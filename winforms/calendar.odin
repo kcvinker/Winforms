@@ -44,10 +44,15 @@ ViewMode :: enum {month, year, decade, centuary}
 }
 
 // Create a new Calendar control.
-new_calendar :: proc{new_cal1}
+new_calendar :: proc{new_cal1, new_cal2}
 
 @private new_cal1 :: proc(parent : ^Form, x, y : int) -> Calendar{
     c := calendar_ctor(parent, x, y)
+    return c
+}
+
+@private new_cal2 :: proc(parent : ^Form) -> Calendar{
+    c := calendar_ctor(parent, 10, 10)
     return c
 }
 
