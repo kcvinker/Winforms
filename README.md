@@ -3,11 +3,11 @@ A simple GUI library for Odin programming language.
 
 It is built upon win api functions. So it needs Windows 64 bit to run.
 
-Screenshot
+## Screenshot
 
 ![image](https://user-images.githubusercontent.com/8840907/150694385-a5b824ab-7df2-4714-9e4f-11a604b5a7df.png)
 
-Example --
+## Example --
 
 ```rust
 import ui "winforms"
@@ -28,3 +28,7 @@ form_click :: proc(sender : ^ui.Control, ea : ^ui.EventArgs) {
 }
 ```
 
+## How to use --
+1. Download or clone repo.
+2. Copy the folder **winforms** and paste it in project's root folder.
+3. Import **winforms** in your main file. Done !!! 👍
