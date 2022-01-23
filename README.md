@@ -2,6 +2,19 @@
 A simple GUI library for Odin programming language.
 
 It is built upon win api functions. So it needs Windows 64 bit to run.
+Currently, it's a work in progress project.
+
+## Control List
+1. Form
+2. Button
+3. Calendar
+4. CheckBox
+5. ComboBox
+6. DateTimePicker
+7. GroupBox
+8. Label
+9. ListBox
+10. TextBox
 
 ## Screenshot
 
