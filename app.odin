@@ -88,16 +88,19 @@ main :: proc() {
         combo_add_items(&cmb, "Vinod", "Vinayak", "Malu", "സിനിമ", 150, 25.1, 1000, b1.handle)
         create_combo(&cmb)
 
-        b1 = new_button(&frm, "Sample", 10, 100)
+        b1 = new_button(&frm, "Color Btn", 10, 100)
         // b1.xpos = 10
         // b1.ypos = 100
         b1.back_color = 0x800080
         b1.fore_color = 0xFFFFFF
         create_button(&b1)
 
-        b2 := new_button(&frm, "Test", 10, 150,)
+        b2 := new_button(&frm, "Gradient Btn", 10, 150,)
         set_button_gradient(&b2, 0x0080FF, 0x00FF80)
         create_button(&b2)
+
+        b3 := new_button(&frm, "Normal Btn", 10, 200,)        
+        create_button(&b3)
 
         dp = new_datetimepicker(parent= &frm, w=140, h=25, x=170, y=100)
         // dp.xpos = 170
@@ -116,7 +119,7 @@ main :: proc() {
     lbx.xpos = 320
     lbx.ypos = 50
     lbx.selection_changed = dtp_tb
-    listbox_add_items(&lbx, "Vinod", "Vinayak", "Malu", "Vineetha")
+    listbox_add_items(&lbx, "Odin", "is really", "a beautiful", "language")
     create_listbox(&lbx)
   
     start_form() 

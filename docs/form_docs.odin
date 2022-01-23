@@ -51,6 +51,7 @@ main :: proc() {
     // You can create other controls here.
 
     start_form() // From now, you can see the form is up & running.
+    
 }
 
 form_click :: proc(sender : ^ui.Control, ea : ^ui.EventArgs) {
