@@ -43,5 +43,9 @@ form_click :: proc(sender : ^ui.Control, ea : ^ui.EventArgs) {
 
 ## How to use --
 1. Download or clone repo.
-2. Copy the folder **winforms** and paste it in project's root folder.
+2. Copy the folder **winforms** and paste it in project folder.
 3. Import **winforms** in your main file. Done !!! 👍
+
+## Note
+To enable visual styles for your application, you need to use a manifest file.
+Here you can see a **app.exe.manifest** file in this repo. You can copy poste it in your project folder. Then rename it. The name must be your exe file's name. Here in my case, my exe file is **app.exe**. So my manifest file's name is **app.exe.manifest**. However, you can use a reource file and put an entry for this manifest file in it. Then you can compile the app with the manifest data embedded into your exe. 
