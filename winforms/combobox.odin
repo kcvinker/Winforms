@@ -12,6 +12,7 @@ ComboBox :: struct {
     combo_style : DropDownStyle,
     items : [dynamic]string, // Don't forget to delete it when combo box deing destroyed.
     visible_item_count : int,
+    selected_index : int,
     p_recreate_enabled : b32, // Used when we need to recreate existing combo
 
     _bk_brush : Hbrush,
@@ -80,6 +81,7 @@ ComboInfo :: struct {
     cmb.back_color = 0xFFFFFF
     cmb.fore_color = 0x000000    
     cmb._ex_style = 0
+    cmb.selected_index = -1
     cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN 
     cmb._ex_style =  WS_EX_LTRREADING | WS_EX_LEFT 
     //cmb._txt_style = DT_SINGLELINE | DT_VCENTER 
@@ -210,11 +212,13 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T ) {
 }
 
 combo_get_selected_index :: proc(cmb : ^ComboBox) -> int {
-    return int(send_message(cmb.handle, CB_GETCURSEL, 0, 0))
+    cmb.selected_index = int(send_message(cmb.handle, CB_GETCURSEL, 0, 0))
+    return cmb.selected_index
 }
 
 combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)  {
     send_message(cmb.handle, CB_SETCURSEL, Wparam(i32(indx)), 0)
+    cmb.selected_index = indx
 }
 
 
@@ -225,12 +229,22 @@ combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
     } else do return ""    
 }
 
-combo_remove_selected_item :: proc(cmb : ^ComboBox) {
-    indx := int(send_message(cmb.handle, CB_GETCURSEL, 0, 0))
+combo_delete_selected_item :: proc(cmb : ^ComboBox) {
+    indx := i32(send_message(cmb.handle, CB_GETCURSEL, 0, 0))
     if indx > -1 {
         send_message(cmb.handle, CB_DELETESTRING, Wparam(indx), 0)
-        ordered_remove(&cmb.items, indx)
+        ordered_remove(&cmb.items, int(indx))
     } 
+}
+
+combo_delete_item :: proc(cmb : ^ComboBox, indx : int) {
+    send_message(cmb.handle, CB_DELETESTRING, direct_cast(i32(indx), Wparam), 0)
+    ordered_remove(&cmb.items, indx)    
+}
+
+combo_clear_items :: proc(cmb : ^ComboBox) {
+    send_message(cmb.handle, CB_DELETESTRING, 0, 0)
+    // TODO - clear dynamic array of combo.
 }
 
 create_combo :: proc(cmb : ^ComboBox) {
@@ -255,9 +269,11 @@ create_combo :: proc(cmb : ^ComboBox) {
         cmb._old_hwnd = cmb.handle       
         setfont_internal(cmb)
         set_subclass(cmb, cmb_wnd_proc) 
-        additem_internal(cmb)
+        if len(cmb.items) > 0 do additem_internal(cmb)
         get_combo_info(cmb)
-       //print("combo handle after creation - ", cmb.handle)
+        if cmb.selected_index > -1 { // User wants to set the selected index.
+            combo_set_selected_index(cmb, cmb.selected_index)
+        }       
     }
 
 }

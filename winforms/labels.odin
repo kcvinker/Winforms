@@ -30,16 +30,16 @@ LabelBorder :: enum {no_border, single_line, sunken_border, }
     lb.auto_size = true
     lb.kind = .label
     lb.text = txt == "" ? concat_number("Label_", _lb_count) : txt
-    lb.width = 20
-    lb.height = 20
+    lb.width = 0 // reset later
+    lb.height = 0 // reset later
     lb.xpos = 50
-    lb.ypos = 40
+    lb.ypos = 50
     lb.parent = p
     lb.font = p.font
     lb.back_color = def_window_color
     lb.fore_color = 0x000000
     lb._ex_style = 0 // WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-    lb._style = WS_VISIBLE | WS_CHILD | SS_OWNERDRAW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED 
+    lb._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED 
     return lb
 }
 
@@ -52,9 +52,9 @@ LabelBorder :: enum {no_border, single_line, sunken_border, }
     return lb
 }
 
-@private new_label2 :: proc(parent : ^Form, txt : string, w : int = 20, h : int = 20) -> Label {
+@private new_label2 :: proc(parent : ^Form, txt : string, w : int = 0, h : int = 0) -> Label {
     lb := label_ctor(parent, txt)
-   if w != 20 || h != 20 do lb.auto_size = false
+    if w != 0 || h != 0 do lb.auto_size = false
     lb.width = w
     lb.height = h
     return lb
@@ -67,8 +67,11 @@ new_label :: proc{new_label1, new_label2}
 
 @private check_for_autosize :: proc(lb : ^Label) {
     if lb.multi_line do lb.auto_size = false
-    if lb.width != 20 do lb.auto_size = false
-    if lb.height != 20 do lb.auto_size = false
+    if lb.width != 0 do lb.auto_size = false // User might change width explicitly
+    if lb.height != 0 do lb.auto_size = false // User might change width explicitly
+    // if lb.width == 0 || lb.height == 0 {
+    //     // User did not made any changes yet. 
+    // }
 }
 
 @private adjust_border :: proc(lb : ^Label) {   
@@ -124,6 +127,17 @@ new_label :: proc{new_label1, new_label2}
     }
 }
 
+@private set_label_size :: proc(lb : ^Label) {
+    hdc := get_dc(lb.handle)
+    defer delete_dc(hdc)
+    lsize : Size            
+    select_gdi_object(hdc, lb.font.handle)
+    get_text_extent_point(hdc, to_wstring(lb.text), i32(len(lb.text)), &lsize )
+    lb.width = int(lsize.width) + _lb_width_incr
+    lb.height = int(lsize.height) + _lb_height_incr       
+    move_window(lb.handle, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), true )
+}
+
 // Create the handle of Label control.
 create_label :: proc(lb : ^Label) {
     if lb.border_style != .no_border do adjust_border(lb)
@@ -147,9 +161,10 @@ create_label :: proc(lb : ^Label) {
     if lb.handle != nil {  
         //print("Original label - ", lb.handle)
         lb._is_created = true              
-        lb.parent._udraw_ids[_global_ctl_id] = lb.handle
+        if lb.auto_size do set_label_size(lb)
         setfont_internal(lb)
         set_subclass(lb, label_wnd_proc) 
+        
               
     }
 
@@ -255,7 +270,7 @@ create_label :: proc(lb : ^Label) {
                 lb.mouse_hover(lb, &mea)
             }
         case WM_MOUSELEAVE :
-           // print("label mouse leave")
+           
             if lb._is_mouse_tracking {
                 lb._is_mouse_tracking = false
                 lb._is_mouse_entered = false
@@ -263,25 +278,15 @@ create_label :: proc(lb : ^Label) {
             if lb.mouse_leave != nil {
                 ea := new_event_args()
                 lb.mouse_leave(lb, &ea)
-            }
+            }           
+       
 
-        
-        case CM_LABELDRAW :
-            dis := get_lparam_value(lp, ^DRAWITEMSTRUCT) 
-            if lb.auto_size {
-                lsize : Size            
-                select_gdi_object(dis.hDC, lb.font.handle)
-                get_text_extent_point(dis.hDC, to_wstring(lb.text), i32(len(lb.text)), &lsize )
-                lb.width = int(lsize.width) + _lb_width_incr
-                lb.height = int(lsize.height) + _lb_height_incr       
-                move_window(lb.handle, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), true )
-            } 
-            set_bk_mode(dis.hDC, Transparent)
-            if lb.fore_color != 0x000000 do set_text_color(dis.hDC, get_color_ref(lb.fore_color))            
-            if lb._hbrush == nil do lb._hbrush = create_solid_brush(get_color_ref(lb.back_color))              
-            fill_rect(dis.hDC, &dis.rcItem, lb._hbrush)            
-            draw_text(dis.hDC, to_wstring(lb.text), -1, &dis.rcItem, lb._txt_align)                                 
-            return Lresult(1)   
+        case CM_CTLLCOLOR :
+            hdc := direct_cast(wp, Hdc)
+            set_text_color(hdc, get_color_ref(lb.fore_color))
+            set_bk_color(hdc, get_color_ref(lb.back_color))
+            lb._hbrush = create_solid_brush(get_color_ref(lb.back_color))
+            return to_lresult(lb._hbrush)
             
         case WM_DESTROY:
             label_dtor(lb)

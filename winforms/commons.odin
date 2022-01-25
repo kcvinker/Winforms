@@ -181,7 +181,31 @@ msg_box4 :: proc(msg : any, caption : string) {
 }
 msg_box :: proc{msg_box1, msg_box2, msg_box3, msg_box4}
 
+@private dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) {
+	for i := 0 ; i < len(arr) ; i += 1 {
+		if arr[i] == item {
+			index = i
+			is_found = true
+			break
+		}
+	}
+	return index, is_found
+} 
 
+@private static_array_search :: proc(arr : []$T, item : T) -> (index : int, is_found : bool) {
+	for i := 0 ; i < len(arr) ; i += 1 {
+		if arr[i] == item {
+			index = i
+			is_found = true
+			break
+		}
+	}
+	return index, is_found
+} 
+
+array_search :: proc{	dynamic_array_search,
+						static_array_search,
+}
 
 // This proc will return an Hbrush to paint the window or a button in gradient colors.
 create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {	

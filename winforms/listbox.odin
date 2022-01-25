@@ -1,12 +1,17 @@
 package winforms
 import "core:runtime"
 import "core:fmt"
+//import "core:slice"
 
 ListBox :: struct {
     using control : Control,
     items : [dynamic]string,
     has_sort : b64,
-    cancel_selection : b64,
+    hide_selection : b64,
+    no_selection : b64,
+    multi_selection : b64,
+    multi_column : b64,
+    key_preview : b64,
 
     selection_changed : LBoxEventHandler,
 
@@ -109,7 +114,10 @@ new_listbox :: proc{lbox_ctor1}
 
 @private set_lbox_style_internal :: proc(lbox : ^ListBox) {
     if lbox.has_sort do lbox._style |= LBS_SORT
-    
+    if lbox.multi_selection do lbox._style |= LBS_EXTENDEDSEL | LBS_MULTIPLESEL
+    if lbox.multi_column do lbox._style |= LBS_MULTICOLUMN
+    if lbox.no_selection do lbox._style |= LBS_NOSEL
+    if lbox.key_preview do lbox._style |= LBS_WANTKEYBOARDINPUT
 }
 
 listbox_add_item :: proc(lbx : ^ListBox, item : $T) {
@@ -149,6 +157,135 @@ listbox_add_items :: proc(lbx : ^ListBox, items : ..any) {
             send_message(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), Lparam))
         }
     }
+}
+
+
+
+listbox_get_selection_index :: proc(lbx : ^ListBox) -> int {
+    if !lbx.multi_selection {
+        return int(send_message(lbx.handle, LB_GETCURSEL, 0, 0))
+    }
+    return -1
+}
+
+listbox_get_selection_indices :: proc(lbx : ^ListBox, alloc := context.allocator) -> [dynamic]i32 {   
+    if lbx.multi_selection {
+        num := send_message(lbx.handle, LB_GETSELCOUNT, 0, 0)
+        if num > 0 {           
+            buffer := make([dynamic]i32, num, alloc)                  
+            defer delete(buffer)
+            send_message(lbx.handle, LB_GETSELITEMS, direct_cast(num, Wparam), direct_cast(&buffer[0], Lparam))           
+            return buffer       
+        } else do return nil  //err_val        
+    } else do return nil //err_val
+    return nil //err_val
+}
+
+@private lb_get_item :: proc(lbx : ^ListBox, indx : i32, alloc := context.allocator) -> string {  
+    if len(lbx.items) > 0 { // Check for items
+        tlen := int(send_message(lbx.handle, LB_GETTEXTLEN, Wparam(indx), 0))
+        if tlen != LB_ERR { // Check for invalid index
+            memory := make([]Wchar, tlen, alloc)
+            defer delete(memory)
+            str_buffer : wstring = &memory[0]
+            send_message(lbx.handle, LB_GETTEXT, Wparam(indx), convert_to(Lparam, str_buffer))
+            return wstring_to_utf8(str_buffer, -1)
+        }        
+    } 
+    return ""
+}
+
+@private lb_get_item2 :: proc(lbx : ^ListBox, indx : int) -> string {
+    return lb_get_item(lbx, i32(indx))
+}
+
+// Get the item from listbox with given index.
+// In case of invalid index, or there is no items in listbox, return an empty string.
+listbox_get_item :: proc{lb_get_item,
+                         lb_get_item2}
+
+listbox_get_selected_item :: proc(lbx : ^ListBox) -> string {
+    if len(lbx.items) > 0 { // Check for items
+        if !lbx.multi_selection { // Only allow single selection list box's        
+            curr_sel_indx := (send_message(lbx.handle, LB_GETCURSEL, 0, 0))            
+            if curr_sel_indx != LB_ERR { // Checking for a selection
+                return listbox_get_item(lbx, int(curr_sel_indx))
+            }  
+        }        
+    } 
+    return ""
+}
+
+// Get selected items from a multi selection listbox.
+listbox_get_selected_items :: proc(lbx : ^ListBox, alloc := context.allocator) -> [dynamic]string {    
+    if len(lbx.items) > 0 { // Check for items
+        if lbx.multi_selection { // Only allow multi selection list boxes        
+            sel_indices := listbox_get_selection_indices(lbx)
+            if len(sel_indices) > 0 { // If there are selections
+                result := make([dynamic]string, len(sel_indices), alloc)
+                for i := 0 ; i < len(sel_indices) ; i += 1 {
+                    item := listbox_get_item(lbx, sel_indices[i])
+                    result[i] = item
+                }
+                return result
+            }
+            
+        }        
+    } 
+    return nil
+}
+
+
+
+listbox_set_item_selected :: proc(lbx : ^ListBox, indx : int) {
+    if len(lbx.items) > 0 do send_message(lbx.handle, LB_SETCURSEL, Wparam(i32(indx)), 0)
+}
+
+listbox_clear_selection :: proc(lbx : ^ListBox) {
+    indx : i32 = -1
+    if len(lbx.items) > 0 do send_message(lbx.handle, LB_SETCURSEL, Wparam(indx) , 0)
+}
+
+listbox_delete_item :: proc(lbx : ^ListBox, indx : int) {
+    if len(lbx.items) > 0 {        
+        if lbx.has_sort {
+            del_item := listbox_get_item(lbx, indx)
+            if del_item != "" { // It's a valid item.
+                ret_val := send_message(lbx.handle, LB_DELETESTRING, Wparam(i32(indx)), 0)
+                if ret_val != LB_ERR { // We need to delete it from our items list too.
+                    idx, fnd := array_search(lbx.items, del_item)
+                    if fnd do ordered_remove(&lbx.items, idx)
+                }
+            }
+        } else {
+            ret_val := send_message(lbx.handle, LB_DELETESTRING, Wparam(i32(indx)), 0)
+            if ret_val != LB_ERR do ordered_remove(&lbx.items, indx)            
+        }
+    }       
+}
+
+listbox_insert_item :: proc(lbx : ^ListBox, indx : int, item : $T) {
+    // TODO use LB_INSERTSTRING
+}
+
+listbox_find_index :: proc(lbx : ^ListBox, item : $T) -> int {
+    // TODO use LB_FINDSTRINGEXACT
+    return 0
+}
+
+listbox_find_hot_index :: proc(lbx : ^ListBox, item : $T) -> int {
+    // TODO use LB_GETCARETINDEX
+    return 0
+}
+
+listbox_get_hot_item :: proc(lbx : ^ListBox) -> string {
+    // TODO use LB_GETCARETINDEX
+    return ""
+}
+
+listbox_clear_items :: proc(lbx : ^ListBox)  {
+    // TODO use LB_RESETCONTENT
+    
 }
 
 create_listbox :: proc(lbx : ^ListBox) {
@@ -192,7 +329,7 @@ create_listbox :: proc(lbx : ^ListBox) {
             switch ncode {
                 case LBN_DBLCLK :
                 case LBN_KILLFOCUS :
-                    if lbx.cancel_selection {
+                    if lbx.hide_selection {
 
                         
                     }
