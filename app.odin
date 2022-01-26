@@ -131,13 +131,14 @@ main :: proc() {
         lbx.xpos = 320
         lbx.ypos = 50
         lbx.multi_selection = true
-        lbx.key_preview = true
-        lbx.hide_selection = true
+        lbx.key_preview = true     
+        lbx.mouse_leave = gen_events  
     // lbx.selection_changed = dtp_tb
+        listbox_add_items(&lbx, "Odin", "Learning", "Started", "And It's awesome")
+        create_listbox(&lbx)
     }
     
-    listbox_add_items(&lbx, "Odin", "Learning", "Started", "And It's awesome")
-    create_listbox(&lbx)
+   
 
     
   
@@ -154,7 +155,7 @@ test_proc :: proc(s : ^Control, e : ^MouseEventArgs) {
     print("----------------------------------------") 
 }
 
-btn_clk :: proc(s : ^Control, e : ^EventArgs) {  
+btn_clk :: proc(s : ^Control, e : ^EventArgs) {  // connected to frm click
     print("form moved to  this loc")
     //print(ui.listbox_get_selection_indices(&lbx))
     print("selected item - " )
@@ -166,14 +167,14 @@ btn_clk :: proc(s : ^Control, e : ^EventArgs) {
 } 
 
 
-mup :: proc(s : ^Control, e : ^MouseEventArgs) {  
+mouse_events :: proc(s : ^Control, e : ^MouseEventArgs) {  
     //f.msg_box("You clicked on button")
     print("Mouse up  on worked")
 } 
 
-cbMenter :: proc(s : ^Control, e : ^EventArgs) {
+gen_events :: proc(s : ^Control, e : ^EventArgs) {
    
-    print("------------mouse entered on group box-----------------------------")
+    print("-----------Your event worked-----------------------------")
 
 }
 

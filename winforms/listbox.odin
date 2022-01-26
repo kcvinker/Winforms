@@ -426,7 +426,76 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
 
 
             }
+        case WM_LBUTTONDOWN:                       
+            lbx._mdown_happened = true            
+            if lbx.left_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                lbx.left_mouse_down(lbx, &mea)
+                return 0
+            }
+        case WM_LBUTTONUP :     
+            if lbx.left_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                lbx.left_mouse_up(lbx, &mea)
+            }
+            if lbx._mdown_happened do send_message(lbx.handle, CM_LMOUSECLICK, 0, 0)             
+        
+        case CM_LMOUSECLICK :
+            lbx._mdown_happened = false
+            if lbx.mouse_click != nil {
+                ea := new_event_args()
+                lbx.mouse_click(lbx, &ea)
+                return 0
+            }
+        case WM_RBUTTONDOWN:
+            lbx._mrdown_happened = true
+            if lbx.right_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                lbx.right_mouse_down(lbx, &mea)
+            }
+        
+        case WM_RBUTTONUP :
+            if lbx.right_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                lbx.right_mouse_up(lbx, &mea)
+            }
+            if lbx._mrdown_happened do send_message(lbx.handle, CM_RMOUSECLICK, 0, 0) 
 
+        case CM_RMOUSECLICK :
+            lbx._mrdown_happened = false
+            if lbx.right_click != nil {
+                ea := new_event_args()
+                lbx.right_click(lbx, &ea)
+                return 0
+            }
+
+        case WM_MOUSEHWHEEL:
+            if lbx.mouse_scroll != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                lbx.mouse_scroll(lbx, &mea)
+            }	
+            
+        case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
+            if lbx._is_mouse_entered {
+                if lbx.mouse_move != nil {
+                    mea := new_mouse_event_args(msg, wp, lp)
+                    lbx.mouse_move(lbx, &mea)                    
+                }
+            }
+            else {
+                lbx._is_mouse_entered = true
+                if lbx.mouse_enter != nil  {
+                    ea := new_event_args()
+                    lbx.mouse_enter(lbx, &ea)                    
+                }
+            }
+
+         case WM_MOUSELEAVE :            
+            lbx._is_mouse_entered = false
+            if lbx.mouse_leave != nil {               
+                ea := new_event_args()
+                lbx.mouse_leave(lbx, &ea)                
+            }
 
     
         case : return def_subclass_proc(hw, msg, wp, lp)

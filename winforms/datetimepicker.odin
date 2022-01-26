@@ -367,7 +367,7 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.right_mouse_up(dtp, &mea)
             }
-            if dtp._mrdown_happened do send_message(dtp.handle, CM_LMOUSECLICK, 0, 0) 
+            if dtp._mrdown_happened do send_message(dtp.handle, CM_RMOUSECLICK, 0, 0) 
             
         case CM_RMOUSECLICK :
             dtp._mrdown_happened = false
