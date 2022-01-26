@@ -3,8 +3,7 @@
 ListBox :: struct {
     using control : Control,
     items : [dynamic]string, // Hold the items 
-    has_sort : b64,         // If enabeled, item will be sorted. Default = false
-    hide_selection : b64,   // If enabled, selection will be hidden when the control lost focus
+    has_sort : b64,         // If enabeled, item will be sorted. Default = false    
     no_selection : b64,     // If enabled, user can't select an item
     multi_selection : b64,  // If enabled, user can select multiple items.
     multi_column : b64,     // If enabled, multiple columns will be visible in listbox
@@ -51,5 +50,7 @@ listbox_get_hot_index :: proc(lbx : ^ListBox) -> int // get the index of the ite
 listbox_get_hot_item :: proc(lbx : ^ListBox) -> string // get item under mouse pointer
 
 listbox_clear_items :: proc(lbx : ^ListBox) // Delete all items in listbox
+
+
 
 

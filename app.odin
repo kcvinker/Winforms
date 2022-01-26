@@ -131,6 +131,8 @@ main :: proc() {
         lbx.xpos = 320
         lbx.ypos = 50
         lbx.multi_selection = true
+        lbx.key_preview = true
+        lbx.hide_selection = true
     // lbx.selection_changed = dtp_tb
     }
     

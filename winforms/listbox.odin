@@ -6,12 +6,13 @@ import "core:fmt"
 ListBox :: struct {
     using control : Control,
     items : [dynamic]string,
-    has_sort : b64,
-    hide_selection : b64,
+    has_sort : b64,    
     no_selection : b64,
     multi_selection : b64,
     multi_column : b64,
     key_preview : b64,
+
+    _private_sel_indices : [dynamic]i32,
 
     selection_changed : LBoxEventHandler,
 
@@ -38,6 +39,7 @@ ListBox :: struct {
 
 @private lbox_dtor :: proc(lbx : ^ListBox) {
     delete(lbx.items)
+    delete(lbx._private_sel_indices)
 }
 
 // Create new listbox type.
@@ -244,6 +246,26 @@ listbox_set_item_selected :: proc(lbx : ^ListBox, indx : int) {
     if len(lbx.items) > 0 do send_message(lbx.handle, LB_SETCURSEL, Wparam(i32(indx)), 0)
 }
 
+//@private
+listbox_set_items_selected :: proc(lbx : ^ListBox, flag : b32, indices : ..int) {
+    if lbx.multi_selection {
+        //bflag : b32 = false
+        for i in indices {
+             send_message(lbx.handle, LB_SETSEL, Wparam(flag), Lparam(i32(i)))
+        }
+    }
+}
+//@private
+// listbox_set_items_selected2 :: proc(lbx : ^ListBox, indices : []int) {
+//     if lbx.multi_selection {
+//         bflag : b32 = false
+//         for i in indices {
+//              send_message(lbx.handle, LB_SETSEL, Wparam(bflag), Lparam(i32(i)))
+//         }
+//     }
+// }
+//listbox_set_items_selected :: proc{listbox_set_items_selected1}//, listbox_set_items_selected2}
+
 // Clear the selection from listbox.
 listbox_clear_selection :: proc(lbx : ^ListBox) {
     indx : int = -1
@@ -349,6 +371,12 @@ create_listbox :: proc(lbx : ^ListBox) {
     }
 }
 
+listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
+    if !lbx.multi_selection {
+        send_message(lbx.handle, LB_SETCURSEL, Wparam(i32(indx)), 0)
+    }
+}
+
 @private lbx_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, 
                                                     sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
     context = runtime.default_context()
@@ -359,14 +387,18 @@ create_listbox :: proc(lbx : ^ListBox) {
             lbox_dtor(lbx) 
             remove_subclass(lbx)
 
-        case CM_CTLCOMMAND :
+        case CM_CTLCOMMAND :            
             ncode := get_hiword(wp)
             switch ncode {
                 case LBN_DBLCLK :
+                    if lbx.double_click != nil {
+                        ea := new_event_args()
+                        lbx.double_click(lbx, &ea)
+                    }
                 case LBN_KILLFOCUS :
-                    if lbx.hide_selection {
-
-                        
+                    if lbx.lost_focus != nil {
+                        ea := new_event_args()
+                        lbx.lost_focus(lbx, &ea)
                     }
                 case LBN_SELCHANGE :
                     sel_indx := send_message(lbx.handle, LB_GETCURSEL, 0, 0)
@@ -383,6 +415,12 @@ create_listbox :: proc(lbx : ^ListBox) {
                     }
                     
                 case LBN_SETFOCUS :
+                    if lbx.got_focus != nil {
+                        ea := new_event_args()
+                        lbx.got_focus(lbx, &ea)
+                    }
+                    
+                 
                 case LBN_SELCANCEL :
                     print("sel cancel")
 
