@@ -156,8 +156,9 @@ btn_clk :: proc(s : ^Control, e : ^EventArgs) {
     print("form moved to  this loc")
     //print(ui.listbox_get_selection_indices(&lbx))
     print("selected item - " )
-    print(ui.listbox_get_selected_items(&lbx))
-    ui.listbox_delete_item(&lbx, 2)
+    ui.listbox_clear_selection(&lbx)
+    //ui.listbox_delete_item(&lbx, 2)
+    //ui.listbox_insert_item(&lbx, 3, "Sunny Leon")
    
     
 } 
