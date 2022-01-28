@@ -69,3 +69,18 @@ main :: proc() {
 on_np_value_changed :: proc(c : ^Control, e : ^EventArgs) {
     ui.msg_box(np.value)
 }
+
+/*NumericUpdown in .NET has an interesting bug.
+When you set the MouseLeave event, if you move the mouse pointer towards the spin button area,
+You will get a mouse leave event. Which I am sure anyone wants to get.
+Reason for this problem is obvious. NumericUpdown is a combo of two controls.
+So the mouse leave event will be triggered when pointer reaches the edge of textbox or spin button.
+So the event will be fired. But this is not a big issue. We can solve it easily.
+I don't know why MS is leaving this bug as it is.
+In this NumberPicker, I solved this issue and the mouse_leave event will be fired only when you move the 
+pointer out of it's actual rect. So each time when your NumberPicker get a WM_MOUSELEAVE message,
+it will check the current mouse position. Then it will check if that position is it's buddy control.
+If that mouse points are inside it's buddy's rect, the message will be suppressed. Otherwise, it will fire a
+mouse_leave event. 
+
+

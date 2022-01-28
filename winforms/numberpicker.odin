@@ -318,19 +318,20 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
             }            
 
         case WM_MOUSELEAVE : 
-            pt : Point
-            get_cursror_pos(&pt)
-            screen_to_client(hw, &pt)            
-            xflag : bool = true if pt.x == (np._udrc.left + 1) else false
-            yflag : bool = true if in_range(pt.y, np._udrc.top, np._udrc.bottom) else false   
-            
-            if !(xflag && yflag) {
-                np._is_mouse_entered = false         
-                if np.mouse_leave != nil {                              
+            if np.mouse_leave != nil {  
+                pt : Point
+                get_cursror_pos(&pt)
+                screen_to_client(hw, &pt)            
+                xflag : bool = true if pt.x == (np._udrc.left + 1) else false
+                yflag : bool = true if in_range(pt.y, np._udrc.top, np._udrc.bottom) else false   
+                
+                if !(xflag && yflag) {
+                    np._is_mouse_entered = false                                         
                     ea := new_event_args()
                     np.mouse_leave(np, &ea) 
-                }  
-            } 
+                    
+                } 
+            }
            
             
 
@@ -441,19 +442,20 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
             }
 
         case WM_MOUSELEAVE :  
-            pt : Point
-            get_cursror_pos(&pt)
-            screen_to_client(hw, &pt)            
-            xflag : bool = true if pt.x == tb._tbrc.right else false
-            yflag : bool = true if in_range(pt.y, tb._tbrc.top, tb._tbrc.bottom) else false
-            
-            if !(xflag && yflag) {               
-                tb._is_mouse_entered = false               
-                if tb.mouse_leave != nil {                           
+            if tb.mouse_leave != nil {
+                pt : Point
+                get_cursror_pos(&pt)
+                screen_to_client(hw, &pt)            
+                xflag : bool = true if pt.x == tb._tbrc.right else false
+                yflag : bool = true if in_range(pt.y, tb._tbrc.top, tb._tbrc.bottom) else false
+                
+                if !(xflag && yflag) {               
+                    tb._is_mouse_entered = false                                         
                     ea := new_event_args()
                     tb.mouse_leave(tb, &ea)   
+                    
                 } 
-             } 
+            }
         
             
         case : return def_subclass_proc(hw, msg, wp, lp)

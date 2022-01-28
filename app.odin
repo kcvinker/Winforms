@@ -157,7 +157,7 @@ main :: proc() {
        // np.format_string = "%.3f"
         np.decimal_precision = 2
         // np.mouse_enter = gen_events
-        // np.mouse_leave = gen_events
+        //np.mouse_leave = gen_events
         //np.mouse_move = test_proc
         create_numberpicker(&np)
     }
