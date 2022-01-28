@@ -16,11 +16,12 @@ ControlKind :: enum {
 	label, 
 	list_box,
 	list_view,
+	number_picker,
 	panel, 
 	radio_button, 
 	text_box, 
 	tree_view,
-	up_down,
+	
 }
 
 // A base class for all controls & Form.
@@ -77,6 +78,8 @@ Control :: struct {
 	ctl._wndproc_ptr = fn_ptr
 	_global_subclass_id += 1
 }
+
+
 
 @private remove_subclass :: proc(ctl : ^Control) { // This will get called when control's wndproc receive wm_destroy message.
 	remove_window_subclass(ctl.handle, ctl._wndproc_ptr, UintPtr(ctl._subclass_id) )

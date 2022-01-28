@@ -17,15 +17,8 @@ import "core:fmt"
 
 // My Own messages
 
-ICC_DATE_CLASSES :: 0x100
 
-initialize_date_class :: proc() {
-    if !app.date_class_init do app.date_class_init = true
-    icc_ex : INITCOMMONCONTROLSEX
-    icc_ex.dwSize = size_of(icc_ex)
-    icc_ex.dwIcc = ICC_DATE_CLASSES
-    init_comm_ctrl_ex(&icc_ex)   
-}
+
 
 
 
@@ -35,6 +28,7 @@ initialize_date_class :: proc() {
 // So this enum will be used in controls which had the ebility to draw a gradient bkgnd.
 GradientStyle :: enum {top_to_bottom, left_to_right,}
 TextAlignment :: enum {top_left, top_center, top_right, mid_left, center, mid_right, bottom_left, bottom_center, bottom_right}
+SimpleTextAlignment :: enum {left, center, right}
 //ClickData :: struct { first_down, first_up, second_down, second_up : b32, }
 
 TimeMode :: enum {nano_sec, micro_sec, milli_sec}
@@ -60,10 +54,19 @@ current_filetime :: proc(tm : TimeMode) -> i64 {
 	return result
 }
 
-// winstring_to_odin_string :: proc(ws : wstring) -> string {
-// 	str_len := len(ws)
+@private get_ctrl_text_internal :: proc(hw : Hwnd, alloc := context.allocator) -> string {
+	tlen := get_window_text_length(hw) 	
+	mem_chunks := make([]Wchar, tlen + 1, alloc)
+	wsBuffer : wstring = &mem_chunks[0]
+	defer delete(mem_chunks)	
+	get_window_text(hw, wsBuffer, i32(len(mem_chunks)))
+	return wstring_to_utf8(wsBuffer, -1)
+}
 
-// }
+@private in_range :: proc(value, min_val, max_val : i32) -> bool {
+	if value > min_val && value < max_val do return true
+	return false
+}
 
 concat_number1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 concat_number2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
@@ -89,6 +92,13 @@ get_rect :: proc(hw : Hwnd) -> Rect {
 	return rct
 }
 
+make_dword :: proc(lo_val, hi_val, : $T) -> Dword {
+	hv := cast(Word) hi_val
+    lv := cast(Word) lo_val
+	dw_val := Dword(Dword(lv) | (Dword(hv)) << 16) 
+	return dw_val
+}
+// left = loword, right side - highword
 
 // There a lot of time we need to convert a handle like HBrush to HGDIOBJ.
 // This proc will help for it. 

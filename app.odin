@@ -29,7 +29,9 @@ import  ui "winforms"
     dp : ui.DateTimePicker
     //gb : ui.GroupBox
     lbx : ui.ListBox
-
+    np : ui.NumberPicker
+    cnt : int
+    gec : int = 1
 //
 
 main :: proc() {   
@@ -48,7 +50,9 @@ main :: proc() {
 
     { // TEXTBOX
         tb = new_textbox(&frm)    
-        tb.text = "Simple tb"   
+        tb.text = "Simple tb" 
+        tb.back_color = 0xACD58E
+        tb.focus_rect_color = 0x00FF00  
         create_textbox(&tb)
     }       
 
@@ -57,7 +61,7 @@ main :: proc() {
         lb.ypos = 50
         lb.xpos = 10
         //lb.back_color = 0x000000
-        lb.fore_color = 0x00D56A
+        lb.fore_color = 0x0000FF
         create_label(&lb)
     }
     { // CHECKBOX
@@ -65,7 +69,7 @@ main :: proc() {
         cb.xpos = 130
         cb.ypos = 50
         //cb.text_alignment = .right
-        cb.fore_color = 0x0000FF
+        cb.fore_color = 0x008000
         //cb.back_color = 0xFF8000
         // cb.back_color = 0x00FF00
         create_checkbox(&cb)  
@@ -76,7 +80,7 @@ main :: proc() {
         mb.xpos = 220
         mb.ypos = 10
         // mb.combo_style = .lb_combo
-        mb.back_color = 0xFFC3A0
+        mb.back_color = 0xE6E600
         mb.fore_color = 0x0000A0
         //mb.combo_style =.lb_combo   
         combo_add_items(&mb, "Vinod", "Vinayak", "Malu", "സിനിമ", 150, 25.1, 1000, b1.handle)
@@ -126,16 +130,36 @@ main :: proc() {
     }
 
     // old code
-    {
+    { // list box
         lbx = new_listbox(&frm)
         lbx.xpos = 320
         lbx.ypos = 50
         lbx.multi_selection = true
-        lbx.key_preview = true     
-        lbx.mouse_leave = gen_events  
-    // lbx.selection_changed = dtp_tb
-        listbox_add_items(&lbx, "Odin", "Learning", "Started", "And It's awesome")
+        lbx.key_preview = true    
+        lbx.font = new_font("FiraCode", 14) 
+        //lbx.mouse_leave = gen_events  
+        // lbx.selection_changed = dtp_tb
+        listbox_add_items(&lbx, "Odin is amazing", "Try it", "It's a Better C", "And It's awesome")
         create_listbox(&lbx)
+    }
+
+    // NumberPicker
+    {
+        np = new_numberpicker(&frm, 190, 145, 100, 25)
+      //  np.font = new_font("Hack", 14, true)
+       // np.button_alignment = .left
+        np.text_alignment = .center
+        np.back_color = 0x8080FF
+        np.fore_color = 0xFFFFFF
+       np.step = 0.25
+        np.auto_rotate = true
+        //np.hide_selection = true
+       // np.format_string = "%.3f"
+        np.decimal_precision = 2
+        // np.mouse_enter = gen_events
+        // np.mouse_leave = gen_events
+        //np.mouse_move = test_proc
+        create_numberpicker(&np)
     }
     
    
@@ -150,8 +174,8 @@ main :: proc() {
 
 
 test_proc :: proc(s : ^Control, e : ^MouseEventArgs) {          
-    print("Your event worked successfully...")    
-   
+    print("Your event worked successfully...", cnt )    
+    cnt += 1
     print("----------------------------------------") 
 }
 
@@ -172,9 +196,9 @@ mouse_events :: proc(s : ^Control, e : ^MouseEventArgs) {
     print("Mouse up  on worked")
 } 
 
-gen_events :: proc(s : ^Control, e : ^EventArgs) {
-   
-    print("-----------Your event worked-----------------------------")
+gen_events :: proc(s : ^Control, e : ^EventArgs) {   
+    ptf(" general event worked [%d]\n", gec)
+    gec += 1
 
 }
 

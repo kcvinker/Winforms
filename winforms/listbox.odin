@@ -33,7 +33,7 @@ ListBox :: struct {
 }
 
 @private lbox_ctor1 :: proc(parent : ^Form) -> ListBox {
-    lb := lbox_ctor(parent, 10, 10, 200, 230)
+    lb := lbox_ctor(parent, 10, 10, 200, 175)
     return lb
 }
 

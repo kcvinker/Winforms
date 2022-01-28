@@ -8,6 +8,18 @@ CS_HREDRAW    :: 0x0002
 CS_OWNDC      :: 0x0020
 CW_USEDEFAULT :: -0x80000000
 
+CCS_TOP           :: 1
+CCS_NOMOVEY       :: 2
+CCS_BOTTOM        :: 3
+CCS_NORESIZE      :: 4
+CCS_NOPARENTALIGN :: 8
+CCS_ADJUSTABLE    :: 32
+CCS_NODIVIDER     :: 64
+CCS_VERT    :: 128
+CCS_LEFT    :: 129
+CCS_NOMOVEX :: 130
+CCS_RIGHT   :: 131
+
 
 
 //Windoe displaying Constants

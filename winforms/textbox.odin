@@ -48,8 +48,8 @@ TextBox :: struct {
     tb.fore_color = 0x000000
     tb.focus_rect_color = 0x0080FF
     tb._focus_rct_clr = get_color_ref(tb.focus_rect_color)
-    tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | WS_CLIPCHILDREN | WS_BORDER | ES_AUTOHSCROLL | WS_TABSTOP
-    tb._ex_style =  0 // WS_EX_LTRREADING | WS_EX_LEFT | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE 
+    tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP | WS_BORDER
+    tb._ex_style =  WS_EX_LTRREADING | WS_EX_WINDOWEDGE | WS_EX_WINDOWEDGE //| WS_EX_LEFT | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE 
     
     return tb
 }
@@ -167,18 +167,7 @@ create_textbox :: proc(tb : ^TextBox) {
                 return 0
             }
 
-        // case WM_ERASEBKGND :
-        //     if tb._draw_focus_rct { 
-        //         return 1
-        //     }             
-        //         //ps : PAINTSTRUCT
-        //         hdc := direct_cast(wp, Hdc)
-        //         rc : Rect
-        //         get_client_rect(hw, &rc)
-        //         frame_brush := create_solid_brush(tb._focus_rct_clr)
-        //         frame_rect(hdc, &rc, frame_brush)
-        //         return 0
-        //     }
+        
 
         case CM_CTLLCOLOR : 
                                

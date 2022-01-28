@@ -5,11 +5,10 @@ package winforms
 import "core:runtime"
 //import "core:strings"
 
-
+ICC_DATE_CLASSES :: 0x100
+is_dtp_class_inited : bool = false
 dtp_class :: "SysDateTimePick32" 
-
-
- // We need to call IniCommCtrlEx function before the first dtp created.
+ 
 
 //#region dtp styles
     //DTN_FIRST :: i64(-740)   //~u64(0) - 740  // 0xFFFFFFFFFFFFFD1C
@@ -142,7 +141,12 @@ DateTimePicker :: struct {
 
 @private dtp_ctor :: proc(p : ^Form, w : int = 130, h : int = 25) -> DateTimePicker {   
 
-    if !app.date_class_init do initialize_date_class()
+    if !is_dtp_class_inited { // Then we need to initialize the date class control.
+        is_dtp_class_inited = true
+        app.iccx.dwIcc = ICC_DATE_CLASSES
+        init_comm_ctrl_ex(&app.iccx)
+    }
+
     dtp : DateTimePicker
     dtp.kind = .date_time_picker
     dtp.parent = p    

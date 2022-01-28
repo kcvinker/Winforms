@@ -4,7 +4,7 @@ package winforms
 
 import "core:fmt"
 import "core:runtime"
-
+nph : Hwnd
 // Some better window colors
 /*
     0xF5FFFA
@@ -32,8 +32,8 @@ app := start_app() // Global variable for storing data needed to create a window
     screen_width, screen_height : int,
     form_count : int,
     start_state : FormState,
-    global_font : Font,
-    date_class_init : b64,
+    global_font : Font,    
+    iccx : INITCOMMONCONTROLSEX,
     //_back_color : uint,
 }
 
@@ -43,8 +43,11 @@ app := start_app() // Global variable for storing data needed to create a window
     appl.class_name = "WingLib_Form"
     appl.h_instance = get_module_handle_w(nil)
     appl.screen_width = int(get_system_metrics(0))
-    appl.screen_height = int(get_system_metrics(1))
+    appl.screen_height = int(get_system_metrics(1))   
 
+    appl.iccx.dwSize = size_of(appl.iccx)
+    appl.iccx.dwIcc = ICC_DATE_CLASSES
+    init_comm_ctrl_ex(&appl.iccx)    // We just initializing standard common controls.
     return appl
 }
 
@@ -186,6 +189,7 @@ create_form :: proc(frm : ^Form ) {
         if app.main_handle == nil {
             app.main_handle = frm.handle
             app.start_state = frm.window_state
+            
         }
         set_form_font_internal(frm)
         set_window_long_ptr(frm.handle, GWLP_USERDATA, cast(LongPtr) cast(uintptr) frm)        
@@ -360,7 +364,8 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
     context = runtime.default_context()    
     frm := direct_cast(get_window_long_ptr(hw, GWLP_USERDATA), ^Form)   
    // display_msg(msg)
-    switch msg {          
+    switch msg {   
+              
 
         // case WM_PARENTNOTIFY :
         //    // display_msg(msg)
@@ -380,12 +385,13 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 return 0
             }
 
-        case WM_DRAWITEM :            
+        case WM_DRAWITEM :                    
             ctl_hwnd, hwnd_found := frm._udraw_ids[Uint(wp)]
             if hwnd_found {                
                 return send_message(ctl_hwnd, CM_LABELDRAW, 0, lp)
             } else do return 0     
-
+            
+        
         case WM_CTLCOLOREDIT :
             ctl_hwnd := get_lparam_value(lp, Hwnd)            
             ci := find_combo_data(frm, ctl_hwnd, FindHwnd.tb_hwnd)
@@ -617,7 +623,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         case WM_NOTIFY :                         
             //nmcd := get_lparam_value(lp, ^NMCUSTOMDRAW)
             nm := direct_cast(lp, ^NMHDR)
-            return send_message(nm.hwndFrom, CM_NOTIFY, 0, lp )
+            return send_message(nm.hwndFrom, CM_NOTIFY, wp, lp )
 
             //-------------------------------------------------------
             //is_hwnd := slice.contains(frm._cdraw_childs[:], nmcd.hdr.hwnd_from )                     
@@ -627,12 +633,15 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 ea:= new_event_args()
                 frm.closed(frm, &ea)
             }
-
             form_dtor(frm) // Freeing all resources. 
-
             if hw == app.main_handle {
                 post_quit_message(0)
             }        
-        }
+        
+
+        case :            
+            return def_window_proc_w(hw, msg, wp, lp)
+        
+    }
     return def_window_proc_w(hw, msg, wp, lp)
 }

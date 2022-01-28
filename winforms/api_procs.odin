@@ -139,6 +139,10 @@ foreign user32 {
    @(link_name="GetClassLongPtrW") get_class_long_ptr :: proc(hw : Hwnd, indx : i32) -> u64 ---
    @(link_name="GetClassLongW") get_class_long :: proc(hw : Hwnd, indx : i32) -> u64 ---
    @(link_name="DestroyWindow") destroy_window :: proc(hw : Hwnd) -> Bool ---
+   @(link_name="GetCursorPos") get_cursror_pos :: proc(pt : ^Point) -> Bool ---
+   @(link_name="ScreenToClient") screen_to_client :: proc(hw : Hwnd, pt : ^Point) -> Bool ---
+   @(link_name="WindowFromPoint") window_from_point :: proc(pt : Point) -> Hwnd ---
+   
 
 
 } // User32 library

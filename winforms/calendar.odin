@@ -29,7 +29,11 @@ Calendar :: struct {
 ViewMode :: enum {month, year, decade, centuary}
 
 @private calendar_ctor :: proc(p : ^Form, x, y : int) -> Calendar {
-    if !app.date_class_init do initialize_date_class()
+    if !is_dtp_class_inited { // Then we need to initialize the date class control.
+        is_dtp_class_inited = true
+        app.iccx.dwIcc = ICC_DATE_CLASSES
+        init_comm_ctrl_ex(&app.iccx)
+    }
     c : Calendar
     c.parent = p
     c.font = p.font
