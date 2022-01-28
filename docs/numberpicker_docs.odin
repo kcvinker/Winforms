@@ -5,7 +5,10 @@ Since, it is using for picking numbers only, I have decided to give this name.
 It is basically a combo of two controls. 
     1. Spin control - Which has two small buttons on it and those buttons have a up & down arrow symbol.
     2. Edit control - Which is associated with the spin control.
-You can either click the spin buttons or type directly to the textbox or you can press the up & down arrow keys
+You can either click the spin buttons or type directly to the textbox or you can press the up & down arrow keys. 
+Note :- If you type some numbers in text area, you need to press Enter or Tab key to make that 
+change updated in NumberPicker. A mouse click on the spin button also cause the updation.
+Otherwise, you lost the entered input and control will display the last updated value.
 Defaults 
     min_range = 0
     max_range = 100
