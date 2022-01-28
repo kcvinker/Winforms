@@ -137,6 +137,8 @@ main :: proc() {
         lbx.multi_selection = true
         lbx.key_preview = true    
         lbx.font = new_font("FiraCode", 14) 
+        lbx.back_color = 0xE4EB72
+        lbx.fore_color = 0x0000A0
         //lbx.mouse_leave = gen_events  
         // lbx.selection_changed = dtp_tb
         listbox_add_items(&lbx, "Odin is amazing", "Try it", "It's a Better C", "And It's awesome")

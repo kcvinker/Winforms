@@ -411,8 +411,9 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             ci := find_combo_data(frm, ctl_hwnd, FindHwnd.lb_hwnd)
             if ci.combo_handle != nil {
                 return send_message(ci.combo_handle, CM_COMBOLBCOLOR, wp, 0)
-            } // Need and else statement when e create ListBox
-        
+            } else { // Need and else statement when e create ListBox
+                return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+            }
         
         
         case WM_COMMAND :

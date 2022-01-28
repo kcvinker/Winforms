@@ -13,6 +13,7 @@ ListBox :: struct {
     key_preview : b64,
 
     _private_sel_indices : [dynamic]i32,
+    _bk_brush : Hbrush,
 
     selection_changed : LBoxEventHandler,
 
@@ -27,6 +28,8 @@ ListBox :: struct {
     lbx.height = h
     lbx.xpos = x
     lbx.ypos = y
+    lbx.back_color = 0xFFFFFF
+    lbx.fore_color = 0x000000
     lbx._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
     lbx._ex_style = 0
     return lbx
@@ -40,6 +43,7 @@ ListBox :: struct {
 @private lbox_dtor :: proc(lbx : ^ListBox) {
     delete(lbx.items)
     delete(lbx._private_sel_indices)
+    delete_gdi_object(lbx._bk_brush)
 }
 
 // Create new listbox type.
@@ -386,6 +390,16 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
         case WM_DESTROY :
             lbox_dtor(lbx) 
             remove_subclass(lbx)
+        
+        case CM_CTLLCOLOR :
+            if lbx.fore_color != 0x000000 || lbx.back_color != 0xFFFFFF {                
+                dc_handle := get_wparam_value(wp, Hdc)
+                set_bk_mode(dc_handle, Transparent)
+                if lbx.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(lbx.fore_color))                
+                if lbx._bk_brush == nil do lbx._bk_brush = create_solid_brush(get_color_ref(lbx.back_color))                 
+                return to_lresult(lbx._bk_brush)
+            } 
+
 
         case CM_CTLCOMMAND :            
             ncode := get_hiword(wp)
