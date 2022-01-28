@@ -15,6 +15,7 @@ Currently, it's a work in progress project.
 8. Label
 9. ListBox
 10. TextBox
+11. NumberPicker (Updown control Or NumericUpDown in .NET)
 
 ## Screenshot
 
@@ -50,4 +51,4 @@ form_click :: proc(sender : ^ui.Control, ea : ^ui.EventArgs) {
 
 ## Note
 To enable visual styles for your application, you need to use a manifest file.
-Here you can see a **app.exe.manifest** file in this repo. You can copy poste it in your project folder. Then rename it. The name must be your exe file's name. Here in my case, my exe file is **app.exe**. So my manifest file's name is **app.exe.manifest**. However, you can use a reource file and put an entry for this manifest file in it. Then you can compile the app with the manifest data embedded into your exe. 
+Here you can see a **app.exe.manifest** file in this repo. You can copy paste it in your project folder. Then rename it. The name must be your exe file's name. Here in my case, my exe file is **app.exe**. So my manifest file's name is **app.exe.manifest**. However, you can use a reource file and put an entry for this manifest file in it. Then you can compile the app with the manifest data embedded into your exe. 
