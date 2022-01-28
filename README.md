@@ -18,7 +18,8 @@ Currently, it's a work in progress project.
 
 ## Screenshot
 
-![image](https://user-images.githubusercontent.com/8840907/151598920-cb742d3d-8f7e-4e2b-a026-f5abcde32d8c.png)
+![image](https://user-images.githubusercontent.com/8840907/151600029-5207b2e9-cdd0-4bdd-a0a8-a596c31f1ad4.png)
+
 
 
 ## Example --
