@@ -8,12 +8,12 @@ Font :: struct
 {
 	name : string,
 	size : int,
-	bold : b32,
-	underline : b32,
-	italics : b32,
+	bold : bool,
+	underline : bool,
+	italics : bool,
 	handle : Hfont,
 	_weight : int,
-	_def_font_changed : b32,
+	_def_font_changed : bool,
 
 
 }
@@ -31,7 +31,7 @@ new_font_1 :: proc() -> Font
 	return f
 }
 
-new_font_2 :: proc(fn : string , fs : int, fb: b32 = false, fw : int = 400, fi : b32 = false, fu : b32 = false) -> Font 
+new_font_2 :: proc(fn : string , fs : int, fb: bool = false, fw : int = 400, fi : bool = false, fu : bool = false) -> Font 
 {
 	f : Font
 	f.name = fn
@@ -54,7 +54,7 @@ create_font_handle :: proc(fnt : ^Font, hw : Hwnd = nil)
 	dc_hwnd : Hdc = get_dc(hw)
 	font_height : i32 = mul_div(i32(fnt.size), get_device_caps(dc_hwnd, LOGPIXELSY), 72)
 	release_dc(hw, dc_hwnd)
-	b_value := b32(false)
+	b_value := bool(false)
 	fnt.handle = create_font(font_height, 0, 0, 0, i32(fnt._weight), Dword(fnt.italics),
 								Dword(fnt.underline), 
 								Dword(b_value), 

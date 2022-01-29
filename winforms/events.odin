@@ -23,12 +23,12 @@ MouseEventArgs :: struct {
 
 KeyEventArgs :: struct {
     using base : EventArgs,
-	alt_pressed : b32,
-    ctrl_pressed : b32, 
-    shift_pressed : b32,       
+	alt_pressed : bool,
+    ctrl_pressed : bool, 
+    shift_pressed : bool,       
     key_code : KeyEnum,     
     key_value : int,    
-    suppress_key_press : b32,
+    suppress_key_press : bool,
 }
 
 DateTimeEvent :: struct {

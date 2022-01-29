@@ -37,14 +37,16 @@ Control :: struct {
     font : Font,
 	back_color : uint,
 	fore_color : uint,
+	enabled : bool,
+	visible : bool,
     _style, _ex_style : Dword, 
-	_is_created : b32,
-	_is_mouse_tracking, _is_mouse_entered : b32,
-	_mdown_happened, _mrdown_happened : b32,
+	_is_created : bool,
+	_is_mouse_tracking, _is_mouse_entered : bool,
+	_mdown_happened, _mrdown_happened : bool,
 	_subclass_id : int,
 	_wndproc_ptr : SUBCLASSPROC,
 	
-	clr_changed : b32,
+	clr_changed : bool,
 	
 	paint : PaintEventHandler,
 	got_focus, 
@@ -92,8 +94,34 @@ Control :: struct {
 	send_message(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
 }
 
+// Enable or disable a control or form.
+control_enable :: proc(ctl : ^Control, bstate : bool) {
+	ctl.enabled = bstate
+	#partial switch ctl.kind {
+		case .number_picker :			
+			send_message(ctl.handle, WM_ENABLE, Wparam(bstate), 0)			
+		case :
+			enable_window(ctl.handle, bstate)
+	} 	
+}
+
+// Hide or show a control.
+control_visibile :: proc(ctl : ^Control, bstate : bool) {
+	ctl.enabled = bstate
+	flag : i32 = SW_HIDE if !bstate else SW_SHOW	
+	#partial switch ctl.kind {
+		case .number_picker :			
+			np := direct_cast(ctl, ^NumberPicker)		
+			showing_window(np.handle, flag)	
+			showing_window(np._buddy_handle, flag)
+		case :
+			showing_window(ctl.handle, flag)
+	} 
+}
+
+
 // To set a user defined font before or after creating the control handle
-control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : b32 = false, fi : b32 = false, fu : b32 = false) {
+control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : bool = false, fi : bool = false, fu : bool = false) {
 	using ctl.font
 	name = fn
 	size = fsz
@@ -112,17 +140,17 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : b32 = fals
 }
 
 // To set the position of a control or form
-control_set_position :: proc(ctl : ^Control, x, y : int) -> Bool {
+control_set_position :: proc(ctl : ^Control, x, y : int) {
 	mx : int = ctl.xpos if x == 0 else x 
 	my : int = ctl.ypos if y == 0 else y
-	return set_window_pos(ctl.handle, nil, i32(mx), i32(my), 0, 0, SWP_NOSIZE | SWP_NOZORDER)
+	set_window_pos(ctl.handle, nil, i32(mx), i32(my), 0, 0, SWP_NOSIZE | SWP_NOZORDER)
 }
 
 // To set the size of the control or form
-control_set_size :: proc(ctl : ^Control, width, height : int) -> Bool {
+control_set_size :: proc(ctl : ^Control, width, height : int) {
 	mw : int = ctl.width if width == 0 else width
 	mh : int = ctl.height if height == 0 else height
-	return set_window_pos(ctl.handle, nil, 0, 0, i32(mw), i32(mh),SWP_NOMOVE | SWP_NOZORDER)
+	set_window_pos(ctl.handle, nil, 0, 0, i32(mw), i32(mh),SWP_NOMOVE | SWP_NOZORDER)
 }
 
 // To set the text of the control or form. 

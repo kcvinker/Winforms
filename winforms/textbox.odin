@@ -16,18 +16,18 @@ TbTextAlign :: enum {left, center, right}
 TextBox :: struct {
     using control : Control,
     text_alignment : TbTextAlign, 
-    multi_line : b32,
+    multi_line : bool,
     text_type : TextType,
     text_case : TextCase,
-    hide_selection : b32,
-    read_only : b32,
+    hide_selection : bool,
+    read_only : bool,
     cue_banner : string,
     focus_rect_color : uint,
 
     text_changed : EventHandler,
 
     _bk_brush : Hbrush,
-    _draw_focus_rct : b32,
+    _draw_focus_rct : bool,
     _focus_rct_clr : ColorRef,
 
 
@@ -101,12 +101,12 @@ new_textbox :: proc{new_tb1, new_tb2}
 }
 
 // Select the text in TextBox control.
-select_tb_text :: proc(tb : ^TextBox, value : b32) {
+select_tb_text :: proc(tb : ^TextBox, value : bool) {
     // TODO
 }
 
 // Set a TextBox's read only state.
-set_tb_readonly_state :: proc(tb : ^TextBox, bstate : b32) {
+set_tb_readonly_state :: proc(tb : ^TextBox, bstate : bool) {
     send_message(tb.handle, EM_SETREADONLY, Wparam(bstate), 0)
     tb.read_only = bstate
 }

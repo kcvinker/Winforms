@@ -142,6 +142,7 @@ foreign user32 {
    @(link_name="GetCursorPos") get_cursror_pos :: proc(pt : ^Point) -> Bool ---
    @(link_name="ScreenToClient") screen_to_client :: proc(hw : Hwnd, pt : ^Point) -> Bool ---
    @(link_name="WindowFromPoint") window_from_point :: proc(pt : Point) -> Hwnd ---
+   @(link_name="EnableWindow") enable_window :: proc(hw : Hwnd, bEnable : bool) -> Bool ---
    
 
 

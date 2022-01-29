@@ -13,7 +13,7 @@ Label :: struct {
     auto_size : b64,
     border_style : LabelBorder,
     text_alignment : TextAlignment, 
-    multi_line : b32,
+    multi_line : bool,
     _hbrush : Hbrush,  
     _txt_align : Dword,
     

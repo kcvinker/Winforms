@@ -55,7 +55,7 @@ Form :: struct {
     using control : Control,  // By this, form is a child of control.
     start_pos : StartPosition,
     style : FormStyle,
-    minimize_box, maximize_box : b32,
+    minimize_box, maximize_box : bool,
     window_state : FormState,    
 
     load : EventHandler,
@@ -69,7 +69,7 @@ Form :: struct {
     closing, 
     closed : EventHandler,
 
-    _is_loaded : b32,   
+    _is_loaded : bool,   
     _gradient_style : GradientStyle,
     _gradient_color : GradientColors,
     _draw_mode : FormDrawMode,
@@ -374,6 +374,8 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         //         return send_message(chw, CM_PARENTNOTIFY, 0, 0)
         //         //ptf("handle from parent notify - %d\n", chw)
         //     }
+
+        
 
         case WM_PAINT :
             if frm.paint != nil {

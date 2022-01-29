@@ -36,7 +36,7 @@ ListBox :: struct {
 }
 
 @private lbox_ctor1 :: proc(parent : ^Form) -> ListBox {
-    lb := lbox_ctor(parent, 10, 10, 200, 175)
+    lb := lbox_ctor(parent, 10, 10, 175, 175)
     return lb
 }
 
@@ -251,7 +251,7 @@ listbox_set_item_selected :: proc(lbx : ^ListBox, indx : int) {
 }
 
 //@private
-listbox_set_items_selected :: proc(lbx : ^ListBox, flag : b32, indices : ..int) {
+listbox_set_items_selected :: proc(lbx : ^ListBox, flag : bool, indices : ..int) {
     if lbx.multi_selection {
         //bflag : b32 = false
         for i in indices {
@@ -275,7 +275,7 @@ listbox_clear_selection :: proc(lbx : ^ListBox) {
     indx : int = -1
     if len(lbx.items) > 0 {
         if lbx.multi_selection {
-            bflag : b32 = false
+            bflag : bool = false
             send_message(lbx.handle, LB_SETSEL, Wparam(bflag), -1)
         } else do send_message(lbx.handle, LB_SETCURSEL, Wparam(i32(indx)) , 0)
     }

@@ -332,6 +332,13 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
                     
                 } 
             }
+        case WM_ENABLE :
+            print("WM_ENABLE rcvd on np wnd")
+            enable_window(hw, bool(wp))
+            enable_window(np._buddy_handle, bool(wp))
+            return 0
+
+        //case WM_CANCELMODE : print("WM_CANCELMODE")
            
             
 

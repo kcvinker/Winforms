@@ -13,7 +13,7 @@ ComboBox :: struct {
     items : [dynamic]string, // Don't forget to delete it when combo box deing destroyed.
     visible_item_count : int,
     selected_index : int,
-    p_recreate_enabled : b32, // Used when we need to recreate existing combo
+    p_recreate_enabled : bool, // Used when we need to recreate existing combo
 
     _bk_brush : Hbrush,
     _old_hwnd : Hwnd,

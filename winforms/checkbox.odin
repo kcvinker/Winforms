@@ -6,7 +6,7 @@ import "core:runtime"
 
 CheckBox :: struct {
     using control : Control,
-    checked : b32,
+    checked : bool,
     text_alignment : enum {left, right},
     check_changed : EventHandler,
 
@@ -111,7 +111,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
             }
 
         case CM_CTLCOMMAND :
-            cb.checked = cast(b32) send_message(hw, BM_GETCHECK, 0, 0)              
+            cb.checked = cast(bool) send_message(hw, BM_GETCHECK, 0, 0)              
             if cb.check_changed != nil {
                 ea := new_event_args()
                 cb.check_changed(cb, &ea)

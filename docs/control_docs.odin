@@ -12,6 +12,8 @@ Control :: struct {
     font : Font,
 	back_color : uint,  // Not applicable for all controls
 	fore_color : uint,  // Not applicable for all controls
+	enabled : bool, 		// Enable or disable a control
+	visibile : bool,		// SHow or hide a control
 
 
     // Events	
@@ -41,10 +43,14 @@ Control :: struct {
 }
 
 // Functions
-control_set_position :: proc(ctl : ^Control, x, y : int) -> Bool // Set the position of a control
-control_set_size :: proc(ctl : ^Control, width, height : int) -> Bool // Set the size of a control
+control_set_position :: proc(ctl : ^Control, x, y : int) // Set the position of a control
+control_set_size :: proc(ctl : ^Control, width, height : int) // Set the size of a control
 control_set_text :: proc(ctl : ^Control, txt : string) // Set the text of a control. Not all controls support this.
 control_get_text :: proc(ctl : Control) -> string // get text from a control. Not all controls support this.
 control_get_text_wstr :: proc(ctl : Control) -> []u16 // get text from a control, but returns a wstring instead of odin string.
 control_set_back_color :: proc(ctl : ^Control, clr : uint) // set the back color of control. Not all controls support this.
 control_set_fore_color1 :: proc(ctl : ^Control, clr : uint) // set the fore color of control. Not all controls support this.
+
+control_enable :: proc(ctl : ^Control, bstate : bool) // Enable or disable a control at runtime
+
+control_visibile :: proc(ctl : ^Control, bstate : bool) // Show or hide a control at runtime.

@@ -106,7 +106,7 @@ new_calendar :: proc{new_cal1, new_cal2}
         iCalendar : i32,        
         iRow : i32,        
         iCol : i32,        
-        bSelecte : b32,       
+        bSelecte : bool,       
         stStart : SYSTEMTIME,
         stEnd : SYSTEMTIME,
         rc : Rect,       

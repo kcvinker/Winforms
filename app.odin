@@ -44,7 +44,7 @@ main :: proc() {
         frm = new_form(txt = "Odin is fun")    
         frm.font = new_font("Tahoma", 13)         
         frm.width = 700
-        frm.mouse_click = btn_clk    
+        frm.right_click = btn_clk    
         create_form(&frm)
     }       
 
@@ -111,9 +111,11 @@ main :: proc() {
     { // Button 2
         b2 := new_button(&frm, "Gradient Btn", 10, 150,)
         set_button_gradient(&b2, 0xDCE35B, 0x45B649)
+        b2.mouse_click = grad_btn_click
         create_button(&b2)
 
-        b3 := new_button(&frm, "Normal Btn", 10, 200,)        
+        b3 := new_button(&frm, "Normal Btn", 10, 200,)  
+        b3.mouse_click = gen_events      
         create_button(&b3)
     }
     { // DTP
@@ -136,7 +138,7 @@ main :: proc() {
         lbx.ypos = 50
         lbx.multi_selection = true
         lbx.key_preview = true    
-        lbx.font = new_font("FiraCode", 14) 
+        lbx.font = new_font("Calibri", 14) 
         lbx.back_color = 0xE4EB72
         lbx.fore_color = 0x0000A0
         //lbx.mouse_leave = gen_events  
@@ -200,6 +202,7 @@ mouse_events :: proc(s : ^Control, e : ^MouseEventArgs) {
 
 gen_events :: proc(s : ^Control, e : ^EventArgs) {   
     ptf(" general event worked [%d]\n", gec)
+    ui.control_enable(&np, false)
     gec += 1
 
 }
@@ -215,4 +218,10 @@ dtp_tb :: proc(s : ^Control, e : string) {
     print(" this is dtp value - ", e)
 }
 
+grad_btn_click :: proc(s : ^Control, e : ^EventArgs) {   
+    ptf(" general event worked [%d]\n", gec)
+    //ui.control_visibile(&mb, false)
+    
+
+}
 
