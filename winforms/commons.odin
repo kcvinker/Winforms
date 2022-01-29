@@ -19,17 +19,13 @@ import "core:fmt"
 
 
 
-
-
-
-
 // Controls like window & button wants to paint themselve with a gradient brush.
 // In that cases, we need an option for painting in two directions.
 // So this enum will be used in controls which had the ebility to draw a gradient bkgnd.
 GradientStyle :: enum {top_to_bottom, left_to_right,}
 TextAlignment :: enum {top_left, top_center, top_right, mid_left, center, mid_right, bottom_left, bottom_center, bottom_right}
 SimpleTextAlignment :: enum {left, center, right}
-//ClickData :: struct { first_down, first_up, second_down, second_up : b32, }
+
 
 TimeMode :: enum {nano_sec, micro_sec, milli_sec}
 
@@ -108,8 +104,6 @@ to_lresult :: proc(value : $T) -> Lresult {
 	return cast(Lresult) up
 }
 
-//to_i32
-
 concat_number :: proc{concat_number1, concat_number2}
 
 // If we want to get the virtual key code (VK_KEY_NUMPAD1 etc) from lparam...
@@ -119,46 +113,10 @@ get_virtual_key :: proc(value : Lparam) -> u32 {
     return map_virtual_key(scan_code, MAPVK_VSC_TO_VK)
 }
 
-// In many cases, LPARAM contains a pointer to a struct or something like that.
-// This proc will help us to extract the type from Lparam.
-// $T = type name
-get_hiword :: proc(value : $T) -> Word { return hi_word(Dword(value))}
-get_loword :: proc(value : $T) -> Word { return lo_word(Dword(value))}
 
+get_x_lparam :: proc(lpm : Lparam) -> int { return int(i16(loword_lparam(lpm)))}
+get_y_lparam :: proc(lpm : Lparam) -> int { return int(i16(hiword_lparam(lpm)))}
 
-get_lparam_value :: proc{get_lparam_value1, get_lparam_value2}
-get_lparam_value1 :: proc(lp : Lparam, $T : typeid) -> T {
-	upt := cast(uintptr) lp
-	return cast(T) upt
-}
-get_lparam_value2 :: proc(lp : Lparam, word : WordValue) -> Word {
-	result : Word
-	if word == .low {
-		result = lo_word(Dword(lp))
-	} else {
-		result = hi_word(Dword(lp))
-	}
-	return result
-}
-
-get_x_lparam :: proc(lpm : Lparam) -> int { return int(i16(get_lparam_value(lpm, WordValue.low)))}
-get_y_lparam :: proc(lpm : Lparam) -> int { return int(i16(get_lparam_value(lpm, WordValue.high)))}
-
-
-get_wparam_value :: proc{get_wparam_value1, get_wparam_value2}
-get_wparam_value1 :: proc(lp : Wparam, $T : typeid) -> T {
-	upt := cast(uintptr) lp
-	return cast(T) upt
-}
-get_wparam_value2 :: proc(wp : Wparam, word : WordValue) -> Word {
-	result : Word
-	if word == .low {
-		result = lo_word(Dword(wp))
-	} else {
-		result = hi_word(Dword(wp))
-	}
-	return result
-}
 
 loword_wparam :: #force_inline proc "contextless" (x : Wparam) -> Word { return Word(x & 0xffff)}
 hiword_wparam :: #force_inline proc "contextless" (x : Wparam) -> Word { return Word(x >> 16)}
@@ -166,28 +124,27 @@ loword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return 
 hiword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return Word(x >> 16)}
 
 
-
-select_gdi_object :: proc(hd : Hdc, obj : $T) {
+@private select_gdi_object :: proc(hd : Hdc, obj : $T) {
 	gdi_obj := cast(Hgdiobj) obj
 	select_object(hd, gdi_obj)
 }
 
-delete_gdi_object :: proc(obj : $T) {
+@private delete_gdi_object :: proc(obj : $T) {
 	gdi_obj := cast(Hgdiobj) obj
 	delete_object(gdi_obj)
 }
 
 
-msg_box1 :: proc(msg : string) { message_box(Hwnd(cast(uintptr) 0), to_wstring(msg), to_wstring("Odin Form"), 0) }
+@private msg_box1 :: proc(msg : string) { message_box(Hwnd(cast(uintptr) 0), to_wstring(msg), to_wstring("Odin Form"), 0) }
 
-msg_box2 :: proc(msg : string, cap : string) { message_box(Hwnd(cast(uintptr) 0), to_wstring(msg), to_wstring(cap), 0) }
-msg_box3 :: proc(msg : any) {
+@private msg_box2 :: proc(msg : string, title : string) { message_box(Hwnd(cast(uintptr) 0), to_wstring(msg), to_wstring(title), 0) }
+@private msg_box3 :: proc(msg : any) {
 	ms_str := fmt.tprint(msg)	
 	message_box(Hwnd(cast(uintptr) 0), to_wstring(ms_str), to_wstring("Odin Form"), 0)
 }
-msg_box4 :: proc(msg : any, caption : string) {
+@private msg_box4 :: proc(msg : any, title : string) {
 	ms_str := fmt.tprint(msg)	
-	message_box(Hwnd(cast(uintptr) 0), to_wstring(ms_str), to_wstring(caption), 0)
+	message_box(Hwnd(cast(uintptr) 0), to_wstring(ms_str), to_wstring(title), 0)
 }
 msg_box :: proc{msg_box1, msg_box2, msg_box3, msg_box4}
 
@@ -218,7 +175,7 @@ array_search :: proc{	dynamic_array_search,
 }
 
 // This proc will return an Hbrush to paint the window or a button in gradient colors.
-create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {	
+@private create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {	
 	t_brush : Hbrush
 	mem_hdc : Hdc = create_compatible_dc(hdc)
 	hbmp : Hbitmap = create_compatible_bitmap(hdc, rct.right, rct.bottom)
@@ -250,7 +207,7 @@ create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc
 }
 
 
-print_rect :: proc(rc : Rect) {
+@private print_rect :: proc(rc : Rect) {
 	ptf("top : %d\n", rc.top)
 	ptf("bottom : %d\n", rc.bottom)
 	ptf("left : %d\n", rc.left)

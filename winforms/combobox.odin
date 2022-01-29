@@ -300,7 +300,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             remove_subclass(cmb)
 
         case CM_CTLCOMMAND :
-            ncode := get_wparam_value(wp, WordValue.high)
+            ncode := hiword_wparam(wp)
            // ptf("WM_COMMAND notification code - %d\n", ncode)
             switch ncode {
                 case CBN_SELCHANGE :
@@ -357,7 +357,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             //print("color combo list box")
             if cmb.fore_color != 0x000000 || cmb.back_color != 0xFFFFFF {
                 //print("combo color rcvd")                
-                dc_handle := get_wparam_value(wp, Hdc)
+                dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
                 if cmb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
                 if cmb._bk_brush == nil do cmb._bk_brush = create_solid_brush(get_color_ref(cmb.back_color))                 
@@ -370,7 +370,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
 
         case CM_COMBOTBCOLOR : // We will receive this message only if combo_style == tb_list
             if cmb.fore_color != 0x000000 || cmb.back_color != 0xFFFFFF {                              
-                dc_handle := get_wparam_value(wp, Hdc)
+                dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
                 if cmb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
                 if cmb._bk_brush == nil do cmb._bk_brush = create_solid_brush(get_color_ref(cmb.back_color))                 

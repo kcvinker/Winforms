@@ -374,7 +374,7 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 		
 		case CM_NOTIFY:		//{default, text_only, bg_only, text_and_bg, gradient, grad_and_text}	
 			if btn._draw_mode != .default {	
-				nmcd := get_lparam_value(lp, ^NMCUSTOMDRAW)			
+				nmcd := direct_cast(lp, ^NMCUSTOMDRAW)			
 				#partial switch btn._draw_mode {
 					case .text_only :						
 						return set_fore_color_internal(btn, nmcd)						

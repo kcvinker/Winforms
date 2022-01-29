@@ -395,7 +395,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             
         
         case WM_CTLCOLOREDIT :
-            ctl_hwnd := get_lparam_value(lp, Hwnd)            
+            ctl_hwnd := direct_cast(lp, Hwnd)            
             ci := find_combo_data(frm, ctl_hwnd, FindHwnd.tb_hwnd)
             if ci.combo_handle == nil {
                 return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
@@ -404,11 +404,11 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             }
             
         case WM_CTLCOLORSTATIC :
-            ctl_hwnd := get_lparam_value(lp, Hwnd)            
+            ctl_hwnd := direct_cast(lp, Hwnd)            
             return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
 
         case WM_CTLCOLORLISTBOX :
-            ctl_hwnd := get_lparam_value(lp, Hwnd)
+            ctl_hwnd := direct_cast(lp, Hwnd)
             //print("list box handle - ", ctl_hwnd)
             ci := find_combo_data(frm, ctl_hwnd, FindHwnd.lb_hwnd)
             if ci.combo_handle != nil {
@@ -419,7 +419,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         
         
         case WM_COMMAND :
-            ctl_hwnd := get_lparam_value(lp, Hwnd)
+            ctl_hwnd := direct_cast(lp, Hwnd)
             send_message(ctl_hwnd, CM_CTLCOMMAND, wp, lp)
 
         case WM_SHOWWINDOW:

@@ -124,7 +124,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
             return to_lresult(cb._bk_brush)
 
         case CM_NOTIFY :
-            nmcd := get_lparam_value(lp, ^NMCUSTOMDRAW)	
+            nmcd := direct_cast(lp, ^NMCUSTOMDRAW)	
             switch nmcd.dwDrawStage {
                 case CDDS_PREERASE :
                     return CDRF_NOTIFYPOSTERASE

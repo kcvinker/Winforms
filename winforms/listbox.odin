@@ -393,7 +393,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
         
         case CM_CTLLCOLOR :
             if lbx.fore_color != 0x000000 || lbx.back_color != 0xFFFFFF {                
-                dc_handle := get_wparam_value(wp, Hdc)
+                dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
                 if lbx.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(lbx.fore_color))                
                 if lbx._bk_brush == nil do lbx._bk_brush = create_solid_brush(get_color_ref(lbx.back_color))                 
@@ -402,7 +402,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
 
 
         case CM_CTLCOMMAND :            
-            ncode := get_hiword(wp)
+            ncode := hiword_wparam(wp)
             switch ncode {
                 case LBN_DBLCLK :
                     if lbx.double_click != nil {

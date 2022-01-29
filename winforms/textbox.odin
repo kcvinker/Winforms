@@ -100,15 +100,27 @@ new_textbox :: proc{new_tb1, new_tb2}
     if tb._is_created do invalidate_rect(tb.handle, nil, true)    
 }
 
-// Select the text in TextBox control.
-select_tb_text :: proc(tb : ^TextBox, value : bool) {
-    // TODO
+// Select or de-select all the text in TextBox control.
+textbox_set_selection :: proc(tb : ^TextBox, value : bool) {
+    wpm, lpm : i32
+    if value {
+        wpm = 0
+        lpm = -1        
+    } else {
+        wpm = -1
+        lpm = 0
+    }
+    send_message(tb.handle, EM_SETSEL, Wparam(wpm), Lparam(lpm))
 }
 
 // Set a TextBox's read only state.
-set_tb_readonly_state :: proc(tb : ^TextBox, bstate : bool) {
+textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool) {
     send_message(tb.handle, EM_SETREADONLY, Wparam(bstate), 0)
     tb.read_only = bstate
+}
+
+textbox_clear_all :: proc(tb : ^TextBox) {
+    
 }
 
 // Create the handle of TextBox control.
@@ -172,7 +184,7 @@ create_textbox :: proc(tb : ^TextBox) {
         case CM_CTLLCOLOR : 
                                
             if tb.fore_color != 0x000000 || tb.back_color != 0xFFFFFF {                
-                dc_handle := get_wparam_value(wp, Hdc)
+                dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
                 if tb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(tb.fore_color))                
                 if tb._bk_brush == nil do tb._bk_brush = create_solid_brush(get_color_ref(tb.back_color))                 

@@ -332,8 +332,7 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
                     
                 } 
             }
-        case WM_ENABLE :
-            print("WM_ENABLE rcvd on np wnd")
+        case WM_ENABLE :            
             enable_window(hw, bool(wp))
             enable_window(np._buddy_handle, bool(wp))
             return 0
@@ -377,7 +376,7 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
                 send_message(hw, EM_SETSEL, Wparam(wpm), 0)
             }           
             if tb.fore_color != 0x000000 || tb.back_color != 0xFFFFFF {                
-                dc_handle := get_wparam_value(wp, Hdc)
+                dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
                
                 if tb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(tb.fore_color))                
