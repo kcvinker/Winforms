@@ -28,8 +28,8 @@ ListBox :: struct {
     lbx.height = h
     lbx.xpos = x
     lbx.ypos = y
-    lbx.back_color = 0xFFFFFF
-    lbx.fore_color = 0x000000
+    lbx.back_color = def_back_clr
+    lbx.fore_color = def_fore_clr
     lbx._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
     lbx._ex_style = 0
     return lbx
@@ -392,10 +392,10 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
             remove_subclass(lbx)
         
         case CM_CTLLCOLOR :
-            if lbx.fore_color != 0x000000 || lbx.back_color != 0xFFFFFF {                
+            if lbx.fore_color != def_fore_clr || lbx.back_color != def_back_clr {                
                 dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
-                if lbx.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(lbx.fore_color))                
+                if lbx.fore_color != def_fore_clr do set_text_color(dc_handle, get_color_ref(lbx.fore_color))                
                 if lbx._bk_brush == nil do lbx._bk_brush = create_solid_brush(get_color_ref(lbx.back_color))                 
                 return to_lresult(lbx._bk_brush)
             } 

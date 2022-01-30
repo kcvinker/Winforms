@@ -78,8 +78,8 @@ ComboInfo :: struct {
     cmb.ypos = 50
     cmb.width = w
     cmb.height = h
-    cmb.back_color = 0xFFFFFF
-    cmb.fore_color = 0x000000    
+    cmb.back_color = def_back_clr
+    cmb.fore_color = def_fore_clr    
     cmb._ex_style = 0
     cmb.selected_index = -1
     cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN 
@@ -355,11 +355,11 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
         
         case CM_COMBOLBCOLOR :
             //print("color combo list box")
-            if cmb.fore_color != 0x000000 || cmb.back_color != 0xFFFFFF {
+            if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {
                 //print("combo color rcvd")                
                 dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
-                if cmb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
+                if cmb.fore_color != def_fore_clr do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
                 if cmb._bk_brush == nil do cmb._bk_brush = create_solid_brush(get_color_ref(cmb.back_color))                 
                 return to_lresult(cmb._bk_brush)
             } else {                
@@ -369,10 +369,10 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
         
 
         case CM_COMBOTBCOLOR : // We will receive this message only if combo_style == tb_list
-            if cmb.fore_color != 0x000000 || cmb.back_color != 0xFFFFFF {                              
+            if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {                              
                 dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
-                if cmb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
+                if cmb.fore_color != def_fore_clr do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
                 if cmb._bk_brush == nil do cmb._bk_brush = create_solid_brush(get_color_ref(cmb.back_color))                 
                 return to_lresult(cmb._bk_brush)
             }   

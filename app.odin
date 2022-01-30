@@ -44,15 +44,16 @@ main :: proc() {
         frm = new_form(txt = "Odin is fun")    
         frm.font = new_font("Tahoma", 13)         
         frm.width = 700
-        frm.right_click = btn_clk    
+        frm.right_click = btn_clk 
+        frm.load = form_load   
         create_form(&frm)
     }       
 
     { // TEXTBOX
         tb = new_textbox(&frm)    
         tb.text = "Simple tb" 
-        tb.back_color = 0xACD58E
-        tb.focus_rect_color = 0x00FF00  
+        tb.back_color = 0x8CC6C6
+        //tb.focus_rect_color = 0x00FF00  
         create_textbox(&tb)
     }       
 
@@ -168,7 +169,7 @@ main :: proc() {
     
    
 
-    
+   
   
     start_form() 
     for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
@@ -176,6 +177,10 @@ main :: proc() {
     
 }
 
+form_load :: proc(s : ^Control, e : ^EventArgs) {
+    ui.control_set_focus(tb)
+    print("loaded")
+}
 
 test_proc :: proc(s : ^Control, e : ^MouseEventArgs) {          
     print("Your event worked successfully...", cnt )    
@@ -202,7 +207,7 @@ mouse_events :: proc(s : ^Control, e : ^MouseEventArgs) {
 
 gen_events :: proc(s : ^Control, e : ^EventArgs) {   
     ptf(" general event worked [%d]\n", gec)
-    ui.control_enable(&np, false)
+    //ui.control_enable(&np, false)
     gec += 1
 
 }

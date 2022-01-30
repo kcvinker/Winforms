@@ -4,9 +4,11 @@ package winforms
 import "core:fmt"
 import "core:runtime"
 
+
 print :: fmt.println // Its easy to use. Delete after finishing this module.
 txt_flag : Uint = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_HIDEPREFIX
 transparent : i32 : 1
+WcButtonW : wstring 
 _button_count : int
 // BS_NOTIFY :: 0x00004000
 // BS_DEFPUSHBUTTON :: 0x00000001
@@ -35,17 +37,18 @@ Button :: struct {
 new_button :: proc{new_button1, new_button2}
 
 @private new_button1 :: proc(parent : ^Form) -> Button {
-	btn := new_button_ctor(parent)
+	btn := btn_ctor(parent)
 	return btn
 }
 
 @private new_button2 :: proc(parent : ^Form, txt : string, x, y : int, w : int = 120, h : int = 40) -> Button {
-	btn := new_button_ctor(parent, txt, w, h, x, y)
+	btn := btn_ctor(parent, txt, w, h, x, y)
 	return btn
 }
 
 
-@private new_button_ctor :: proc(p : ^Form, txt : string = "", w : int = 120, h : int = 40, x : int = 10, y : int = 10) -> Button {	
+@private btn_ctor :: proc(p : ^Form, txt : string = "", w : int = 120, h : int = 40, x : int = 10, y : int = 10) -> Button {
+	if WcButtonW == nil do WcButtonW = to_wstring("Button")	
 	_button_count += 1	
 	b : Button
 	b.kind = .button
@@ -71,7 +74,7 @@ create_button :: proc(btn : ^Button) -> bool {
 	btn.control_id = _global_ctl_id
 	if btn._draw_mode == .default do check_initial_color_change(btn)	
 	btn.handle = create_window_ex(  btn._ex_style, 
-									to_wstring("Button"), 
+									WcButtonW, //to_wstring("Button"), 
 									to_wstring(btn.text),
                                     btn._style, 
 									i32(btn.xpos), 

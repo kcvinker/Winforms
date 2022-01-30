@@ -17,7 +17,9 @@ import "core:fmt"
 
 // My Own messages
 
-
+// All controls has a default back & fore color.
+def_back_clr :: 0xFFFFFF
+def_fore_clr :: 0x000000
 
 // Controls like window & button wants to paint themselve with a gradient brush.
 // In that cases, we need an option for painting in two directions.

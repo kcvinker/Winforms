@@ -55,8 +55,8 @@ main :: proc() {
     np = new_numberpicker(&frm, 190, 145, 100, 25)
     np.font = new_font("Hack", 14, true) 
     np.text_alignment = .center
-    np.back_color = 0x8080FF
-    np.fore_color = 0xFFFFFF
+    np.back_color = def_back_clr
+    np.fore_color = def_fore_clr
     np.step = 0.25
     np.auto_rotate = true
     np.format_string = "%.3f"

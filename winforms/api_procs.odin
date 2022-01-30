@@ -143,6 +143,9 @@ foreign user32 {
    @(link_name="ScreenToClient") screen_to_client :: proc(hw : Hwnd, pt : ^Point) -> Bool ---
    @(link_name="WindowFromPoint") window_from_point :: proc(pt : Point) -> Hwnd ---
    @(link_name="EnableWindow") enable_window :: proc(hw : Hwnd, bEnable : bool) -> Bool ---
+   @(link_name="SetFocus") set_focus :: proc(hw : Hwnd) -> Hwnd ---
+   @(link_name="GetFocus") get_focus :: proc() -> Hwnd ---
+   @(link_name="SetActiveWindow") set_active_window :: proc(hw : Hwnd) -> Hwnd ---
    
 
 
@@ -197,6 +200,8 @@ foreign gdi32 {
                                                                         psize : ^Size) -> Bool ---
    @(link_name="SetBkColor") set_bk_color :: proc(dchandle : Hdc, cref : ColorRef) -> ColorRef ---   
    @(link_name="GetStockObject") get_stock_object :: proc(fn_object : i32) -> Hgdiobj ---
+   @(link_name="SaveDC") save_dc :: proc(dch : Hdc) -> i32 ---
+   @(link_name="RestoreDC") restore_dc :: proc(dch : Hdc, ndc : i32) -> Bool ---
    
 
 } // Gdi32 library

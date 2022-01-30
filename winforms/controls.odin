@@ -246,6 +246,21 @@ control_set_back_color :: proc{set_back_color1, set_back_color2}
 control_set_fore_color :: proc{set_fore_color1, set_fore_color2}
 //--------------------------------------------------------------
 
+// Writen to set a control's focus, but it seems not working.
+control_set_focus :: proc(ctl : Control) {
+	// This is not working as i intented. This will erase the text box's back color.
+	// I don't know how to fix this. 
+	//curr_hw := get_focus()
+	set_focus(ctl.handle)
+	//send_message(hw, WM_UPDATEUISTATE, Wparam(0x10002), 0)
+	//send_message(ctl.handle, WM_SETFOCUS, direct_cast(0, Wparam), 0)
+	// mdw := Wparam(make_dword(2, 0x1))
+    // send_message(ctl.handle, WM_UPDATEUISTATE, mdw, 0)
+	//  mdw := Wparam(make_dword(1, 0x4 | 0x1))
+    //          send_message(ctl.handle, WM_CHANGEUISTATE, mdw, 0)
+    //         ptf("low word - %d, hi word - %d\n", loword_wparam(mdw), hiword_wparam(mdw))
+	
+}
 
 
 

@@ -1,6 +1,10 @@
 package winforms
 import "core:runtime"
 
+EN_SETFOCUS :: 256
+UIS_CLEAR :: 2
+UISF_HIDEFOCUS :: 0x1
+WcEditClassW : wstring
 // Text case for Textbox control.
 // Possible values : default, lower_case, upper_case
 TextCase :: enum {default, lower_case, upper_case}
@@ -28,13 +32,14 @@ TextBox :: struct {
 
     _bk_brush : Hbrush,
     _draw_focus_rct : bool,
-    _focus_rct_clr : ColorRef,
+    _frc_ref : ColorRef,
 
 
 
 }
 
 @private tb_ctor :: proc(p : ^Form, w : int = 200, h : int = 0) -> TextBox {
+    if WcEditClassW == nil do WcEditClassW = to_wstring("Edit")
     tb : TextBox
     tb.kind = .text_box
     tb.width = w
@@ -44,12 +49,12 @@ TextBox :: struct {
     tb.ypos = 10
     tb.font = p.font
     tb.hide_selection = true
-    tb.back_color = 0xFFFFFF
-    tb.fore_color = 0x000000
-    tb.focus_rect_color = 0x0080FF
-    tb._focus_rct_clr = get_color_ref(tb.focus_rect_color)
-    tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP | WS_BORDER
-    tb._ex_style =  WS_EX_LTRREADING | WS_EX_WINDOWEDGE | WS_EX_WINDOWEDGE //| WS_EX_LEFT | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE 
+    tb.back_color = def_back_clr
+    tb.fore_color = def_fore_clr
+    tb.focus_rect_color = 0x4F4FFF
+    tb._frc_ref = get_color_ref(tb.focus_rect_color)
+    tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP | WS_BORDER
+    tb._ex_style = 0 //| WS_EX_LEFT | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE 
     
     return tb
 }
@@ -120,7 +125,7 @@ textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool) {
 }
 
 textbox_clear_all :: proc(tb : ^TextBox) {
-    
+    if tb._is_created do set_window_text(tb.handle, to_wstring(""))
 }
 
 // Create the handle of TextBox control.
@@ -129,7 +134,7 @@ create_textbox :: proc(tb : ^TextBox) {
     tb.control_id = _global_ctl_id 
     adjust_styles(tb)
     tb.handle = create_window_ex(   tb._ex_style, 
-                                    to_wstring("Edit"), 
+                                    WcEditClassW, //to_wstring("Edit"), 
                                     to_wstring(tb.text),
                                     tb._style, 
                                     i32(tb.xpos), 
@@ -143,11 +148,15 @@ create_textbox :: proc(tb : ^TextBox) {
     
     if tb.handle != nil {
         tb._is_created = true
-        setfont_internal(tb)
+        //mdw := Wparam(make_dword(3,  4))
+        // emty_wstr := to_wstring(" 0")
+        // set_window_theme(tb.handle, emty_wstr,emty_wstr)
         set_subclass(tb, tb_wnd_proc) 
+        setfont_internal(tb)
+        //send_message(tb.parent.handle, WM_UPDATEUISTATE, mdw, 0)
         if len(tb.cue_banner) > 0 {
             up := cast(uintptr) to_wstring(tb.cue_banner)
-            send_message(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )  
+            send_message(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )
         }     
     }
 }
@@ -162,13 +171,16 @@ create_textbox :: proc(tb : ^TextBox) {
     
     switch msg {   
         case WM_PAINT :
-            if tb._draw_focus_rct {                
-                ps : PAINTSTRUCT
-                hdc := begin_paint(tb.handle, &ps)
-                frame_brush := create_solid_brush(tb._focus_rct_clr)
-                frame_rect(hdc, &ps.rcPaint, frame_brush)
-                end_paint(tb.handle, &ps)
-            }
+            // if tb._draw_focus_rct {
+            //     ps : PAINTSTRUCT
+            //     hdc := begin_paint(tb.handle, &ps)
+            //     frame_brush := create_solid_brush(tb._frc_ref)
+            //     frame_rect(hdc, &ps.rcPaint, frame_brush)
+            //     set_bk_mode(hdc, Opaque)
+            //     set_bk_color(hdc, get_color_ref(tb.back_color))
+            //     end_paint(tb.handle, &ps)
+            //     return 1
+            // }
 
             if tb.paint != nil {
                 ps : PAINTSTRUCT
@@ -180,40 +192,63 @@ create_textbox :: proc(tb : ^TextBox) {
             }
 
         
+            
+        
 
         case CM_CTLLCOLOR : 
-                               
-            if tb.fore_color != 0x000000 || tb.back_color != 0xFFFFFF {                
+            //print("ctl clr rcvd")
+            if tb.fore_color != def_fore_clr || tb.back_color != def_back_clr {
                 dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
-                if tb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(tb.fore_color))                
-                if tb._bk_brush == nil do tb._bk_brush = create_solid_brush(get_color_ref(tb.back_color))                 
+                if tb.fore_color != def_fore_clr do set_text_color(dc_handle, get_color_ref(tb.fore_color))   
+                //set_bk_color(dc_handle, get_color_ref(tb.back_color))
+                tb._bk_brush = create_solid_brush(get_color_ref(tb.back_color))
                 return to_lresult(tb._bk_brush)
             } 
 
+        case CM_CTLCOMMAND :
+            ncode := hiword_wparam(wp)
+            if ncode == EN_SETFOCUS { 
+            //    tb._draw_focus_rct = true
+               //set_window_pos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
+               
+               if tb.got_focus != nil {
+                    ea := new_event_args()
+                    tb.got_focus(tb, &ea)
+                    return 0
+                }
+               
+            }
+           
+            
+            
         
             
            
 
-        case WM_LBUTTONDOWN:                
-            tb._mdown_happened = true            
+        case WM_LBUTTONDOWN:
+           // tb._draw_focus_rct = true
+            tb._mdown_happened = true
             if tb.left_mouse_down != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.left_mouse_down(tb, &mea)
                 return 0
             }
-        case WM_RBUTTONDOWN:
+            
+
+        case WM_RBUTTONDOWN :
             tb._mrdown_happened = true
             if tb.right_mouse_down != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.right_mouse_down(tb, &mea)
             }
-        case WM_LBUTTONUP :     
+            
+        case WM_LBUTTONUP :
             if tb.left_mouse_up != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.left_mouse_up(tb, &mea)
             }
-            if tb._mdown_happened do send_message(tb.handle, CM_LMOUSECLICK, 0, 0)             
+            if tb._mdown_happened do send_message(tb.handle, CM_LMOUSECLICK, 0, 0)
 
         case CM_LMOUSECLICK :
             tb._mdown_happened = false
@@ -254,55 +289,84 @@ create_textbox :: proc(tb : ^TextBox) {
             if tb._is_mouse_entered {
                 if tb.mouse_move != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    tb.mouse_move(tb, &mea)                    
+                    tb.mouse_move(tb, &mea)
                 }
             }
             else {
                 tb._is_mouse_entered = true
                 if tb.mouse_enter != nil  {
                     ea := new_event_args()
-                    tb.mouse_enter(tb, &ea)                    
+                    tb.mouse_enter(tb, &ea)
                 }
             }
         
-        case WM_MOUSELEAVE :            
+        case WM_MOUSELEAVE :
             tb._is_mouse_entered = false
-            if tb.mouse_leave != nil {               
+            if tb.mouse_leave != nil {
                 ea := new_event_args()
-                tb.mouse_leave(tb, &ea)                
+                tb.mouse_leave(tb, &ea)
             }
 
         case WM_SETFOCUS :
-            tb._draw_focus_rct = true
-            if tb.got_focus != nil {
-                ea := new_event_args()
-                tb.got_focus(tb, &ea)
-                return 0
-            }
+            
+            // tb._draw_focus_rct = true
+            // invalidate_rect(hw, nil, true)
+            //set_focus(tb.handle)
+            // print("st foc rcvd")
+            // mdw := Wparam(make_dword(1,  0x1))
+            // send_message(tb.handle, WM_CHANGEUISTATE, mdw, 0)
+            //ptf("low word - %d, hi word - %d\n", loword_wparam(mdw), hiword_wparam(mdw))
+            //set_window_pos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
+            // if tb.got_focus != nil {
+            //     ea := new_event_args()
+            //     tb.got_focus(tb, &ea)
+            //     return 0 WM_UPDATEUISTATE  WM_CHANGEUISTATE
+            // }
+           //return 1 //def_subclass_proc(hw, msg, wp, lp)
+
+        // case WM_UPDATEUISTATE :
+
+        // //     print("ui update")
+        //     mdw := Wparam(make_dword(1,  0x1))
+        //     return def_subclass_proc(hw, msg, mdw, lp)
+
+        // case WM_CHANGEUISTATE :
+        //     //print("change ui state")
+            
+        //     send_message(tb.handle, WM_UPDATEUISTATE, wp, lp)
+        //     ptf("low word - %d, hi word - %d\n", loword_wparam(wp), hiword_wparam(wp))
+            //return  def_subclass_proc(hw, msg, wp, lp)
+
+        //     print("change ui state")
+
+        case WM_MOUSEACTIVATE :
+            //print("WM_MOUSEACTIVATE")
 
         case WM_KILLFOCUS:
-            tb._draw_focus_rct = false
+           //tb._draw_focus_rct = false
             if tb.lost_focus != nil {
                 ea := new_event_args()
                 tb.lost_focus(tb, &ea)
                 return 0
             }
-
+            
+            
         case WM_KEYDOWN :
+           // tb._draw_focus_rct = true
             if tb.key_down != nil {
                 kea := new_key_event_args(wp)
-                tb.key_down(tb, &kea)                
+                tb.key_down(tb, &kea)
             }
         case WM_KEYUP :
             if tb.key_up != nil {
                 kea := new_key_event_args(wp)
-                tb.key_up(tb, &kea)   
+                tb.key_up(tb, &kea)
             }
 
         case WM_CHAR :  
             if tb.key_press != nil {
                 kea := new_key_event_args(wp)
-                tb.key_press(tb, &kea)   
+                tb.key_press(tb, &kea)
             }          
             send_message(tb.handle, CM_TBTXTCHANGED, 0, 0)
             
@@ -318,7 +382,7 @@ create_textbox :: proc(tb : ^TextBox) {
 
         
         
-        case : return def_subclass_proc(hw, msg, wp, lp)
+        //case : return def_subclass_proc(hw, msg, wp, lp)
     }
     return def_subclass_proc(hw, msg, wp, lp)
 }

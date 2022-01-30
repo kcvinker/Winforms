@@ -6,6 +6,8 @@
 package winforms
 import "core:runtime"
 
+WcCalenderClassW : wstring
+
 Calendar :: struct {
     using control : Control,
     value : DateTime,
@@ -31,6 +33,7 @@ ViewMode :: enum {month, year, decade, centuary}
 @private calendar_ctor :: proc(p : ^Form, x, y : int) -> Calendar {
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
         is_dtp_class_inited = true
+        WcCalenderClassW = to_wstring("SysMonthCal32")
         app.iccx.dwIcc = ICC_DATE_CLASSES
         init_comm_ctrl_ex(&app.iccx)
     }
@@ -139,7 +142,7 @@ create_calendar :: proc(cal : ^Calendar) {
     _global_ctl_id += 1  
     cal.control_id = _global_ctl_id  
     cal.handle = create_window_ex(   cal._ex_style, 
-                                    to_wstring("SysMonthCal32"), 
+                                    WcCalenderClassW, //to_wstring("SysMonthCal32"), 
                                     to_wstring(cal.text),
                                     cal._style, 
                                     i32(cal.xpos), 

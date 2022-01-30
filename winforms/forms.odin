@@ -46,7 +46,7 @@ app := start_app() // Global variable for storing data needed to create a window
     appl.screen_height = int(get_system_metrics(1))   
 
     appl.iccx.dwSize = size_of(appl.iccx)
-    appl.iccx.dwIcc = ICC_DATE_CLASSES
+    appl.iccx.dwIcc = ICC_STANDARD_CLASSES
     init_comm_ctrl_ex(&appl.iccx)    // We just initializing standard common controls.
     return appl
 }
@@ -326,12 +326,14 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
 
-@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ComboInfo {
-    ci : ComboInfo
+@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) {
+    // ci : ComboInfo
+    // ok 
     if item == .lb_hwnd {
         for c in frm._combo_list {        
             if c.lb_handle == hw {
                 ci = c
+                ok = true
                 break
             }
         }
@@ -339,11 +341,12 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         for c in frm._combo_list {        
             if c.tb_handle == hw {
                 ci = c
+                ok = true
                 break
             }
         }
     }    
-    return ci
+    return ci, ok
 }
 
 
@@ -396,13 +399,13 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         
         case WM_CTLCOLOREDIT :
             ctl_hwnd := direct_cast(lp, Hwnd)            
-            ci := find_combo_data(frm, ctl_hwnd, FindHwnd.tb_hwnd)
-            if ci.combo_handle == nil {
-                return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
-            } else {  
+            ci, is_combo := find_combo_data(frm, ctl_hwnd, FindHwnd.tb_hwnd)
+            if is_combo {
                 if !ci.no_tb_msg do return send_message(ci.combo_handle, CM_COMBOTBCOLOR, wp, 0)
+            } else {                  
+                return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
             }
-            
+             //return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
         case WM_CTLCOLORSTATIC :
             ctl_hwnd := direct_cast(lp, Hwnd)            
             return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
@@ -410,8 +413,8 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         case WM_CTLCOLORLISTBOX :
             ctl_hwnd := direct_cast(lp, Hwnd)
             //print("list box handle - ", ctl_hwnd)
-            ci := find_combo_data(frm, ctl_hwnd, FindHwnd.lb_hwnd)
-            if ci.combo_handle != nil {
+            ci, is_combo := find_combo_data(frm, ctl_hwnd, FindHwnd.lb_hwnd)
+            if is_combo {
                 return send_message(ci.combo_handle, CM_COMBOLBCOLOR, wp, 0)
             } else { // Need and else statement when e create ListBox
                 return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
@@ -428,6 +431,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 if frm.load != nil {
                     ea := new_event_args()
                     frm.load(frm, &ea)
+                    return 0
                 }
             }
 

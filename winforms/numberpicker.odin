@@ -83,8 +83,8 @@ NMUPDOWN :: struct {
     np.xpos = x
     np.ypos = y
     np.step = 1
-    np.back_color = 0xFFFFFF
-    np.fore_color = 0x000000 
+    np.back_color = def_back_clr
+    np.fore_color = def_fore_clr 
     np.min_range = 0
     np.max_range = 100
     np.decimal_precision = 0
@@ -375,7 +375,7 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
                 wpm : i32 = -1
                 send_message(hw, EM_SETSEL, Wparam(wpm), 0)
             }           
-            if tb.fore_color != 0x000000 || tb.back_color != 0xFFFFFF {                
+            if tb.fore_color != def_fore_clr || tb.back_color != def_back_clr {                
                 dc_handle := direct_cast(wp, Hdc)
                 set_bk_mode(dc_handle, Transparent)
                
