@@ -19,7 +19,8 @@ Currently, it's a work in progress project.
 
 ## Screenshot
 
-![image](https://user-images.githubusercontent.com/8840907/151632151-92f19796-a531-4ec5-8641-2baad6c15cb0.png)
+![image](https://user-images.githubusercontent.com/8840907/151837858-2a2adcbb-a2a9-4b3f-8c84-3930d4ad56f0.png)
+
 
 
 
