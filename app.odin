@@ -31,6 +31,7 @@ import  ui "winforms"
     lbx : ui.ListBox
     np : ui.NumberPicker
     pb : ui.ProgressBar
+    pb2 : ui.ProgressBar
     cnt : int
     gec : int = 1
 //
@@ -172,9 +173,12 @@ main :: proc() {
 
     { // ProgressBar
         pb = new_progressbar(&frm, 175, 185, 200, 25)
-        //progressbar_set_theme(&pb, true, 0x0000FF)
-        pb.style = .marquee
         create_progressbar(&pb)
+
+        pb2 = new_progressbar(&frm, 175, 215, 200, 25)
+        progressbar_set_theme(&pb2, true, 0x8080FF)
+        
+        create_progressbar(&pb2)
     }
     
    
@@ -190,7 +194,8 @@ main :: proc() {
 form_load :: proc(s : ^Control, e : ^EventArgs) {
    // ui.control_set_focus(tb)
     print("loaded")
-    ui.progressbar_start_marquee(&pb)
+    ui.progressbar_set_value(&pb, 25)
+    ui.progressbar_set_value(&pb2, 35)
 }
 
 test_proc :: proc(s : ^Control, e : ^MouseEventArgs) {          
