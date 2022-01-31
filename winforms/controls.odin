@@ -18,6 +18,7 @@ ControlKind :: enum {
 	list_view,
 	number_picker,
 	panel, 
+	progress_bar,
 	radio_button, 
 	text_box, 
 	tree_view,

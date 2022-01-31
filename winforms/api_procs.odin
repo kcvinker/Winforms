@@ -146,6 +146,7 @@ foreign user32 {
    @(link_name="SetFocus") set_focus :: proc(hw : Hwnd) -> Hwnd ---
    @(link_name="GetFocus") get_focus :: proc() -> Hwnd ---
    @(link_name="SetActiveWindow") set_active_window :: proc(hw : Hwnd) -> Hwnd ---
+   @(link_name="GetDCEx") get_dc_ex :: proc(hw : Hwnd, clp_rgn : Hrgn, flags : Dword) -> Hdc ---
    
 
 
@@ -170,6 +171,7 @@ foreign kernel32 {
    @(link_name="GetSystemTimeAsFileTime") get_systemtime_as_filetime :: proc(pfile_time : ^FILETIME) ---
    @(link_name="GetSystemTime") get_system_time :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="GetLocalTime") get_local_time :: proc(sys_time : ^SYSTEMTIME) ---
+   @(link_name="Sleep") win32_sleep :: proc(milli_sec : Dword) ---
 
 } // Kernel32 library
 

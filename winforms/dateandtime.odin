@@ -56,6 +56,8 @@ date_string ::proc(dt : DateTime) -> string {
     return fmt.tprintf(  "%2d-%2d-%4d", dt.day, dt.month, dt.year)
 }
 
+sleep :: proc(msec : int) {win32_sleep(Dword(msec))}
+
 print_time :: proc(dt : DateTime) {
     ptf("Year - %d\n", dt.year)
     ptf("Month - %d\n", dt.month)

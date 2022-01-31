@@ -17,6 +17,7 @@ nph : Hwnd
 def_window_color :: 0xF5F5F5
 def_font_name :: "Calibri"
 def_font_size :: 12
+empty_wstring := to_wstring(" ") // This is just for testing purpose. Remove it when you finished this lib.
 app := start_app() // Global variable for storing data needed to create a window.
 //mcd : MouseClickData
 

@@ -30,6 +30,7 @@ import  ui "winforms"
     //gb : ui.GroupBox
     lbx : ui.ListBox
     np : ui.NumberPicker
+    pb : ui.ProgressBar
     cnt : int
     gec : int = 1
 //
@@ -45,14 +46,15 @@ main :: proc() {
         frm.font = new_font("Tahoma", 13)         
         frm.width = 700
         frm.right_click = btn_clk 
-        frm.load = form_load   
+        frm.load = form_load 
+        frm.mouse_click = frm_click  
         create_form(&frm)
     }       
 
     { // TEXTBOX
         tb = new_textbox(&frm)    
         tb.text = "Simple tb" 
-        tb.back_color = 0x8CC6C6
+       // tb.back_color = 0x8CC6C6
         //tb.focus_rect_color = 0x00FF00  
         create_textbox(&tb)
     }       
@@ -120,7 +122,7 @@ main :: proc() {
         create_button(&b3)
     }
     { // DTP
-        dp = new_datetimepicker(parent= &frm, w=140, h=25, x=170, y=100)
+        dp = new_datetimepicker(parent= &frm, w=140, h=25, x=175, y=100)
         // dp.xpos = 170
         // dp.ypos = 100
         // dp.text_changed = dtp_tb
@@ -135,8 +137,9 @@ main :: proc() {
     // old code
     { // list box
         lbx = new_listbox(&frm)
-        lbx.xpos = 320
+        lbx.xpos = 330
         lbx.ypos = 50
+        lbx.height = 120
         lbx.multi_selection = true
         lbx.key_preview = true    
         lbx.font = new_font("Calibri", 14) 
@@ -150,7 +153,7 @@ main :: proc() {
 
     // NumberPicker
     {
-        np = new_numberpicker(&frm, 190, 145, 100, 25)
+        np = new_numberpicker(&frm, 175, 145, 100, 25)
       //  np.font = new_font("Hack", 14, true)
        // np.button_alignment = .left
         np.text_alignment = .center
@@ -166,6 +169,13 @@ main :: proc() {
         //np.mouse_move = test_proc
         create_numberpicker(&np)
     }
+
+    { // ProgressBar
+        pb = new_progressbar(&frm, 175, 185, 200, 25)
+        //progressbar_set_theme(&pb, true, 0x0000FF)
+        pb.style = .marquee
+        create_progressbar(&pb)
+    }
     
    
 
@@ -178,8 +188,9 @@ main :: proc() {
 }
 
 form_load :: proc(s : ^Control, e : ^EventArgs) {
-    ui.control_set_focus(tb)
+   // ui.control_set_focus(tb)
     print("loaded")
+    ui.progressbar_start_marquee(&pb)
 }
 
 test_proc :: proc(s : ^Control, e : ^MouseEventArgs) {          
@@ -189,15 +200,14 @@ test_proc :: proc(s : ^Control, e : ^MouseEventArgs) {
 }
 
 btn_clk :: proc(s : ^Control, e : ^EventArgs) {  // connected to frm click
-    print("form moved to  this loc")
-    //print(ui.listbox_get_selection_indices(&lbx))
-    print("selected item - " )
-    ui.listbox_clear_selection(&lbx)
-    //ui.listbox_delete_item(&lbx, 2)
-    //ui.listbox_insert_item(&lbx, 3, "Sunny Leon")
-   
-    
+    print("form  clicked")
+    ui.progressbar_pause_marquee(&pb)
 } 
+
+frm_click :: proc(s : ^Control, e : ^EventArgs) {
+    print("frm just clk")
+    ui.progressbar_restart_marquee(&pb)
+}
 
 
 mouse_events :: proc(s : ^Control, e : ^MouseEventArgs) {  
