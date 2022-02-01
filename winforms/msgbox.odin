@@ -36,6 +36,7 @@ msg_box :: proc{    msg_box1,
                     msg_box4,
                     msg_box5,
                     msg_box6,
+                    msg_box7,
                 }
 
 @private msg_box1 :: proc(msg : string) {     
@@ -64,7 +65,11 @@ msg_box :: proc{    msg_box1,
     return MsgResult(message_box(dummy_hwnd, ms_str, cap_str, u32(msg_btn) ))
 }
 
-@private msg_box6 :: proc(msg : any, title : string, msg_btn : MsgBoxButtons, ms_icon : MsgBoxIcons) -> MsgResult {
+@private msg_box6 :: proc(  msg : any, 
+                            title : string, 
+                            msg_btn : MsgBoxButtons, 
+                            ms_icon : MsgBoxIcons ) -> MsgResult 
+{
     ms_str := to_wstring(fmt.tprint(msg))
     cap_str : wstring
     if len(title) == 0 {
@@ -73,3 +78,21 @@ msg_box :: proc{    msg_box1,
     utype : u32 = u32(msg_btn) | u32(ms_icon)
     return MsgResult(message_box(dummy_hwnd, ms_str, cap_str, utype ))
 }
+
+
+@private msg_box7 :: proc(  msg : any, 
+                            title : string, 
+                            msg_btn : MsgBoxButtons, 
+                            ms_icon : MsgBoxIcons,
+                            def_btn : MsgBoxDefButton = .button1) -> MsgResult 
+{
+    ms_str := to_wstring(fmt.tprint(msg))
+    cap_str : wstring
+    if len(title) == 0 {
+        cap_str = def_msg_title
+    } else do cap_str = to_wstring(title)
+    utype : u32 = u32(msg_btn) | u32(ms_icon) | u32(def_btn)
+    return MsgResult(message_box(dummy_hwnd, ms_str, cap_str, utype ))
+}
+
+

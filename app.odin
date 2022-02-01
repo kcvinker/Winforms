@@ -210,7 +210,7 @@ btn_clk :: proc(s : ^Control, e : ^EventArgs) {  // connected to frm click
 } 
 
 frm_click :: proc(s : ^Control, e : ^EventArgs) {
-    val := ui.msg_box("Hi I am vinod", "", ui.MsgBoxButtons.ok_cancel, ui.MsgBoxIcons.stop)
+    val := ui.msg_box("Hi I am vinod", "", ui.MsgBoxButtons.ok_cancel, ui.MsgBoxIcons.exclamation, ui.MsgBoxDefButton.button2)
     print(val)
 }
 
