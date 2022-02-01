@@ -420,7 +420,9 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             } else { // Need and else statement when e create ListBox
                 return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
             }
-        
+        // case WM_CTLCOLORBTN :
+        //     ctl_hwnd := direct_cast(lp, Hwnd)
+        //     return send_message(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
         
         case WM_COMMAND :
             ctl_hwnd := direct_cast(lp, Hwnd)

@@ -32,6 +32,8 @@ import  ui "winforms"
     np : ui.NumberPicker
     pb : ui.ProgressBar
     pb2 : ui.ProgressBar
+    rb : ui.RadioButton
+    rb2 : ui.RadioButton
     cnt : int
     gec : int = 1
 //
@@ -181,7 +183,15 @@ main :: proc() {
         create_progressbar(&pb2)
     }
     
-    //Test()
+    { // Radio Button
+        rb = new_radiobutton(&frm, "Radio 1", 525, 10, 120, 25)
+        rb.fore_color = 0xA91655
+        create_radiobutton(&rb)
+
+        rb2 = new_radiobutton(&frm, "Radio 2", 525, 40, 120, 25)
+        rb2.fore_color = 0x0000FF
+        create_radiobutton(&rb2)
+    }
 
    
   
