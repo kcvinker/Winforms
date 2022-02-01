@@ -15,11 +15,14 @@ Currently, it's a work in progress project.
 8. Label
 9. ListBox
 10. TextBox
-11. NumberPicker (Updown control Or NumericUpDown in .NET)
+11. NumberPicker (Updown Control)
+12. ProgressBar
+13. RadioButton
 
 ## Screenshot
 
-![image](https://user-images.githubusercontent.com/8840907/151837858-2a2adcbb-a2a9-4b3f-8c84-3930d4ad56f0.png)
+![image](https://user-images.githubusercontent.com/8840907/151911285-3f25f3a5-41f6-4637-bc4f-e11df18d2362.png)
+
 
 
 
