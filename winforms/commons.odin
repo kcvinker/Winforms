@@ -137,18 +137,7 @@ hiword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return 
 }
 
 
-@private msg_box1 :: proc(msg : string) { message_box(Hwnd(cast(uintptr) 0), to_wstring(msg), to_wstring("Odin Form"), 0) }
 
-@private msg_box2 :: proc(msg : string, title : string) { message_box(Hwnd(cast(uintptr) 0), to_wstring(msg), to_wstring(title), 0) }
-@private msg_box3 :: proc(msg : any) {
-	ms_str := fmt.tprint(msg)	
-	message_box(Hwnd(cast(uintptr) 0), to_wstring(ms_str), to_wstring("Odin Form"), 0)
-}
-@private msg_box4 :: proc(msg : any, title : string) {
-	ms_str := fmt.tprint(msg)	
-	message_box(Hwnd(cast(uintptr) 0), to_wstring(ms_str), to_wstring(title), 0)
-}
-msg_box :: proc{msg_box1, msg_box2, msg_box3, msg_box4}
 
 @private dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) {
 	for i := 0 ; i < len(arr) ; i += 1 {
@@ -215,4 +204,13 @@ array_search :: proc{	dynamic_array_search,
 	ptf("left : %d\n", rc.left)
 	ptf("right : %d\n", rc.right)
 	print("----------------------------------------------------")
+}
+
+Test :: proc() {
+	dw : Dword = 100 | 200 | 300
+	ptf("dw in decimal %d\n", dw)
+	ptf("dw in binary %b\n", dw)
+	ptf("dw in hex %X\n", dw)
+
+
 }

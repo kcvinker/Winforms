@@ -54,7 +54,7 @@ TextBox :: struct {
     tb.focus_rect_color = 0x4F4FFF
     tb._frc_ref = get_color_ref(tb.focus_rect_color)
     tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP | WS_BORDER | WS_CLIPCHILDREN
-    tb._ex_style = 0 //| WS_EX_LEFT | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE 
+    tb._ex_style = 0x00000100 //| WS_EX_LEFT | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE 
     
     return tb
 }

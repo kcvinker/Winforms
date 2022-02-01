@@ -181,7 +181,7 @@ main :: proc() {
         create_progressbar(&pb2)
     }
     
-   
+    //Test()
 
    
   
@@ -210,8 +210,8 @@ btn_clk :: proc(s : ^Control, e : ^EventArgs) {  // connected to frm click
 } 
 
 frm_click :: proc(s : ^Control, e : ^EventArgs) {
-    print("frm just clk")
-    ui.progressbar_restart_marquee(&pb)
+    val := ui.msg_box("Hi I am vinod", "", ui.MsgBoxButtons.ok_cancel, ui.MsgBoxIcons.stop)
+    print(val)
 }
 
 
