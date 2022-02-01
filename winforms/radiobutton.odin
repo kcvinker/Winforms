@@ -11,6 +11,7 @@ rb_count : int
 WcRadioBtnClassW := to_wstring("Button")
 RadioButton :: struct {
     using control : Control,
+    text_alignment : enum {left, right},
 
     _hbrush : Hbrush,
     _txt_style : Uint,
@@ -114,9 +115,9 @@ create_radiobutton :: proc(rb : ^RadioButton) {
                 case CDDS_PREPAINT :
                     cref := get_color_ref(rb.fore_color)                       
                     rct : Rect = nmcd.rc
-                    // if rb.text_alignment == .left{
+                    if rb.text_alignment == .left{
                         rct.left += 18 
-                    // } else do rct.right -= 18   
+                    } else do rct.right -= 18   
                     set_text_color(nmcd.hdc, cref) 
                     draw_text(nmcd.hdc, to_wstring(rb.text), -1, &rct, rb._txt_style)    
                     
