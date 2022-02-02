@@ -15,6 +15,7 @@ RadioButton :: struct {
     text_alignment : enum {left, right},
     checked : bool,
     check_on_click : bool,
+    auto_size : bool,
 
     _hbrush : Hbrush,
     _txt_style : Uint,
@@ -35,12 +36,14 @@ RadioButton :: struct {
     rb.width = w
     rb.height = h
     rb.check_on_click = true
+    rb.auto_size = true
     rb.back_color = f.back_color
     rb.fore_color = def_fore_clr
     rb._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON 
     rb._txt_style = DT_SINGLELINE | DT_VCENTER 
     rb._ex_style = 0
-
+    rb._size_incr.width = 20
+    rb._size_incr.height = 3
     return rb
 } 
 
@@ -48,7 +51,7 @@ RadioButton :: struct {
     delete_gdi_object(rb._hbrush)
 }
 
-new_radiobutton :: proc{new_rb1, new_rb2, new_rb3}
+new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
 
 @private new_rb1 :: proc(parent : ^Form) -> RadioButton {
     rb_count += 1
@@ -67,6 +70,11 @@ new_radiobutton :: proc{new_rb1, new_rb2, new_rb3}
     return rb
 }
 
+@private new_rb4 :: proc(parent : ^Form, txt : string, x, y : int) -> RadioButton {    
+    rb := rb_ctor(parent, txt, x, y, 100, 25 )
+    return rb    
+}
+
 @private rb_adjust_styles :: proc(rb : ^RadioButton) {
     if !rb.check_on_click do rb._style ~= BS_AUTORADIOBUTTON
     //if rb.text_alignment = .right do rb. 
@@ -77,6 +85,8 @@ radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool) {
     SendMessage(rb.handle, BM_SETCHECK, Wparam(state), 0)
 }
 
+// Change Radio Button's behaviour. Normally radio button will change it's checked state when it clicked.
+// But you can change that behaviour by passing a false to this function.
 radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) {
     ready_to_change : bool
     if auto_check {        
@@ -123,6 +133,7 @@ create_radiobutton :: proc(rb : ^RadioButton) {
         rb._is_created = true
         set_subclass(rb, rb_wnd_proc) 
         setfont_internal(rb)
+        if rb.auto_size do calculate_ctl_size(rb)
         if rb.checked {
             SendMessage(rb.handle, BM_SETCHECK, Wparam(0x0001), 0)
         }
@@ -238,7 +249,7 @@ create_radiobutton :: proc(rb : ^RadioButton) {
             rb._hbrush = CreateSolidBrush(get_color_ref(rb.back_color))
             return to_lresult(rb._hbrush)
 
-         case CM_NOTIFY :
+        case CM_NOTIFY :
             nmcd := direct_cast(lp, ^NMCUSTOMDRAW)	
             switch nmcd.dwDrawStage {
                 case CDDS_PREERASE :

@@ -139,7 +139,7 @@ DateTimePicker :: struct {
 
 // End of API Types
 
-@private dtp_ctor :: proc(p : ^Form, w : int = 130, h : int = 25) -> DateTimePicker {   
+@private dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker {   
 
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
         is_dtp_class_inited = true
@@ -151,6 +151,8 @@ DateTimePicker :: struct {
     dtp.kind = .date_time_picker
     dtp.parent = p    
     dtp.font = p.font
+    dtp.xpos = x
+    dtp.ypos = y
     dtp.width = w
     dtp.height = h  
 
@@ -161,19 +163,22 @@ DateTimePicker :: struct {
 
 
 @private new_dtp1 :: proc(parent : ^Form) -> DateTimePicker {
-    d := dtp_ctor(parent)
+    d := dtp_ctor(parent, 10, 10, 120, 30)
     return d
 }
 
-@private new_dtp2 :: proc(parent : ^Form, w, h, x, y : int) -> DateTimePicker {
-    d := dtp_ctor(parent, w, h)
-    d.xpos = x
-    d.ypos = y
+@private new_dtp2 :: proc(parent : ^Form, x, y : int) -> DateTimePicker {
+    d := dtp_ctor(parent, x, y, 120, 30)
+    return d
+}
+
+@private new_dtp3 :: proc(parent : ^Form, x, y, w, h : int) -> DateTimePicker {
+    d := dtp_ctor(parent,x, y, w, h)    
     return d
 }
 
 // DateTimePicker constructor.
-new_datetimepicker :: proc{new_dtp1, new_dtp2}
+new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
 
 @private set_style_internal :: proc(dtp : ^DateTimePicker) {
     switch dtp.format {

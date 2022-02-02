@@ -10,8 +10,7 @@ txt_flag : Uint = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_HIDEPREFIX
 transparent : i32 : 1
 WcButtonW : wstring 
 _button_count : int
-// BS_NOTIFY :: 0x00004000
-// BS_DEFPUSHBUTTON :: 0x00000001
+
 mouse_clicked :: 0b1  
 mouse_over :: 0b1000000 
 btn_focused :: 0b10000
@@ -22,7 +21,7 @@ ButtonDrawMode :: enum {default, text_only, bg_only, text_and_bg, gradient, grad
 Button :: struct {
 	using control : Control,	
 	style : ButtonStyle,
-	click : EventHandler,
+	//click : EventHandler,
 	_draw_needed : bool,
 	_draw_mode : ButtonDrawMode,	
 	_fclr_changed, _bclr_changed : bool,
@@ -34,20 +33,9 @@ Button :: struct {
 }
 
 // create new Button type
-new_button :: proc{new_button1, new_button2}
+new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 
-@private new_button1 :: proc(parent : ^Form) -> Button {
-	btn := btn_ctor(parent)
-	return btn
-}
-
-@private new_button2 :: proc(parent : ^Form, txt : string, x, y : int, w : int = 120, h : int = 40) -> Button {
-	btn := btn_ctor(parent, txt, w, h, x, y)
-	return btn
-}
-
-
-@private btn_ctor :: proc(p : ^Form, txt : string = "", w : int = 120, h : int = 40, x : int = 10, y : int = 10) -> Button {
+@private btn_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> Button {
 	if WcButtonW == nil do WcButtonW = to_wstring("Button")	
 	_button_count += 1	
 	b : Button
@@ -63,6 +51,29 @@ new_button :: proc{new_button1, new_button2}
 	b._style = WS_CHILD | WS_TABSTOP | WS_VISIBLE | BS_NOTIFY
 	return b
 }
+
+@private new_button1 :: proc(parent : ^Form) -> Button {
+	btn := btn_ctor(parent, "", 10, 10, 120, 35)
+	return btn
+}
+
+@private new_button2 :: proc(parent : ^Form, txt : string) -> Button {
+	btn := btn_ctor(parent, txt, 10, 10, 120, 35)
+	return btn
+}
+
+@private new_button3 :: proc(parent : ^Form, txt : string, x, y : int) -> Button {
+	btn := btn_ctor(parent, txt, x, y, 120, 35)
+	return btn
+}
+
+@private new_button4 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> Button {
+	btn := btn_ctor(parent, txt, x, y, w, h)
+	return btn
+}
+
+
+
 
 // @private btn_dtor :: proc(btn : ^Button) {
 

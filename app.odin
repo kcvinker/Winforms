@@ -71,9 +71,8 @@ main :: proc() {
         create_label(&lb)
     }
     { // CHECKBOX
-        cb = new_checkbox(&frm, "Select Me", 110, 25)
-        cb.xpos = 130
-        cb.ypos = 50
+        cb = new_checkbox(&frm, "Select Me", 175, 50)
+        
         //cb.text_alignment = .right
         cb.fore_color = 0x008000
         //cb.back_color = 0xFF8000
@@ -106,9 +105,7 @@ main :: proc() {
     }
         
     { // BUTTON1
-         b1 = new_button(&frm, "Color Btn", 10, 100)
-        // b1.xpos = 10
-        // b1.ypos = 100
+         b1 = new_button(&frm, "Color Btn", 10, 100)        
         b1.back_color = 0x800080
         b1.fore_color = 0xFFFFFF
         create_button(&b1)
@@ -185,11 +182,12 @@ main :: proc() {
     
     { // Radio Button
         rb = new_radiobutton(&frm, "Radio 1", 525, 10, 120, 25)
+
         rb.fore_color = 0xA91655
         rb.checked = true
         create_radiobutton(&rb)
 
-        rb2 = new_radiobutton(&frm, "Radio 2", 525, 40, 120, 25)
+        rb2 = new_radiobutton(&frm, "Radio Button Model 1", 525, 40)
         rb2.fore_color = 0x0000FF
         create_radiobutton(&rb2)
     }

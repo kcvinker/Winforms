@@ -46,6 +46,7 @@ Control :: struct {
 	_mdown_happened, _mrdown_happened : bool,
 	_subclass_id : int,
 	_wndproc_ptr : SUBCLASSPROC,
+	_size_incr : SizeIncrement,
 	
 	clr_changed : bool,
 	
@@ -135,7 +136,7 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : bool = fal
 		SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
 		if ctl.kind == .label { // Label need special care only because of the autosize property
 			lb := cast(^Label) ctl
-			if lb.auto_size do set_label_size(lb)
+			if lb.auto_size do calculate_ctl_size(lb)
 		}		
 	}
 }
@@ -159,9 +160,16 @@ control_set_size :: proc(ctl : ^Control, width, height : int) {
 control_set_text :: proc(ctl : ^Control, txt : string) {
 	ctl.text = txt	
 	if ctl._is_created {
-		if ctl.kind == .label { // Label need special care only because of the autosize property
-			lb := cast(^Label) ctl
-			if lb.auto_size do set_label_size(lb)
+		#partial switch ctl.kind {
+			case .label : // Label need special care only because of the autosize property
+				lb := cast(^Label) ctl
+				if lb.auto_size do calculate_ctl_size(lb)
+			case .check_box :
+				cb := cast(^CheckBox) ctl
+				if cb.auto_size do calculate_ctl_size(cb)
+			case .radio_button :
+				rb := cast(^RadioButton) ctl
+				if rb.auto_size do calculate_ctl_size(rb)
 		}
 		SetWindowText(ctl.handle, to_wstring(txt))
 	}

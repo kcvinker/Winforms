@@ -32,6 +32,7 @@ SimpleTextAlignment :: enum {left, center, right}
 TimeMode :: enum {nano_sec, micro_sec, milli_sec}
 
 Time :: struct {_nano_sec : i64,}
+SizeIncrement :: struct {width, height : int,}
 WordValue :: enum {low, high}
 
 current_time_internal :: proc() -> Time {
@@ -59,6 +60,18 @@ current_filetime :: proc(tm : TimeMode) -> i64 {
 	defer delete(mem_chunks)	
 	GetWindowText(hw, wsBuffer, i32(len(mem_chunks)))
 	return wstring_to_utf8(wsBuffer, -1)
+}
+
+@private calculate_ctl_size :: proc(c : ^Control) {
+    hdc := GetDC(c.handle)
+    defer DeleteDC(hdc)
+    ctl_size : Size            
+    select_gdi_object(hdc, c.font.handle)
+    GetTextExtentPoint32(hdc, to_wstring(c.text), i32(len(c.text)), &ctl_size )
+    c.width = int(ctl_size.width) + c._size_incr.width
+    c.height = int(ctl_size.height) + c._size_incr.height       
+    MoveWindow(c.handle, i32(c.xpos), i32(c.ypos), i32(c.width), i32(c.height), true )
+	print("ctl size - ", ctl_size)
 }
 
 @private in_range :: proc(value, min_val, max_val : i32) -> bool {

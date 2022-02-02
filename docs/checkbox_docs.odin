@@ -10,7 +10,8 @@ CheckBox :: struct {
 
 // Constructors
 new_checkbox :: proc(parent : ^Form, txt : string = "") -> CheckBox
-new_checkbox ::  proc(parent : ^Form, txt : string, w, h : int, x : int = 50, y : int = 50) -> CheckBox
+new_checkbox ::  proc(parent : ^Form, txt : string, x, y : int) -> CheckBox
+new_checkbox ::  proc(parent : ^Form, txt : string, x, y, w, h : int) -> CheckBox
 
 // Functions
 create_checkbox :: proc(cb : ^CheckBox) // Create the handle of check box

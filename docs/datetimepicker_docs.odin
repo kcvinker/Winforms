@@ -18,6 +18,7 @@ DateTimePicker :: struct {
     no_trailing_dates : b64, // No prevoious & next month dates displayed
     show_updown : b64, // To show an updown control to change the date
     short_day_names : b64, // day names will be displayed in shor forms.
+    // Besides these properties, DTP supports almost all common properties of Control type.
 
     // Events
     calendar_opened, // when calendar control opened
@@ -43,16 +44,19 @@ DateTimePicker :: struct {
                 WORD wMilliseconds;
                 } SYSTEMTIME
         */
+    // Besides these events, DTP supports almost all common events of Control type.
 }
 
 // Constructors
 new_datetimepicker :: proc(parent : ^Form) -> DateTimePicker
-new_datetimepicker :: proc(parent : ^Form, w, h, x, y : int) -> DateTimePicker
+new_datetimepicker :: proc(parent : ^Form, x, y : int) -> DateTimePicker
+new_datetimepicker :: proc(parent : ^Form, x, y, w, h : int) -> DateTimePicker
 
 // Functions
 create_datetimepicker :: proc(dtp : ^DateTimePicker) // create dtp handle
 set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) 
-        // To set custom format in datetimepicker
-        // Parameter
-            // fmt_string - A string value. Please see the above link to know more.
+        /* To set custom format in datetimepicker
+            ----Parameter
+                ---- fmt_string - A string value. Please see the above link to know more.
+        */
 

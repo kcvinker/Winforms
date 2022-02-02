@@ -3,12 +3,17 @@
 
 Button :: struct {
 	using control : Control,	
-	style : ButtonStyle,
+    // Button supports all common properties that Control type offers.
+
+    // Events
+    // Button supports all common events that Control type offers.
 }
 
 // Constructors
 new_button :: proc(parent : ^Form) -> Button
-new_button :: proc(parent : ^Form, txt : string, x, y : int, w : int = 120, h : int = 40) -> Button
+new_button :: proc(parent : ^Form, txt : string) -> Button 
+new_button :: proc(parent : ^Form, txt : string, x, y : int) -> Button
+new_button :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> Button
 
 // Functions
 create_button :: proc(btn : ^Button) // Creates button handle.

@@ -9,7 +9,7 @@ CheckBox :: struct {
     checked : bool,
     text_alignment : enum {left, right},
     check_changed : EventHandler,
-
+    auto_size : bool,
     _bk_brush : Hbrush,
     _txt_style : Uint,
 
@@ -34,6 +34,9 @@ CheckBox :: struct {
     cb._style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX 
     cb._ex_style =  WS_EX_LTRREADING | WS_EX_LEFT 
     cb._txt_style = DT_SINGLELINE | DT_VCENTER 
+    cb.auto_size = true
+    cb._size_incr.width = 20
+    cb._size_incr.height = 3
     return cb
 }
 
@@ -49,7 +52,14 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
     return cb
 }
 
-@private new_checkbox2 :: proc(parent : ^Form, txt : string, w, h : int, x : int = 50, y : int = 50) -> CheckBox {
+@private new_checkbox2 :: proc(parent : ^Form, txt : string, x, y : int) -> CheckBox {
+    cb := cb_ctor(parent, txt)    
+    cb.xpos = x
+    cb.ypos = y
+    return cb
+}
+
+@private new_checkbox3 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> CheckBox {
     cb := cb_ctor(parent, txt)
     cb.width = w
     cb.height = h
@@ -81,6 +91,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
         cb._is_created = true        
         setfont_internal(cb)
         set_subclass(cb, cb_wnd_proc) 
+        if cb.auto_size do calculate_ctl_size(cb)
         //ptf("global ctl id of label - %d\n", _global_ctl_id)       
     }
 }

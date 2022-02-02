@@ -10,7 +10,7 @@ import "core:runtime"
 
 Label :: struct {
     using control : Control,
-    auto_size : b64,
+    auto_size : bool,
     border_style : LabelBorder,
     text_alignment : TextAlignment, 
     multi_line : bool,
@@ -39,7 +39,9 @@ LabelBorder :: enum {no_border, single_line, sunken_border, }
     lb.back_color = def_window_color
     lb.fore_color = 0x000000
     lb._ex_style = 0 // WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-    lb._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED 
+    lb._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED
+    lb._size_incr.width = 2
+    lb._size_incr.height = 3 
     return lb
 }
 
@@ -127,16 +129,6 @@ new_label :: proc{new_label1, new_label2}
     }
 }
 
-@private set_label_size :: proc(lb : ^Label) {
-    hdc := GetDC(lb.handle)
-    defer DeleteDC(hdc)
-    lsize : Size            
-    select_gdi_object(hdc, lb.font.handle)
-    GetTextExtentPoint32(hdc, to_wstring(lb.text), i32(len(lb.text)), &lsize )
-    lb.width = int(lsize.width) + _lb_width_incr
-    lb.height = int(lsize.height) + _lb_height_incr       
-    MoveWindow(lb.handle, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), true )
-}
 
 // Create the handle of Label control.
 create_label :: proc(lb : ^Label) {
@@ -161,7 +153,7 @@ create_label :: proc(lb : ^Label) {
     if lb.handle != nil {  
         //print("Original label - ", lb.handle)
         lb._is_created = true              
-        if lb.auto_size do set_label_size(lb)
+        if lb.auto_size do calculate_ctl_size(lb) 
         setfont_internal(lb)
         set_subclass(lb, label_wnd_proc) 
         
