@@ -327,9 +327,7 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
 
-@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) {
-    // ci : ComboInfo
-    // ok 
+@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) {    
     if item == .lb_hwnd {
         for c in frm._combo_list {        
             if c.lb_handle == hw {
@@ -568,12 +566,21 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             }
 
         case WM_SIZING :
+            
             if frm.size_changing != nil {
                 ea := new_event_args()
                 frm.size_changing(frm, &ea)
                 return 1
             }
-        
+        case WM_WINDOWPOSCHANGING:
+            wps := direct_cast(lp, ^WINDOWPOS)
+            frm.xpos = int(wps.x)
+            frm.ypos = int(wps.y)
+            frm.width = int(wps.cx)
+            frm.height = int(wps.cy)
+        //case WM_WINDOWPOSCHANGED:
+            //wps := direct_cast(lp, ^WINDOWPOS)
+
         case WM_SIZE :
             if frm.size_changed != nil {
                 ea := new_event_args()
@@ -581,6 +588,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 return 1
             }
         case WM_MOVE :
+           // print("window size - ", frm.xpos, frm.ypos)
             if frm.moved != nil {
                 mea := new_move_event_args(msg, lp)
                 frm.moved(frm, &mea)

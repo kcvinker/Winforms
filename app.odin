@@ -174,8 +174,8 @@ main :: proc() {
         pb = new_progressbar(&frm, 175, 185, 200, 25)
         create_progressbar(&pb)
 
-        pb2 = new_progressbar(&frm, 175, 215, 200, 25)
-        progressbar_set_theme(&pb2, true, 0x8080FF)
+        pb2 = new_progressbar(&frm, 525, 80, 25, 100)
+        pb2.alignment= .vertical
         
         create_progressbar(&pb2)
     }
@@ -219,7 +219,7 @@ btn_clk :: proc(s : ^Control, e : ^EventArgs) {  // connected to frm click
 } 
 
 frm_click :: proc(s : ^Control, e : ^EventArgs) {
-    ui.radiobutton_set_autocheck(&rb2, false)
+    //ui.radiobutton_set_autocheck(&rb2, false)
 }
 
 

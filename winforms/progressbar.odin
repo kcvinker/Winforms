@@ -100,18 +100,16 @@ new_progressbar :: proc{pb_new1, pb_new2}
 @private pb_adjust_styles :: proc(pb : ^ProgressBar) {
     if pb.style == .marquee do pb._style |= PBS_MARQUEE
     if pb.alignment == .vertical do pb._style |= PBS_VERTICAL
-    
-
 }
 
 // Remove visual styles from progress bar. 
 // You can set back color & fore color now. 
-progressbar_set_theme :: proc(pb : ^ProgressBar, border : bool, fclr : uint, bclr : uint = 0xFFFFFF) {
-    pb._theme = .custom_color
-    pb.fore_color = fclr
-    pb.back_color = bclr
-    //if border do pb._style |= WS_BORDER
-}
+// progressbar_set_theme :: proc(pb : ^ProgressBar, border : bool, fclr : uint, bclr : uint = 0xFFFFFF) {
+//     pb._theme = .custom_color
+//     pb.fore_color = fclr
+//     pb.back_color = bclr
+//     //if border do pb._style |= WS_BORDER
+// }
 
 // Increment progress bar value one step.
 progressbar_increment :: proc(pb : ^ProgressBar) {SendMessage(pb.handle, PBM_STEPIT, 0, 0)}

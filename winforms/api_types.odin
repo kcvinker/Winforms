@@ -169,3 +169,12 @@ DTBGOPTS :: struct {
 	dwFlags : Dword,
 	rcClip : Rect,	
 }
+
+WINDOWPOS :: struct {
+	hwnd : Hwnd,
+	hwndInsertAfter : Hwnd,
+	x, y : i32,
+	cx, cy : i32,
+	flags : u32,
+}
+
