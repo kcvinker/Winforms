@@ -18,7 +18,7 @@ WeekDays :: enum {sunday, monday, tuesday, wednesday, thursday, friday, saturday
 @private dt_ctor :: proc() -> DateTime {
     dt : DateTime
     st : SYSTEMTIME
-    get_local_time(&st)
+    GetLocalTime(&st)
     dt.year = int(st.wYear)
     dt.month = int(st.wMonth)
     dt.day = int(st.wDay)
@@ -56,7 +56,7 @@ date_string ::proc(dt : DateTime) -> string {
     return fmt.tprintf(  "%2d-%2d-%4d", dt.day, dt.month, dt.year)
 }
 
-sleep :: proc(msec : int) {win32_sleep(Dword(msec))}
+sleep :: proc(msec : int) {Sleep(Dword(msec))}
 
 print_time :: proc(dt : DateTime) {
     ptf("Year - %d\n", dt.year)

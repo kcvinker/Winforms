@@ -42,13 +42,13 @@ app := start_app() // Global variable for storing data needed to create a window
     appl : Application
     appl.global_font = new_font(def_font_name, def_font_size)
     appl.class_name = "WingLib_Form"
-    appl.h_instance = get_module_handle_w(nil)
-    appl.screen_width = int(get_system_metrics(0))
-    appl.screen_height = int(get_system_metrics(1))   
+    appl.h_instance = GetModuleHandle(nil)
+    appl.screen_width = int(GetSystemMetrics(0))
+    appl.screen_height = int(GetSystemMetrics(1))   
 
     appl.iccx.dwSize = size_of(appl.iccx)
     appl.iccx.dwIcc = ICC_STANDARD_CLASSES
-    init_comm_ctrl_ex(&appl.iccx)    // We just initializing standard common controls.
+    InitCommonControlsEx(&appl.iccx)    // We just initializing standard common controls.
     return appl
 }
 
@@ -142,20 +142,20 @@ new_form :: proc{new_form1, new_form2}
 }
 
 @private set_form_font_internal :: proc(frm : ^Form) {
-    if app.global_font.handle == nil do create_font_handle(&app.global_font, frm.handle)
+    if app.global_font.handle == nil do CreateFont_handle(&app.global_font, frm.handle)
     if frm.font.name == def_font_name && frm.font.size == def_font_size {
         // User did not made any changes in font. So use default font handle.
         frm.font = app.global_font
-        send_message(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
+        SendMessage(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
     }
     else {
         if frm.font.handle == nil {
             // User just changed the font name and/or size. Create the font handle
-            create_font_handle(&frm.font, frm.handle)
-            send_message(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
+            CreateFont_handle(&frm.font, frm.handle)
+            SendMessage(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
         }
         else {
-            send_message(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
+            SendMessage(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
         }
     }
 }
@@ -169,7 +169,7 @@ create_form :: proc(frm : ^Form ) {
     }
     set_start_position(frm)
     set_form_style(frm)
-    frm.handle = create_window_ex(  frm._ex_style, 
+    frm.handle = CreateWindowEx(  frm._ex_style, 
                                     to_wstring(app.class_name), 
                                     to_wstring(frm.text),
                                     frm._style, 
@@ -182,7 +182,7 @@ create_form :: proc(frm : ^Form ) {
                                     app.h_instance, 
                                     nil )
     if frm.handle == nil {        
-        fmt.println("Error in CreateWindoeEx,", get_last_error())        
+        fmt.println("Error in CreateWindoeEx,", GetLastError())        
     }
     else {
         frm._is_created = true 
@@ -193,7 +193,7 @@ create_form :: proc(frm : ^Form ) {
             
         }
         set_form_font_internal(frm)
-        set_window_long_ptr(frm.handle, GWLP_USERDATA, cast(LongPtr) cast(uintptr) frm)        
+        SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LongPtr) cast(uintptr) frm)        
     }
     
 }
@@ -202,18 +202,18 @@ create_form :: proc(frm : ^Form ) {
     And it will check if the main loop is started or not.
     If not started, it will start the main loop */
 start_form :: proc() {
-    showing_window(app.main_handle, cast(i32) app.start_state )    
+    ShowWindow(app.main_handle, cast(i32) app.start_state )    
     //app.main_loop_started = true
     ms : Msg
-    for get_message_w(&ms, nil, 0, 0) != 0 {        
-        translate_message(&ms)
-        dispatch_message_w(&ms)
+    for GetMessage(&ms, nil, 0, 0) != 0 {        
+        TranslateMessage(&ms)
+        DispatchMessage(&ms)
     }    
 }
 
-show_form :: proc(f : Form) { showing_window(f.handle, SW_SHOW) }
-hide_form :: proc(f : Form) { showing_window(f.handle, SW_HIDE) }
-set_form_state :: proc(frm : Form, state : FormState) { showing_window(frm.handle, cast(i32) state ) }
+show_form :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
+hide_form :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
+set_form_state :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
 
 // Set the colors to draw a gradient background in form.
 set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .top_to_bottom) {
@@ -221,7 +221,7 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
     f._gradient_color.color2 = new_rgb_color(clr2)
     f._draw_mode = .gradient
     f._gradient_style = style
-    if f._is_created do invalidate_rect(f.handle, nil, true)    
+    if f._is_created do InvalidateRect(f.handle, nil, true)    
 }
 
 
@@ -233,16 +233,16 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
     win_class.cbClsExtra = 0
     win_class.cbWndExtra = 0
     win_class.hInstance = app.h_instance
-    win_class.hIcon = load_icon_w(nil, IDI_APPLICATION)
-    win_class.hCursor = load_cursor_w(nil, IDC_ARROW)
-    win_class.hbrBackground = create_solid_brush(get_color_ref(def_window_color)) //cast(Hbrush) (cast(uintptr) Color_Window + 1)
+    win_class.hIcon = LoadIcon(nil, IDI_APPLICATION)
+    win_class.hCursor = LoadCursor(nil, IDC_ARROW)
+    win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) //cast(Hbrush) (cast(uintptr) Color_Window + 1)
     win_class.lpszMenuName = nil
     win_class.lpszClassName = to_wstring(app.class_name)
 
-    res := register_class_ex_w(&win_class)
-    if res == 0 {print("reg window class error -- ", get_last_error())}
+    res := RegisterClassEx(&win_class)
+    if res == 0 {print("reg window class error -- ", GetLastError())}
     //icc_ex := INITCOMMONCONTROLSEX{dw_size = size_of(INITCOMMONCONTROLSEX), dw_icc = ICC_STANDARD_CLASSES}
-    //init_comm_ctrl_ex(&icc_ex)
+    //InitCommonControlsEx(&icc_ex)
 
 }
 
@@ -303,26 +303,26 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 }
 
 @private track_mouse_move :: proc(hw : Hwnd) {
-    tme : TrackMouseEvent
+    tme : TRACKMOUSEEVENT
     tme.cbSize = size_of(tme)
     tme.dwFlags = TME_HOVER | TME_LEAVE
     tme.dwHoverTime = HOVER_DEFAULT
     tme.hwndTrack = hw
-    track_mouse_event(&tme)
+    TrackMouseEvent(&tme)
 }
 
 @private set_back_clr_internal :: proc(f : ^Form, hdc : Hdc) {
     rct : Rect
     hbr : Hbrush     
-    get_client_rect(f.handle, &rct)
+    GetClientRect(f.handle, &rct)
     if f._draw_mode == .flat_color {
-        hbr = create_solid_brush(get_color_ref(f.back_color))
+        hbr = CreateSolidBrush(get_color_ref(f.back_color))
     }
     else if f._draw_mode == .gradient {        
         hbr = create_gradient_brush(f._gradient_color, f._gradient_style, hdc, rct)
     }
-    fill_rect(hdc, &rct, hbr)
-    delete_object(Hgdiobj(hbr))
+    FillRect(hdc, &rct, hbr)
+    DeleteObject(Hgdiobj(hbr))
 }
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
@@ -366,7 +366,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 
 @private window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> Lresult {
     context = runtime.default_context()    
-    frm := direct_cast(get_window_long_ptr(hw, GWLP_USERDATA), ^Form)   
+    frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)   
    // display_msg(msg)
     switch msg {   
               
@@ -375,7 +375,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         //    // display_msg(msg)
         //     if lo_word(Dword(wp)) == WM_CREATE {
         //         chw := get_lparam_value(lp, Hwnd)
-        //         return send_message(chw, CM_PARENTNOTIFY, 0, 0)
+        //         return SendMessage(chw, CM_PARENTNOTIFY, 0, 0)
         //         //ptf("handle from parent notify - %d\n", chw)
         //     }
 
@@ -384,17 +384,17 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         case WM_PAINT :
             if frm.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 frm.paint(frm, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
 
         case WM_DRAWITEM :                    
             ctl_hwnd, hwnd_found := frm._udraw_ids[Uint(wp)]
             if hwnd_found {                
-                return send_message(ctl_hwnd, CM_LABELDRAW, 0, lp)
+                return SendMessage(ctl_hwnd, CM_LABELDRAW, 0, lp)
             } else do return 0     
             
         
@@ -402,31 +402,31 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             ctl_hwnd := direct_cast(lp, Hwnd)            
             ci, is_combo := find_combo_data(frm, ctl_hwnd, FindHwnd.tb_hwnd)
             if is_combo {
-                if !ci.no_tb_msg do return send_message(ci.combo_handle, CM_COMBOTBCOLOR, wp, 0)
+                if !ci.no_tb_msg do return SendMessage(ci.combo_handle, CM_COMBOTBCOLOR, wp, 0)
             } else {                  
-                return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
+                return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
             }
-             //return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
+             //return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
         case WM_CTLCOLORSTATIC :
             ctl_hwnd := direct_cast(lp, Hwnd)            
-            return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+            return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
 
         case WM_CTLCOLORLISTBOX :
             ctl_hwnd := direct_cast(lp, Hwnd)
             //print("list box handle - ", ctl_hwnd)
             ci, is_combo := find_combo_data(frm, ctl_hwnd, FindHwnd.lb_hwnd)
             if is_combo {
-                return send_message(ci.combo_handle, CM_COMBOLBCOLOR, wp, 0)
+                return SendMessage(ci.combo_handle, CM_COMBOLBCOLOR, wp, 0)
             } else { // Need and else statement when e create ListBox
-                return send_message(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+                return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
             }
         // case WM_CTLCOLORBTN :
         //     ctl_hwnd := direct_cast(lp, Hwnd)
-        //     return send_message(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
+        //     return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
         
         case WM_COMMAND :
             ctl_hwnd := direct_cast(lp, Hwnd)
-            send_message(ctl_hwnd, CM_CTLCOMMAND, wp, lp)
+            SendMessage(ctl_hwnd, CM_CTLCOMMAND, wp, lp)
 
         case WM_SHOWWINDOW:
             if !frm._is_loaded {
@@ -494,7 +494,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.left_mouse_up(frm, &mea)                
             }
-            if frm._mdown_happened do send_message(frm.handle, CM_LMOUSECLICK, 0, 0) 
+            if frm._mdown_happened do SendMessage(frm.handle, CM_LMOUSECLICK, 0, 0) 
             
         case CM_LMOUSECLICK :
             frm._mdown_happened = false
@@ -509,7 +509,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.right_mouse_up(frm, &mea)
             } 
-            if frm._mrdown_happened do send_message(frm.handle, CM_RMOUSECLICK, 0, 0)           
+            if frm._mrdown_happened do SendMessage(frm.handle, CM_RMOUSECLICK, 0, 0)           
 
         case CM_RMOUSECLICK :
             frm._mrdown_happened = false
@@ -630,11 +630,12 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             }
             
 
-        case WM_NOTIFY :                         
+        case WM_NOTIFY :   
+                                 
             //nmcd := get_lparam_value(lp, ^NMCUSTOMDRAW)
             nm := direct_cast(lp, ^NMHDR)
-            return send_message(nm.hwndFrom, CM_NOTIFY, wp, lp )
-
+            return SendMessage(nm.hwndFrom, CM_NOTIFY, wp, lp )
+            
             //-------------------------------------------------------
             //is_hwnd := slice.contains(frm._cdraw_childs[:], nmcd.hdr.hwnd_from )                     
 
@@ -645,13 +646,13 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             }
             form_dtor(frm) // Freeing all resources. 
             if hw == app.main_handle {
-                post_quit_message(0)
+                PostQuitMessage(0)
             }        
         
 
         case :            
-            return def_window_proc_w(hw, msg, wp, lp)
+            return DefWindowProc(hw, msg, wp, lp)
         
     }
-    return def_window_proc_w(hw, msg, wp, lp)
+    return DefWindowProc(hw, msg, wp, lp)
 }

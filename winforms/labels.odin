@@ -123,19 +123,19 @@ new_label :: proc{new_label1, new_label2}
     lb.back_color = clr
     if lb._is_created {
         lb._hbrush = nil
-        invalidate_rect(lb.handle, nil, true)
+        InvalidateRect(lb.handle, nil, true)
     }
 }
 
 @private set_label_size :: proc(lb : ^Label) {
-    hdc := get_dc(lb.handle)
-    defer delete_dc(hdc)
+    hdc := GetDC(lb.handle)
+    defer DeleteDC(hdc)
     lsize : Size            
     select_gdi_object(hdc, lb.font.handle)
-    get_text_extent_point(hdc, to_wstring(lb.text), i32(len(lb.text)), &lsize )
+    GetTextExtentPoint32(hdc, to_wstring(lb.text), i32(len(lb.text)), &lsize )
     lb.width = int(lsize.width) + _lb_width_incr
     lb.height = int(lsize.height) + _lb_height_incr       
-    move_window(lb.handle, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), true )
+    MoveWindow(lb.handle, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), true )
 }
 
 // Create the handle of Label control.
@@ -145,7 +145,7 @@ create_label :: proc(lb : ^Label) {
     adjust_alignment(lb)
     _global_ctl_id += 1  
     lb.control_id = _global_ctl_id  
-    lb.handle = create_window_ex(   lb._ex_style, 
+    lb.handle = CreateWindowEx(   lb._ex_style, 
                                     to_wstring("Static"), 
                                     to_wstring(lb.text),
                                     lb._style, 
@@ -182,10 +182,10 @@ create_label :: proc(lb : ^Label) {
         case WM_PAINT :
             if lb.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 lb.paint(lb, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
             
@@ -209,7 +209,7 @@ create_label :: proc(lb : ^Label) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.left_mouse_up(lb, &mea)
             }
-            if lb._mdown_happened do send_message(lb.handle, CM_LMOUSECLICK, 0, 0) 
+            if lb._mdown_happened do SendMessage(lb.handle, CM_LMOUSECLICK, 0, 0) 
 
         case CM_LMOUSECLICK :
             lb._mdown_happened = false
@@ -231,7 +231,7 @@ create_label :: proc(lb : ^Label) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.right_mouse_up(lb, &mea)
             }
-            if lb._mrdown_happened do send_message(lb.handle, CM_RMOUSECLICK, 0, 0)
+            if lb._mrdown_happened do SendMessage(lb.handle, CM_RMOUSECLICK, 0, 0)
 
         case CM_RMOUSECLICK :
             lb._mrdown_happened = false
@@ -283,20 +283,20 @@ create_label :: proc(lb : ^Label) {
 
         case CM_CTLLCOLOR :
             hdc := direct_cast(wp, Hdc)
-            set_text_color(hdc, get_color_ref(lb.fore_color))
-            set_bk_color(hdc, get_color_ref(lb.back_color))
-            lb._hbrush = create_solid_brush(get_color_ref(lb.back_color))
+            SetTextColor(hdc, get_color_ref(lb.fore_color))
+            SetBackColor(hdc, get_color_ref(lb.back_color))
+            lb._hbrush = CreateSolidBrush(get_color_ref(lb.back_color))
             return to_lresult(lb._hbrush)
             
         case WM_DESTROY:
             label_dtor(lb)
             remove_subclass(lb)
    
-        case : return def_subclass_proc(hw, msg, wp, lp)
+        case : return DefSubclassProc(hw, msg, wp, lp)
         
 
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }
 
 

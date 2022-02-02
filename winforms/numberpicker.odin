@@ -72,7 +72,7 @@ NMUPDOWN :: struct {
     if !is_np_inited { // Then we need to initialize the date class control.
         is_np_inited = true
         app.iccx.dwIcc = ICC_UPDOWN_CLASS
-        init_comm_ctrl_ex(&app.iccx)
+        InitCommonControlsEx(&app.iccx)
     }
     np : NumberPicker
     np.kind = .number_picker
@@ -99,8 +99,8 @@ NMUPDOWN :: struct {
 
 @private np_dtor :: proc(np : ^NumberPicker) {
     delete_gdi_object(np._bk_brush)
-    remove_window_subclass(np.handle, np._wndproc_ptr, UintPtr(np._subclass_id) )
-	remove_window_subclass(np._buddy_handle, np._buddy_proc, UintPtr(np._buddy_sc_id) )
+    RemoveWindowSubclass(np.handle, np._wndproc_ptr, UintPtr(np._subclass_id) )
+	RemoveWindowSubclass(np._buddy_handle, np._buddy_proc, UintPtr(np._buddy_sc_id) )
 	
 }
 
@@ -137,14 +137,14 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
     if np._is_created { 
         wpm := direct_cast(min_val, Wparam) 
         lpm := direct_cast(max_val, Lparam)      
-        send_message(np.handle, UDM_SETRANGE32, wpm, lpm)
+        SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
     }    
 }
 
 @private np_set_range_internal :: proc(np : ^NumberPicker) {
     wpm := direct_cast(i32(np.min_range), Wparam) 
     lpm := direct_cast(i32(np.max_range), Lparam)      
-    send_message(np.handle, UDM_SETRANGE32, wpm, lpm)
+    SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
 }
 
 @private np_set_value_internal :: proc(np : ^NumberPicker, op : StepOprator) {
@@ -178,7 +178,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
 
 @private np_display_value_internal :: proc(np : ^NumberPicker) {
     val_str := fmt.tprintf(np.format_string, np.value)
-    set_window_text(np._buddy_handle, to_wstring(val_str)) 
+    SetWindowText(np._buddy_handle, to_wstring(val_str)) 
     
 }
 
@@ -191,7 +191,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
 
 @private np_hide_selection :: proc(np : ^NumberPicker) {
     wpm : i32 = -1
-    send_message(np._buddy_handle, EM_SETSEL, Wparam(wpm), 0)
+    SendMessage(np._buddy_handle, EM_SETSEL, Wparam(wpm), 0)
 }
 
 @private check_updated_text :: proc(tb : ^NumberPicker) {
@@ -206,7 +206,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
         tb.value = tb.min_range 
     } else do tb.value = new_val                
     wst := fmt.tprintf(tb.format_string, tb.value)                
-    set_window_text(tb._buddy_handle, to_wstring(wst))  
+    SetWindowText(tb._buddy_handle, to_wstring(wst))  
 }
 
 
@@ -216,14 +216,14 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         icex : INITCOMMONCONTROLSEX
         icex.dwSize = size_of(icex)
         icex.dwIcc = ICC_UPDOWN_CLASS
-        init_comm_ctrl_ex(&icex)  
+        InitCommonControlsEx(&icex)  
         is_np_inited = true
     }
     _global_ctl_id += 1     
     np.control_id = _global_ctl_id 
     set_np_styles(np)
     
-    np._buddy_handle = create_window_ex( np._buddy_exstyle, 
+    np._buddy_handle = CreateWindowEx( np._buddy_exstyle, 
                                         to_wstring("Edit"), 
                                         nil,
                                         np._buddy_style, 
@@ -236,7 +236,7 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
                                         app.h_instance, 
                                         nil )
 
-    np.handle = create_window_ex(  np._ex_style, 
+    np.handle = CreateWindowEx(  np._ex_style, 
                                     to_wstring("msctls_updown32"), 
                                     nil,
                                     np._style, 
@@ -249,11 +249,11 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
     if np.handle != nil && np._buddy_handle != nil {
       // print("np handle - ", np.handle) 
         nph = np.handle
-        send_message(np.handle, UDM_SETBUDDY, convert_to(Wparam, np._buddy_handle), 0)       
+        SendMessage(np.handle, UDM_SETBUDDY, convert_to(Wparam, np._buddy_handle), 0)       
         np._is_created = true        
         set_np_subclass(np, np_wnd_proc, buddy_wnd_proc) 
-        if np.font.handle != np.parent.font.handle do create_font_handle(&np.font, np._buddy_handle)
-	    send_message(np._buddy_handle, WM_SETFONT, Wparam(np.font.handle), Lparam(1))
+        if np.font.handle != np.parent.font.handle do CreateFont_handle(&np.font, np._buddy_handle)
+	    SendMessage(np._buddy_handle, WM_SETFONT, Wparam(np.font.handle), Lparam(1))
         np_set_range_internal(np) 
         if np.format_string == "" do np.format_string = fmt.tprintf("%%.%df", np.decimal_precision)
         np_display_value_internal(np)  
@@ -273,10 +273,10 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         case WM_PAINT :
             if np.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 np.button_paint(np, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
 
@@ -320,8 +320,8 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         case WM_MOUSELEAVE : 
             if np.mouse_leave != nil {  
                 pt : Point
-                get_cursror_pos(&pt)
-                screen_to_client(hw, &pt)            
+                GetCursorPos(&pt)
+                ScreenToClient(hw, &pt)            
                 xflag : bool = true if pt.x == (np._udrc.left + 1) else false
                 yflag : bool = true if in_range(pt.y, np._udrc.top, np._udrc.bottom) else false   
                 
@@ -333,8 +333,8 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
                 } 
             }
         case WM_ENABLE :            
-            enable_window(hw, bool(wp))
-            enable_window(np._buddy_handle, bool(wp))
+            EnableWindow(hw, bool(wp))
+            EnableWindow(np._buddy_handle, bool(wp))
             return 0
 
         //case WM_CANCELMODE : print("WM_CANCELMODE")
@@ -348,11 +348,11 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         
 
         
-        case : return def_subclass_proc(hw, msg, wp, lp)
+        case : return DefSubclassProc(hw, msg, wp, lp)
 
 
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }
 
 @private buddy_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
@@ -363,24 +363,24 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         case WM_PAINT :
             if tb.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 tb.text_paint(tb, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
 
         case CM_CTLLCOLOR : 
             if tb.hide_selection {
                 wpm : i32 = -1
-                send_message(hw, EM_SETSEL, Wparam(wpm), 0)
+                SendMessage(hw, EM_SETSEL, Wparam(wpm), 0)
             }           
             if tb.fore_color != def_fore_clr || tb.back_color != def_back_clr {                
                 dc_handle := direct_cast(wp, Hdc)
-                set_bk_mode(dc_handle, Transparent)
+                SetBkMode(dc_handle, Transparent)
                
-                if tb.fore_color != 0x000000 do set_text_color(dc_handle, get_color_ref(tb.fore_color))                
-                if tb._bk_brush == nil do tb._bk_brush = create_solid_brush(get_color_ref(tb.back_color))                 
+                if tb.fore_color != 0x000000 do SetTextColor(dc_handle, get_color_ref(tb.fore_color))                
+                if tb._bk_brush == nil do tb._bk_brush = CreateSolidBrush(get_color_ref(tb.back_color))                 
                 return to_lresult(tb._bk_brush)
             } 
         case WM_KEYDOWN :  
@@ -414,7 +414,7 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
             if tb.key_up != nil {                
                 tb.key_up(tb, &kea)   
             }            
-            send_message(hw, CM_TBTXTCHANGED, 0, 0)
+            SendMessage(hw, CM_TBTXTCHANGED, 0, 0)
             return 0
 
         case WM_CHAR :           
@@ -450,8 +450,8 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         case WM_MOUSELEAVE :  
             if tb.mouse_leave != nil {
                 pt : Point
-                get_cursror_pos(&pt)
-                screen_to_client(hw, &pt)            
+                GetCursorPos(&pt)
+                ScreenToClient(hw, &pt)            
                 xflag : bool = true if pt.x == tb._tbrc.right else false
                 yflag : bool = true if in_range(pt.y, tb._tbrc.top, tb._tbrc.bottom) else false
                 
@@ -464,20 +464,20 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
             }
         
             
-        case : return def_subclass_proc(hw, msg, wp, lp)
+        case : return DefSubclassProc(hw, msg, wp, lp)
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }
 
 // Special subclassing for NumberPicker control. Remove_subclass is written in dtor
 @private set_np_subclass :: proc(np : ^NumberPicker, np_func, buddy_func : SUBCLASSPROC ) {
 	np_dwp := cast(DwordPtr)(cast(uintptr) np)
-	set_windows_subclass(np.handle, np_func, UintPtr(_global_subclass_id), np_dwp )
+	SetWindowSubclass(np.handle, np_func, UintPtr(_global_subclass_id), np_dwp )
 	np._subclass_id = _global_subclass_id
 	np._wndproc_ptr = np_func       
 	_global_subclass_id += 1  
 
-	set_windows_subclass(np._buddy_handle, buddy_func, UintPtr(_global_subclass_id), np_dwp )
+	SetWindowSubclass(np._buddy_handle, buddy_func, UintPtr(_global_subclass_id), np_dwp )
 	np._buddy_sc_id = _global_subclass_id
 	np._buddy_proc = buddy_func
 	_global_subclass_id += 1

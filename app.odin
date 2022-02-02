@@ -186,6 +186,7 @@ main :: proc() {
     { // Radio Button
         rb = new_radiobutton(&frm, "Radio 1", 525, 10, 120, 25)
         rb.fore_color = 0xA91655
+        rb.checked = true
         create_radiobutton(&rb)
 
         rb2 = new_radiobutton(&frm, "Radio 2", 525, 40, 120, 25)
@@ -220,8 +221,7 @@ btn_clk :: proc(s : ^Control, e : ^EventArgs) {  // connected to frm click
 } 
 
 frm_click :: proc(s : ^Control, e : ^EventArgs) {
-    val := ui.msg_box("Hi I am vinod", "", ui.MsgBoxButtons.ok_cancel, ui.MsgBoxIcons.exclamation, ui.MsgBoxDefButton.button2)
-    print(val)
+    ui.radiobutton_set_autocheck(&rb2, false)
 }
 
 

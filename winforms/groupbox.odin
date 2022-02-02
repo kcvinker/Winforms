@@ -57,7 +57,7 @@ create_groupbox :: proc(gb : ^GroupBox) {
     gb.control_id = _global_ctl_id 
     //set_style_internal(gb)
     if gb.back_color != gb.parent.back_color do gb._paint_bkg = true
-    gb.handle = create_window_ex(  gb._ex_style, 
+    gb.handle = CreateWindowEx(  gb._ex_style, 
                                     to_wstring("Button"), 
                                     to_wstring(gb.text),
                                     gb._style, 
@@ -74,7 +74,7 @@ create_groupbox :: proc(gb : ^GroupBox) {
         gb._is_created = true
         setfont_internal(gb)
         set_subclass(gb, gb_wnd_proc)
-        set_window_theme(gb.handle, to_wstring(" "), to_wstring(" "))
+        SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
         
 
         
@@ -89,10 +89,10 @@ create_groupbox :: proc(gb : ^GroupBox) {
         case WM_PAINT :
             if gb.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 gb.paint(gb, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
         case WM_DESTROY :
@@ -101,18 +101,18 @@ create_groupbox :: proc(gb : ^GroupBox) {
             
         case CM_CTLLCOLOR :            
             hdc := direct_cast(wp, Hdc)
-            set_bk_mode(hdc, Transparent)            
-            gb._bk_brush = create_solid_brush(get_color_ref(gb.back_color))
-            if gb.fore_color != 0x000000 do set_text_color(hdc, get_color_ref(gb.fore_color))            
+            SetBkMode(hdc, Transparent)            
+            gb._bk_brush = CreateSolidBrush(get_color_ref(gb.back_color))
+            if gb.fore_color != 0x000000 do SetTextColor(hdc, get_color_ref(gb.fore_color))            
             return direct_cast(gb._bk_brush, Lresult)           
 
         case WM_ERASEBKGND :  
             if gb._paint_bkg {
                 hdc := direct_cast(wp, Hdc)
                 rc : Rect
-                get_client_rect(gb.handle, &rc)
+                GetClientRect(gb.handle, &rc)
                 rc.bottom -= 2         
-                fill_rect(hdc, &rc, create_solid_brush(get_color_ref(gb.back_color)))                
+                FillRect(hdc, &rc, CreateSolidBrush(get_color_ref(gb.back_color)))                
                 return 1
             }       
             
@@ -154,7 +154,7 @@ create_groupbox :: proc(gb : ^GroupBox) {
        
             
         case :
-            return def_subclass_proc(hw, msg, wp, lp)
+            return DefSubclassProc(hw, msg, wp, lp)
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }

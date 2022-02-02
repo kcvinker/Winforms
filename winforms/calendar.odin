@@ -35,7 +35,7 @@ ViewMode :: enum {month, year, decade, centuary}
         is_dtp_class_inited = true
         WcCalenderClassW = to_wstring("SysMonthCal32")
         app.iccx.dwIcc = ICC_DATE_CLASSES
-        init_comm_ctrl_ex(&app.iccx)
+        InitCommonControlsEx(&app.iccx)
     }
     c : Calendar
     c.parent = p
@@ -141,7 +141,7 @@ create_calendar :: proc(cal : ^Calendar) {
     set_cal_style(cal)
     _global_ctl_id += 1  
     cal.control_id = _global_ctl_id  
-    cal.handle = create_window_ex(   cal._ex_style, 
+    cal.handle = CreateWindowEx(   cal._ex_style, 
                                     WcCalenderClassW, //to_wstring("SysMonthCal32"), 
                                     to_wstring(cal.text),
                                     cal._style, 
@@ -159,8 +159,8 @@ create_calendar :: proc(cal : ^Calendar) {
         setfont_internal(cal) 
         set_subclass(cal, cal_wnd_proc) 
         rc : Rect
-        send_message(cal.handle, MCM_GETMINREQRECT, 0, convert_to(Lparam, &rc))
-        set_window_pos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
+        SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(Lparam, &rc))
+        SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
               
     }
 
@@ -176,10 +176,10 @@ create_calendar :: proc(cal : ^Calendar) {
         case WM_PAINT :
             if cal.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 cal.paint(cal, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
             
@@ -261,7 +261,7 @@ create_calendar :: proc(cal : ^Calendar) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.left_mouse_up(cal, &mea)
             }
-            if cal._mdown_happened do send_message(cal.handle, CM_LMOUSECLICK, 0, 0)             
+            if cal._mdown_happened do SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0)             
 
         case CM_LMOUSECLICK :            
             cal._mdown_happened = false
@@ -283,7 +283,7 @@ create_calendar :: proc(cal : ^Calendar) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.right_mouse_up(cal, &mea)
             }
-            if cal._mrdown_happened do send_message(cal.handle, CM_LMOUSECLICK, 0, 0) 
+            if cal._mrdown_happened do SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0) 
             
         case CM_RMOUSECLICK :           
             cal._mrdown_happened = false
@@ -297,8 +297,8 @@ create_calendar :: proc(cal : ^Calendar) {
         
         
             case :
-            return def_subclass_proc(hw, msg, wp, lp)
+            return DefSubclassProc(hw, msg, wp, lp)
 
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }

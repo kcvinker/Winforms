@@ -40,20 +40,20 @@ msg_box :: proc{    msg_box1,
                 }
 
 @private msg_box1 :: proc(msg : string) {     
-    message_box(dummy_hwnd, to_wstring(msg), def_msg_title, 0) 
+    MessageBox(dummy_hwnd, to_wstring(msg), def_msg_title, 0) 
 }
 
 @private msg_box2 :: proc(msg : string, title : string) { 
-    message_box(dummy_hwnd, to_wstring(msg), to_wstring(title), 0) 
+    MessageBox(dummy_hwnd, to_wstring(msg), to_wstring(title), 0) 
 }
 
 @private msg_box3 :: proc(msg : any) {
 	ms_str := fmt.tprint(msg)	
-	message_box(dummy_hwnd, to_wstring(ms_str), def_msg_title, 0)
+	MessageBox(dummy_hwnd, to_wstring(ms_str), def_msg_title, 0)
 }
 @private msg_box4 :: proc(msg : any, title : string) {
 	ms_str := fmt.tprint(msg)	
-	message_box(dummy_hwnd, to_wstring(ms_str), to_wstring(title), 0)
+	MessageBox(dummy_hwnd, to_wstring(ms_str), to_wstring(title), 0)
 }
 
 @private msg_box5 :: proc(msg : any, title : string, msg_btn : MsgBoxButtons) -> MsgResult {
@@ -62,7 +62,7 @@ msg_box :: proc{    msg_box1,
     if len(title) == 0 {
         cap_str = def_msg_title
     } else do cap_str = to_wstring(title)
-    return MsgResult(message_box(dummy_hwnd, ms_str, cap_str, u32(msg_btn) ))
+    return MsgResult(MessageBox(dummy_hwnd, ms_str, cap_str, u32(msg_btn) ))
 }
 
 @private msg_box6 :: proc(  msg : any, 
@@ -76,7 +76,7 @@ msg_box :: proc{    msg_box1,
         cap_str = def_msg_title
     } else do cap_str = to_wstring(title)
     utype : u32 = u32(msg_btn) | u32(ms_icon)
-    return MsgResult(message_box(dummy_hwnd, ms_str, cap_str, utype ))
+    return MsgResult(MessageBox(dummy_hwnd, ms_str, cap_str, utype ))
 }
 
 
@@ -92,7 +92,7 @@ msg_box :: proc{    msg_box1,
         cap_str = def_msg_title
     } else do cap_str = to_wstring(title)
     utype : u32 = u32(msg_btn) | u32(ms_icon) | u32(def_btn)
-    return MsgResult(message_box(dummy_hwnd, ms_str, cap_str, utype ))
+    return MsgResult(MessageBox(dummy_hwnd, ms_str, cap_str, utype ))
 }
 
 

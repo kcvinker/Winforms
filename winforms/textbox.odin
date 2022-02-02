@@ -53,8 +53,8 @@ TextBox :: struct {
     tb.fore_color = def_fore_clr
     tb.focus_rect_color = 0x4F4FFF
     tb._frc_ref = get_color_ref(tb.focus_rect_color)
-    tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP | WS_BORDER | WS_CLIPCHILDREN
-    tb._ex_style = 0x00000100 //| WS_EX_LEFT | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE 
+    tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPCHILDREN
+    tb._ex_style = WS_EX_WINDOWEDGE | WS_EX_STATICEDGE // WS_EX_WINDOWEDGE WS_EX_CLIENTEDGE WS_EX_STATICEDGE
     
     return tb
 }
@@ -103,7 +103,7 @@ new_textbox :: proc{new_tb1, new_tb2}
 
 @private set_tb_bk_clr :: proc(tb : ^TextBox, clr : uint) {
     tb.back_color = clr
-    if tb._is_created do invalidate_rect(tb.handle, nil, true)    
+    if tb._is_created do InvalidateRect(tb.handle, nil, true)    
 }
 
 // Select or de-select all the text in TextBox control.
@@ -116,17 +116,17 @@ textbox_set_selection :: proc(tb : ^TextBox, value : bool) {
         wpm = -1
         lpm = 0
     }
-    send_message(tb.handle, EM_SETSEL, Wparam(wpm), Lparam(lpm))
+    SendMessage(tb.handle, EM_SETSEL, Wparam(wpm), Lparam(lpm))
 }
 
 // Set a TextBox's read only state.
 textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool) {
-    send_message(tb.handle, EM_SETREADONLY, Wparam(bstate), 0)
+    SendMessage(tb.handle, EM_SETREADONLY, Wparam(bstate), 0)
     tb.read_only = bstate
 }
 
 textbox_clear_all :: proc(tb : ^TextBox) {
-    if tb._is_created do set_window_text(tb.handle, to_wstring(""))
+    if tb._is_created do SetWindowText(tb.handle, to_wstring(""))
 }
 
 // Create the handle of TextBox control.
@@ -134,7 +134,7 @@ create_textbox :: proc(tb : ^TextBox) {
     _global_ctl_id += 1     
     tb.control_id = _global_ctl_id 
     adjust_styles(tb)
-    tb.handle = create_window_ex(   tb._ex_style, 
+    tb.handle = CreateWindowEx(   tb._ex_style, 
                                     WcEditClassW, //to_wstring("Edit"), 
                                     to_wstring(tb.text),
                                     tb._style, 
@@ -151,13 +151,13 @@ create_textbox :: proc(tb : ^TextBox) {
         tb._is_created = true
         //mdw := Wparam(make_dword(3,  4))
         // emty_wstr := to_wstring(" 0")
-        // set_window_theme(tb.handle, emty_wstr,emty_wstr)
+        // SetWindowTheme(tb.handle, emty_wstr,emty_wstr)
         set_subclass(tb, tb_wnd_proc) 
         setfont_internal(tb)
-        //send_message(tb.parent.handle, WM_UPDATEUISTATE, mdw, 0)
+        //SendMessage(tb.parent.handle, WM_UPDATEUISTATE, mdw, 0)
         if len(tb.cue_banner) > 0 {
             up := cast(uintptr) to_wstring(tb.cue_banner)
-            send_message(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )
+            SendMessage(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )
         }     
     }
 }
@@ -174,21 +174,21 @@ create_textbox :: proc(tb : ^TextBox) {
         case WM_PAINT :
             // if tb._draw_focus_rct {
             //     ps : PAINTSTRUCT
-            //     hdc := begin_paint(tb.handle, &ps)
-            //     frame_brush := create_solid_brush(tb._frc_ref)
-            //     frame_rect(hdc, &ps.rcPaint, frame_brush)
-            //     set_bk_mode(hdc, Opaque)
-            //     set_bk_color(hdc, get_color_ref(tb.back_color))
-            //     end_paint(tb.handle, &ps)
+            //     hdc := BeginPaint(tb.handle, &ps)
+            //     frame_brush := CreateSolidBrush(tb._frc_ref)
+            //     FrameRect(hdc, &ps.rcPaint, frame_brush)
+            //     SetBkMode(hdc, Opaque)
+            //     SetBackColor(hdc, get_color_ref(tb.back_color))
+            //     EndPaint(tb.handle, &ps)
             //     return 1
             // }
 
             if tb.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 tb.paint(tb, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
 
@@ -200,10 +200,10 @@ create_textbox :: proc(tb : ^TextBox) {
             //print("ctl clr rcvd")
             if tb.fore_color != def_fore_clr || tb.back_color != def_back_clr {
                 dc_handle := direct_cast(wp, Hdc)
-                set_bk_mode(dc_handle, Transparent)
-                if tb.fore_color != def_fore_clr do set_text_color(dc_handle, get_color_ref(tb.fore_color))   
-                //set_bk_color(dc_handle, get_color_ref(tb.back_color))
-                tb._bk_brush = create_solid_brush(get_color_ref(tb.back_color))
+                SetBkMode(dc_handle, Transparent)
+                if tb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(tb.fore_color))   
+                //SetBackColor(dc_handle, get_color_ref(tb.back_color))
+                tb._bk_brush = CreateSolidBrush(get_color_ref(tb.back_color))
                 return to_lresult(tb._bk_brush)
             } 
 
@@ -211,7 +211,7 @@ create_textbox :: proc(tb : ^TextBox) {
             ncode := hiword_wparam(wp)
             if ncode == EN_SETFOCUS { 
             //    tb._draw_focus_rct = true
-               //set_window_pos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
+               //SetWindowPos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
                
                if tb.got_focus != nil {
                     ea := new_event_args()
@@ -249,7 +249,7 @@ create_textbox :: proc(tb : ^TextBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.left_mouse_up(tb, &mea)
             }
-            if tb._mdown_happened do send_message(tb.handle, CM_LMOUSECLICK, 0, 0)
+            if tb._mdown_happened do SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
 
         case CM_LMOUSECLICK :
             tb._mdown_happened = false
@@ -271,7 +271,7 @@ create_textbox :: proc(tb : ^TextBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.right_mouse_up(tb, &mea)
             }
-            if tb._mrdown_happened do send_message(tb.handle, CM_LMOUSECLICK, 0, 0) 
+            if tb._mrdown_happened do SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0) 
             
         case CM_RMOUSECLICK :
             tb._mrdown_happened = false
@@ -311,32 +311,32 @@ create_textbox :: proc(tb : ^TextBox) {
         case WM_SETFOCUS :
             
             // tb._draw_focus_rct = true
-            // invalidate_rect(hw, nil, true)
-            //set_focus(tb.handle)
+            // InvalidateRect(hw, nil, true)
+            //SetFocus(tb.handle)
             // print("st foc rcvd")
             // mdw := Wparam(make_dword(1,  0x1))
-            // send_message(tb.handle, WM_CHANGEUISTATE, mdw, 0)
+            // SendMessage(tb.handle, WM_CHANGEUISTATE, mdw, 0)
             //ptf("low word - %d, hi word - %d\n", loword_wparam(mdw), hiword_wparam(mdw))
-            //set_window_pos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
+            //SetWindowPos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
             // if tb.got_focus != nil {
             //     ea := new_event_args()
             //     tb.got_focus(tb, &ea)
             //     return 0 WM_UPDATEUISTATE  WM_CHANGEUISTATE
             // }
-           //return 1 //def_subclass_proc(hw, msg, wp, lp)
+           //return 1 //DefSubclassProc(hw, msg, wp, lp)
 
         // case WM_UPDATEUISTATE :
 
         // //     print("ui update")
         //     mdw := Wparam(make_dword(1,  0x1))
-        //     return def_subclass_proc(hw, msg, mdw, lp)
+        //     return DefSubclassProc(hw, msg, mdw, lp)
 
         // case WM_CHANGEUISTATE :
         //     //print("change ui state")
             
-        //     send_message(tb.handle, WM_UPDATEUISTATE, wp, lp)
+        //     SendMessage(tb.handle, WM_UPDATEUISTATE, wp, lp)
         //     ptf("low word - %d, hi word - %d\n", loword_wparam(wp), hiword_wparam(wp))
-            //return  def_subclass_proc(hw, msg, wp, lp)
+            //return  DefSubclassProc(hw, msg, wp, lp)
 
         //     print("change ui state")
 
@@ -369,7 +369,7 @@ create_textbox :: proc(tb : ^TextBox) {
                 kea := new_key_event_args(wp)
                 tb.key_press(tb, &kea)
             }          
-            send_message(tb.handle, CM_TBTXTCHANGED, 0, 0)
+            SendMessage(tb.handle, CM_TBTXTCHANGED, 0, 0)
             
         case CM_TBTXTCHANGED :
             if tb.text_changed != nil {
@@ -383,7 +383,7 @@ create_textbox :: proc(tb : ^TextBox) {
 
         
         
-        //case : return def_subclass_proc(hw, msg, wp, lp)
+        //case : return DefSubclassProc(hw, msg, wp, lp)
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }

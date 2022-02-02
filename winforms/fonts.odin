@@ -48,14 +48,14 @@ new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
 
 
-create_font_handle :: proc(fnt : ^Font, hw : Hwnd = nil)
+CreateFont_handle :: proc(fnt : ^Font, hw : Hwnd = nil)
 {	
 	if fnt.bold {fnt._weight = 600}
-	dc_hwnd : Hdc = get_dc(hw)
-	font_height : i32 = mul_div(i32(fnt.size), get_device_caps(dc_hwnd, LOGPIXELSY), 72)
-	release_dc(hw, dc_hwnd)
+	dc_hwnd : Hdc = GetDC(hw)
+	font_height : i32 = MulDiv(i32(fnt.size), GetDeviceCaps(dc_hwnd, LOGPIXELSY), 72)
+	ReleaseDC(hw, dc_hwnd)
 	b_value := bool(false)
-	fnt.handle = create_font(font_height, 0, 0, 0, i32(fnt._weight), Dword(fnt.italics),
+	fnt.handle = CreateFont(font_height, 0, 0, 0, i32(fnt._weight), Dword(fnt.italics),
 								Dword(fnt.underline), 
 								Dword(b_value), 
 								Dword(1),

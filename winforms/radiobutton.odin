@@ -6,15 +6,21 @@
 
 package winforms
 import "core:runtime"
+//import "core:fmt"
 
 rb_count : int
 WcRadioBtnClassW := to_wstring("Button")
 RadioButton :: struct {
     using control : Control,
     text_alignment : enum {left, right},
+    checked : bool,
+    check_on_click : bool,
 
     _hbrush : Hbrush,
     _txt_style : Uint,
+
+    state_changed : EventHandler,
+    
 
 }
 
@@ -28,6 +34,7 @@ RadioButton :: struct {
     rb.ypos = y
     rb.width = w
     rb.height = h
+    rb.check_on_click = true
     rb.back_color = f.back_color
     rb.fore_color = def_fore_clr
     rb._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON 
@@ -60,14 +67,46 @@ new_radiobutton :: proc{new_rb1, new_rb2, new_rb3}
     return rb
 }
 
+@private rb_adjust_styles :: proc(rb : ^RadioButton) {
+    if !rb.check_on_click do rb._style ~= BS_AUTORADIOBUTTON
+    //if rb.text_alignment = .right do rb. 
+}
+
+radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool) {
+    state := 0x0001 if bstate else 0x0000
+    SendMessage(rb.handle, BM_SETCHECK, Wparam(state), 0)
+}
+
+radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) {
+    ready_to_change : bool
+    if auto_check {        
+         if !rb.check_on_click {
+            rb._style =  WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON          
+            rb.check_on_click = true
+            ready_to_change = true
+        }
+    } else {
+       if rb.check_on_click {
+            rb._style = WS_VISIBLE | WS_CHILD  | BS_RADIOBUTTON            
+            rb.check_on_click = false
+            ready_to_change = true
+        }
+    }
+    if ready_to_change {
+        SetWindowLongPtr(rb.handle, GWL_STYLE, LongPtr(rb._style))
+        InvalidateRect(rb.handle, nil, true)
+    }
+}
+
+
 
 
 // Create the handle of a progress bar
 create_radiobutton :: proc(rb : ^RadioButton) {
     _global_ctl_id += 1
     rb.control_id = _global_ctl_id 
-    //rb_adjust_styles(rb)
-    rb.handle = create_window_ex(   rb._ex_style, 
+    rb_adjust_styles(rb)
+    rb.handle = CreateWindowEx(   rb._ex_style, 
                                     WcRadioBtnClassW, 
                                     to_wstring(rb.text),
                                     rb._style, 
@@ -84,7 +123,9 @@ create_radiobutton :: proc(rb : ^RadioButton) {
         rb._is_created = true
         set_subclass(rb, rb_wnd_proc) 
         setfont_internal(rb)
-        //rb_set_range_internal(rb)
+        if rb.checked {
+            SendMessage(rb.handle, BM_SETCHECK, Wparam(0x0001), 0)
+        }
         
  
     }
@@ -100,11 +141,101 @@ create_radiobutton :: proc(rb : ^RadioButton) {
             rb_dtor(rb)
             remove_subclass(rb)
 
+        case CM_CTLCOMMAND :
+            if hiword_wparam(wp) == 0 {
+                rb.checked = bool(SendMessage(rb.handle, BM_GETCHECK, 0, 0))
+                if rb.state_changed != nil {
+                    ea := new_event_args()
+                    rb.state_changed(rb, &ea)                    
+                }
+            }
+         case WM_LBUTTONDOWN:                      
+            rb._mdown_happened = true
+            if rb.left_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                rb.left_mouse_down(rb, &mea)
+                return 0
+            }
+
+        case WM_RBUTTONDOWN:
+            rb._mrdown_happened = true
+            if rb.right_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                rb.right_mouse_down(rb, &mea)
+            }
+        case WM_LBUTTONUP :                           
+            if rb.left_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                rb.left_mouse_up(rb, &mea)
+            }
+            if rb._mdown_happened do SendMessage(rb.handle, CM_LMOUSECLICK, 0, 0)
+
+        case CM_LMOUSECLICK :
+            if rb.mouse_click != nil {
+                ea := new_event_args()
+                rb.mouse_click(rb, &ea)
+                return 0
+            }        
+
+        case WM_LBUTTONDBLCLK :
+            rb._mdown_happened = false
+            if rb.double_click != nil {
+                ea := new_event_args()
+                rb.double_click(rb, &ea)
+                return 0
+            }
+
+        case WM_RBUTTONUP :
+            if rb.right_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                rb.right_mouse_up(rb, &mea)
+            }
+            if rb._mrdown_happened do SendMessage(rb.handle, CM_RMOUSECLICK, 0, 0)
+        
+        case CM_RMOUSECLICK :
+            rb._mrdown_happened = false
+            if rb.right_click != nil {
+                ea := new_event_args()
+                rb.right_click(rb, &ea)
+                return 0
+            }        			
+
+        case WM_MOUSEHWHEEL:
+            if rb.mouse_scroll != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                rb.mouse_scroll(rb, &mea)
+            }	
+        case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
+            if rb._is_mouse_entered {
+                if rb.mouse_move != nil {
+                    mea := new_mouse_event_args(msg, wp, lp)
+                    rb.mouse_move(rb, &mea)                    
+                }
+            }
+            else {
+                rb._is_mouse_entered = true
+                if rb.mouse_enter != nil  {
+                    ea := new_event_args()
+                    rb.mouse_enter(rb, &ea)                    
+                }
+            }
+        //end case--------------------
+
+        case WM_MOUSELEAVE :
+            rb._is_mouse_entered = false
+            if rb.mouse_leave != nil {               
+                ea := new_event_args()
+                rb.mouse_leave(rb, &ea)                
+            }
+        
+        
+
+
         case CM_CTLLCOLOR :
             hdc := direct_cast(wp, Hdc)
-            set_bk_mode(hdc, Transparent)           
-            //set_bk_color(hdc, get_color_ref(rb.back_color))            
-            rb._hbrush = create_solid_brush(get_color_ref(rb.back_color))
+            SetBkMode(hdc, Transparent)           
+            //SetBackColor(hdc, get_color_ref(rb.back_color))            
+            rb._hbrush = CreateSolidBrush(get_color_ref(rb.back_color))
             return to_lresult(rb._hbrush)
 
          case CM_NOTIFY :
@@ -118,8 +249,8 @@ create_radiobutton :: proc(rb : ^RadioButton) {
                     if rb.text_alignment == .left{
                         rct.left += 18 
                     } else do rct.right -= 18   
-                    set_text_color(nmcd.hdc, cref) 
-                    draw_text(nmcd.hdc, to_wstring(rb.text), -1, &rct, rb._txt_style)    
+                    SetTextColor(nmcd.hdc, cref) 
+                    DrawText(nmcd.hdc, to_wstring(rb.text), -1, &rct, rb._txt_style)    
                     
                     return CDRF_SKIPDEFAULT                
             }
@@ -127,5 +258,5 @@ create_radiobutton :: proc(rb : ^RadioButton) {
         
 
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }

@@ -76,7 +76,7 @@ Control :: struct {
 @private control_cast :: proc($T : typeid, refd : DwordPtr) -> ^T { return cast(^T) (cast(uintptr) refd) }
 
 @private set_subclass :: proc(ctl : ^Control, fn_ptr : SUBCLASSPROC ) {
-	set_windows_subclass(ctl.handle, fn_ptr, UintPtr(_global_subclass_id), to_dwptr(ctl) )
+	SetWindowSubclass(ctl.handle, fn_ptr, UintPtr(_global_subclass_id), to_dwptr(ctl) )
 	ctl._subclass_id = _global_subclass_id
 	ctl._wndproc_ptr = fn_ptr
 	_global_subclass_id += 1
@@ -85,14 +85,14 @@ Control :: struct {
 
 
 @private remove_subclass :: proc(ctl : ^Control) { // This will get called when control's wndproc receive wm_destroy message.
-	remove_window_subclass(ctl.handle, ctl._wndproc_ptr, UintPtr(ctl._subclass_id) )
+	RemoveWindowSubclass(ctl.handle, ctl._wndproc_ptr, UintPtr(ctl._subclass_id) )
 	//ptf("Removed control - %s\n", ctl.kind)
 }
 
 // This is used to set the defualt font right creating the control handle.
 @private setfont_internal :: proc(ctl : ^Control) {
-	if ctl.font.handle != ctl.parent.font.handle do create_font_handle(&ctl.font, ctl.handle)
-	send_message(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
+	if ctl.font.handle != ctl.parent.font.handle do CreateFont_handle(&ctl.font, ctl.handle)
+	SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
 }
 
 // Enable or disable a control or form.
@@ -100,9 +100,9 @@ control_enable :: proc(ctl : ^Control, bstate : bool) {
 	ctl.enabled = bstate
 	#partial switch ctl.kind {
 		case .number_picker :			
-			send_message(ctl.handle, WM_ENABLE, Wparam(bstate), 0)			
+			SendMessage(ctl.handle, WM_ENABLE, Wparam(bstate), 0)			
 		case :
-			enable_window(ctl.handle, bstate)
+			EnableWindow(ctl.handle, bstate)
 	} 	
 }
 
@@ -113,10 +113,10 @@ control_visibile :: proc(ctl : ^Control, bstate : bool) {
 	#partial switch ctl.kind {
 		case .number_picker :			
 			np := direct_cast(ctl, ^NumberPicker)		
-			showing_window(np.handle, flag)	
-			showing_window(np._buddy_handle, flag)
+			ShowWindow(np.handle, flag)	
+			ShowWindow(np._buddy_handle, flag)
 		case :
-			showing_window(ctl.handle, flag)
+			ShowWindow(ctl.handle, flag)
 	} 
 }
 
@@ -131,8 +131,8 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : bool = fal
 	underline = fu
 	_def_font_changed = true	
 	if ctl.handle != nil { // Only set the font if control handle is created.
-		create_font_handle(&ctl.font, ctl.handle) 
-		send_message(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
+		CreateFont_handle(&ctl.font, ctl.handle) 
+		SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
 		if ctl.kind == .label { // Label need special care only because of the autosize property
 			lb := cast(^Label) ctl
 			if lb.auto_size do set_label_size(lb)
@@ -144,14 +144,14 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : bool = fal
 control_set_position :: proc(ctl : ^Control, x, y : int) {
 	mx : int = ctl.xpos if x == 0 else x 
 	my : int = ctl.ypos if y == 0 else y
-	set_window_pos(ctl.handle, nil, i32(mx), i32(my), 0, 0, SWP_NOSIZE | SWP_NOZORDER)
+	SetWindowPos(ctl.handle, nil, i32(mx), i32(my), 0, 0, SWP_NOSIZE | SWP_NOZORDER)
 }
 
 // To set the size of the control or form
 control_set_size :: proc(ctl : ^Control, width, height : int) {
 	mw : int = ctl.width if width == 0 else width
 	mh : int = ctl.height if height == 0 else height
-	set_window_pos(ctl.handle, nil, 0, 0, i32(mw), i32(mh),SWP_NOMOVE | SWP_NOZORDER)
+	SetWindowPos(ctl.handle, nil, 0, 0, i32(mw), i32(mh),SWP_NOMOVE | SWP_NOZORDER)
 }
 
 // To set the text of the control or form. 
@@ -163,7 +163,7 @@ control_set_text :: proc(ctl : ^Control, txt : string) {
 			lb := cast(^Label) ctl
 			if lb.auto_size do set_label_size(lb)
 		}
-		set_window_text(ctl.handle, to_wstring(txt))
+		SetWindowText(ctl.handle, to_wstring(txt))
 	}
 }
 		 
@@ -171,22 +171,22 @@ control_set_text :: proc(ctl : ^Control, txt : string) {
 // To get the text from the control or form. 
 // Note :- This is not applicable for all controls.
 control_get_text :: proc(ctl : Control, alloc := context.allocator) -> string {	 
-	tlen := get_window_text_length(ctl.handle) 	
+	tlen := GetWindowTextLength(ctl.handle) 	
 	mem_chunks := make([]Wchar, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
 	defer delete(mem_chunks)	
-	get_window_text(ctl.handle, wsBuffer, i32(len(mem_chunks)))
+	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))
 	return wstring_to_utf8(wsBuffer, -1)	
 }
 
 // To get the text from a control or form as a wstring.
 // Note :- This is not applicable for all controls.
 control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u16 {	 
-	tlen := get_window_text_length(ctl.handle) 	
+	tlen := GetWindowTextLength(ctl.handle) 	
 	mem_chunks := make([]Wchar, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
 	defer delete(mem_chunks)	
-	get_window_text(ctl.handle, wsBuffer, i32(len(mem_chunks)))	
+	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))	
 	return wsBuffer[:tlen]	
 }
 
@@ -201,7 +201,7 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 		case : // For all other controls
 			ctl.clr_changed = true
 			ctl.back_color = clr
-			if ctl._is_created do invalidate_rect(ctl.handle, nil, true)
+			if ctl._is_created do InvalidateRect(ctl.handle, nil, true)
 	}
 }
 
@@ -228,7 +228,7 @@ control_set_back_color :: proc{set_back_color1, set_back_color2}
 
 		case : // for all other controls
 			ctl.fore_color = clr
-			if ctl._is_created do invalidate_rect(ctl.handle, nil, true)
+			if ctl._is_created do InvalidateRect(ctl.handle, nil, true)
 			
 	}
 }
@@ -248,17 +248,17 @@ control_set_fore_color :: proc{set_fore_color1, set_fore_color2}
 //--------------------------------------------------------------
 
 // Writen to set a control's focus, but it seems not working.
-control_set_focus :: proc(ctl : Control) {
+control_SetFocus :: proc(ctl : Control) {
 	// This is not working as i intented. This will erase the text box's back color.
 	// I don't know how to fix this. 
-	//curr_hw := get_focus()
-	set_focus(ctl.handle)
-	//send_message(hw, WM_UPDATEUISTATE, Wparam(0x10002), 0)
-	//send_message(ctl.handle, WM_SETFOCUS, direct_cast(0, Wparam), 0)
+	//curr_hw := GetFocus()
+	SetFocus(ctl.handle)
+	//SendMessage(hw, WM_UPDATEUISTATE, Wparam(0x10002), 0)
+	//SendMessage(ctl.handle, WM_SETFOCUS, direct_cast(0, Wparam), 0)
 	// mdw := Wparam(make_dword(2, 0x1))
-    // send_message(ctl.handle, WM_UPDATEUISTATE, mdw, 0)
+    // SendMessage(ctl.handle, WM_UPDATEUISTATE, mdw, 0)
 	//  mdw := Wparam(make_dword(1, 0x4 | 0x1))
-    //          send_message(ctl.handle, WM_CHANGEUISTATE, mdw, 0)
+    //          SendMessage(ctl.handle, WM_CHANGEUISTATE, mdw, 0)
     //         ptf("low word - %d, hi word - %d\n", loword_wparam(mdw), hiword_wparam(mdw))
 	
 }

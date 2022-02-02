@@ -63,7 +63,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
     _global_ctl_id += 1
     cb.control_id = _global_ctl_id    
     adjust_style(cb)
-    cb.handle = create_window_ex(   cb._ex_style, 
+    cb.handle = CreateWindowEx(   cb._ex_style, 
                                     to_wstring("Button"),
                                     to_wstring(cb.text),
                                     cb._style, 
@@ -103,15 +103,15 @@ create_checkbox :: proc(cb : ^CheckBox) {
         case WM_PAINT :
             if cb.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 cb.paint(cb, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
 
         case CM_CTLCOMMAND :
-            cb.checked = cast(bool) send_message(hw, BM_GETCHECK, 0, 0)              
+            cb.checked = cast(bool) SendMessage(hw, BM_GETCHECK, 0, 0)              
             if cb.check_changed != nil {
                 ea := new_event_args()
                 cb.check_changed(cb, &ea)
@@ -119,8 +119,8 @@ create_checkbox :: proc(cb : ^CheckBox) {
         case CM_CTLLCOLOR :           
             hd := direct_cast(wp, Hdc)
             bkref := get_color_ref(cb.back_color)             
-            set_bk_mode(hd, transparent)
-            if cb._bk_brush == nil do cb._bk_brush = create_solid_brush(bkref)
+            SetBkMode(hd, transparent)
+            if cb._bk_brush == nil do cb._bk_brush = CreateSolidBrush(bkref)
             return to_lresult(cb._bk_brush)
 
         case CM_NOTIFY :
@@ -134,8 +134,8 @@ create_checkbox :: proc(cb : ^CheckBox) {
                     if cb.text_alignment == .left{
                         rct.left += 18 
                     } else do rct.right -= 18   
-                    set_text_color(nmcd.hdc, cref) 
-                    draw_text(nmcd.hdc, to_wstring(cb.text), -1, &rct, cb._txt_style)    
+                    SetTextColor(nmcd.hdc, cref) 
+                    DrawText(nmcd.hdc, to_wstring(cb.text), -1, &rct, cb._txt_style)    
                     
                     return CDRF_SKIPDEFAULT                
             }
@@ -159,7 +159,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.left_mouse_up(cb, &mea)
             }
-            if cb._mdown_happened do send_message(cb.handle, CM_LMOUSECLICK, 0, 0)
+            if cb._mdown_happened do SendMessage(cb.handle, CM_LMOUSECLICK, 0, 0)
 
         case CM_LMOUSECLICK :
             if cb.mouse_click != nil {
@@ -181,7 +181,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.right_mouse_up(cb, &mea)
             }
-            if cb._mrdown_happened do send_message(cb.handle, CM_RMOUSECLICK, 0, 0)
+            if cb._mrdown_happened do SendMessage(cb.handle, CM_RMOUSECLICK, 0, 0)
         
         case CM_RMOUSECLICK :
             cb._mrdown_happened = false
@@ -224,7 +224,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
             cb_dtor(cb)
             remove_subclass(cb)
 
-        case : return def_subclass_proc(hw, msg, wp, lp)
+        case : return DefSubclassProc(hw, msg, wp, lp)
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }

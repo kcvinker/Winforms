@@ -47,6 +47,7 @@ Hrawinput :: distinct Handle
 Hresult   :: distinct i32
 Hkl       :: distinct Handle
 Hrgn	  :: distinct Handle
+Htheme	  :: distinct Handle
 Wparam    :: distinct UintPtr
 Lparam    :: distinct LongPtr
 Lresult   :: distinct LongPtr
@@ -78,7 +79,7 @@ Point :: struct { x, y: i32,}
 
 Msg :: struct {hwnd: Hwnd, message: u32, wparam: Wparam, lparam: Lparam, time: u32, pt: Point,}
 
-TrackMouseEvent :: struct {
+TRACKMOUSEEVENT :: struct {
 	cbSize : Dword,
 	dwFlags : Dword,
 	hwndTrack : Hwnd,
@@ -161,4 +162,10 @@ SYSTEMTIME :: struct{
 	wMinute,
 	wSecond,
 	wMilliseconds : Word,
+}
+
+DTBGOPTS :: struct {
+	dwSize : Dword,
+	dwFlags : Dword,
+	rcClip : Rect,	
 }

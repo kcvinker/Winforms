@@ -73,7 +73,7 @@ create_button :: proc(btn : ^Button) -> bool {
 	_global_ctl_id += 1
 	btn.control_id = _global_ctl_id
 	if btn._draw_mode == .default do check_initial_color_change(btn)	
-	btn.handle = create_window_ex(  btn._ex_style, 
+	btn.handle = CreateWindowEx(  btn._ex_style, 
 									WcButtonW, //to_wstring("Button"), 
 									to_wstring(btn.text),
                                     btn._style, 
@@ -120,9 +120,9 @@ create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
 @private set_fore_color_internal :: proc(btn : ^Button, ncd : ^NMCUSTOMDRAW) -> Lresult {			
 	cref := get_color_ref(btn.fore_color)
 	btxt := to_wstring(btn.text)		
-	set_text_color(ncd.hdc, cref)	
-	set_bk_mode(ncd.hdc, 1)
-	draw_text(ncd.hdc, btxt, -1, &ncd.rc, txt_flag)	
+	SetTextColor(ncd.hdc, cref)	
+	SetBkMode(ncd.hdc, 1)
+	DrawText(ncd.hdc, btxt, -1, &ncd.rc, txt_flag)	
 	return CDRF_NOTIFYPOSTPAINT	 
 }
 
@@ -157,22 +157,22 @@ create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
 }
 
 @private draw_back_color :: proc(hd : Hdc, rct : ^Rect, clr : ColorRef, rc_size : i32 = -3) {	
-	hbr := create_solid_brush(clr)
-	select_object(hd, to_hgdi_obj(hbr))	
+	hbr := CreateSolidBrush(clr)
+	SelectObject(hd, to_hgdi_obj(hbr))	
 	tmp_rct : ^Rect = rct
-	if rc_size != 0 do inflate_rect(tmp_rct, rc_size, rc_size)	
-	fill_rect(hd, tmp_rct, hbr)
-	delete_object(to_hgdi_obj(hbr))
+	if rc_size != 0 do InflateRect(tmp_rct, rc_size, rc_size)	
+	FillRect(hd, tmp_rct, hbr)
+	DeleteObject(to_hgdi_obj(hbr))
 }
 
 @private draw_frame :: proc(hd : Hdc, rct : ^Rect, clr : uint, pen_width : i32, rc_size : i32 = 1) {
 	trc : ^Rect = rct
-	inflate_rect(trc, rc_size, rc_size )
+	InflateRect(trc, rc_size, rc_size )
 	clr := change_color(clr, 0.5) //  find a way to get the color which is matching to button back color.
-	frame_pen := create_pen(PS_SOLID, pen_width, clr)
-	select_object(hd, to_hgdi_obj(frame_pen))
-	draw_rectangle(hd, trc.left, trc.top, trc.right, trc.bottom)
-	delete_object(to_hgdi_obj(frame_pen))
+	frame_pen := CreatePen(PS_SOLID, pen_width, clr)
+	SelectObject(hd, to_hgdi_obj(frame_pen))
+	Rectangle(hd, trc.left, trc.top, trc.right, trc.bottom)
+	DeleteObject(to_hgdi_obj(frame_pen))
 }
 
 @private set_button_forecolor :: proc(btn : ^ Button, clr : uint) {	// Public version of this function is in control.odin
@@ -186,7 +186,7 @@ create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
 		case : btn._draw_mode = .text_only
 	}
 	btn.fore_color = clr	
-	if btn._is_created do invalidate_rect(btn.handle, nil, true)	
+	if btn._is_created do InvalidateRect(btn.handle, nil, true)	
 }
 
 @private set_button_backcolor :: proc(btn : ^Button, clr : uint) {  // Public version of this function is in control.odin
@@ -202,7 +202,7 @@ create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
 		case : btn._draw_mode = .bg_only
 	}
 	btn.back_color = clr	
-	if btn._is_created do invalidate_rect(btn.handle, nil, true)
+	if btn._is_created do InvalidateRect(btn.handle, nil, true)
 }
 
 // Set gradient colors for a button.
@@ -219,7 +219,7 @@ set_button_gradient :: proc(btn : ^Button, clr1, clr2 : uint, style : GradientSt
     btn._gradient_color.color1 = new_rgb_color(clr1)
     btn._gradient_color.color2 = new_rgb_color(clr2)   
     btn._gradient_style = style	
-    if btn._is_created do invalidate_rect(btn.handle, nil, true)
+    if btn._is_created do InvalidateRect(btn.handle, nil, true)
 	//print("draw mode in sgb func - ", btn._draw_mode)
 }
 
@@ -254,20 +254,20 @@ set_button_gradient :: proc(btn : ^Button, clr1, clr2 : uint, style : GradientSt
 @private 
 paint_with_gradient_brush :: proc(grc : GradientColors, grs : GradientStyle, hd : Hdc, rc : Rect, rc_size : i32) {
 	rct : Rect = rc
-	if rc_size != 0 do inflate_rect(&rct, rc_size, rc_size)
+	if rc_size != 0 do InflateRect(&rct, rc_size, rc_size)
 	gr_brush := create_gradient_brush(grc, grs, hd, rct)
-	fill_rect(hd, &rct, gr_brush)
-	delete_object(to_hgdi_obj(gr_brush))
+	FillRect(hd, &rct, gr_brush)
+	DeleteObject(to_hgdi_obj(gr_brush))
 }
 
 @private 
 draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw : i32 = 2) {
 	rct := rc
-	if rc_size != 0 do inflate_rect(&rct, rc_size, rc_size )	
+	if rc_size != 0 do InflateRect(&rct, rc_size, rc_size )	
 	clr := change_color_get_uint(rgbc, 0.5)
-	frame_pen := create_pen(PS_SOLID, pw, clr)	
+	frame_pen := CreatePen(PS_SOLID, pw, clr)	
 	select_gdi_object(hd, frame_pen)	
-	draw_rectangle(hd, rct.left, rct.top, rct.right, rct.bottom)
+	Rectangle(hd, rct.left, rct.top, rct.right, rct.bottom)
 	delete_gdi_object(frame_pen)
 }
 
@@ -281,10 +281,10 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 		case WM_PAINT :
             if btn.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 btn.paint(btn, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
 		case WM_SETFOCUS:			
@@ -322,7 +322,7 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.left_mouse_up(btn, &mea)
 			}
-			if btn._mdown_happened do send_message(btn.handle, CM_LMOUSECLICK, 0, 0)
+			if btn._mdown_happened do SendMessage(btn.handle, CM_LMOUSECLICK, 0, 0)
 			
 		case CM_LMOUSECLICK :
 			btn._mdown_happened = false	
@@ -338,7 +338,7 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.right_mouse_up(btn, &mea)
 			}
-			if btn._mrdown_happened do send_message(btn.handle, CM_RMOUSECLICK, 0, 0)
+			if btn._mrdown_happened do SendMessage(btn.handle, CM_RMOUSECLICK, 0, 0)
 			 
 		case CM_RMOUSECLICK :
 			btn._mrdown_happened = false
@@ -397,9 +397,9 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 		case WM_DESTROY:
 			remove_subclass(btn)
 
-		case : return def_subclass_proc(hw, msg, wp, lp)
+		case : return DefSubclassProc(hw, msg, wp, lp)
 			
 			
 	}
-	return def_subclass_proc(hw, msg, wp, lp)
+	return DefSubclassProc(hw, msg, wp, lp)
 }

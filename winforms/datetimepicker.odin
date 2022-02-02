@@ -144,7 +144,7 @@ DateTimePicker :: struct {
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
         is_dtp_class_inited = true
         app.iccx.dwIcc = ICC_DATE_CLASSES
-        init_comm_ctrl_ex(&app.iccx)
+        InitCommonControlsEx(&app.iccx)
     }
 
     dtp : DateTimePicker
@@ -207,7 +207,7 @@ new_datetimepicker :: proc{new_dtp1, new_dtp2}
 // @private get_dtp_info :: proc(dp : ^DateTimePicker) {
 //     di : DATETIMEPICKERINFO
 //     di.cbSize = size_of(di)
-//     send_message(dp.handle, DTM_GETDATETIMEPICKERINFO, Wparam(0), direct_cast(&di, Lparam ))    
+//     SendMessage(dp.handle, DTM_GETDATETIMEPICKERINFO, Wparam(0), direct_cast(&di, Lparam ))    
 //     using dp._dtp_info
 //     tb_handle = di.hwndEdit
 //     ud_handle = di.hwndUD
@@ -230,7 +230,7 @@ set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
     dtp.format_string = fmt_string
     dtp.format = .custom
     if dtp._is_created {        
-        send_message(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
+        SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
     } 
 }
 
@@ -239,7 +239,7 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
     _global_ctl_id += 1     
     dtp.control_id = _global_ctl_id 
     set_style_internal(dtp)
-    dtp.handle = create_window_ex(  dtp._ex_style, 
+    dtp.handle = CreateWindowEx(  dtp._ex_style, 
                                     to_wstring(dtp_class), 
                                     to_wstring(dtp.text),
                                     dtp._style, 
@@ -259,10 +259,10 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
         setfont_internal(dtp)
         set_subclass(dtp, dtp_wnd_proc) 
         if dtp.format == .custom {          
-            send_message(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
+            SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
         }  
         if dtp._cal_style > 0 {
-            send_message(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
+            SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
         } 
         //print("month cal style - ", mst)
         //print_dtpinfo(dtp._dtp_info)
@@ -278,10 +278,10 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
         case WM_PAINT :
             if dtp.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 dtp.paint(dtp, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
 
@@ -295,7 +295,7 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
                         dtea.date_string = wstring_to_utf8(dts.pszUserString, -1)
                         dtp.text_changed(dtp, &dtea )
                         // After invoking the event, send this message to set the time in dtp
-                        if dtea.handled do send_message(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&dtea.dt_struct, Lparam))
+                        if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&dtea.dt_struct, Lparam))
                     }
                 case DTN_DROPDOWN :
                     if dtp.calendar_opened != nil {
@@ -349,7 +349,7 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.left_mouse_up(dtp, &mea)
             }
-            if dtp._mdown_happened do send_message(dtp.handle, CM_LMOUSECLICK, 0, 0)             
+            if dtp._mdown_happened do SendMessage(dtp.handle, CM_LMOUSECLICK, 0, 0)             
 
         case CM_LMOUSECLICK :
             dtp._mdown_happened = false
@@ -371,7 +371,7 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.right_mouse_up(dtp, &mea)
             }
-            if dtp._mrdown_happened do send_message(dtp.handle, CM_RMOUSECLICK, 0, 0) 
+            if dtp._mrdown_happened do SendMessage(dtp.handle, CM_RMOUSECLICK, 0, 0) 
             
         case CM_RMOUSECLICK :
             dtp._mrdown_happened = false
@@ -412,9 +412,9 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
         
            
 
-        case : return def_subclass_proc(hw, msg, wp, lp)
+        case : return DefSubclassProc(hw, msg, wp, lp)
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }
 
 

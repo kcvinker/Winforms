@@ -17,6 +17,7 @@ ComboBox :: struct {
 
     _bk_brush : Hbrush,
     _old_hwnd : Hwnd,
+    _hbrush : Hbrush,
 
     selection_changed,
     selection_committed,
@@ -44,7 +45,7 @@ ComboInfo :: struct {
 @private get_combo_info :: proc(cmb : ^ComboBox)  {
     cmInfo : COMBOBOXINFO
     cmInfo.cbSize = size_of(cmInfo)    
-    send_message(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cmInfo, Lparam))
+    SendMessage(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cmInfo, Lparam))
     bval : b64 = true if cmb.combo_style == .lb_combo else false
     ci := ComboInfo{cmInfo.hwndList, cmInfo.hwndItem, cmb.handle, bval}
     append(&cmb.parent._combo_list, ci)
@@ -56,7 +57,7 @@ ComboInfo :: struct {
 @private update_combo_info :: proc(cmb : ^ComboBox) {
     cbi : COMBOBOXINFO
     cbi.cbSize = size_of(cbi)    
-    send_message(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cbi, Lparam))
+    SendMessage(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cbi, Lparam))
     for ci in &cmb.parent._combo_list {
         if ci.combo_handle == cmb._old_hwnd {
             ci.lb_handle = cbi.hwndList
@@ -83,7 +84,7 @@ ComboInfo :: struct {
     cmb._ex_style = 0
     cmb.selected_index = -1
     cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN 
-    cmb._ex_style =  WS_EX_LTRREADING | WS_EX_LEFT 
+    cmb._ex_style = WS_EX_CLIENTEDGE    // WS_EX_WINDOWEDGE WS_EX_STATICEDGE
     //cmb._txt_style = DT_SINGLELINE | DT_VCENTER 
     return cmb
 }
@@ -105,6 +106,7 @@ new_combobox :: proc{new_combo1, new_combo2}
     if !cmb.p_recreate_enabled {
         delete_gdi_object(cmb.font.handle)
         delete_gdi_object(cmb._bk_brush)
+        delete_gdi_object(cmb._hbrush)
         delete(cmb.items)
     }     
 }
@@ -126,14 +128,14 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
         cmb.combo_style = style   
         cmb.p_recreate_enabled = true  
         sel_indx := combo_get_selected_index(cmb)   
-        destroy_window(cmb.handle)
+        DestroyWindow(cmb.handle)
         recreate_combo(cmb)
         if sel_indx != -1 do combo_set_selected_index(cmb, sel_indx)        
     } 
 }
 
 @private recreate_combo :: proc(cmb : ^ComboBox) {
-    cmb.handle = create_window_ex(  cmb._ex_style, 
+    cmb.handle = CreateWindowEx(  cmb._ex_style, 
                                     to_wstring("ComboBox"), 
                                     to_wstring(cmb.text),
                                     cmb._style, 
@@ -147,7 +149,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
                                     nil )
     if cmb.handle != nil {
         cmb._is_created = true        
-        send_message(cmb.handle, WM_SETFONT, Wparam(cmb.font.handle), Lparam(1))
+        SendMessage(cmb.handle, WM_SETFONT, Wparam(cmb.font.handle), Lparam(1))
         set_subclass(cmb, cmb_wnd_proc) 
         additem_internal(cmb)
         update_combo_info(cmb)
@@ -164,12 +166,12 @@ combo_add_item :: proc(cmb : ^ComboBox, item : $T ) {
     }    
     append(&cmb.items, sitem) 
     if cmb._is_created {
-        send_message(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(sitem), Lparam))
+        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(sitem), Lparam))
     }
 }
 
-combo_open_list :: proc(cmb : ^ComboBox) { send_message(cmb.handle, CB_SHOWDROPDOWN, Wparam(1), 0) }
-combo_close_list :: proc(cmb : ^ComboBox) { send_message(cmb.handle, CB_SHOWDROPDOWN, Wparam(0), 0) }
+combo_open_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, Wparam(1), 0) }
+combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, Wparam(0), 0) }
 
 
 @private add_items2 :: proc(cmb : ^ComboBox, items : ..any ) {    
@@ -177,13 +179,13 @@ combo_close_list :: proc(cmb : ^ComboBox) { send_message(cmb.handle, CB_SHOWDROP
         if value, is_str := i.(string) ; is_str { // Magic -- type assert
             append(&cmb.items, value)
             if cmb._is_created {
-                send_message(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(value), Lparam))
+                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(value), Lparam))
             }
         } else {
             a_string := fmt.tprint(i)
             append(&cmb.items, a_string)
             if cmb._is_created {
-                send_message(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(a_string), Lparam))
+                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(a_string), Lparam))
             }
         }
     }          
@@ -207,43 +209,43 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T ) {
 
 @private additem_internal :: proc(cmb : ^ComboBox) {
     for i in cmb.items {
-        send_message(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(i), Lparam))
+        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(i), Lparam))
     }
 }
 
 combo_get_selected_index :: proc(cmb : ^ComboBox) -> int {
-    cmb.selected_index = int(send_message(cmb.handle, CB_GETCURSEL, 0, 0))
+    cmb.selected_index = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     return cmb.selected_index
 }
 
 combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)  {
-    send_message(cmb.handle, CB_SETCURSEL, Wparam(i32(indx)), 0)
+    SendMessage(cmb.handle, CB_SETCURSEL, Wparam(i32(indx)), 0)
     cmb.selected_index = indx
 }
 
 
 combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
-    indx := int(send_message(cmb.handle, CB_GETCURSEL, 0, 0))
+    indx := int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     if indx > -1 {
         return cmb.items[indx]
     } else do return ""    
 }
 
 combo_delete_selected_item :: proc(cmb : ^ComboBox) {
-    indx := i32(send_message(cmb.handle, CB_GETCURSEL, 0, 0))
+    indx := i32(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     if indx > -1 {
-        send_message(cmb.handle, CB_DELETESTRING, Wparam(indx), 0)
+        SendMessage(cmb.handle, CB_DELETESTRING, Wparam(indx), 0)
         ordered_remove(&cmb.items, int(indx))
     } 
 }
 
 combo_delete_item :: proc(cmb : ^ComboBox, indx : int) {
-    send_message(cmb.handle, CB_DELETESTRING, direct_cast(i32(indx), Wparam), 0)
+    SendMessage(cmb.handle, CB_DELETESTRING, direct_cast(i32(indx), Wparam), 0)
     ordered_remove(&cmb.items, indx)    
 }
 
 combo_clear_items :: proc(cmb : ^ComboBox) {
-    send_message(cmb.handle, CB_DELETESTRING, 0, 0)
+    SendMessage(cmb.handle, CB_DELETESTRING, 0, 0)
     // TODO - clear dynamic array of combo.
 }
 
@@ -251,7 +253,7 @@ create_combo :: proc(cmb : ^ComboBox) {
     _global_ctl_id += 1
     cmb.control_id = _global_ctl_id      
     if cmb.combo_style == .lb_combo do cmb._style |= CBS_DROPDOWNLIST
-    cmb.handle = create_window_ex(  cmb._ex_style, 
+    cmb.handle = CreateWindowEx(  cmb._ex_style, 
                                     to_wstring("ComboBox"), 
                                     to_wstring(cmb.text),
                                     cmb._style, 
@@ -288,16 +290,26 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
         case WM_PAINT :
             if cmb.paint != nil {
                 ps : PAINTSTRUCT
-                hdc := begin_paint(hw, &ps)
+                hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
                 cmb.paint(cmb, &pea)
-                end_paint(hw, &ps)
+                EndPaint(hw, &ps)
                 return 0
             }
         case WM_DESTROY:
-
             cmb_dtor(cmb)
             remove_subclass(cmb)
+
+        //case CM_NOTIFY :
+            
+        // case CM_CTLLCOLOR :
+        //     //print("CM_CTLLCOLOR combo")
+        //     hdc := direct_cast(wp, Hdc)
+        //     //SetTextColor(hdc, get_color_ref(cmb.fore_color))
+        //     //SetBackColor(hdc, get_color_ref(cmb.back_color))
+        //     SetBkMode(hdc, Transparent)
+        //     cmb._hbrush = CreateSolidBrush(get_color_ref(cmb.back_color))
+        //     return to_lresult(cmb._hbrush)
 
         case CM_CTLCOMMAND :
             ncode := hiword_wparam(wp)
@@ -358,12 +370,12 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {
                 //print("combo color rcvd")                
                 dc_handle := direct_cast(wp, Hdc)
-                set_bk_mode(dc_handle, Transparent)
-                if cmb.fore_color != def_fore_clr do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
-                if cmb._bk_brush == nil do cmb._bk_brush = create_solid_brush(get_color_ref(cmb.back_color))                 
+                SetBkMode(dc_handle, Transparent)
+                if cmb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.fore_color))                
+                if cmb._bk_brush == nil do cmb._bk_brush = CreateSolidBrush(get_color_ref(cmb.back_color))                 
                 return to_lresult(cmb._bk_brush)
             } else {                
-                if cmb._bk_brush == nil do cmb._bk_brush = create_solid_brush(get_color_ref(cmb.back_color))                 
+                if cmb._bk_brush == nil do cmb._bk_brush = CreateSolidBrush(get_color_ref(cmb.back_color))                 
                 return to_lresult(cmb._bk_brush)
             }
         
@@ -371,9 +383,9 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
         case CM_COMBOTBCOLOR : // We will receive this message only if combo_style == tb_list
             if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {                              
                 dc_handle := direct_cast(wp, Hdc)
-                set_bk_mode(dc_handle, Transparent)
-                if cmb.fore_color != def_fore_clr do set_text_color(dc_handle, get_color_ref(cmb.fore_color))                
-                if cmb._bk_brush == nil do cmb._bk_brush = create_solid_brush(get_color_ref(cmb.back_color))                 
+                SetBkMode(dc_handle, Transparent)
+                if cmb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.fore_color))                
+                if cmb._bk_brush == nil do cmb._bk_brush = CreateSolidBrush(get_color_ref(cmb.back_color))                 
                 return to_lresult(cmb._bk_brush)
             }   
             
@@ -417,7 +429,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             mea := new_mouse_event_args(msg, wp, lp)
             cmb.left_mouse_up(cmb, &mea)
             }
-            if cmb._mdown_happened do send_message(cmb.handle, CM_LMOUSECLICK, 0, 0)
+            if cmb._mdown_happened do SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
 
         case CM_LMOUSECLICK :
             if cmb.mouse_click != nil {
@@ -431,7 +443,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             mea := new_mouse_event_args(msg, wp, lp)
             cmb.right_mouse_up(cmb, &mea)
             }
-            if cmb._mrdown_happened do send_message(cmb.handle, CM_RMOUSECLICK, 0, 0)
+            if cmb._mrdown_happened do SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
 
         case CM_RMOUSECLICK :
             cmb._mrdown_happened = false
@@ -482,7 +494,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
                     cmb.key_up(cmb, &kea)                
                 }
         
-            case : return def_subclass_proc(hw, msg, wp, lp)
+            case : return DefSubclassProc(hw, msg, wp, lp)
     }
-    return def_subclass_proc(hw, msg, wp, lp)
+    return DefSubclassProc(hw, msg, wp, lp)
 }
