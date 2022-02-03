@@ -78,8 +78,7 @@ Form :: struct {
     _cdraw_childs : [dynamic]Hwnd,
     _udraw_ids : map[Uint]Hwnd,
     _combo_list : [dynamic]ComboInfo,
-    _move_started : bool,
-    _size_started : bool,
+   
    
     
     //cb_hwnd : Hwnd,

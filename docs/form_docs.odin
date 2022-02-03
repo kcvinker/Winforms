@@ -10,8 +10,17 @@ Form :: struct {
     // events
     load : EventHandler, // Signature - proc(sender : ^Control, ea : ^EventArgs)
     activate,
-    de_activate : EventHandler,
-    moving, moved : MoveEventHandler, // Signature - proc(sender : ^Control, e : ^MoveEventArgs)
+    de_activate : EventHandler,    
+    moving, moved : EventHandler, 
+    resizing,resized : SizeEventHandler  // Signature - proc(sender : ^Control, e : ^SizeEventArgs)
+        /*
+            SizeEventArgs :: struct {
+                using base : EventArgs,
+                form_rect : ^Rect, // Containsform's current window rect
+                sized_on : SizedPosition, // On which side of the window, the resizng happened.
+                client_area : Area, // Width & height of client area of form.
+            }
+        */
     minimized, 
     maximized, 
     restored, 
