@@ -33,6 +33,7 @@ TimeMode :: enum {nano_sec, micro_sec, milli_sec}
 
 Time :: struct {_nano_sec : i64,}
 SizeIncrement :: struct {width, height : int,}
+Area :: struct {width, height : int,}
 WordValue :: enum {low, high}
 
 current_time_internal :: proc() -> Time {
@@ -71,12 +72,18 @@ current_filetime :: proc(tm : TimeMode) -> i64 {
     c.width = int(ctl_size.width) + c._size_incr.width
     c.height = int(ctl_size.height) + c._size_incr.height       
     MoveWindow(c.handle, i32(c.xpos), i32(c.ypos), i32(c.width), i32(c.height), true )
-	print("ctl size - ", ctl_size)
+	//print("ctl size - ", ctl_size)
 }
 
 @private in_range :: proc(value, min_val, max_val : i32) -> bool {
 	if value > min_val && value < max_val do return true
 	return false
+}
+
+@private alert :: proc(txt : string) {
+	@static cntr : int = 1
+	ptf("%s - [%d]\n", txt, cntr)
+	cntr += 1
 }
 
 concat_number1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}

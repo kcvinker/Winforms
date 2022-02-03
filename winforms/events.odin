@@ -6,7 +6,7 @@ MouseEventHandler :: proc(sender : ^Control, e : ^MouseEventArgs)
 KeyEventHandler :: proc(sender : ^Control, e : ^KeyEventArgs)
 DateTimeEventHandler :: proc(sender : ^Control, e : ^DateTimeEvent)
 PaintEventHandler :: proc(sender : ^Control, e : ^PaintEventArgs)
-MoveEventHandler :: proc(sender : ^Control, e : ^MoveEventArgs)
+SizeEventHandler :: proc(sender : ^Control, e : ^SizeEventArgs)
 LBoxEventHandler :: proc(sender : ^Control, e : string)
 
 
@@ -43,10 +43,14 @@ PaintEventArgs ::  struct {
 
 }
 
-MoveEventArgs :: struct {
+SizeEventArgs :: struct {
     using base : EventArgs,
     form_rect : ^Rect,
-    x, y : int,
+    sized_on : SizedPosition,
+    client_area : Area,
+   // sized_reason : SizedReason,
+    
+    
 }
 
 
@@ -105,21 +109,39 @@ new_paint_event_args :: proc(ps : ^PAINTSTRUCT) -> PaintEventArgs {
     return pea
 }
 
-new_move_event_args :: proc(m : u32, lpm : Lparam) -> MoveEventArgs {
-    mea : MoveEventArgs
-    if m == WM_MOVING {
-        mea.form_rect = direct_cast(lpm, ^Rect)
-        mea.x = int(mea.form_rect.left)
-        mea.y = int(mea.form_rect.top)
+new_size_event_args :: proc(m : u32, wpm : Wparam, lpm : Lparam) -> SizeEventArgs {
+    sea : SizeEventArgs
+    if m == WM_SIZING { // When resizing happening
+        sea.sized_on = SizedPosition(wpm)
+        sea.form_rect = direct_cast(lpm, ^Rect)
     }
-    else {
-        mea.x = get_x_lparam(lpm)
-        mea.y = get_y_lparam(lpm)
+    else { //After resizing finished
+        //sea.sized_reason = SizedReason(wpm)
+        sea.client_area.width = int(loword_lparam(lpm))
+        sea.client_area.height = int(hiword_lparam(lpm))
     }
-    return mea
+    return sea
 }
 //new_datetime_event_args :: proc()
 
+SizedPosition :: enum {
+    left_edge = 1, 
+    right_edge, 
+    top_edge, 
+    top_left_corner,
+    top_right_corner,
+    bottom_edge,
+    bottom_left_corner,
+    bottom_right_corner,
+}
+
+SizedReason :: enum { // It is not using now.
+    on_restored,
+    on_minimized,
+    on_maximized,
+    other_restored,
+    other_maxmizied,
+}
 
 MouseButtons :: enum {
 	none = 0,

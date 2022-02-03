@@ -38,11 +38,9 @@ import  ui "winforms"
     gec : int = 1
 //
 
-main :: proc() {   
+MakeWindow :: proc() {   
     // Old code 
-    track: mem.Tracking_Allocator
-    mem.tracking_allocator_init(&track, context.allocator)
-    context.allocator = mem.tracking_allocator(&track)
+    
     using ui
     { // FORM
         frm = new_form(txt = "Odin is fun")    
@@ -51,6 +49,7 @@ main :: proc() {
         frm.right_click = btn_clk 
         frm.load = form_load 
         frm.mouse_click = frm_click  
+        frm.resizing = frm_resize 
         create_form(&frm)
     }       
 
@@ -195,6 +194,14 @@ main :: proc() {
    
   
     start_form() 
+    
+}
+
+main :: proc() {
+    track: mem.Tracking_Allocator
+    mem.tracking_allocator_init(&track, context.allocator)
+    context.allocator = mem.tracking_allocator(&track)
+    MakeWindow()
     for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
     for bf in track.bad_free_array { ptf("%v allocation %p was freed badly\n", bf.location, bf.memory) }  
     
@@ -253,3 +260,7 @@ grad_btn_click :: proc(s : ^Control, e : ^EventArgs) {
 
 }
 
+frm_resize :: proc(s : ^Control, e : ^ui.SizeEventArgs) {
+    ptf("form.width - %d\nform.height - %d\n", frm.width, frm.height)
+    print("Position being resized - ", e.sized_on)
+}

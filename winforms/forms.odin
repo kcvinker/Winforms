@@ -62,7 +62,8 @@ Form :: struct {
     load : EventHandler,
     activate,
     de_activate : EventHandler,
-    moving, moved : MoveEventHandler, 
+    moving, moved : EventHandler, 
+    resizing,resized : SizeEventHandler,
     
     minimized, 
     maximized, 
@@ -77,6 +78,8 @@ Form :: struct {
     _cdraw_childs : [dynamic]Hwnd,
     _udraw_ids : map[Uint]Hwnd,
     _combo_list : [dynamic]ComboInfo,
+    _move_started : bool,
+    _size_started : bool,
    
     
     //cb_hwnd : Hwnd,
@@ -565,43 +568,64 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 frm.mouse_leave(frm, &ea)
             }
 
-        case WM_SIZING :
-            
-            if frm.size_changing != nil {
-                ea := new_event_args()
-                frm.size_changing(frm, &ea)
+        case WM_SIZING :            
+            sea := new_size_event_args(msg, wp, lp)  
+            frm.width = int(sea.form_rect.right - sea.form_rect.left)
+            frm.height = int(sea.form_rect.bottom - sea.form_rect.top)                    
+            if frm.resizing != nil {                               
+                frm.resizing(frm, &sea)
                 return 1
             }
-        case WM_WINDOWPOSCHANGING:
+            return 1
+        //case WM_WINDOWPOSCHANGING:
+            //alert("Pos changing")
+            /*
             wps := direct_cast(lp, ^WINDOWPOS)
             frm.xpos = int(wps.x)
             frm.ypos = int(wps.y)
             frm.width = int(wps.cx)
             frm.height = int(wps.cy)
+            if frm._size_started {
+                frm._size_started = false
+                if frm.size_changing != nil {
+                    ea := new_event_args()
+                    frm.size_changing(frm, &ea)
+                    return 1
+                }
+            }
+            
         //case WM_WINDOWPOSCHANGED:
-            //wps := direct_cast(lp, ^WINDOWPOS)
+            //alert("Pos changed")
+            //wps := direct_cast(lp, ^WINDOWPOS) */
 
-        case WM_SIZE :
+        case WM_SIZE :            
+            sea := new_size_event_args(msg, wp, lp)            
             if frm.size_changed != nil {
                 ea := new_event_args()
                 frm.size_changed(frm, &ea)
-                return 1
-            }
-        case WM_MOVE :
-           // print("window size - ", frm.xpos, frm.ypos)
-            if frm.moved != nil {
-                mea := new_move_event_args(msg, lp)
-                frm.moved(frm, &mea)
                 return 0
             }
+            return 0
+        case WM_MOVE :                   
+            frm.xpos = get_x_lparam(lp)
+            frm.ypos = get_y_lparam(lp)
+            if frm.moved != nil {
+                ea := new_event_args()
+                frm.moved(frm, &ea)
+                return 0
+            }
+            return 0
 
-        case WM_MOVING :
+        case WM_MOVING :            
+            rct := direct_cast(lp, ^Rect)
+            frm.xpos = int(rct.left)
+            frm.ypos = int(rct.top)
             if frm.moving != nil {
-                mea := new_move_event_args(msg, lp)                
-                frm.moving(frm, &mea)
+                ea := new_event_args()                
+                frm.moving(frm, &ea)
                 return Lresult(1)
             }
-
+            return 0
         case WM_SYSCOMMAND :
             sys_msg := uint(wp & 0xFFF0)
             switch sys_msg {
