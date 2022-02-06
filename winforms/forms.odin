@@ -369,7 +369,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
     frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)   
     //display_msg(msg)
     switch msg {   
-              
+          
 
         // case WM_PARENTNOTIFY :
         //    // display_msg(msg)

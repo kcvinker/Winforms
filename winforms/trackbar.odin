@@ -40,7 +40,7 @@ _def_tkb_height :: 30
 TrackBar :: struct {
     using control : Control,
     orientation : enum {horizontal, vertical},
-    direction : enum {down_side, up_side, left_side, right_side, both_side},
+    tic_pos : enum {down_side, up_side, left_side, right_side, both_side},
     max_position : enum {right, left},
     no_ticks : bool,
     enable_sel_range : bool,
@@ -60,11 +60,6 @@ TrackBar :: struct {
     _tic_count : i32,
 
     value_changed : EventHandler,
-
-
-
-
-
 }
 
 new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
@@ -93,7 +88,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     tkb.max_range = 100
     tkb.frequency = 10
     tkb.jump_distance = 1
-    tkb._style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS | TBS_BOTTOM
+    tkb._style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS 
     tkb._ex_style = 0
     tkb.text = "my track"
     return tkb
@@ -114,21 +109,39 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     return tkb
 }
 
-@private tkb_adjust_styles :: proc(tkb : ^TrackBar) {
-    // TODO
+@private tkb_adjust_styles :: proc(tkb : ^TrackBar) {    
     if tkb.orientation == .vertical {
         tkb._style |= TBS_VERT
-        if tkb.direction == .left_side {
-            tkb._style |= TBS_LEFT        
-        } else do tkb._style |= TBS_RIGHT
+        #partial switch tkb.tic_pos {
+            case .right_side :
+                tkb._style |= TBS_RIGHT
+            case .left_side :
+                tkb._style |= TBS_LEFT
+            case .both_side :
+                tkb._style |= TBS_BOTH 
+            case : 
+                tkb._style |=  TBS_LEFT
+                tkb.tic_pos = .left_side  
+                 
+        }
+    } else {        
+        #partial switch tkb.tic_pos {
+            case .down_side :
+                tkb._style |= TBS_BOTTOM
+            case .up_side :
+                tkb._style |= TBS_TOP  
+            case .both_side :
+                tkb._style |= TBS_BOTH          
+        }
     }
+
 
 }
 
 @private tkb_set_range_internal :: proc(tkb : ^TrackBar) {
     SendMessage(tkb.handle, TBM_SETRANGEMIN, Wparam(1), Lparam(i32(tkb.min_range)))
     SendMessage(tkb.handle, TBM_SETRANGEMAX, Wparam(1), Lparam(i32(tkb.max_range)))
-   // SendMessage(tkb.handle, TBM_SETPAGESIZE, Wparam(0), Lparam(20))
+    SendMessage(tkb.handle, TBM_SETPAGESIZE, Wparam(0), Lparam(tkb.frequency))
    // SendMessage(tkb.handle, TBM_SETLINESIZE, Wparam(0), Lparam(20))
     SendMessage(tkb.handle, TBM_SETTICFREQ, Wparam(i32(tkb.frequency)), Lparam(0))
     SendMessage(tkb.handle, TBM_SETLINESIZE, 0, Lparam(i32(tkb.jump_distance)))
@@ -145,33 +158,105 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     crc : Rect // to store Channel rect
     SendMessage(t.handle, TBM_GETCHANNELRECT, 0, direct_cast(&crc, Lparam))
     trc := get_rect(t.handle) // We need track bar's rect also
-    first_x := crc.left + 5
-    last_x := crc.right - 5
     tics_to_draw := t._tic_count - 2
-    tlength := last_x - first_x // distance between first & last tics
-    distance := tlength / tics_to_draw
-    extra_pts := tlength %% tics_to_draw
+    if t.orientation == .horizontal {
+        first_x : i32 = crc.left + 5
+        last_x : i32 = crc.right - 5
+        tlength := last_x - first_x // distance between first & last tics
+        distance := tlength / tics_to_draw
+        extra_pts := tlength %% tics_to_draw 
+        #partial switch t.tic_pos {            
+            case .down_side :  
+                draw_single_tic(dch, first_x, trc.bottom - 5, trc.bottom - 2)
+                draw_multi_tics(dch, first_x, tics_to_draw, extra_pts, distance, trc.bottom - 5, trc.bottom - 2)
+                draw_single_tic(dch, last_x, trc.bottom - 5, trc.bottom - 2)
+            case .up_side :                               
+                draw_single_tic(dch, first_x, trc.top + 2, trc.top + 5 )
+                draw_multi_tics(dch, first_x, tics_to_draw, extra_pts, distance, trc.top + 2, trc.top + 5)
+                draw_single_tic(dch, last_x, trc.top + 2, trc.top + 5)
+            case .both_side :
+                draw_single_tic(dch, first_x, trc.bottom - 5, trc.bottom - 2)
+                draw_multi_tics(dch, first_x, tics_to_draw, extra_pts, distance, trc.bottom - 5, trc.bottom - 2)
+                draw_single_tic(dch, last_x, trc.bottom - 5, trc.bottom - 2)
 
-    // Draw first tic. This tic is longer than other tics
-    MoveToEx(dch, first_x, trc.bottom - 7, nil)
-    LineTo(dch, first_x, trc.bottom - 2 )
+                draw_single_tic(dch, first_x, trc.top + 2, trc.top + 5 )
+                draw_multi_tics(dch, first_x, tics_to_draw, extra_pts, distance, trc.top + 2, trc.top + 5)
+                draw_single_tic(dch, last_x, trc.top + 2, trc.top + 5)
 
-    start_point := first_x + distance    
-
-    xp : i32 = start_point
-    for _ in 0 ..< tics_to_draw {          
-        if extra_pts > 0 {
-            xp += 1
-            extra_pts -= 1
         }
-        MoveToEx(dch, xp, trc.bottom - 5, nil)
-        LineTo(dch, xp, trc.bottom - 2 ) 
-        xp += distance       
-    }    
+    } else {     // drawing tics in vertical style.
+        
+        first_x : i32 = trc.left + 2
+        //last_x : i32 = trc.bottom - 5
+        first_y := trc.top + 13
+        last_y := trc.bottom - 13
+        tlength := last_y - first_y // distance between first & last tics
+        distance := tlength / tics_to_draw
+        extra_pts := tlength %% tics_to_draw 
+        
+        print("tic to dra - ", tics_to_draw)
+        #partial switch t.tic_pos {            
+            case .left_side :
+                draw_single_tic_vertical(dch, first_x, first_y)
+                draw_multi_tics_vertical(dch, tics_to_draw, distance, extra_pts, first_x, first_y)
+                draw_single_tic_vertical(dch, first_x, last_y)
+            case .right_side :
+                first_x = trc.right - 7                
+                draw_single_tic_vertical(dch, first_x, first_y)
+                draw_multi_tics_vertical(dch, tics_to_draw, distance, extra_pts, first_x, first_y)
+                draw_single_tic_vertical(dch, first_x, last_y)
+            case .both_side :
+                draw_single_tic_vertical(dch, first_x, first_y)
+                draw_multi_tics_vertical(dch, tics_to_draw, distance, extra_pts, first_x, first_y)
+                draw_single_tic_vertical(dch, first_x, last_y)
 
-    // Draw last tic. This tic is longer than other tics
-    MoveToEx(dch, last_x, trc.bottom - 7, nil)
-    LineTo(dch, last_x, trc.bottom - 2 )    
+                right_x := trc.right - 7                
+                draw_single_tic_vertical(dch, right_x, first_y)
+                draw_multi_tics_vertical(dch, tics_to_draw, distance, extra_pts, right_x, first_y)
+                draw_single_tic_vertical(dch, right_x, last_y)
+
+        }
+    }      
+}
+
+@private draw_single_tic :: proc(dch : Hdc, p1, p2, p3 : i32) {
+    MoveToEx(dch, p1, p2, nil)
+    LineTo(dch, p1, p3 )
+}
+
+@private draw_single_tic_vertical :: proc(dch : Hdc, x1, y1 : i32) {
+    MoveToEx(dch, x1, y1, nil)
+    LineTo(dch, x1 + 5, y1 )
+}
+
+@private draw_multi_tics :: proc(dch : Hdc, first_p, count, ex_p, dist, last_p1, last_p2 : i32 ) {     
+    xp : i32 = first_p + dist
+    extras := ex_p 
+    for _ in 0 ..< count {          
+        if extras > 0 {
+            xp += 1
+            extras -= 1
+        }
+
+        MoveToEx(dch, xp, last_p1, nil)
+        LineTo(dch, xp, last_p2 ) 
+        xp += dist       
+    }     
+}
+
+@private draw_multi_tics_vertical :: proc(dch : Hdc, count, dist, ex_p, fx, fy : i32 ) {     
+    yp : i32 = fy + dist
+    extras := ex_p 
+    for _ in 0 ..< count {          
+        if extras > 0 {
+            yp += 1
+            extras -= 1
+        }
+
+        MoveToEx(dch, fx, yp, nil)
+        LineTo(dch, fx + 5, yp ) 
+        yp += dist       
+    }     
 }
 
 
@@ -179,7 +264,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
 create_trackbar :: proc(tkb : ^TrackBar) {
     _global_ctl_id += 1
     tkb.control_id = _global_ctl_id 
-    //tkb_adjust_styles(tkb)
+    tkb_adjust_styles(tkb)
     tkb.handle = CreateWindowEx(   tkb._ex_style, 
                                     WcTrackbarClassW, 
                                     to_wstring(tkb.text),
@@ -201,7 +286,7 @@ create_trackbar :: proc(tkb : ^TrackBar) {
         tkb_set_range_internal(tkb)
         
         // ret := SendMessage(tkb.handle, TBM_GETTIC, 0, 0)
-        print("track bar hwnd - ", tkb.handle)
+       // print("track bar hwnd - ", tkb.handle)
         
     }
 }

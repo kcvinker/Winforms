@@ -182,6 +182,7 @@ create_textbox :: proc(tb : ^TextBox) {
             //     EndPaint(tb.handle, &ps)
             //     return 1
             // }
+        
 
             if tb.paint != nil {
                 ps : PAINTSTRUCT
@@ -190,10 +191,8 @@ create_textbox :: proc(tb : ^TextBox) {
                 tb.paint(tb, &pea)
                 EndPaint(hw, &ps)
                 return 0
-            }
-
+            }       
         
-            
         
 
         case CM_CTLLCOLOR : 

@@ -35,6 +35,7 @@ import  ui "winforms"
     rb : ui.RadioButton
     rb2 : ui.RadioButton
     tkb : ui.TrackBar
+    tkb2 : ui.TrackBar
     cnt : int
     gec : int = 1
 //
@@ -194,8 +195,17 @@ MakeWindow :: proc() {
         //tkb.back_color = goldenrod
        //tkb.channel_color = red
        //tkb.tic_color = red
-       
+       tkb.tic_pos = .down_side       
         create_trackbar(&tkb)
+
+        tkb2 = new_trackbar(&frm, 430, 165, 40, 150)
+        tkb2.orientation = .vertical
+        tkb2.tic_color = blue
+        tkb2.channel_color = maroon
+        tkb2.tic_pos = .both_side
+        tkb2.tic_width = 2
+       // tkb2.default_tics = true
+        create_trackbar(&tkb2)
     }
 
     // a := 8
