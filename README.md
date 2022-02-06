@@ -21,7 +21,8 @@ Currently, it's a work in progress project.
 
 ## Screenshot
 
-![image](https://user-images.githubusercontent.com/8840907/151911285-3f25f3a5-41f6-4637-bc4f-e11df18d2362.png)
+![image](https://user-images.githubusercontent.com/8840907/152684189-b0f2f9ae-40d7-4ccd-b30f-4a94c34e3b6c.png)
+
 
 
 
