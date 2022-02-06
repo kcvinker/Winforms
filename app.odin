@@ -34,6 +34,7 @@ import  ui "winforms"
     pb2 : ui.ProgressBar
     rb : ui.RadioButton
     rb2 : ui.RadioButton
+    tkb : ui.TrackBar
     cnt : int
     gec : int = 1
 //
@@ -103,14 +104,12 @@ MakeWindow :: proc() {
         create_combo(&cmb)
     }
         
-    { // BUTTON1
+    { // BUTTON 1, 2, 3
          b1 = new_button(&frm, "Color Btn", 10, 100)        
         b1.back_color = 0x800080
         b1.fore_color = 0xFFFFFF
         create_button(&b1)
-    }      
 
-    { // Button 2
         b2 := new_button(&frm, "Gradient Btn", 10, 150,)
         set_button_gradient(&b2, 0xDCE35B, 0x45B649)
         b2.mouse_click = grad_btn_click
@@ -190,7 +189,18 @@ MakeWindow :: proc() {
         rb2.fore_color = 0x0000FF
         create_radiobutton(&rb2)
     }
+    {// Trackbar
+        tkb = new_trackbar(&frm, 175, 230, 200, 30)
+        //tkb.back_color = goldenrod
+       //tkb.channel_color = red
+       //tkb.tic_color = red
+       
+        create_trackbar(&tkb)
+    }
 
+    // a := 8
+    // b := 5
+    // print("answer - ", a %% b)
    
   
     start_form() 

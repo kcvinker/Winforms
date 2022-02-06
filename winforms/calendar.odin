@@ -85,7 +85,7 @@ new_calendar :: proc{new_cal1, new_cal2}
     MCGIP_CALENDAR :: 4
     MCGIF_RECT :: 0x2
 
-    NM_RELEASEDCAPTURE :: 4294967280
+    //NM_RELEASEDCAPTURE :: 4294967280
 
 // End of API constants.
 

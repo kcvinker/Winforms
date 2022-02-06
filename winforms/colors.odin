@@ -1,140 +1,142 @@
-
 package winforms
-import "core:fmt"
 
-RgbColor :: struct {red, green, blue : uint,}
-
-@private rgb_color_uint :: proc(clr : uint) -> RgbColor {
-   return _get_rgb_color(clr)
-}
-@private rgb_color_3value :: proc(r, g, b: uint) -> RgbColor {
-   rc : RgbColor
-   rc.red = r
-   rc.green = g
-   rc.blue = b   
-   return rc
-}
-
-@private rgb_from_clrref :: proc(clr : ColorRef) -> RgbColor {
-   rc : RgbColor
-
-   return rc
-}
-
-new_rgb_color :: proc{rgb_color_uint, rgb_color_3value, rgb_from_clrref}
-
-
-_get_rgb_color :: proc(clr : uint) -> RgbColor {
-   rc : RgbColor
-   rc.red = clr >> 16
-   rc.green = (clr & 0x00ff00) >> 8
-   rc.blue = clr & 0x0000ff    
-   return rc   
-}
-
-
-@private get_color_ref1 :: proc(clr : uint) -> ColorRef {
-	rc := _get_rgb_color(clr)
-	rst := (rc.blue << 16) | (rc.green << 8) | rc.red
-	return cast(ColorRef) rst
-}
-@private get_color_ref2 :: proc(r, g, b : uint) -> ColorRef {	
-	return ColorRef((b << 16) | (g << 8) | r)
-	//return cast(ColorRef) rst
-}
-
-@private get_color_ref3 :: proc(rc : RgbColor) -> ColorRef {	
-	return ColorRef((rc.blue << 16) | (rc.green << 8) | rc.red)
-	//return cast(ColorRef) rst
-}
-
-get_color_ref :: proc{get_color_ref1, get_color_ref2, get_color_ref3}
-//---------------------------------------------------------
-
-change_color_uint :: proc(clr : uint, adj : f64) -> RgbColor {
-   rc := new_rgb_color(clr)
-   rc.red = cast(uint) (f64(rc.red) * adj)
-   rc.green = cast(uint) (f64( rc.green) * adj)
-   rc.blue = cast(uint) (f64( rc.blue) * adj)
-   if rc.red > 255 do rc.red = 255
-   if rc.green > 255 do rc.green = 255
-   if rc.blue > 255 do rc.blue = 255
-   return rc
-}
-
-change_color :: proc(clr : uint, adj : f64) -> ColorRef {
-   rc := change_color_uint(clr, adj)
-   crf := get_color_ref(rc)   
-   return crf
-}
-
-change_color_rgb :: proc(rc : ^RgbColor, adj : f64) {   
-   rc.red = cast(uint) (f64(rc.red) * adj)
-   rc.green = cast(uint) (f64( rc.green) * adj)
-   rc.blue = cast(uint) (f64( rc.blue) * adj)
-   if rc.red > 255 do rc.red = 255
-   if rc.green > 255 do rc.green = 255
-   if rc.blue > 255 do rc.blue = 255
-   
-}
-
-change_color_get_uint :: proc(rgbc : RgbColor, adj : f64) -> ColorRef {
-   rc := rgbc
-   rc.red = cast(uint) (f64(rc.red) * adj)
-   rc.green = cast(uint) (f64( rc.green) * adj)
-   rc.blue = cast(uint) (f64( rc.blue) * adj)
-   if rc.red > 255 do rc.red = 255
-   if rc.green > 255 do rc.green = 255
-   if rc.blue > 255 do rc.blue = 255
-   crf := get_color_ref(rc)   
-   return crf
-
-}
-
-change_gradient_color :: proc(gc : GradientColors, adj : f64) -> GradientColors {
-   ngc : GradientColors = gc
-   change_color_rgb(&ngc.color1, adj)
-   change_color_rgb(&ngc.color2, adj) 
-   return ngc  
-}
-
-
-
-
-
-print_rgb:: proc(rc : RgbColor)
-{
-   fmt.println("red - ", rc.red)
-   fmt.println("green - ", rc.green)
-   fmt.println("blue - ", rc.blue)
-}
-
-@private rgb_to_uint1 :: proc(rc : RgbColor) -> uint {
-   clr : uint = ((rc.red & 0xff) << 16) + ((rc.green & 0xff) << 8) + (rc.blue & 0xff)
-   return clr
-}
-
-@private rgb_to_uint2 :: proc(r, g, b : int) -> uint {  
-   ur := cast(uint) r
-   ug := cast(uint) g
-   ub := cast(uint) b
-   clr : uint = ((ur & 0xff) << 16) + ((ug & 0xff) << 8) + (ub & 0xff)
-   return clr
-}
-
-rgb_to_uint :: proc{rgb_to_uint1, rgb_to_uint2}
-
-print_color_uint :: proc(rc :RgbColor){
-   clr : uint = ((rc.red & 0xff) << 16) + ((rc.green & 0xff) << 8) + (rc.blue & 0xff)
-   fmt.printf("Rgb Value - %x\n",clr)
-}
-
-print_rgb_2 :: proc(r, g, b : uint) {
-   print("red = ", r)
-   print("green = ", g)
-   print("blue = ", b)
-   print("---------------------------")
-}
-
-
-// Later install Ouput colorizer & Bookmarks extensions
+alice_blue						:: 0xF0F8FF
+antique_white                    :: 0xFAEBD7
+aqua                            :: 0x00FFFF
+aqua_marine                      :: 0x7FFFD4
+azure                           :: 0xF0FFFF
+beige                           :: 0xF5F5DC
+bisque                          :: 0xFFE4C4
+black                           :: 0x000000
+blanched_almond                  :: 0xFFEBCD
+blue                            :: 0x0000FF
+blue_violet                      :: 0x8A2BE2
+brown                           :: 0xA52A2A
+burly_wood                       :: 0xDEB887
+cadet_blue                       :: 0x5F9EA0
+chartreuse                      :: 0x7FFF00
+chocolate                       :: 0xD2691E
+coral                           :: 0xFF7F50
+cornflower_blue                  :: 0x6495ED
+corn_silk                        :: 0xFFF8DC
+crimson                         :: 0xDC143C
+cyan                            :: 0x00FFFF
+dark_blue                        :: 0x00008B
+dark_cyan                        :: 0x008B8B
+dark_goldenrod                   :: 0xB8860B
+dark_gray                        :: 0xA9A9A9
+dark_green                       :: 0x006400
+dark_khaki                       :: 0xBDB76B
+dark_magenta                     :: 0x8B008B
+dark_olive_green                  :: 0x556B2F
+dark_orange                      :: 0xFF8C00
+dark_orchid                      :: 0x9932CC
+dark_red                         :: 0x8B0000
+dark_salmon                      :: 0xE9967A
+dark_sea_green                    :: 0x8FBC8F
+dark_slate_blue                   :: 0x483D8B
+dark_slate_gray                   :: 0x2F4F4F
+dark_turquoise                   :: 0x00CED1
+dark_violet                      :: 0x9400D3
+deep_pink                        :: 0xFF1493
+deep_sky_blue                     :: 0x00BFFF
+dim_gray                         :: 0x696969
+dodger_blue                      :: 0x1E90FF
+fire_brick                       :: 0xB22222
+floral_white                     :: 0xFFFAF0
+forest_green                     :: 0x228B22
+fuchsia                         :: 0xFF00FF
+gainsboro                       :: 0xDCDCDC
+ghost_white                      :: 0xF8F8FF
+gold                            :: 0xFFD700
+goldenrod                       :: 0xDAA520
+gray                            :: 0x808080
+green                           :: 0x008000
+green_yellow                     :: 0xADFF2F
+honeydew                        :: 0xF0FFF0
+hot_pink                         :: 0xFF69B4
+indian_red                       :: 0xCD5C5C
+indigo                          :: 0x4B0082
+ivory                           :: 0xFFFFF0
+khaki                           :: 0xF0E68C
+lavender                        :: 0xE6E6FA
+lavender_blush                   :: 0xFFF0F5
+lawn_green                       :: 0x7CFC00
+lemon_chiffon                    :: 0xFFFACD
+light_blue                       :: 0xADD8E6
+light_coral                      :: 0xF08080
+light_cyan                       :: 0xE0FFFF
+light_goldenrod_yellow            :: 0xFAFAD2
+light_green                      :: 0x90EE90
+light_grey                       :: 0xD3D3D3
+light_pink                       :: 0xFFB6C1
+light_salmon                     :: 0xFFA07A
+light_sea_green                   :: 0x20B2AA
+light_sky_blue                    :: 0x87CEFA
+light_slate_gray                  :: 0x778899
+light_steel_blue                  :: 0xB0C4DE
+light_yellow                     :: 0xFFFFE0
+lime                            :: 0x00FF00
+lime_green                       :: 0x32CD32
+linen                           :: 0xFAF0E6
+magenta                         :: 0xFF00FF
+maroon                          :: 0x800000
+medium_aqua_marine                :: 0x66CDAA
+medium_blue                      :: 0x0000CD
+medium_orchid                    :: 0xBA55D3
+medium_purple                    :: 0x9370DB
+medium_sea_green                  :: 0x3CB371
+medium_slate_blue                 :: 0x7B68EE
+medium_spring_green               :: 0x00FA9A
+medium_turquoise                 :: 0x48D1CC
+medium_violet_red                 :: 0xC71585
+midnight_blue                    :: 0x191970
+mint_cream                       :: 0xF5FFFA
+misty_rose                       :: 0xFFE4E1
+moccasin                        :: 0xFFE4B5
+navajo_white                     :: 0xFFDEAD
+navy                            :: 0x000080
+old_lace                         :: 0xFDF5E6
+olive                           :: 0x808000
+olive_drab                       :: 0x6B8E23
+orange                          :: 0xFFA500
+orange_red                       :: 0xFF4500
+orchid                          :: 0xDA70D6
+pale_goldenrod                   :: 0xEEE8AA
+pale_green                       :: 0x98FB98
+pale_violet_red                   :: 0xDB7093
+papaya_whip                      :: 0xFFEFD5
+peach_puff                       :: 0xFFDAB9
+peru                            :: 0xCD853F
+pink                            :: 0xFFC0CB
+plum                            :: 0xDDA0DD
+powder_blue                      :: 0xB0E0E6
+purple				            :: 0x800080
+red                             :: 0xFF0000
+rosy_brown                       :: 0xBC8F8F
+royal_blue                       :: 0x4169E1
+saddle_brown                     :: 0x8B4513
+salmon                          :: 0xFA8072
+sandy_brown                      :: 0xFAA460
+sea_green                        :: 0x2E8B57
+sea_shell                        :: 0xFFF5EE
+sienna                          :: 0xA0522D
+silver                          :: 0xC0C0C0
+sky_blue                         :: 0x87CEEB
+slate_blue                       :: 0x6A5ACD
+slate_gray                       :: 0x708090
+snow                            :: 0xFFFAFA
+spring_green                     :: 0x00FF7F
+steel_blue                       :: 0x4682B4
+tan                             :: 0xD2B48C
+teal                            :: 0x008080
+thistle                         :: 0xD8BFD8
+tomato                          :: 0xFF6347
+turquoise                       :: 0x40E0D0
+violet                          :: 0xEE82EE
+wheat                           :: 0xF5DEB3
+white                           :: 0xFFFFFF
+white_smoke                      :: 0xF5F5F5
+yellow                          :: 0xFFFF00
+yellow_green                     :: 0x9ACD32
+corn_flower_blue              :: 0x6495ED

@@ -21,6 +21,7 @@ ControlKind :: enum {
 	progress_bar,
 	radio_button, 
 	text_box, 
+	track_bar,
 	tree_view,
 	
 }

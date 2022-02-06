@@ -367,7 +367,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 @private window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> Lresult {
     context = runtime.default_context()    
     frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)   
-   // display_msg(msg)
+    //display_msg(msg)
     switch msg {   
               
 
@@ -379,6 +379,9 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
         //         //ptf("handle from parent notify - %d\n", chw)
         //     }
 
+        case WM_HSCROLL :
+            ctl_hw := direct_cast(lp, Hwnd)
+            return SendMessage(ctl_hw, WM_HSCROLL, wp, lp)
         
 
         case WM_PAINT :
@@ -408,7 +411,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             }
              //return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
         case WM_CTLCOLORSTATIC :
-            ctl_hwnd := direct_cast(lp, Hwnd)            
+            ctl_hwnd := direct_cast(lp, Hwnd)                        
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
 
         case WM_CTLCOLORLISTBOX :
@@ -420,9 +423,10 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             } else { // Need and else statement when e create ListBox
                 return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
             }
-        // case WM_CTLCOLORBTN :
-        //     ctl_hwnd := direct_cast(lp, Hwnd)
-        //     return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
+        
+            // case WM_CTLCOLORBTN :
+            //     ctl_hwnd := direct_cast(lp, Hwnd)
+            //     return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
         
         case WM_COMMAND :
             ctl_hwnd := direct_cast(lp, Hwnd)

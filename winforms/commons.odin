@@ -1,19 +1,22 @@
 package winforms
 import "core:fmt"
 // My Own messages
+
 	ptf :: fmt.printf
-	CM_NOTIFY :: WM_USER + 1
-	CM_CTLLCOLOR :: WM_USER + 2
-	CM_LABELDRAW :: WM_USER + 3
-	CM_LMOUSECLICK :: WM_USER + 4
-	CM_RMOUSECLICK :: WM_USER + 5
-	CM_TBTXTCHANGED :: WM_USER + 6
-	CM_CBCOLOR :: WM_USER  + 7
-	CM_CTLCOMMAND :: WM_USER + 8
-	CM_PARENTNOTIFY :: WM_USER + 9
-	CM_COMBOLBCOLOR :: WM_USER + 10
-	CM_COMBOTBCOLOR :: WM_USER + 11
-	CM_GBFORECOLOR :: WM_USER + 12
+	MSG_FIXED_VALUE :: 9000
+	CM_NOTIFY :: MSG_FIXED_VALUE + 1 
+	CM_CTLLCOLOR :: MSG_FIXED_VALUE + 2
+	CM_LABELDRAW :: MSG_FIXED_VALUE + 3
+	CM_LMOUSECLICK :: MSG_FIXED_VALUE + 4
+	CM_RMOUSECLICK :: MSG_FIXED_VALUE + 5
+	CM_TBTXTCHANGED :: MSG_FIXED_VALUE + 6
+	CM_CBCOLOR :: MSG_FIXED_VALUE  + 7
+	CM_CTLCOMMAND :: MSG_FIXED_VALUE + 8
+	CM_PARENTNOTIFY :: MSG_FIXED_VALUE + 9
+	CM_COMBOLBCOLOR :: MSG_FIXED_VALUE + 10
+	CM_COMBOTBCOLOR :: MSG_FIXED_VALUE + 11
+	CM_GBFORECOLOR :: MSG_FIXED_VALUE + 12
+	CM_HSCROLL :: MSG_FIXED_VALUE + 13
 
 // My Own messages
 
@@ -52,6 +55,15 @@ current_filetime :: proc(tm : TimeMode) -> i64 {
 		case .milli_sec : result = n._nano_sec / 1000000
 	}
 	return result
+}
+
+create_hbrush :: proc(clr : uint) -> Hbrush {
+	cref := get_color_ref(clr)
+	return CreateSolidBrush(cref)
+}
+
+draw_ellipse :: proc(dch : Hdc, rc : Rect) {
+	Ellipse(dch, rc.left, rc.top, rc.right, rc.bottom)
 }
 
 @private get_ctrl_text_internal :: proc(hw : Hwnd, alloc := context.allocator) -> string {

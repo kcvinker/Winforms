@@ -98,13 +98,13 @@ foreign user32 {
    @(link_name="LoadCursorW") LoadCursor :: proc(instance: Hinstance, cursor_name: wstring) -> Hcursor ---
 
    @(link_name="CreateWindowExW") CreateWindowEx :: proc(  ex_style: u32, 
-                                                               class_name, title: wstring, 
-                                                               style: u32, 
-                                                               x, y, w, h: i32, 
-                                                               parent: Hwnd, 
-                                                               menu: Hmenu, 
-                                                               instance: Hinstance, 
-                                                               param: rawptr) -> Hwnd ---
+                                                            class_name, title: wstring, 
+                                                            style: u32, 
+                                                            #any_int x, y, w, h: i32, 
+                                                            parent: Hwnd, 
+                                                            menu: Hmenu, 
+                                                            instance: Hinstance, 
+                                                            param: rawptr) -> Hwnd ---
 
    @(link_name="SetWindowLongPtrW") SetWindowLongPtr :: proc(wnd: Hwnd, index: i32, new_long: LongPtr) -> LongPtr ---
    @(link_name="GetWindowLongPtrW") GetWindowLongPtr :: proc(wnd: Hwnd, index: i32) -> LongPtr ---
@@ -196,7 +196,7 @@ foreign gdi32 {
    @(link_name="SetTextColor") SetTextColor :: proc(hdc : Hdc, clr : ColorRef) -> ColorRef ---
    @(link_name="SetBkMode") SetBkMode :: proc(hdc : Hdc, mode : i32) -> i32 ---
    @(link_name="Rectangle") Rectangle :: proc(hdc : Hdc, left, top, right, bottom : i32) -> Bool ---
-   @(link_name="CreatePen") CreatePen :: proc(style, width : i32, cref : ColorRef) -> Hpen ---
+   @(link_name="CreatePen") CreatePen :: proc(style, #any_int width : i32, cref : ColorRef) -> Hpen ---
    @(link_name="GetTextExtentPoint32W") GetTextExtentPoint32 :: proc(dch : Hdc, 
                                                                         lp_string : wstring, 
                                                                         str_len : i32, 
@@ -205,6 +205,11 @@ foreign gdi32 {
    @(link_name="GetStockObject") GetStockObject :: proc(fn_object : i32) -> Hgdiobj ---
    @(link_name="SaveDC") SaveDC :: proc(dch : Hdc) -> i32 ---
    @(link_name="RestoreDC") RestoreDC :: proc(dch : Hdc, ndc : i32) -> Bool ---
+   @(link_name="Ellipse") Ellipse :: proc(dch : Hdc, #any_int left, top, right, bottom : i32) -> Bool ---
+   @(link_name="Polygon") Polygon :: proc(dch : Hdc, pArr : [^]Point, #any_int cpt : i32) -> Bool ---
+   @(link_name="Polyline") Polyline :: proc(dch : Hdc, pArr : rawptr, #any_int cpt : i32) -> Bool ---
+   @(link_name="MoveToEx") MoveToEx :: proc(dch : Hdc, #any_int x, y : i32, lppt : ^Point) -> Bool ---
+   @(link_name="LineTo") LineTo :: proc(dch : Hdc, #any_int x, y : i32) -> Bool ---
    
 
 } // Gdi32 library
