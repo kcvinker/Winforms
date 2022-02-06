@@ -18,6 +18,7 @@ Currently, it's a work in progress project.
 11. NumberPicker (Updown Control)
 12. ProgressBar
 13. RadioButton
+14. TrackBar
 
 ## Screenshot
 
