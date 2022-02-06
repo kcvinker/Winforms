@@ -186,8 +186,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
         }
     } else {     // drawing tics in vertical style.
         
-        first_x : i32 = trc.left + 2
-        //last_x : i32 = trc.bottom - 5
+        first_x : i32 = trc.left + 2        
         first_y := trc.top + 13
         last_y := trc.bottom - 13
         tlength := last_y - first_y // distance between first & last tics
@@ -284,9 +283,7 @@ create_trackbar :: proc(tkb : ^TrackBar) {
         //setfont_internal(tkb)
         // SendMessage(tkb.handle, TBM_SETTHUMBLENGTH, Wparam(i32(100)), 0)
         tkb_set_range_internal(tkb)
-        
-        // ret := SendMessage(tkb.handle, TBM_GETTIC, 0, 0)
-       // print("track bar hwnd - ", tkb.handle)
+       
         
     }
 }
