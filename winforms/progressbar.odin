@@ -39,7 +39,7 @@ ProgressBar :: struct {
     max_value : int,
     step : int,
     style : BarStyle,
-    alignment : BarAlign,
+    orientation : BarAlign,
     value : int,
     
 
@@ -51,9 +51,9 @@ ProgressBar :: struct {
 
 }
 
-BarStyle :: enum {block, marquee}
-BarAlign :: enum {horizontal, vertical}
-BarTheme :: enum {system_color, custom_color }
+BarStyle :: enum {Block, Marquee}
+BarAlign :: enum {Horizontal, Vertical}
+BarTheme :: enum {System_Color, Custom_Color }
 
 @private pb_ctor :: proc(f : ^Form, x, y, w, h : int) -> ProgressBar {
     if WcProgressClassW == nil {
@@ -62,7 +62,7 @@ BarTheme :: enum {system_color, custom_color }
         InitCommonControlsEx(&app.iccx)
     }
     pb : ProgressBar
-    pb.kind = .progress_bar
+    pb.kind = .Progress_Bar
     pb.parent = f
     pb.font = f.font
     pb.xpos = x
@@ -72,7 +72,7 @@ BarTheme :: enum {system_color, custom_color }
     pb.min_value = 0
     pb.max_value = 100
     pb.step = 1
-    pb._theme = .system_color
+    pb._theme = .System_Color
     
 
     pb._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH 
@@ -98,8 +98,8 @@ new_progressbar :: proc{pb_new1, pb_new2}
 }
 
 @private pb_adjust_styles :: proc(pb : ^ProgressBar) {
-    if pb.style == .marquee do pb._style |= PBS_MARQUEE
-    if pb.alignment == .vertical do pb._style |= PBS_VERTICAL
+    if pb.style == .Marquee do pb._style |= PBS_MARQUEE
+    if pb.orientation == .Vertical do pb._style |= PBS_VERTICAL
 }
 
 // Remove visual styles from progress bar. 
@@ -116,7 +116,7 @@ progressbar_increment :: proc(pb : ^ProgressBar) {SendMessage(pb.handle, PBM_STE
 
 // Start marquee animation in progress bar. 
 progressbar_start_marquee :: proc(pb : ^ProgressBar, speed : int = 30) {  
-    if pb.style == .marquee {
+    if pb.style == .Marquee {
         pb._style |= PBS_MARQUEE
         SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(1), Lparam(i32(speed)))
@@ -125,7 +125,7 @@ progressbar_start_marquee :: proc(pb : ^ProgressBar, speed : int = 30) {
 
 // Pause marquee animation in progress bar
 progressbar_pause_marquee :: proc(pb : ^ProgressBar) { 
-    if pb.style == .marquee {        
+    if pb.style == .Marquee {        
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(0), Lparam(0))
         pb._is_paused = true
     }
@@ -133,7 +133,7 @@ progressbar_pause_marquee :: proc(pb : ^ProgressBar) {
 
 // Restart marquee animation in a paused progress bar
 progressbar_restart_marquee :: proc(pb : ^ProgressBar) { 
-    if pb.style == .marquee && pb._is_paused {
+    if pb.style == .Marquee && pb._is_paused {
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(1), Lparam(0))
         pb._is_paused = false
     }
@@ -141,7 +141,7 @@ progressbar_restart_marquee :: proc(pb : ^ProgressBar) {
 
 // Stop marquee animation in progress bar.
 progressbar_stop_marquee :: proc(pb : ^ProgressBar) {  
-    if pb.style == .marquee {
+    if pb.style == .Marquee {
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(0), Lparam(0))
         pb._style ~= PBS_MARQUEE
         SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )        
@@ -151,20 +151,20 @@ progressbar_stop_marquee :: proc(pb : ^ProgressBar) {
 // Toggle the style of progress bar. 
 // If it is a block style, it will be marquee and vice versa.
 progressbar_change_style :: proc(pb : ^ProgressBar) { 
-    if pb.style == .block {
+    if pb.style == .Block {
         pb._style |= PBS_MARQUEE
         SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
-        pb.style = .marquee
+        pb.style = .Marquee
     } else {
         pb._style ~= PBS_MARQUEE
         SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
-        pb.style = .block
+        pb.style = .Block
     }
 }
 
 // Set the value for progress bar. Only applicable for block styles
 progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) { 
-    if pb.style == .block {
+    if pb.style == .Block {
         SendMessage(pb.handle, PBM_SETPOS, Wparam(i32(ival)), 0)
         pb.value = ival
     }

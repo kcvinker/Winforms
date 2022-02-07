@@ -2,7 +2,7 @@
 Calendar :: struct {
     using control : Control,
     value : DateTime, // See DateTime type.
-    view_mode : ViewMode, //  values - month, year, decade, centuary
+    view_mode : ViewMode, //  values - Month, Year, Decade, Centuary
     old_view : ViewMode, // values - same as above
     show_week_num : b64, // To show the week numbers in left side of the Calendar.
     no_today_circle : b64, // No circle or square around today

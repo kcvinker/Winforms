@@ -3,7 +3,7 @@
 CheckBox :: struct {
     using control : Control,
     checked : b32, // Checked state of checkbox
-    text_alignment : enum {left, right}, // text appear on the left side of checkbox or right side of the checkbox
+    text_alignment : enum {Left, Right}, // text appear on the left side of checkbox or right side of the checkbox
     // Event
     check_changed : EventHandler, //  When user change the check state of CheckBox.    
 }

@@ -27,7 +27,7 @@ RadioButton :: struct {
 
 @private rb_ctor :: proc(f : ^Form, txt : string, x, y, w, h : int) -> RadioButton {
     rb : RadioButton
-    rb.kind = .radio_button
+    rb.kind = .Radio_Button
     rb.parent = f
     rb.font = f.font
     rb.text = txt

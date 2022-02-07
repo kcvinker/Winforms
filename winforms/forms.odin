@@ -84,23 +84,23 @@ Form :: struct {
     //cb_hwnd : Hwnd,
 }
 
-FormDrawMode :: enum { default, flat_color, gradient,}
-//GradientStyle :: enum {top_to_bottom, left_to_right,}
+FormDrawMode :: enum { Default, flat_color, gradient,}
+//GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
 StartPosition :: enum {
-    top_left,
-    top_mid,
-    top_right,
-    mid_left,
-    center,
-    mid_right,
-    bottom_left,
-    bottom_mid,
-    bottom_right,
-    manual,
+    Top_Left,
+    Top_Mid,
+    Top_Right,
+    Mid_Left,
+    Center,
+    Mid_Right,
+    Bottom_Left,
+    Bottom_Mid,
+    Bottom_Right,
+    Manual,
 }
 
-FormStyle :: enum { default, fixed_single, fixed_3d, fixed_dialog, fixed_tool, sizable_tool, }
-FormState :: enum {normal = 1, minimized, maximized}
+FormStyle :: enum { Default, Fixed_Single, Fixed_3D, Fixed_Dialog, Fixed_Tool, Sizable_Tool, }
+FormState :: enum {Normal = 1, Minimized, Maximized}
 GradientColors :: struct {color1, color2 : RgbColor,}
 
 new_form :: proc{new_form1, new_form2} 
@@ -108,19 +108,19 @@ new_form :: proc{new_form1, new_form2}
 @private new_form_internal :: proc(t : string = "", w : int = 500, h : int = 400) -> Form {
     app.form_count += 1
     f : Form
-    f.kind = .form    
+    f.kind = .Form    
     f.text = t == "" ? concat_number("Form_", app.form_count) : t
     f.width = w
     f.height = h
-    f.start_pos = .center
-    f.style = .default
+    f.start_pos = .Center
+    f.style = .Default
     f.maximize_box = true
     f.minimize_box = true
     f.font = new_font()
-    f._draw_mode = .default
+    f._draw_mode = .Default
     f.back_color = def_window_color
-    f._gradient_style = .top_to_bottom
-    f.window_state = .normal
+    f._gradient_style = .Top_To_Bottom
+    f.window_state = .Normal
     f._udraw_ids = make(map[Uint]Hwnd)
     return  f
 }
@@ -218,7 +218,7 @@ hide_form :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
 set_form_state :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
 
 // Set the colors to draw a gradient background in form.
-set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .top_to_bottom) {
+set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom) {
     f._gradient_color.color1 = new_rgb_color(clr1)
     f._gradient_color.color2 = new_rgb_color(clr2)
     f._draw_mode = .gradient
@@ -250,24 +250,24 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 
 @private set_start_position :: proc(frm : ^Form) {
     #partial switch frm.start_pos {
-    case .center:
+    case .Center:
         frm.xpos = (app.screen_width - frm.width) / 2
         frm.ypos = (app.screen_height - frm.height) / 2
-    case .top_mid :
+    case .Top_Mid :
         frm.xpos = (app.screen_width - frm.width) / 2
-    case .top_right :
+    case .Top_Right :
         frm.xpos = app.screen_width - frm.width ;
-    case .mid_left :
+    case .Mid_Left :
         frm.ypos = (app.screen_height - frm.height) / 2
-    case .mid_right:
+    case .Mid_Right:
         frm.xpos = app.screen_width - frm.width ;
         frm.ypos = (app.screen_height - frm.height) / 2
-    case .bottom_left:
+    case .Bottom_Left:
         frm.ypos = app.screen_height - frm.height
-    case .bottom_mid :
+    case .Bottom_Mid :
         frm.xpos = (app.screen_width - frm.width) / 2
         frm.ypos = app.screen_height - frm.height
-    case .bottom_right :
+    case .Bottom_Right :
         frm.xpos = app.screen_width - frm.width
         frm.ypos = app.screen_height - frm.height
     }
@@ -275,30 +275,30 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 
 @private set_form_style :: proc(frm : ^Form) {
     #partial switch frm.style {
-        case .default :
+        case .Default :
             frm._ex_style = normal_form_ex_style
             frm._style = normal_form_style
             if !frm.maximize_box {frm._style = frm._style ~ WS_MAXIMIZEBOX }
             if !frm.minimize_box {frm._style = frm._style ~ WS_MINIMIZEBOX }
-        case .fixed_3d :
+        case .Fixed_3D :
             frm._ex_style = fixed_3d_ex_style
             frm._style = fixed_3d_style
             if !frm.maximize_box {frm._style = frm._style ~ WS_MAXIMIZEBOX }
             if !frm.minimize_box {frm._style = frm._style ~ WS_MINIMIZEBOX }
-        case .fixed_dialog :
+        case .Fixed_Dialog :
             frm._ex_style = fixed_dialog_ex_style
             frm._style = fixed_dialog_style
             if !frm.maximize_box {frm._style = frm._style ~ WS_MAXIMIZEBOX }
             if !frm.minimize_box {frm._style = frm._style ~ WS_MINIMIZEBOX }
-        case .fixed_single :
+        case .Fixed_Single :
             frm._ex_style = fixed_single_ex_style
             frm._style = fixed_single_style
             if !frm.maximize_box {frm._style = frm._style ~ WS_MAXIMIZEBOX }
             if !frm.minimize_box {frm._style = frm._style ~ WS_MINIMIZEBOX }    
-        case .fixed_tool :
+        case .Fixed_Tool :
             frm._ex_style = fixed_tool_ex_style
             frm._style = sizable_tool_style
-        case .sizable_tool :
+        case .Sizable_Tool :
             frm._ex_style = sizable_tool_ex_style
             frm._style = sizable_tool_style
     }
@@ -649,7 +649,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                     }
             }
         case WM_ERASEBKGND :
-            if frm._draw_mode != .default {
+            if frm._draw_mode != .Default {
                 dc_handle := Hdc(wp)
                 set_back_clr_internal(frm, dc_handle)
                 return 1

@@ -39,13 +39,12 @@ _def_tkb_height :: 30
 
 TrackBar :: struct {
     using control : Control,
-    orientation : enum {horizontal, vertical},
-    tic_pos : enum {down_side, up_side, left_side, right_side, both_side},
-    max_position : enum {right, left},
+    orientation : enum {Horizontal, Vertical},
+    tic_pos : enum {Down_Side, Up_Side, Left_Side, Right_Side, Both_Side},
+    reverse_start_pos :bool,
     no_ticks : bool,
     enable_sel_range : bool,
-    fixed_length : bool,
-    thumb_color,
+       
     channel_color,
     tic_color : uint,
     tic_width : int,
@@ -55,8 +54,7 @@ TrackBar :: struct {
     default_tics : bool,
     value : int,
 
-    _bk_brush : Hbrush,
-    _lb_down : bool,
+    _bk_brush : Hbrush,    
     _tic_count : i32,
 
     value_changed : EventHandler,
@@ -72,15 +70,14 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     }
 
     tkb : TrackBar
-    tkb.kind = .track_bar
+    tkb.kind = .Track_Bar
     tkb.parent = f
     tkb.font = f.font
     tkb.xpos = x
     tkb.ypos = y
     tkb.width = w
     tkb.height = h
-    tkb.back_color = f.back_color
-    tkb.thumb_color = 0x00DF00
+    tkb.back_color = f.back_color   
     tkb.channel_color = light_steel_blue
     tkb.tic_color = 0x000000
     tkb.tic_width = 1
@@ -110,27 +107,27 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
 }
 
 @private tkb_adjust_styles :: proc(tkb : ^TrackBar) {    
-    if tkb.orientation == .vertical {
+    if tkb.orientation == .Vertical {
         tkb._style |= TBS_VERT
         #partial switch tkb.tic_pos {
-            case .right_side :
+            case .Right_Side :
                 tkb._style |= TBS_RIGHT
-            case .left_side :
+            case .Left_Side :
                 tkb._style |= TBS_LEFT
-            case .both_side :
+            case .Both_Side :
                 tkb._style |= TBS_BOTH 
             case : 
                 tkb._style |=  TBS_LEFT
-                tkb.tic_pos = .left_side  
+                tkb.tic_pos = .Left_Side  
                  
         }
     } else {        
         #partial switch tkb.tic_pos {
-            case .down_side :
+            case .Down_Side :
                 tkb._style |= TBS_BOTTOM
-            case .up_side :
+            case .Up_Side :
                 tkb._style |= TBS_TOP  
-            case .both_side :
+            case .Both_Side :
                 tkb._style |= TBS_BOTH          
         }
     }
@@ -159,22 +156,22 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     SendMessage(t.handle, TBM_GETCHANNELRECT, 0, direct_cast(&crc, Lparam))
     trc := get_rect(t.handle) // We need track bar's rect also
     tics_to_draw := t._tic_count - 2
-    if t.orientation == .horizontal {
+    if t.orientation == .Horizontal {
         first_x : i32 = crc.left + 5
         last_x : i32 = crc.right - 5
         tlength := last_x - first_x // distance between first & last tics
         distance := tlength / tics_to_draw
         extra_pts := tlength %% tics_to_draw 
         #partial switch t.tic_pos {            
-            case .down_side :  
+            case .Down_Side :  
                 draw_single_tic(dch, first_x, trc.bottom - 5, trc.bottom - 2)
                 draw_multi_tics(dch, first_x, tics_to_draw, extra_pts, distance, trc.bottom - 5, trc.bottom - 2)
                 draw_single_tic(dch, last_x, trc.bottom - 5, trc.bottom - 2)
-            case .up_side :                               
+            case .Up_Side :                               
                 draw_single_tic(dch, first_x, trc.top + 2, trc.top + 5 )
                 draw_multi_tics(dch, first_x, tics_to_draw, extra_pts, distance, trc.top + 2, trc.top + 5)
                 draw_single_tic(dch, last_x, trc.top + 2, trc.top + 5)
-            case .both_side :
+            case .Both_Side :
                 draw_single_tic(dch, first_x, trc.bottom - 5, trc.bottom - 2)
                 draw_multi_tics(dch, first_x, tics_to_draw, extra_pts, distance, trc.bottom - 5, trc.bottom - 2)
                 draw_single_tic(dch, last_x, trc.bottom - 5, trc.bottom - 2)
@@ -195,16 +192,16 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
         
         print("tic to dra - ", tics_to_draw)
         #partial switch t.tic_pos {            
-            case .left_side :
+            case .Left_Side :
                 draw_single_tic_vertical(dch, first_x, first_y)
                 draw_multi_tics_vertical(dch, tics_to_draw, distance, extra_pts, first_x, first_y)
                 draw_single_tic_vertical(dch, first_x, last_y)
-            case .right_side :
+            case .Right_Side :
                 first_x = trc.right - 7                
                 draw_single_tic_vertical(dch, first_x, first_y)
                 draw_multi_tics_vertical(dch, tics_to_draw, distance, extra_pts, first_x, first_y)
                 draw_single_tic_vertical(dch, first_x, last_y)
-            case .both_side :
+            case .Both_Side :
                 draw_single_tic_vertical(dch, first_x, first_y)
                 draw_multi_tics_vertical(dch, tics_to_draw, distance, extra_pts, first_x, first_y)
                 draw_single_tic_vertical(dch, first_x, last_y)

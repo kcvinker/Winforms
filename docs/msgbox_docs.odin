@@ -25,36 +25,36 @@ msg_box :: proc(msg : any,
                 title : string, 
                 msg_btn : MsgBoxButtons, 
                 ms_icon : MsgBoxIcons,                  // See below for more info about MsgBoxIcons.
-                def_btn : MsgBoxDefButton = .button1    // See below for more info about MsgBoxDefButton.
+                def_btn : MsgBoxDefButton = .Button1    // See below for more info about MsgBoxDefButton.
                 ) -> MsgResult
 
-MsgResult :: enum { none, // 0 .. 7
-                    okay, 
-                    canel, 
-                    abort, 
-                    retry, 
-                    ignore, 
-                    yes, 
-                    no } 
+MsgResult :: enum { None, // 0 .. 7
+                    Okay, 
+                    Canel, 
+                    Abort, 
+                    Retry, 
+                    Ignore, 
+                    Yes, 
+                    No } 
 
-MsgBoxButtons :: enum { okay,               // Single 'Okay' button
-                        ok_cancel,          // Okay & Cancel buttons
-                        abort_retry_ignore, // Abort, Retry, Ignore buttons
-                        yes_no_cancel,      // Yes, No, Cancel buttons
-                        yes_no,             // Yes & No buttons
-                        retry_cancel }      // Retry & Cancel buttons
+MsgBoxButtons :: enum { Okay,               // Single 'Okay' button
+                        Ok_Cancel,          // Okay & Cancel buttons
+                        Abort_Retry_Ignore, // Abort, Retry, Ignore buttons
+                        Yes_No_Cancel,      // Yes, No, Cancel buttons
+                        Yes_No,             // Yes & No buttons
+                        Retry_Cancel }      // Retry & Cancel buttons
 
-MsgBoxIcons :: enum {   none = 0,           // No Icon
-                        hand = 16,          // A hand icon
-                        stop = 16,          // A stop icon
-                        error = 16,         // An error icon
-                        question = 32,      // A question icon
-                        exclamation = 48,   // An exclamation icon
-                        warning = 48,       // A warning icon
-                        asterisk = 64,      // An asterisk icon
-                        information = 64, } // An information icon
+MsgBoxIcons :: enum {   None = 0,           // No Icon
+                        Hand = 16,          // A hand icon
+                        Stop = 16,          // A stop icon
+                        Error = 16,         // An error icon
+                        Question = 32,      // A question icon
+                        Exclamation = 48,   // An exclamation icon
+                        Warning = 48,       // A warning icon
+                        Asterisk = 64,      // An asterisk icon
+                        Information = 64, } // An information icon
 
-MsgBoxDefButton :: enum {   button1 = 0,    // First button will be the default button
-                            button2 = 256,  // Second button will be the default button
-                            button3 = 512}  // Third button will be the default button
+MsgBoxDefButton :: enum {   Button1 = 0,    // First button will be the default button
+                            Button2 = 256,  // Second button will be the default button
+                            Button3 = 512}  // Third button will be the default button
 

@@ -5,7 +5,7 @@ import "core:fmt"
 import "core:runtime"
 //import "core:reflect"
 
-DropDownStyle :: enum {tb_combo, lb_combo,}
+DropDownStyle :: enum {Tb_Combo, Lb_Combo,}
 
 ComboBox :: struct {
     using control : Control,
@@ -46,7 +46,7 @@ ComboInfo :: struct {
     cmInfo : COMBOBOXINFO
     cmInfo.cbSize = size_of(cmInfo)    
     SendMessage(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cmInfo, Lparam))
-    bval : b64 = true if cmb.combo_style == .lb_combo else false
+    bval : b64 = true if cmb.combo_style == .Lb_Combo else false
     ci := ComboInfo{cmInfo.hwndList, cmInfo.hwndItem, cmb.handle, bval}
     append(&cmb.parent._combo_list, ci)
     // print("combo edit hwnd - ", ci.tb_handle)
@@ -72,7 +72,7 @@ ComboInfo :: struct {
 
 @private cmb_ctor :: proc(p : ^Form, w : int = 130, h : int = 30) -> ComboBox {
     cmb : ComboBox
-    cmb.kind = .combo_box
+    cmb.kind = .Combo_Box
     cmb.parent = p
     cmb.font = p.font    
     cmb.xpos = 50
@@ -118,11 +118,11 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
     // We are going to delete the current combo and create new one.
     // Then we set up the old font and old selection. 
     if cmb._is_created {
-        if style == .tb_combo {
-            if cmb.combo_style != .lb_combo do return
+        if style == .Lb_Combo {
+            if cmb.combo_style != .Lb_Combo do return
             cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN
         } else {
-            if cmb.combo_style != .tb_combo do return
+            if cmb.combo_style != .Tb_Combo do return
             cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST
         }        
         cmb.combo_style = style   
@@ -252,7 +252,7 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
 create_combo :: proc(cmb : ^ComboBox) {
     _global_ctl_id += 1
     cmb.control_id = _global_ctl_id      
-    if cmb.combo_style == .lb_combo do cmb._style |= CBS_DROPDOWNLIST
+    if cmb.combo_style == .Lb_Combo do cmb._style |= CBS_DROPDOWNLIST
     cmb.handle = CreateWindowEx(  cmb._ex_style, 
                                     to_wstring("ComboBox"), 
                                     to_wstring(cmb.text),

@@ -16,7 +16,7 @@ GroupBox :: struct {
 @private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> GroupBox {
     gb : GroupBox
     using gb
-        kind = .group_box
+        kind = .Group_Box
         parent = p
         font = p.font
         xpos = x

@@ -27,17 +27,17 @@ def_fore_clr :: 0x000000
 // Controls like window & button wants to paint themselve with a gradient brush.
 // In that cases, we need an option for painting in two directions.
 // So this enum will be used in controls which had the ebility to draw a gradient bkgnd.
-GradientStyle :: enum {top_to_bottom, left_to_right,}
-TextAlignment :: enum {top_left, top_center, top_right, mid_left, center, mid_right, bottom_left, bottom_center, bottom_right}
-SimpleTextAlignment :: enum {left, center, right}
+GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
+TextAlignment :: enum {Top_Left, Top_Center, Top_Right, Mid_Left, Center, Mid_Right, Bottom_Left, Bottom_Center, Bottom_Right}
+SimpleTextAlignment :: enum {Left, Center, Right}
 
 
-TimeMode :: enum {nano_sec, micro_sec, milli_sec}
+TimeMode :: enum {Nano_Sec, Micro_Sec, Milli_Sec}
 
 Time :: struct {_nano_sec : i64,}
 SizeIncrement :: struct {width, height : int,}
 Area :: struct {width, height : int,}
-WordValue :: enum {low, high}
+WordValue :: enum {Low, High}
 
 current_time_internal :: proc() -> Time {
 	ftime : FILETIME
@@ -50,9 +50,9 @@ current_filetime :: proc(tm : TimeMode) -> i64 {
 	result : i64
 	n := current_time_internal()
 	switch tm {
-		case .nano_sec : result = n._nano_sec
-		case .micro_sec : result = n._nano_sec / 1000
-		case .milli_sec : result = n._nano_sec / 1000000
+		case .Nano_Sec : result = n._nano_sec
+		case .Micro_Sec : result = n._nano_sec / 1000
+		case .Milli_Sec : result = n._nano_sec / 1000000
 	}
 	return result
 }
@@ -208,7 +208,7 @@ array_search :: proc{	dynamic_array_search,
 	t_brush : Hbrush
 	mem_hdc : Hdc = CreateCompatibleDC(hdc)
 	hbmp : Hbitmap = CreateCompatibleBitmap(hdc, rct.right, rct.bottom)
-	loop_end : i32 = rct.bottom if gs == .top_to_bottom else rct.right 
+	loop_end : i32 = rct.bottom if gs == .Top_To_Bottom else rct.right 
 	
 	SelectObject(mem_hdc, Hgdiobj(hbmp))	
 	i : i32		
@@ -221,10 +221,10 @@ array_search :: proc{	dynamic_array_search,
         b = gc.color1.blue + uint((i * i32(gc.color2.blue - gc.color1.blue) / loop_end))
 		t_brush = CreateSolidBrush(get_color_ref(r, g, b))
 		
-		t_rct.left = 0 if gs == .top_to_bottom else i
-		t_rct.top = i if gs == .top_to_bottom else 0
-		t_rct.right = rct.right if gs == .top_to_bottom else i + 1
-		t_rct.bottom = i + 1 if gs == .top_to_bottom else loop_end
+		t_rct.left = 0 if gs == .Top_To_Bottom else i
+		t_rct.top = i if gs == .Top_To_Bottom else 0
+		t_rct.right = rct.right if gs == .Top_To_Bottom else i + 1
+		t_rct.bottom = i + 1 if gs == .Top_To_Bottom else loop_end
 		FillRect(mem_hdc, &t_rct, t_brush)
 		DeleteObject(Hgdiobj(t_brush))
 	}

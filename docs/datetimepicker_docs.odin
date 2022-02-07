@@ -3,7 +3,7 @@
 DateTimePicker :: struct {
     using control : Control, 
     format : DtpFormat, // time format to display
-                // Possible values - {long = 1, short = 2, time = 4, custom = 8}
+                // Possible values - {Long = 1, Short = 2, Time = 4, Custom = 8}
                 
     format_string : string, // Custom format string for dtp.
                 // See this page to know more about custom format strings

@@ -55,6 +55,7 @@ Dword     :: c_ulong
 DwordPtr :: ^c_ulong
 Word      :: u16
 ColorRef :: distinct Dword
+HtreeItem :: distinct Handle
 
 
 WNDPROC  :: distinct #type proc "std" (Hwnd, u32, Wparam, Lparam) -> Lresult

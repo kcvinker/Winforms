@@ -6,23 +6,23 @@ _global_ctl_id : Uint = 100
 
 
 ControlKind :: enum {
-	form, 
-	button, 
-	calendar,		
-	check_box, 
-	combo_box,
-	date_time_picker, 
-	group_box, 
-	label, 
-	list_box,
-	list_view,
-	number_picker,
-	panel, 
-	progress_bar,
-	radio_button, 
-	text_box, 
-	track_bar,
-	tree_view,
+	Form, 
+	Button, 
+	Calendar,		
+	Check_Box, 
+	Combo_Box,
+	Date_Time_Picker, 
+	Group_Box, 
+	Label, 
+	List_Box,
+	List_View,
+	Number_Picker,
+	Panel, 
+	Progress_Bar,
+	Radio_Button, 
+	Text_Box, 
+	Track_Bar,
+	Tree_View,
 	
 }
 
@@ -101,7 +101,7 @@ Control :: struct {
 control_enable :: proc(ctl : ^Control, bstate : bool) {
 	ctl.enabled = bstate
 	#partial switch ctl.kind {
-		case .number_picker :			
+		case .Number_Picker :			
 			SendMessage(ctl.handle, WM_ENABLE, Wparam(bstate), 0)			
 		case :
 			EnableWindow(ctl.handle, bstate)
@@ -113,7 +113,7 @@ control_visibile :: proc(ctl : ^Control, bstate : bool) {
 	ctl.enabled = bstate
 	flag : i32 = SW_HIDE if !bstate else SW_SHOW	
 	#partial switch ctl.kind {
-		case .number_picker :			
+		case .Number_Picker :			
 			np := direct_cast(ctl, ^NumberPicker)		
 			ShowWindow(np.handle, flag)	
 			ShowWindow(np._buddy_handle, flag)
@@ -135,7 +135,7 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : bool = fal
 	if ctl.handle != nil { // Only set the font if control handle is created.
 		CreateFont_handle(&ctl.font, ctl.handle) 
 		SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
-		if ctl.kind == .label { // Label need special care only because of the autosize property
+		if ctl.kind == .Label { // Label need special care only because of the autosize property
 			lb := cast(^Label) ctl
 			if lb.auto_size do calculate_ctl_size(lb)
 		}		
@@ -162,13 +162,13 @@ control_set_text :: proc(ctl : ^Control, txt : string) {
 	ctl.text = txt	
 	if ctl._is_created {
 		#partial switch ctl.kind {
-			case .label : // Label need special care only because of the autosize property
+			case .Label : // Label need special care only because of the autosize property
 				lb := cast(^Label) ctl
 				if lb.auto_size do calculate_ctl_size(lb)
-			case .check_box :
+			case .Check_Box :
 				cb := cast(^CheckBox) ctl
 				if cb.auto_size do calculate_ctl_size(cb)
-			case .radio_button :
+			case .Radio_Button :
 				rb := cast(^RadioButton) ctl
 				if rb.auto_size do calculate_ctl_size(rb)
 		}
@@ -203,7 +203,7 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 @private set_back_color1 :: proc(ctl : ^Control, clr : uint) {
 	//print("not implemented")
 	#partial switch ctl.kind {
-		case .button:
+		case .Button:
 			btn := cast(^Button) ctl
 			set_button_backcolor(btn, clr)		
 
@@ -217,7 +217,7 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 @private set_back_color2 :: proc(ctl : ^Control, clr : RgbColor) {
 	uclr := rgb_to_uint(clr)
 	#partial switch ctl.kind {
-		case .button:
+		case .Button:
 			btn := cast(^Button) ctl
 			set_button_backcolor(btn, uclr)
 	}
@@ -230,7 +230,7 @@ control_set_back_color :: proc{set_back_color1, set_back_color2}
 
 @private set_fore_color1 :: proc(ctl : ^Control, clr : uint) {
 	#partial switch ctl.kind {
-		case .button :
+		case .Button :
 			btn := cast(^Button) ctl
 			set_button_forecolor(btn, clr)
 		
@@ -245,7 +245,7 @@ control_set_back_color :: proc{set_back_color1, set_back_color2}
 @private set_fore_color2 :: proc(ctl : ^Control, clr : RgbColor) {
 	uclr := rgb_to_uint(clr)
 	#partial switch ctl.kind {
-		case .button :
+		case .Button :
 			btn := cast(^Button) ctl
 			set_button_forecolor(btn, uclr)
 	}

@@ -22,13 +22,13 @@ Label :: struct {
 
 // Border style for Label.
 // Possible values : no_border, single_line, sunken_border
-LabelBorder :: enum {no_border, single_line, sunken_border, }
+LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
 
 @private label_ctor :: proc(p : ^Form, txt : string = "") -> Label {
     _lb_count += 1
     lb : Label
     lb.auto_size = true
-    lb.kind = .label
+    lb.kind = .Label
     lb.text = txt == "" ? concat_number("Label_", _lb_count) : txt
     lb.width = 0 // reset later
     lb.height = 0 // reset later
@@ -77,9 +77,9 @@ new_label :: proc{new_label1, new_label2}
 }
 
 @private adjust_border :: proc(lb : ^Label) {   
-    if lb.border_style == .sunken_border {
+    if lb.border_style == .Sunken_Border {
         lb._style |= SS_SUNKEN
-    } else if lb.border_style == .single_line {
+    } else if lb.border_style == .Single_Line {
         lb._style |= WS_BORDER           
     }
 }
@@ -87,32 +87,32 @@ new_label :: proc{new_label1, new_label2}
 @private adjust_alignment :: proc(lb : ^Label) {
     if lb.multi_line {
         switch lb.text_alignment {
-            case .top_left : lb._txt_align = DT_TOP | DT_LEFT | DT_WORDBREAK
-            case .top_center : lb._txt_align = DT_TOP | DT_CENTER | DT_WORDBREAK
-            case .top_right : lb._txt_align = DT_TOP | DT_RIGHT | DT_WORDBREAK
+            case .Top_Left : lb._txt_align = DT_TOP | DT_LEFT | DT_WORDBREAK
+            case .Top_Center : lb._txt_align = DT_TOP | DT_CENTER | DT_WORDBREAK
+            case .Top_Right : lb._txt_align = DT_TOP | DT_RIGHT | DT_WORDBREAK
 
-            case .mid_left : lb._txt_align = DT_VCENTER | DT_LEFT | DT_WORDBREAK
-            case .center : lb._txt_align = DT_VCENTER | DT_CENTER | DT_WORDBREAK 
-            case .mid_right : lb._txt_align = DT_VCENTER | DT_RIGHT | DT_WORDBREAK
+            case .Mid_Left : lb._txt_align = DT_VCENTER | DT_LEFT | DT_WORDBREAK
+            case .Center : lb._txt_align = DT_VCENTER | DT_CENTER | DT_WORDBREAK 
+            case .Mid_Right : lb._txt_align = DT_VCENTER | DT_RIGHT | DT_WORDBREAK
 
-            case .bottom_left : lb._txt_align = DT_BOTTOM | DT_LEFT | DT_WORDBREAK
-            case .bottom_center : lb._txt_align = DT_BOTTOM | DT_CENTER | DT_WORDBREAK
-            case .bottom_right : lb._txt_align = DT_BOTTOM | DT_RIGHT   | DT_WORDBREAK         
+            case .Bottom_Left : lb._txt_align = DT_BOTTOM | DT_LEFT | DT_WORDBREAK
+            case .Bottom_Center : lb._txt_align = DT_BOTTOM | DT_CENTER | DT_WORDBREAK
+            case .Bottom_Right : lb._txt_align = DT_BOTTOM | DT_RIGHT   | DT_WORDBREAK         
         }
     
     } else {
         switch lb.text_alignment {
-            case .top_left : lb._txt_align = DT_TOP | DT_LEFT  | DT_SINGLELINE 
-            case .top_center : lb._txt_align = DT_TOP | DT_CENTER | DT_SINGLELINE
-            case .top_right : lb._txt_align = DT_TOP | DT_RIGHT | DT_SINGLELINE
+            case .Top_Left : lb._txt_align = DT_TOP | DT_LEFT  | DT_SINGLELINE 
+            case .Top_Center : lb._txt_align = DT_TOP | DT_CENTER | DT_SINGLELINE
+            case .Top_Right : lb._txt_align = DT_TOP | DT_RIGHT | DT_SINGLELINE
 
-            case .mid_left : lb._txt_align = DT_VCENTER | DT_LEFT  | DT_SINGLELINE
-            case .center : lb._txt_align =  DT_VCENTER | DT_CENTER | DT_SINGLELINE
-            case .mid_right : lb._txt_align = DT_VCENTER | DT_RIGHT | DT_SINGLELINE
+            case .Mid_Left : lb._txt_align = DT_VCENTER | DT_LEFT  | DT_SINGLELINE
+            case .Center : lb._txt_align =  DT_VCENTER | DT_CENTER | DT_SINGLELINE
+            case .Mid_Right : lb._txt_align = DT_VCENTER | DT_RIGHT | DT_SINGLELINE
 
-            case .bottom_left : lb._txt_align = DT_BOTTOM | DT_LEFT | DT_SINGLELINE
-            case .bottom_center : lb._txt_align = DT_BOTTOM | DT_CENTER | DT_SINGLELINE
-            case .bottom_right : lb._txt_align = DT_BOTTOM | DT_RIGHT | DT_SINGLELINE 
+            case .Bottom_Left : lb._txt_align = DT_BOTTOM | DT_LEFT | DT_SINGLELINE
+            case .Bottom_Center : lb._txt_align = DT_BOTTOM | DT_CENTER | DT_SINGLELINE
+            case .Bottom_Right : lb._txt_align = DT_BOTTOM | DT_RIGHT | DT_SINGLELINE 
         }
 
     }
@@ -132,7 +132,7 @@ new_label :: proc{new_label1, new_label2}
 
 // Create the handle of Label control.
 create_label :: proc(lb : ^Label) {
-    if lb.border_style != .no_border do adjust_border(lb)
+    if lb.border_style != .No_Border do adjust_border(lb)
     check_for_autosize(lb)
     adjust_alignment(lb)
     _global_ctl_id += 1  

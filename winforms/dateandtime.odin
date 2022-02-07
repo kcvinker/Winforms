@@ -13,7 +13,7 @@ DateTime :: struct{
     day_of_week : WeekDays,
 }
 
-WeekDays :: enum {sunday, monday, tuesday, wednesday, thursday, friday, saturday }
+WeekDays :: enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }
 
 @private dt_ctor :: proc() -> DateTime {
     dt : DateTime

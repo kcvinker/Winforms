@@ -18,8 +18,8 @@ Defaults
 
 NumberPicker :: struct {
     using control : Control,
-    button_alignment : ButtonAlignment, // enum {right, left} Spin button's position
-    text_alignment : SimpleTextAlignment, // enum {left, center, right} 
+    button_alignment : ButtonAlignment, // enum {Right, Left} Spin button's position
+    text_alignment : SimpleTextAlignment, // enum {Left, Center, Right} 
     min_range, max_range : f32, // Min & max range for value in NumberPicker
     has_separator : bool, // Displays a thousand separator. True by default.
     auto_rotate : bool, // If enabled, if you add next step after max_range, it will automatically go to min_range
@@ -54,7 +54,7 @@ main :: proc() {
 
     np = new_numberpicker(&frm, 190, 145, 100, 25)
     np.font = new_font("Hack", 14, true) 
-    np.text_alignment = .center
+    np.text_alignment = .Center
     np.back_color = def_back_clr
     np.fore_color = def_fore_clr
     np.step = 0.25

@@ -28,7 +28,7 @@ Calendar :: struct {
 
 // Enum for setting Calendar's view mode.
 // Posible values : month, year, decade, centuary
-ViewMode :: enum {month, year, decade, centuary}
+ViewMode :: enum {Month, Year, Decade, Centuary}
 
 @private calendar_ctor :: proc(p : ^Form, x, y : int) -> Calendar {
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
@@ -40,7 +40,7 @@ ViewMode :: enum {month, year, decade, centuary}
     c : Calendar
     c.parent = p
     c.font = p.font
-    c.kind = .calendar
+    c.kind = .Calendar
     c.width = 0
     c.height = 0
     c.xpos = x

@@ -15,8 +15,8 @@ mouse_clicked :: 0b1
 mouse_over :: 0b1000000 
 btn_focused :: 0b10000
 
-ButtonStyle :: enum {default, flat, gradient,}
-ButtonDrawMode :: enum {default, text_only, bg_only, text_and_bg, gradient, grad_and_text}
+ButtonStyle :: enum {Default, Flat, Gradient,}
+ButtonDrawMode :: enum {Default, Text_Only, Bg_Only, Text_And_Bg, Gradient, Grad_And_Text}
 
 Button :: struct {
 	using control : Control,	
@@ -39,7 +39,7 @@ new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 	if WcButtonW == nil do WcButtonW = to_wstring("Button")	
 	_button_count += 1	
 	b : Button
-	b.kind = .button
+	b.kind = .Button
 	b.text = txt == "" ? concat_number("Button_", _button_count) : txt
 	b.width = w
 	b.height = h
@@ -83,7 +83,7 @@ new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 create_button :: proc(btn : ^Button) -> bool {	
 	_global_ctl_id += 1
 	btn.control_id = _global_ctl_id
-	if btn._draw_mode == .default do check_initial_color_change(btn)	
+	if btn._draw_mode == .Default do check_initial_color_change(btn)	
 	btn.handle = CreateWindowEx(  btn._ex_style, 
 									WcButtonW, //to_wstring("Button"), 
 									to_wstring(btn.text),
@@ -99,7 +99,7 @@ create_button :: proc(btn : ^Button) -> bool {
 	
 	if btn.handle != nil {
 		btn._is_created = true
-		if btn._draw_mode != .default && !btn._added_in_draw_list {
+		if btn._draw_mode != .Default && !btn._added_in_draw_list {
 			append(&btn.parent._cdraw_childs, btn.handle)
 		}
 		set_subclass(btn, btn_wnd_proc)
@@ -117,14 +117,14 @@ create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
 	// In that case, we need to check for color changes.
 	if btn.fore_color != 0 {
 		if btn.back_color != 0 {
-			btn._draw_mode = ButtonDrawMode.text_and_bg
-		} else do btn._draw_mode = ButtonDrawMode.text_only
+			btn._draw_mode = ButtonDrawMode.Text_And_Bg
+		} else do btn._draw_mode = ButtonDrawMode.Text_Only
 	} 
 
 	if btn.back_color != 0 {
 		if btn.fore_color != 0 {
-			btn._draw_mode = ButtonDrawMode.text_and_bg
-		} else do btn._draw_mode = ButtonDrawMode.bg_only
+			btn._draw_mode = ButtonDrawMode.Text_And_Bg
+		} else do btn._draw_mode = ButtonDrawMode.Bg_Only
 	} 		
 }
 
@@ -187,45 +187,45 @@ create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
 }
 
 @private set_button_forecolor :: proc(btn : ^ Button, clr : uint) {	// Public version of this function is in control.odin
-	if btn._draw_mode == .default && btn._is_created{
+	if btn._draw_mode == .Default && btn._is_created{
 		append(&btn.parent._cdraw_childs, btn.handle)
 		btn._added_in_draw_list = true
 	}
 	#partial switch btn._draw_mode {
-		case .bg_only : btn._draw_mode = .text_and_bg
-		case .gradient : btn._draw_mode = .grad_and_text
-		case : btn._draw_mode = .text_only
+		case .Bg_Only : btn._draw_mode = .Text_And_Bg
+		case .Gradient : btn._draw_mode = .Grad_And_Text
+		case : btn._draw_mode = .Text_Only
 	}
 	btn.fore_color = clr	
 	if btn._is_created do InvalidateRect(btn.handle, nil, true)	
 }
 
 @private set_button_backcolor :: proc(btn : ^Button, clr : uint) {  // Public version of this function is in control.odin
-	if btn._draw_mode == .default && btn._is_created{
+	if btn._draw_mode == .Default && btn._is_created{
 		append(&btn.parent._cdraw_childs, btn.handle)
 		btn._added_in_draw_list = true
 	}
 	#partial switch btn._draw_mode {
-		case .text_only : btn._draw_mode = .text_and_bg
-		case .gradient : btn._draw_mode = .bg_only
-		case .grad_and_text : btn._draw_mode = .text_and_bg
-		case .text_and_bg : btn._draw_mode = .text_and_bg
-		case : btn._draw_mode = .bg_only
+		case .Text_Only : btn._draw_mode = .Text_And_Bg
+		case .Gradient : btn._draw_mode = .Bg_Only
+		case .Grad_And_Text : btn._draw_mode = .Text_And_Bg
+		case .Text_And_Bg : btn._draw_mode = .Text_And_Bg
+		case : btn._draw_mode = .Bg_Only
 	}
 	btn.back_color = clr	
 	if btn._is_created do InvalidateRect(btn.handle, nil, true)
 }
 
 // Set gradient colors for a button.
-set_button_gradient :: proc(btn : ^Button, clr1, clr2 : uint, style : GradientStyle = .top_to_bottom) {
-	if btn._draw_mode == .default && btn._is_created {
+set_button_gradient :: proc(btn : ^Button, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom) {
+	if btn._draw_mode == .Default && btn._is_created {
 		append(&btn.parent._cdraw_childs, btn.handle)
 		btn._added_in_draw_list = true
 	}
 	#partial switch btn._draw_mode {
-		case .text_only : btn._draw_mode = .grad_and_text		
-		case .grad_and_text : btn._draw_mode = .grad_and_text
-		case : btn._draw_mode = .gradient
+		case .Text_Only : btn._draw_mode = .Grad_And_Text		
+		case .Grad_And_Text : btn._draw_mode = .Grad_And_Text
+		case : btn._draw_mode = .Gradient
 	}
     btn._gradient_color.color1 = new_rgb_color(clr1)
     btn._gradient_color.color2 = new_rgb_color(clr2)   
@@ -386,20 +386,20 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
                 btn.mouse_leave(btn, &ea)                
             }
 		
-		case CM_NOTIFY:		//{default, text_only, bg_only, text_and_bg, gradient, grad_and_text}	
-			if btn._draw_mode != .default {	
+		case CM_NOTIFY:		//{default, Text_Only, Bg_Only, Text_And_Bg, gradient, Grad_And_Text}	
+			if btn._draw_mode != .Default {	
 				nmcd := direct_cast(lp, ^NMCUSTOMDRAW)			
 				#partial switch btn._draw_mode {
-					case .text_only :						
+					case .Text_Only :						
 						return set_fore_color_internal(btn, nmcd)						
-					case .bg_only :
+					case .Bg_Only :
 						return set_back_color_internal(btn, nmcd)
-					case .text_and_bg :
+					case .Text_And_Bg :
 						set_back_color_internal(btn, nmcd)
 						return set_fore_color_internal(btn, nmcd)
-					case .gradient :						
+					case .Gradient :						
 						return set_gradient_internal(btn, nmcd)	
-					case .grad_and_text :						
+					case .Grad_And_Text :						
 						set_gradient_internal(btn, nmcd)
 						return set_fore_color_internal(btn, nmcd)						
 				}

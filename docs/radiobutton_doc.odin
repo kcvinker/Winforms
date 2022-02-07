@@ -5,7 +5,7 @@
 
 RadioButton :: struct {
     using control : Control,
-    text_alignment : enum {left, right}, // Determines whether the text of the radio button is left or right. 
+    text_alignment : enum {Left, Right}, // Determines whether the text of the radio button is left or right. 
     checked : bool, // checked state of radio button
     check_on_click : bool, // Determines whether the radio button change the checked state when clicked
     // RadioButton supports all other common properties that Control type offers.

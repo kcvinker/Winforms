@@ -9,20 +9,20 @@ import "core:fmt"
 def_msg_title := to_wstring("Winforms")
 dummy_hwnd := Hwnd(cast(uintptr) 0)
 
-MsgResult :: enum { none, okay, canel, abort, retry, ignore, yes, no }
-MsgBoxButtons :: enum {okay, ok_cancel, abort_retry_ignore, yes_no_cancel, yes_no, retry_cancel }
+MsgResult :: enum { None, Okay, Canel, Abort, Retry, Ignore, Yes, No }
+MsgBoxButtons :: enum {Okay, Ok_Cancel, Abort_Retry_Ignore, Yes_No_Cancel, Yes_No, Retry_Cancel }
 MsgBoxIcons :: enum {
-    none = 0,
-    hand = 16,
-    stop = 16,  
-    error = 16,
-    question = 32,
-    exclamation = 48,
-    warning = 48,
-    asterisk = 64,
-    information = 64,
+    None = 0,
+    Hand = 16,
+    Stop = 16,  
+    Error = 16,
+    Question = 32,
+    Exclamation = 48,
+    Warning = 48,
+    Asterisk = 64,
+    Information = 64,
 }
-MsgBoxDefButton :: enum {button1 = 0, button2 = 256, button3 = 512}
+MsgBoxDefButton :: enum {Button1 = 0, Button2 = 256, Button3 = 512}
 // MsgBoxOptions :: enum {
 //     def_desktop = 131072,
 //     right_align = 524288,
@@ -84,7 +84,7 @@ msg_box :: proc{    msg_box1,
                             title : string, 
                             msg_btn : MsgBoxButtons, 
                             ms_icon : MsgBoxIcons,
-                            def_btn : MsgBoxDefButton = .button1) -> MsgResult 
+                            def_btn : MsgBoxDefButton = .Button1) -> MsgResult 
 {
     ms_str := to_wstring(fmt.tprint(msg))
     cap_str : wstring

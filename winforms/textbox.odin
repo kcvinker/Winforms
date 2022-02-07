@@ -7,15 +7,15 @@ UISF_HIDEFOCUS :: 0x1
 WcEditClassW : wstring
 // Text case for Textbox control.
 // Possible values : default, lower_case, upper_case
-TextCase :: enum {default, lower_case, upper_case}
+TextCase :: enum {Default, Lower_Case, Upper_Case}
 
 // Text case for Textbox control.
 // Possible values : default, number_only, password_char
-TextType :: enum {default, number_only, password_char}
+TextType :: enum {Default, Number_Only, Password_Char}
 
 // Text alignment for Textbox control.
 // Possible values : left, center, right
-TbTextAlign :: enum {left, center, right}
+TbTextAlign :: enum {Left, Center, Right}
 
 TextBox :: struct {
     using control : Control,
@@ -41,7 +41,7 @@ TextBox :: struct {
 @private tb_ctor :: proc(p : ^Form, w : int = 200, h : int = 0) -> TextBox {
     if WcEditClassW == nil do WcEditClassW = to_wstring("Edit")
     tb : TextBox
-    tb.kind = .text_box
+    tb.kind = .Text_Box
     tb.width = w
     tb.height = h + 25 if h == 0 else h
     tb.parent = p
@@ -84,19 +84,19 @@ new_textbox :: proc{new_tb1, new_tb2}
     if tb.multi_line do tb._style |= ES_MULTILINE | ES_WANTRETURN
     if !tb.hide_selection do tb._style |= ES_NOHIDESEL
     if tb.read_only do tb._style |= ES_READONLY
-    if tb.text_case == .lower_case {
+    if tb.text_case == .Lower_Case {
         tb._style |= ES_LOWERCASE
-    } else if tb.text_case == .upper_case {
+    } else if tb.text_case == .Upper_Case {
         tb._style |= ES_UPPERCASE
     }
-    if tb.text_type == .number_only {
+    if tb.text_type == .Number_Only {
         tb._style |= ES_NUMBER
-    } else if tb.text_type == .password_char {
+    } else if tb.text_type == .Password_Char {
         tb._style |= ES_PASSWORD
     }
-    if tb.text_alignment == .center {
+    if tb.text_alignment == .Center {
         tb._style |= ES_CENTER
-    } else if tb.text_alignment == .right {
+    } else if tb.text_alignment == .Right {
         tb._style |= ES_RIGHT
     }
 }

@@ -2,9 +2,9 @@
 
 ComboBox :: struct {
     using control : Control,
-    combo_style : DropDownStyle, // values - {tb_combo, lb_combo} 
-                                // tb_combo = You have a textbox on your combo box and you can type something in that textbox.
-                                // lb_combo = You have a label on your combo box and you only see the list of items. 
+    combo_style : DropDownStyle, // values - {Tb_Combo, Lb_Combo} 
+                                // Tb_Combo = You have a textbox on your combo box and you can type something in that textbox.
+                                // Lb_Combo = You have a label on your combo box and you only see the list of items. 
     items : [dynamic]string, // A dynamic array to keep track of all items in combo
     visible_item_count : int, 
                 // When you click on combo box's dropdown menu button,...

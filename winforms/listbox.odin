@@ -21,7 +21,7 @@ ListBox :: struct {
 
 @private lbox_ctor :: proc(p : ^Form, x, y, w, h : int) -> ListBox {
     lbx : ListBox
-    lbx.kind = .list_box
+    lbx.kind = .List_Box
     lbx.parent = p
     lbx.font = p.font
     lbx.width = w 

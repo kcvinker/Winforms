@@ -7,7 +7,7 @@ import "core:runtime"
 
 ICC_DATE_CLASSES :: 0x100
 is_dtp_class_inited : bool = false
-dtp_class :: "SysDateTimePick32" 
+WcDTPClassW : wstring 
  
 
 //#region dtp styles
@@ -69,7 +69,7 @@ dtp_class :: "SysDateTimePick32"
 
 // Date time time format for DTP control.
 // Possible values : long = 1, short = 2, time = 4, custom = 8
-DtpFormat :: enum {long = 1, short = 2, time = 4, custom = 8}
+DtpFormat :: enum {Long = 1, Short = 2, Time = 4, Custom = 8}
 
 
 DateTimePicker :: struct {
@@ -143,12 +143,13 @@ DateTimePicker :: struct {
 
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
         is_dtp_class_inited = true
+        WcDTPClassW = to_wstring("SysDateTimePick32" )
         app.iccx.dwIcc = ICC_DATE_CLASSES
         InitCommonControlsEx(&app.iccx)
     }
 
     dtp : DateTimePicker
-    dtp.kind = .date_time_picker
+    dtp.kind = .Date_Time_Picker
     dtp.parent = p    
     dtp.font = p.font
     dtp.xpos = x
@@ -182,17 +183,17 @@ new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
 
 @private set_style_internal :: proc(dtp : ^DateTimePicker) {
     switch dtp.format {
-        case .custom :
+        case .Custom :
             dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT | DTS_APPCANPARSE 
-        case .long :
+        case .Long :
             dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT
-        case .short :
+        case .Short :
             if dtp.four_digit_year { 
                 dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT 
             } else {
                 dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT 
             }
-        case .time :
+        case .Time :
             dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_TIMEFORMAT        
     }
     
@@ -233,7 +234,7 @@ new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
 // To see how to create a custom format, see the docs.
 set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
     dtp.format_string = fmt_string
-    dtp.format = .custom
+    dtp.format = .Custom
     if dtp._is_created {        
         SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
     } 
@@ -245,7 +246,7 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
     dtp.control_id = _global_ctl_id 
     set_style_internal(dtp)
     dtp.handle = CreateWindowEx(  dtp._ex_style, 
-                                    to_wstring(dtp_class), 
+                                    WcDTPClassW, 
                                     to_wstring(dtp.text),
                                     dtp._style, 
                                     i32(dtp.xpos), 
@@ -258,12 +259,12 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
                                     nil )
     
     if dtp.handle != nil {
-      // print("dtp handle - ", dtp.handle)
+        // print("dtp handle - ", dtp.handle)
         
         dtp._is_created = true
         setfont_internal(dtp)
         set_subclass(dtp, dtp_wnd_proc) 
-        if dtp.format == .custom {          
+        if dtp.format == .Custom {          
             SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
         }  
         if dtp._cal_style > 0 {

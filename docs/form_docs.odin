@@ -2,10 +2,10 @@
 // Documentation for Form type.
 Form :: struct {
     using control : Control,  // A Form is inheriting from Control type.
-    start_pos : StartPosition, // Values - top_left, top_mid, top_right, mid_left, center, mid_right, bottom_left, bottom_mid, bottom_right, manual
-    style : FormStyle, // Values - default, fixed_single, fixed_3d, fixed_dialog, fixed_tool, sizable_tool
+    start_pos : StartPosition, // Values - Top_Left, Top_Mid, Top_Right, Mid_Left, Center, Mid_Right, Bottom_Left, Bottom_Mid, Bottom_Right, Manual
+    style : FormStyle, // Values - Default, Fixed_Single, Fixed_3D, Fixed_Dialog, Fixed_Tool, Sizable_Tool
     minimize_box, maximize_box : b32,
-    window_state : FormState,    // Values - normal = 1, minimized, maximized
+    window_state : FormState,    // Values - Normal = 1, Minimized, Maximized
 
     // events
     load : EventHandler, // Signature - proc(sender : ^Control, ea : ^EventArgs)
@@ -39,12 +39,12 @@ start_form :: proc() // Show the form and start the main loop
 show_form :: proc(f : Form) // Just show the form - Used for second form
 hide_form :: proc(f : Form) // Hide a form
 set_form_state :: proc(frm : Form, state : FormState) // Set the window state of a form. Please see the FormState enum.
-set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .top_to_bottom)
+set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom)
 /*Info
     Set grdient colors for a form.
     Parameters - clr1 -- color value 1
                 clr2 -- color value 2
-                GradientStyle - enum - top_to_bottom, left_to_right
+                GradientStyle - enum - Top_To_Bottom, Left_To_Right
 */
 
 // Example 

@@ -58,8 +58,8 @@ NumberPicker :: struct {
     value_changed : EventHandler,
 }
 
-StepOprator :: enum {add, sub}
-ButtonAlignment :: enum {right, left}
+StepOprator :: enum {Add, Sub}
+ButtonAlignment :: enum {Right, Left}
 NMUPDOWN :: struct {
     hdr : NMHDR,
     iPos : i32,
@@ -75,7 +75,7 @@ NMUPDOWN :: struct {
         InitCommonControlsEx(&app.iccx)
     }
     np : NumberPicker
-    np.kind = .number_picker
+    np.kind = .Number_Picker
     np.parent = p
     np.font = p.font
     np.width = w
@@ -117,15 +117,15 @@ NMUPDOWN :: struct {
 new_numberpicker :: proc{np_ctor1, np_ctor2}
 
 @private set_np_styles :: proc(np : ^NumberPicker) {
-    if np.button_alignment == .left {
+    if np.button_alignment == .Left {
         np._style ~= UDS_ALIGNRIGHT
         np._style |= UDS_ALIGNLEFT          
     }
 
     switch np.text_alignment {
-        case .left : np._buddy_style |= ES_LEFT
-        case .center : np._buddy_style |= ES_CENTER           
-        case .right : np._buddy_style |= ES_RIGHT
+        case .Left : np._buddy_style |= ES_LEFT
+        case .Center : np._buddy_style |= ES_CENTER           
+        case .Right : np._buddy_style |= ES_RIGHT
     }
 
     if !np.has_separator do np._style |= UDS_NOTHOUSANDS
@@ -149,7 +149,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
 
 @private np_set_value_internal :: proc(np : ^NumberPicker, op : StepOprator) {
     new_val : f32
-    if op == .add {
+    if op == .Add {
         new_val = np.value + np.step
         if np.auto_rotate {             
             if new_val > np.max_range {  // 100.25 > 100.00
@@ -291,9 +291,9 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
             }        
             nm := direct_cast(lp, ^NMUPDOWN)
             if nm.iDelta == 1 { 
-                np_set_value_internal(np, .add)              
+                np_set_value_internal(np, .Add)              
             } else {
-                np_set_value_internal(np, .sub)
+                np_set_value_internal(np, .Sub)
             }
             np_display_value_internal(np)
             if np.value_changed != nil {
@@ -386,7 +386,7 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         case WM_KEYDOWN :  
             kea := new_key_event_args(wp)          
             if !tb._update_started {
-                if kea.key_code != .up_arrow && kea.key_code != .down_arrow {                    
+                if kea.key_code != .Up_Arrow && kea.key_code != .Down_Arrow {                    
                     tb._update_started = true
                     tb._update_finished = false
                 }
@@ -404,7 +404,7 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
 
         case WM_KEYUP :            
             kea := new_key_event_args(wp)
-            if kea.key_code == .enter || kea.key_code == .tab   { 
+            if kea.key_code == .Enter || kea.key_code == .Tab   { 
                 tb._update_finished = true
                 tb._update_started = false
             }  

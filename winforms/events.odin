@@ -69,10 +69,10 @@ new_mouse_event_args :: proc(msg : u32, wp : Wparam, lp : Lparam) -> MouseEventA
 	//fmt.println("fw_keys - ", fw_keys)
 	mea.delta = cast(i32) (hi_word(cast(Dword) wp))
 	switch fw_keys {
-	case 5 : mea.shift_key = KeyState.pressed
-	case 9 : mea.ctrl_key = KeyState.pressed
-	case 17 : mea.button = MouseButtons.middle
-	case 33 : mea.button = MouseButtons.xButton1                
+	case 5 : mea.shift_key = KeyState.Pressed
+	case 9 : mea.ctrl_key = KeyState.Pressed
+	case 17 : mea.button = MouseButtons.Middle
+	case 33 : mea.button = MouseButtons.XButton1                
 	}
 
 	switch msg {
@@ -80,11 +80,11 @@ new_mouse_event_args :: proc(msg : u32, wp : Wparam, lp : Lparam) -> MouseEventA
 		mea.x = cast(int) (lo_word(cast(Dword) lp))
 		mea.y = cast(int) (hi_word(cast(Dword) lp))
 	case WM_LBUTTONDOWN, WM_LBUTTONUP : 
-        mea.button = MouseButtons.left 
+        mea.button = MouseButtons.Left 
         mea.x = cast(int) (lo_word(cast(Dword) lp))
         mea.y = cast(int) (hi_word(cast(Dword) lp))
     case WM_RBUTTONDOWN, WM_RBUTTONUP : 
-        mea.button = MouseButtons.right ;
+        mea.button = MouseButtons.Right ;
         mea.x = cast(int) (lo_word(cast(Dword) lp))
         mea.y = cast(int) (hi_word(cast(Dword) lp))
 	}
@@ -96,9 +96,9 @@ new_key_event_args :: proc(wP : Wparam) -> KeyEventArgs {
     kea.key_code = KeyEnum(wP)    
     kea.key_value = cast(int) kea.key_code  
     #partial switch kea.key_code {
-	case KeyEnum.shift : kea.shift_pressed = true     		    		 
-	case KeyEnum.ctrl : kea.ctrl_pressed = true     				 
-	case KeyEnum.alt : kea.alt_pressed = true         	      
+	case KeyEnum.Shift : kea.shift_pressed = true     		    		 
+	case KeyEnum.Ctrl : kea.ctrl_pressed = true     				 
+	case KeyEnum.Alt : kea.alt_pressed = true         	      
     }      
     return kea
 }
@@ -125,63 +125,63 @@ new_size_event_args :: proc(m : u32, wpm : Wparam, lpm : Lparam) -> SizeEventArg
 //new_datetime_event_args :: proc()
 
 SizedPosition :: enum {
-    left_edge = 1, 
-    right_edge, 
-    top_edge, 
-    top_left_corner,
-    top_right_corner,
-    bottom_edge,
-    bottom_left_corner,
-    bottom_right_corner,
+    Left_Edge = 1, 
+    Right_Edge, 
+    Top_Edge, 
+    Top_Left_Corner,
+    Top_Right_Corner,
+    Bottom_Edge,
+    Bottom_Left_Corner,
+    Bottom_Right_Corner,
 }
 
 SizedReason :: enum { // It is not using now.
-    on_restored,
-    on_minimized,
-    on_maximized,
-    other_restored,
-    other_maxmizied,
+    On_Restored,
+    On_Minimized,
+    On_Maximized,
+    Other_Restored,
+    Other_Maxmizied,
 }
 
 MouseButtons :: enum {
-	none = 0,
-    right = 2097152,
-    middle = 4194304,
-    left = 1048576,
-    xButton1 = 8388608,
-    xButton2 = 16777216,
+	None = 0,
+    Right = 2097152,
+    Middle = 4194304,
+    Left = 1048576,
+    XButton1 = 8388608,
+    XButton2 = 16777216,
 }
 
-KeyState :: enum {released, pressed,}
+KeyState :: enum {Released, Pressed,}
 
 KeyEnum :: enum {
-    modifier = -65_536,
-    none = 0, 
-    left_button, right_button, cancel, middle_button, x_button1, x_button2, 
-    back_space = 8, tab,
-    clear = 12, enter, 
-    shift = 16, ctrl, alt, pause, caps_lock, 
-    escape = 27,
-    space = 32, page_up, page_down, end, home, left_arrow, up_arrow, right_arrow, down_arrow,
-    select, print, execute, print_screen, insert, del, help,
-    d0, d1, d2, d3, d4, d5, d6, d7, d8, d9,   
-    a = 65, 
-    b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,    
-    left_win, right_win, apps,
-    sleep = 95,     
-    num_pad0, num_pad1, num_pad2, num_pad3, num_pad4, num_pad5, num_pad6, num_pad7, num_pad8, num_pad9, 
-    multiply, add, seperator, subtract, decimal, divide, 
-    f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8, f_9, f_10, f_11, f_12, f_13, f_14, f_15, f_16, f_17, f_18, f_19, f_20, f_21, f_22, f_23, f_24, 
-    num_lock = 144, scroll, 
-    left_shift = 160, right_shift, left_ctrl, right_ctrl, left_menu, right_menu, 
-    browser_back, browser_forward, brower_refresh, browser_stop, browser_search, browser_favorites, browser_home, 
-    volume_mute, volume_down, volume_up, 
-    media_next_track, media_prev_track, media_stop, media_play_pause, launch_mail, select_media, 
-    launch_app1, launch_app2, 
-    colon = 186, oem_plus, oem_comma, oem_minus, oem_period, oem_question, oem_tilde, 
-    oem_open_bracket = 219, oem_pipe, oem_close_bracket, oem_quotes, oem8,
-    oem_back_slash = 226,
-    process = 229,
-    packet = 231,
-    attn = 246, cr_sel, ex_sel, erase_eof, play, zoom, no_name, pa1, oem_clear,  // start from 400    
+    Modifier = -65_536,
+    None = 0, 
+    Left_Button, Right_Button, Cancel, Middle_Button, Xbutton1, Xbutton2, 
+    Back_Space = 8, Tab,
+    Clear = 12, Enter, 
+    Shift = 16, Ctrl, Alt, Pause, Caps_Lock, 
+    Escape = 27,
+    Space = 32, Page_Up, Page_Down, End, Home, Left_Arrow, Up_Arrow, Right_Arrow, Down_Arrow,
+    Select, Print, Execute, Print_Screen, Insert, Del, Help,
+    D0, D1, D2, D3, D4, D5, D6, D7, D8, D9,   
+    A = 65, 
+    B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,    
+    Left_Win, Right_Win, Apps,
+    Sleep = 95,     
+    Numpad0, Numpad1, Numpad2, Numpad3, Numpad4, Numpad5, Numpad6, Numpad7, Numpad8, Numpad9, 
+    Multiply, Add, Seperator, Subtract, Decimal, Divide, 
+    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24, 
+    Num_Lock = 144, Scroll, 
+    Left_Shift = 160, Right_Shift, Left_Ctrl, Right_Ctrl, Left_Menu, Right_Menu, 
+    Browser_Back, Browser_Forward, Brower_Refresh, Browser_Stop, Browser_Search, Browser_Favorites, Browser_Home, 
+    Volume_Mute, Volume_Down, Volume_Up, 
+    Media_Next_Track, Media_Prev_Track, Media_Stop, Media_Play_Pause, Launch_Mail, Select_Media, 
+    Launch_App1, Launch_App2, 
+    Colon = 186, Oem_Plus, Oem_Comma, Oem_Minus, Oem_Period, Oem_Question, Oem_Tilde, 
+    Oem_Open_Bracket = 219, Oem_Pipe, Oem_Close_Bracket, Oem_Quotes, Oem8,
+    Oem_Back_Slash = 226,
+    Process = 229,
+    Packet = 231,
+    Attn = 246, Cr_Sel, Ex_Sel, Erase_Eof, Play, Zoom, No_Name, Pa1, Oem_Clear,  // start from 400    
 }

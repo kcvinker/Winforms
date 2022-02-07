@@ -7,7 +7,7 @@ import "core:runtime"
 CheckBox :: struct {
     using control : Control,
     checked : bool,
-    text_alignment : enum {left, right},
+    text_alignment : enum {Left, Right},
     check_changed : EventHandler,
     auto_size : bool,
     _bk_brush : Hbrush,
@@ -20,7 +20,7 @@ CheckBox :: struct {
 @private cb_ctor :: proc(p : ^Form, txt : string = "") -> CheckBox {
     cb_count += 1
     cb : CheckBox
-    cb.kind = .check_box
+    cb.kind = .Check_Box
     cb.parent = p
     cb.font = p.font
     cb.text = concat_number("CheckBox_", cb_count) if txt == "" else txt
@@ -97,7 +97,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
 }
 
 @private adjust_style :: proc(cb : ^CheckBox) {
-    if cb.text_alignment == .right {
+    if cb.text_alignment == .Right {
         cb._style |= BS_RIGHTBUTTON
        cb._txt_style |= DT_RIGHT
     } 
@@ -142,7 +142,7 @@ create_checkbox :: proc(cb : ^CheckBox) {
                 case CDDS_PREPAINT :
                     cref := get_color_ref(cb.fore_color)                       
                     rct : Rect = nmcd.rc
-                    if cb.text_alignment == .left{
+                    if cb.text_alignment == .Left{
                         rct.left += 18 
                     } else do rct.right -= 18   
                     SetTextColor(nmcd.hdc, cref) 

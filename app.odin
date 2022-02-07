@@ -100,7 +100,7 @@ MakeWindow :: proc() {
         cmb := new_combobox(&frm)
         cmb.xpos = 380
         cmb.ypos = 10
-        cmb.combo_style = .lb_combo
+        cmb.combo_style = .Lb_Combo
         combo_add_items(&cmb, "Vinod", "Vinayak", "Malu", "സിനിമ", 150, 25.1, 1000, b1.handle)
         create_combo(&cmb)
     }
@@ -125,7 +125,7 @@ MakeWindow :: proc() {
         // dp.xpos = 170
         // dp.ypos = 100
         // dp.text_changed = dtp_tb
-        dp.format = .custom
+        dp.format = .Custom
         //dp.show_updown = true
         dp.format_string = "dd-MM-yyyy"
         //dp.short_day_names = true
@@ -155,7 +155,7 @@ MakeWindow :: proc() {
         np = new_numberpicker(&frm, 175, 145, 100, 25)
       //  np.font = new_font("Hack", 14, true)
        // np.button_alignment = .left
-        np.text_alignment = .center
+        np.text_alignment = .Center
         np.back_color = 0x8080FF
         np.fore_color = 0xFFFFFF
        np.step = 0.25
@@ -174,7 +174,7 @@ MakeWindow :: proc() {
         create_progressbar(&pb)
 
         pb2 = new_progressbar(&frm, 525, 80, 25, 100)
-        pb2.alignment= .vertical
+        pb2.orientation = .Vertical
         
         create_progressbar(&pb2)
     }
@@ -195,14 +195,14 @@ MakeWindow :: proc() {
         //tkb.back_color = goldenrod
        //tkb.channel_color = red
        //tkb.tic_color = red
-       tkb.tic_pos = .down_side       
+       tkb.tic_pos = .Down_Side       
         create_trackbar(&tkb)
 
         tkb2 = new_trackbar(&frm, 430, 165, 40, 150)
-        tkb2.orientation = .vertical
+        tkb2.orientation = .Vertical
         tkb2.tic_color = blue
         tkb2.channel_color = maroon
-        tkb2.tic_pos = .both_side
+        tkb2.tic_pos = .Both_Side
         tkb2.tic_width = 2
        // tkb2.default_tics = true
         create_trackbar(&tkb2)
