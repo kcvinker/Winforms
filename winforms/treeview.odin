@@ -273,6 +273,7 @@ new_treeview :: proc{new_tv1, new_tv2}
     return tv
 }
 
+// a comment
 @private tv_dtor :: proc(tv : ^TreeView) 
 {      
     for n in tv.nodes { n._dispose(n)} // looping thru the child nodes and delete them.

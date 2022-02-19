@@ -290,7 +290,8 @@ CDIS_DEFAULT            :: 0x20
 CDIS_HOT                :: 0x40
 CDIS_MARKED             :: 0x80
 CDIS_INDETERMINATE      :: 0x100
-CDIS_SHOWKEYBOARDCUES   :: 0x200
+CDIS_SHOWKEYBOARDCUES   :: 0x200 
+
 
 U32_NM_FIRST := max(u32)
 NM_FIRST  := U32_NM_FIRST + 1 //~u64(0) - 1 // (0U - 0U)
