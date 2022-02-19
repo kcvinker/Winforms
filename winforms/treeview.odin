@@ -194,8 +194,7 @@ TreeView :: struct
     show_selection : bool,
     hot_tracking : bool,
     selected_node : ^TreeNode,
-    nodes : [dynamic]^TreeNode,
-    root_item : TreeNode,
+    nodes : [dynamic]^TreeNode,    
     image_list : HimageList,
     line_color : uint,
     
