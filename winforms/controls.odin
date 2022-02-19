@@ -5,7 +5,8 @@ _global_subclass_id : int = 2001
 _global_ctl_id : Uint = 100
 
 
-ControlKind :: enum {
+ControlKind :: enum 
+{
 	Form, 
 	Button, 
 	Calendar,		
@@ -27,7 +28,8 @@ ControlKind :: enum {
 }
 
 // A base class for all controls & Form.
-Control :: struct {
+Control :: struct 
+{
 	kind : ControlKind,
 	name : string,
 	handle : Hwnd,
@@ -41,6 +43,7 @@ Control :: struct {
 	fore_color : uint,
 	enabled : bool,
 	visible : bool,
+
     _style, _ex_style : Dword, 
 	_is_created : bool,
 	_is_mouse_tracking, _is_mouse_entered : bool,
@@ -73,6 +76,7 @@ Control :: struct {
     key_up, 
 	key_down, 
 	key_press : KeyEventHandler,
+	on_destroy : EventHandler,
 }
 
 @private control_cast :: proc($T : typeid, refd : DwordPtr) -> ^T { return cast(^T) (cast(uintptr) refd) }
@@ -205,7 +209,9 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 	#partial switch ctl.kind {
 		case .Button:
 			btn := cast(^Button) ctl
-			set_button_backcolor(btn, clr)		
+			set_button_backcolor(btn, clr)
+		case .Tree_View :
+			treeview_set_back_color(ctl, clr)		
 
 		case : // For all other controls
 			ctl.clr_changed = true
@@ -233,6 +239,14 @@ control_set_back_color :: proc{set_back_color1, set_back_color2}
 		case .Button :
 			btn := cast(^Button) ctl
 			set_button_forecolor(btn, clr)
+		case .Tree_View :
+			//tv := cast(^Tree_View) ctl
+			ctl.back_color = clr
+			if ctl._is_created
+			{
+				cref := get_color_ref(clr)
+				SendMessage(ctl.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, Lparam))
+			}
 		
 
 		case : // for all other controls

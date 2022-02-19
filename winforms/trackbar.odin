@@ -190,7 +190,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
         distance := tlength / tics_to_draw
         extra_pts := tlength %% tics_to_draw 
         
-        print("tic to dra - ", tics_to_draw)
+        //print("tic to dra - ", tics_to_draw)
         #partial switch t.tic_pos {            
             case .Left_Side :
                 draw_single_tic_vertical(dch, first_x, first_y)

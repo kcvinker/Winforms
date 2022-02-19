@@ -2,6 +2,9 @@ package winforms
 
 //import "core:math/bits"
 
+U64MAX :: ~u64(0) // When CPP code shows minus value from an unsigned type, do this. You will get the max value for that type.
+U32MAX :: ~u32(0) // Same as above. Remember to add 1 after deduct those negative values.
+
 // Window class Constants
 CS_VREDRAW    :: 0x0001
 CS_HREDRAW    :: 0x0002
@@ -293,7 +296,7 @@ U32_NM_FIRST := max(u32)
 NM_FIRST  := U32_NM_FIRST + 1 //~u64(0) - 1 // (0U - 0U)
 
 // NM_OUTOFMEMORY :: (NM_FIRST-1)
-NM_CLICK := (NM_FIRST-2) // 4294967294
+NM_CLICK :: 4294967294
 // NM_DBLCLK :: (NM_FIRST-3)
 // NM_RETURN :: (NM_FIRST-4)
 // NM_RCLICK :: (NM_FIRST-5)
@@ -338,6 +341,7 @@ RDW_UPDATENOW       :: 256
 RDW_ERASENOW        :: 512
 RDW_FRAME           :: 1024
 RDW_NOFRAME         :: 2048
+
 
 
 SS_BITMAP ::  14

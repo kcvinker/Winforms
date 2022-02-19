@@ -25,7 +25,8 @@ app := start_app() // Global variable for storing data needed to create a window
     This type is used for holding information about the program for whole run time.
     We need to keep some info from the very beginning to the very end.
 */
-@private Application :: struct {
+@private Application :: struct 
+{
     main_handle : Hwnd,
     main_loop_started : bool,
     class_name : string,
@@ -38,7 +39,8 @@ app := start_app() // Global variable for storing data needed to create a window
     //_back_color : uint,
 }
 
-@private start_app :: proc() -> Application {
+@private start_app :: proc() -> Application 
+{
     appl : Application
     appl.global_font = new_font(def_font_name, def_font_size)
     appl.class_name = "WingLib_Form"
@@ -52,7 +54,8 @@ app := start_app() // Global variable for storing data needed to create a window
     return appl
 }
 
-Form :: struct {
+Form :: struct 
+{
     using control : Control,  // By this, form is a child of control.
     start_pos : StartPosition,
     style : FormStyle,
@@ -86,7 +89,8 @@ Form :: struct {
 
 FormDrawMode :: enum { Default, flat_color, gradient,}
 //GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
-StartPosition :: enum {
+StartPosition :: enum 
+{
     Top_Left,
     Top_Mid,
     Top_Right,
@@ -105,7 +109,8 @@ GradientColors :: struct {color1, color2 : RgbColor,}
 
 new_form :: proc{new_form1, new_form2} 
 
-@private new_form_internal :: proc(t : string = "", w : int = 500, h : int = 400) -> Form {
+@private new_form_internal :: proc(t : string = "", w : int = 500, h : int = 400) -> Form 
+{
     app.form_count += 1
     f : Form
     f.kind = .Form    
@@ -125,50 +130,53 @@ new_form :: proc{new_form1, new_form2}
     return  f
 }
 
-@private new_form1 :: proc() -> Form {
+@private new_form1 :: proc() -> Form 
+{
     frm := new_form_internal()
     return frm
 }
 
-@private new_form2 :: proc(txt : string, w : int = 500, h : int = 400) -> Form {
+@private new_form2 :: proc(txt : string, w : int = 500, h : int = 400) -> Form 
+{
     frm := new_form_internal(txt, w, h)
     return frm
 }
 
-@private form_dtor :: proc(frm : ^Form) {
+@private form_dtor :: proc(frm : ^Form) 
+{
     delete_gdi_object(frm.font.handle)
     delete(frm._udraw_ids)
     delete(frm._cdraw_childs)
-    delete(frm._combo_list)
-    
+    delete(frm._combo_list)    
 }
 
-@private set_form_font_internal :: proc(frm : ^Form) {
+@private set_form_font_internal :: proc(frm : ^Form) 
+{
     if app.global_font.handle == nil do CreateFont_handle(&app.global_font, frm.handle)
-    if frm.font.name == def_font_name && frm.font.size == def_font_size {
+    if frm.font.name == def_font_name && frm.font.size == def_font_size 
+    {
         // User did not made any changes in font. So use default font handle.
         frm.font = app.global_font
         SendMessage(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
     }
-    else {
-        if frm.font.handle == nil {
+    else 
+    {
+        if frm.font.handle == nil 
+        {
             // User just changed the font name and/or size. Create the font handle
             CreateFont_handle(&frm.font, frm.handle)
             SendMessage(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
         }
-        else {
-            SendMessage(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1))
-        }
+        else { SendMessage(frm.handle, WM_SETFONT, Wparam(frm.font.handle), Lparam(1)) }
     }
 }
 
 
 
-create_form :: proc(frm : ^Form ) {    
+create_form :: proc(frm : ^Form ) 
+{    
     if app.main_handle == nil {register_class()}
-    if frm.back_color != def_window_color {
-        frm._draw_mode = .flat_color
-    }
+    if frm.back_color != def_window_color { frm._draw_mode = .flat_color }
     set_start_position(frm)
     set_form_style(frm)
     frm.handle = CreateWindowEx(  frm._ex_style, 
@@ -183,16 +191,15 @@ create_form :: proc(frm : ^Form ) {
                                     nil, 
                                     app.h_instance, 
                                     nil )
-    if frm.handle == nil {        
-        fmt.println("Error in CreateWindoeEx,", GetLastError())        
-    }
-    else {
+    if frm.handle == nil { fmt.println("Error in CreateWindoeEx,", GetLastError()) }
+    else 
+    {
         frm._is_created = true 
         app.form_count += 1       
-        if app.main_handle == nil {
+        if app.main_handle == nil 
+        {
             app.main_handle = frm.handle
-            app.start_state = frm.window_state
-            
+            app.start_state = frm.window_state            
         }
         set_form_font_internal(frm)
         SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LongPtr) cast(uintptr) frm)        
@@ -203,11 +210,13 @@ create_form :: proc(frm : ^Form ) {
 /* This will display the window.
     And it will check if the main loop is started or not.
     If not started, it will start the main loop */
-start_form :: proc() {
+start_form :: proc() 
+{
     ShowWindow(app.main_handle, cast(i32) app.start_state )    
     //app.main_loop_started = true
     ms : Msg
-    for GetMessage(&ms, nil, 0, 0) != 0 {        
+    for GetMessage(&ms, nil, 0, 0) != 0 
+    {        
         TranslateMessage(&ms)
         DispatchMessage(&ms)
     }    
@@ -218,7 +227,8 @@ hide_form :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
 set_form_state :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
 
 // Set the colors to draw a gradient background in form.
-set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom) {
+set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom) 
+{
     f._gradient_color.color1 = new_rgb_color(clr1)
     f._gradient_color.color2 = new_rgb_color(clr2)
     f._draw_mode = .gradient
@@ -227,7 +237,8 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 }
 
 
-@private register_class :: proc() {
+@private register_class :: proc() 
+{
     win_class : WNDCLASSEXW
     win_class.cbSize = size_of(win_class)
     win_class.style = CS_HREDRAW | CS_VREDRAW
@@ -248,8 +259,10 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 
 }
 
-@private set_start_position :: proc(frm : ^Form) {
-    #partial switch frm.start_pos {
+@private set_start_position :: proc(frm : ^Form) 
+{
+    #partial switch frm.start_pos 
+    {
     case .Center:
         frm.xpos = (app.screen_width - frm.width) / 2
         frm.ypos = (app.screen_height - frm.height) / 2
@@ -273,8 +286,10 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
     }
 }
 
-@private set_form_style :: proc(frm : ^Form) {
-    #partial switch frm.style {
+@private set_form_style :: proc(frm : ^Form) 
+{
+    #partial switch frm.style 
+    {
         case .Default :
             frm._ex_style = normal_form_ex_style
             frm._style = normal_form_style
@@ -304,7 +319,8 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
     }
 }
 
-@private track_mouse_move :: proc(hw : Hwnd) {
+@private track_mouse_move :: proc(hw : Hwnd) 
+{
     tme : TRACKMOUSEEVENT
     tme.cbSize = size_of(tme)
     tme.dwFlags = TME_HOVER | TME_LEAVE
@@ -313,34 +329,39 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
     TrackMouseEvent(&tme)
 }
 
-@private set_back_clr_internal :: proc(f : ^Form, hdc : Hdc) {
+@private set_back_clr_internal :: proc(f : ^Form, hdc : Hdc) 
+{
     rct : Rect
     hbr : Hbrush     
     GetClientRect(f.handle, &rct)
-    if f._draw_mode == .flat_color {
-        hbr = CreateSolidBrush(get_color_ref(f.back_color))
-    }
-    else if f._draw_mode == .gradient {        
-        hbr = create_gradient_brush(f._gradient_color, f._gradient_style, hdc, rct)
-    }
+    if f._draw_mode == .flat_color { hbr = CreateSolidBrush(get_color_ref(f.back_color)) }
+    else if f._draw_mode == .gradient { hbr = create_gradient_brush(f._gradient_color, f._gradient_style, hdc, rct) }
     FillRect(hdc, &rct, hbr)
     DeleteObject(Hgdiobj(hbr))
 }
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
 
-@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) {    
-    if item == .lb_hwnd {
-        for c in frm._combo_list {        
-            if c.lb_handle == hw {
+@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) 
+{    
+    if item == .lb_hwnd 
+    {
+        for c in frm._combo_list 
+        {        
+            if c.lb_handle == hw 
+            {
                 ci = c
                 ok = true
                 break
             }
         }
-    } else {
-        for c in frm._combo_list {        
-            if c.tb_handle == hw {
+    } 
+    else 
+    {
+        for c in frm._combo_list 
+        {        
+            if c.tb_handle == hw 
+            {
                 ci = c
                 ok = true
                 break
@@ -351,11 +372,14 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 }
 
 
-@private display_msg :: proc(umsg : u32, ) {
+@private display_msg :: proc(umsg : u32, ) 
+{
     @static counter : int = 1
     mmap := make_mes_map()
-    for k, v in mmap {
-        if v == umsg {
+    for k, v in mmap 
+    {
+        if v == umsg 
+        {
             ptf("message number - [%d] - %s\n", counter, k)
             counter += 1
             break
@@ -364,11 +388,13 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 }
 
 
-@private window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> Lresult {
+@private window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> Lresult 
+{
     context = runtime.default_context()    
     frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)   
     //display_msg(msg)
-    switch msg {   
+    switch msg 
+    {   
           
 
         // case WM_PARENTNOTIFY :
@@ -418,9 +444,12 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
             ctl_hwnd := direct_cast(lp, Hwnd)
             //print("list box handle - ", ctl_hwnd)
             ci, is_combo := find_combo_data(frm, ctl_hwnd, FindHwnd.lb_hwnd)
-            if is_combo {
+            if is_combo 
+            {
                 return SendMessage(ci.combo_handle, CM_COMBOLBCOLOR, wp, 0)
-            } else { // Need and else statement when e create ListBox
+            } 
+            else 
+            { // Need and else statement when e create ListBox
                 return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
             }
         

@@ -148,6 +148,12 @@ foreign user32 {
    @(link_name="SetActiveWindow") SetActiveWindow :: proc(hw : Hwnd) -> Hwnd ---
    @(link_name="GetDCEx") GetDCEx :: proc(hw : Hwnd, clp_rgn : Hrgn, flags : Dword) -> Hdc ---
    @(link_name="GetWindowRect") GetWindowRect :: proc(hw : Hwnd, pRc : ^Rect) -> Bool ---
+   @(link_name="DestroyIcon") DestroyIcon :: proc(hIco : Hicon) -> Bool ---
+   @(link_name="LoadImageW") LoadImage :: proc(hInst : Hinstance, 
+                                                img_name : wstring,
+                                                img_type : u32,
+                                                cx, cy : i32,
+                                                fuLoad : u32 ) -> Handle ---
    
 
 
@@ -221,6 +227,15 @@ foreign Comctl32 {
    @(link_name="DefSubclassProc") DefSubclassProc :: proc(hw : Hwnd, ms : u32, wpm : Wparam, lpm : Lparam) -> Lresult ---
    @(link_name="RemoveWindowSubclass") RemoveWindowSubclass :: proc(hw : Hwnd, pfn : SUBCLASSPROC, uid : UintPtr) -> Bool ---
    @(link_name="InitCommonControlsEx") InitCommonControlsEx :: proc(picc_ex : ^INITCOMMONCONTROLSEX) -> Bool ---
+   @(link_name="ImageList_Create") ImageList_Create :: proc(#any_int cx, cy : i32, 
+                                                            flags : u32, 
+                                                            #any_int cIntial, 
+                                                            cGrow : i32) -> HimageList ---
+   @(link_name="ImageList_Destroy") ImageList_Destroy :: proc(himl : HimageList) -> Bool ---
+   @(link_name="ImageList_Add") ImageList_Add :: proc(himl : HimageList, hbmImg : Hbitmap, hbmMask : Hbitmap) -> i32 ---
+   @(link_name="ImageList_ReplaceIcon") ImageList_ReplaceIcon :: proc(himl : HimageList, i : i32, icon : Hicon) -> i32 ---
+
+
 
 } // Comctrl library
 
@@ -255,4 +270,16 @@ foreign UxTheme {
                                                       partId, stateId : i32,
                                                       pRect : ^Rect,
                                                       opts : ^DTBGOPTS) -> Hresult ---                                                  
+}
+
+
+foreign import "system:shell32.lib"
+@(default_calling_convention = "std")
+foreign shell32 {
+   @(link_name="ExtractIconExW") ExtractIconEx :: proc(  lpszFile : wstring, 
+                                                         iconIndex : i32, 
+                                                         pLgicon : ^Hicon,
+                                                         pSmIcon : ^Hicon,
+                                                         nIcons : u32 ) -> u32 ---
+
 }

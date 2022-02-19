@@ -8,12 +8,15 @@ DateTimeEventHandler :: proc(sender : ^Control, e : ^DateTimeEvent)
 PaintEventHandler :: proc(sender : ^Control, e : ^PaintEventArgs)
 SizeEventHandler :: proc(sender : ^Control, e : ^SizeEventArgs)
 LBoxEventHandler :: proc(sender : ^Control, e : string)
+TreeEventHandler :: proc(sender : ^TreeView, e : ^TreeEventArgs)
+
 
 
 
 
 EventArgs :: struct {handled : b64, cancelled : b64,}
-MouseEventArgs :: struct {
+MouseEventArgs :: struct 
+{
 	using base : EventArgs,
 	button : MouseButtons,
 	clicks, delta : i32,
@@ -21,7 +24,8 @@ MouseEventArgs :: struct {
 	x, y : int,
 }
 
-KeyEventArgs :: struct {
+KeyEventArgs :: struct 
+{
     using base : EventArgs,
 	alt_pressed : bool,
     ctrl_pressed : bool, 
@@ -31,26 +35,34 @@ KeyEventArgs :: struct {
     suppress_key_press : bool,
 }
 
-DateTimeEvent :: struct {
+DateTimeEvent :: struct 
+{
     using base : EventArgs,
     date_string : string,
     dt_struct : SYSTEMTIME,
 }
 
-PaintEventArgs ::  struct {
+PaintEventArgs ::  struct 
+{
     using base : EventArgs,
     paint_info : ^PAINTSTRUCT,
-
 }
 
-SizeEventArgs :: struct {
+SizeEventArgs :: struct 
+{
     using base : EventArgs,
     form_rect : ^Rect,
     sized_on : SizedPosition,
     client_area : Area,
-   // sized_reason : SizedReason,
-    
-    
+   // sized_reason : SizedReason,   
+}
+
+TreeEventArgs :: struct
+{
+    using base : EventArgs,
+    action : TreeViewAction,
+    node : ^TreeNode,
+    old_node : ^TreeNode,
 }
 
 
@@ -63,7 +75,8 @@ new_event_args :: proc() -> EventArgs {
 	return ea
 }
 
-new_mouse_event_args :: proc(msg : u32, wp : Wparam, lp : Lparam) -> MouseEventArgs {
+new_mouse_event_args :: proc(msg : u32, wp : Wparam, lp : Lparam) -> MouseEventArgs 
+{
 	mea : MouseEventArgs
 	fw_keys := cast(Word) (wp & 0xffff) //(lo_word(cast(Dword) wp))	
 	//fmt.println("fw_keys - ", fw_keys)
@@ -91,7 +104,8 @@ new_mouse_event_args :: proc(msg : u32, wp : Wparam, lp : Lparam) -> MouseEventA
 	return mea
 }
 
-new_key_event_args :: proc(wP : Wparam) -> KeyEventArgs {
+new_key_event_args :: proc(wP : Wparam) -> KeyEventArgs 
+{
 	kea : KeyEventArgs    
     kea.key_code = KeyEnum(wP)    
     kea.key_value = cast(int) kea.key_code  
@@ -103,13 +117,15 @@ new_key_event_args :: proc(wP : Wparam) -> KeyEventArgs {
     return kea
 }
 
-new_paint_event_args :: proc(ps : ^PAINTSTRUCT) -> PaintEventArgs {
+new_paint_event_args :: proc(ps : ^PAINTSTRUCT) -> PaintEventArgs 
+{
     pea : PaintEventArgs
     pea.paint_info = ps
     return pea
 }
 
-new_size_event_args :: proc(m : u32, wpm : Wparam, lpm : Lparam) -> SizeEventArgs {
+new_size_event_args :: proc(m : u32, wpm : Wparam, lpm : Lparam) -> SizeEventArgs 
+{
     sea : SizeEventArgs
     if m == WM_SIZING { // When resizing happening
         sea.sized_on = SizedPosition(wpm)
@@ -122,9 +138,49 @@ new_size_event_args :: proc(m : u32, wpm : Wparam, lpm : Lparam) -> SizeEventArg
     }
     return sea
 }
+
+new_tree_event_args :: proc{tree_event_args1, tree_event_args2}
+tree_event_args1 :: proc(ntv : ^NMTREEVIEW) -> TreeEventArgs
+{
+    tea : TreeEventArgs
+    if ntv.hdr.code == TVN_SELCHANGEDW || ntv.hdr.code == TVN_SELCHANGINGW {
+        switch ntv.action {
+            case 0 : tea.action = .Unknown
+            case 1 : tea.action = .By_Mouse
+            case 2 : tea.action = .By_Keyboard
+        }
+    } 
+    else if ntv.hdr.code == TVN_ITEMEXPANDEDW || ntv.hdr.code == TVN_ITEMEXPANDINGW { 
+        switch ntv.action {
+            case 0 : tea.action = .Unknown
+            case 1 : tea.action = .Collapse
+            case 2 : tea.action = .Expand
+        }
+    }
+    
+    tea.node = direct_cast(ntv.itemNew.lParam, ^TreeNode)
+    tea.old_node = direct_cast(ntv.itemOld.lParam, ^TreeNode) if ntv.itemOld.lParam > 0 else nil
+    return tea
+}
+
+tree_event_args2 :: proc(pic : ^TVITEMCHANGE) -> TreeEventArgs
+{
+    @static x : int
+    tea : TreeEventArgs
+    ptf("Printing count ---------[%d]\n", x)
+    print("uChanged - ", pic.uChanged)
+    print("UStateNew - ", pic.uStateNew)
+    print("UStateOld - ", pic.uStateOld)
+    print("----------------------------------------")
+    x += 1
+    return tea
+}
+
+
 //new_datetime_event_args :: proc()
 
-SizedPosition :: enum {
+SizedPosition :: enum 
+{
     Left_Edge = 1, 
     Right_Edge, 
     Top_Edge, 
@@ -135,7 +191,8 @@ SizedPosition :: enum {
     Bottom_Right_Corner,
 }
 
-SizedReason :: enum { // It is not using now.
+SizedReason :: enum 
+{ // It is not using now.
     On_Restored,
     On_Minimized,
     On_Maximized,
@@ -143,7 +200,8 @@ SizedReason :: enum { // It is not using now.
     Other_Maxmizied,
 }
 
-MouseButtons :: enum {
+MouseButtons :: enum 
+{
 	None = 0,
     Right = 2097152,
     Middle = 4194304,
@@ -151,6 +209,8 @@ MouseButtons :: enum {
     XButton1 = 8388608,
     XButton2 = 16777216,
 }
+
+TreeViewAction :: enum {Unknown, By_Keyboard, By_Mouse, Collapse, Expand,}
 
 KeyState :: enum {Released, Pressed,}
 

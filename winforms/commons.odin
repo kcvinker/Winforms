@@ -39,6 +39,20 @@ SizeIncrement :: struct {width, height : int,}
 Area :: struct {width, height : int,}
 WordValue :: enum {Low, High}
 
+image_list_add_icon :: proc(himl : HimageList, fPath : string, indx : int, smIcon : bool) -> i32 {
+	hIco : Hicon
+	uRet : u32
+	if smIcon {
+		uRet = ExtractIconEx(to_wstring(fPath), i32(indx), nil, &hIco, 1)
+	} else do uRet = ExtractIconEx(to_wstring(fPath), i32(indx), &hIco, nil, 1)
+	if uRet == 0 do return -1
+	iRet := ImageList_ReplaceIcon(himl, -1, hIco)
+	DestroyIcon(hIco)
+	return iRet
+}
+
+
+
 current_time_internal :: proc() -> Time {
 	ftime : FILETIME
 	GetSysTimeAsFileTime(&ftime)

@@ -23,6 +23,8 @@ UintPtr :: distinct uintptr
 IntPtr :: distinct int
 Long   :: distinct c_long
 LongPtr :: distinct int
+UlongPtr :: distinct c_ulong
+Ulong :: distinct c_ulong
 
 Bool :: distinct b32
 Wchar :: wchar_t
@@ -52,10 +54,12 @@ Wparam    :: distinct UintPtr
 Lparam    :: distinct LongPtr
 Lresult   :: distinct LongPtr
 Dword     :: c_ulong
-DwordPtr :: ^c_ulong
+DwordPtr  :: ^c_ulong
 Word      :: u16
-ColorRef :: distinct Dword
+ColorRef  :: distinct Dword
 HtreeItem :: distinct Handle
+HimageList :: distinct Handle
+
 
 
 WNDPROC  :: distinct #type proc "std" (Hwnd, u32, Wparam, Lparam) -> Lresult

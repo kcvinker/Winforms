@@ -436,7 +436,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
                     
                  
                 case LBN_SELCANCEL :
-                    print("sel cancel")
+                    //print("sel cancel")
 
 
             }
