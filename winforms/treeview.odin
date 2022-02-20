@@ -129,6 +129,11 @@ NodeDisposeHandler :: proc(node : ^TreeNode)
     TVIF_STATE :: 0x8    
     TVIF_TEXT :: 0x1
 
+    TVE_COLLAPSE      :: 1
+    TVE_EXPAND        :: 2
+    TVE_TOGGLE        :: 3
+    TVE_COLLAPSERESET :: 0x8000
+
     TVNA_ADD :: 1
     TVNA_ADDFIRST :: 2
     TVNA_ADDCHILD :: 3
@@ -140,6 +145,7 @@ NodeDisposeHandler :: proc(node : ^TreeNode)
     TV_FIRST :: 0x1100
     TVN_FIRST :: 4294966896
     TVM_DELETEITEM :: (TV_FIRST+1)
+    TVM_EXPAND  :: TV_FIRST + 2
     TVM_INSERTITEMW :: (TV_FIRST + 50)
     TVM_SETIMAGELIST :: (TV_FIRST + 9)
     TVM_SETBKCOLOR :: (TV_FIRST + 29)
@@ -218,8 +224,7 @@ TreeView :: struct
     after_collapse : TreeEventHandler,
 }
 
-TreeNode :: struct 
-{   
+TreeNode :: struct {   
     handle : HtreeItem,
     parent_node : ^TreeNode,        
     image_index : int,
@@ -281,10 +286,10 @@ new_treeview :: proc{new_tv1, new_tv2}
 }
 
 // Create new tree view node.
-new_treenode :: proc(txt : string, img : int = -1, simg : int = -1, fclr : uint = def_fore_clr, bk_clr : uint = def_back_clr) -> TreeNode 
+new_treenode :: proc{node_ctor1, node_ctor2, node_ctor3, node_ctor4}
+@private treenode_ctor :: proc(txt : string, img : int = -1, simg : int = -1, fclr : uint = def_fore_clr, bk_clr : uint = def_back_clr) -> TreeNode 
 {
-    tn : TreeNode    
-    //tn.uid = g_node_id
+    tn : TreeNode       
     tn.image_index = img
     tn.sel_image_index = simg
     tn.text = txt
@@ -293,6 +298,43 @@ new_treenode :: proc(txt : string, img : int = -1, simg : int = -1, fclr : uint 
     tn.back_color = bk_clr
     return tn
 }
+
+@private node_ctor1 :: proc(txt : string) -> TreeNode { return treenode_ctor(txt)}
+
+@private node_ctor2 :: proc(txt : string, img_indx, sel_img_indx : int) -> TreeNode { 
+    return treenode_ctor(txt, img_indx, sel_img_indx)
+}
+
+@private node_ctor3 :: proc(txt : string, txt_clr : uint, back_clr : uint = def_back_clr) -> TreeNode { 
+    return treenode_ctor(txt, -1, -1, txt_clr, back_clr)
+}
+
+@private node_ctor4 :: proc(txt : string, img_indx : int, sel_img_indx : int,  txt_clr : uint, back_clr : uint = def_back_clr) -> TreeNode { 
+    return treenode_ctor(txt, img_indx, sel_img_indx, txt_clr, back_clr)
+}
+
+// Expand all nodes.
+treeview_expand_all :: proc(tv : ^TreeView) {
+    for node in tv.nodes {
+        SendMessage(tv.handle, CM_TVNODEEXPAND, Wparam(TVE_EXPAND), direct_cast(node, Lparam))
+    }    
+}
+
+// Collapse all nodes
+treeview_collapse_all :: proc(tv : ^TreeView) {
+    for node in tv.nodes {
+        SendMessage(tv.handle, CM_TVNODEEXPAND, Wparam(TVE_COLLAPSE), direct_cast(node, Lparam))
+    }    
+}
+
+treeview_expand_node :: proc(tv : ^TreeView, node : ^TreeNode) {    
+    SendMessage(tv.handle, CM_TVNODEEXPAND, Wparam(TVE_EXPAND), direct_cast(node, Lparam))     
+}
+
+treeview_collapse_node :: proc(tv : ^TreeView, node : ^TreeNode) {    
+    SendMessage(tv.handle, CM_TVNODEEXPAND, Wparam(TVE_COLLAPSE), direct_cast(node, Lparam))     
+}
+
 
 // Add a new node to tree view. It can be a parent or a child.
 treeview_add_node :: proc(tv : ^TreeView, node : ^TreeNode, parent : ^TreeNode = nil) {
@@ -517,6 +559,114 @@ create_treeview :: proc(tv : ^TreeView) {
             }
             tv_dtor(tv)
             remove_subclass(tv) 
+
+        case WM_PAINT :
+            if tv.paint != nil {
+                ps : PAINTSTRUCT
+                hdc := BeginPaint(hw, &ps)
+                pea := new_paint_event_args(&ps)
+                tv.paint(tv, &pea)
+                EndPaint(hw, &ps)
+                return 0
+            }
+        case WM_SETFOCUS:           
+            if tv.got_focus != nil {
+                ea := new_event_args()
+                tv.got_focus(tv, &ea)
+                return 0
+            }
+
+        case WM_KILLFOCUS:
+            //tv._draw_focus_rct = false
+            if tv.lost_focus != nil  {
+                ea := new_event_args()
+                tv.lost_focus(tv, &ea)
+                return 0
+            }
+            return 0  // Avoid this if you want to show the focus rectangle (....)
+
+        
+        
+        case WM_LBUTTONDOWN:
+            tv._mdown_happened = true
+            if tv.left_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                tv.left_mouse_down(tv, &mea)
+            }
+        case WM_RBUTTONDOWN:
+            tv._mrdown_happened = true
+            if tv.right_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                tv.right_mouse_down(tv, &mea)
+            }
+        case WM_LBUTTONUP :
+            if tv.left_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                tv.left_mouse_up(tv, &mea)
+            }
+            if tv._mdown_happened do SendMessage(tv.handle, CM_LMOUSECLICK, 0, 0)
+            
+        case CM_LMOUSECLICK :
+            tv._mdown_happened = false 
+            if tv.mouse_click != nil {
+                ea := new_event_args()
+                tv.mouse_click(tv, &ea)
+                return 0
+            }           
+
+        case WM_RBUTTONUP :
+            
+            if tv.right_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                tv.right_mouse_up(tv, &mea)
+            }
+            if tv._mrdown_happened do SendMessage(tv.handle, CM_RMOUSECLICK, 0, 0)
+             
+        case CM_RMOUSECLICK :
+            tv._mrdown_happened = false
+            if tv.right_click != nil {
+                ea := new_event_args()
+                tv.right_click(tv, &ea)
+                return 0
+            }
+
+        case WM_MOUSEHWHEEL:
+            if tv.mouse_scroll != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                tv.mouse_scroll(tv, &mea)
+            }   
+        case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.          
+            if tv._is_mouse_entered {
+                if tv.mouse_move != nil {
+                    mea := new_mouse_event_args(msg, wp, lp)
+                    tv.mouse_move(tv, &mea)                    
+                }
+            }
+            else {
+                tv._is_mouse_entered = true
+                if tv.mouse_enter != nil  {
+                    ea := new_event_args()
+                    tv.mouse_enter(tv, &ea)                    
+                }
+            }
+        
+        case WM_MOUSELEAVE :            
+            tv._is_mouse_entered = false
+            if tv.mouse_leave != nil {               
+                ea := new_event_args()
+                tv.mouse_leave(tv, &ea)                
+            }
+
+        case CM_TVNODEEXPAND :                    
+            node := direct_cast(lp, ^TreeNode)           
+            SendMessage(tv.handle, TVM_EXPAND, wp, direct_cast(node.handle, Lparam))
+            if node.child_count > 0 {
+                for n in node.nodes {
+                    SendMessage(tv.handle, CM_TVNODEEXPAND, wp, direct_cast(n, Lparam))
+                }
+            }
+           // return 0
+
         case CM_NOTIFY :
             nm := direct_cast(lp, ^NMHDR)            
             switch nm.code 
@@ -606,6 +756,8 @@ create_treeview :: proc(tv : ^TreeView) {
                     if tv._node_clr_change {
                         return treenode_color( lp)
                     }
+
+                
 
                 case :
                     //print("else case - ", nm.code) 

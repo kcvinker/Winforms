@@ -44,18 +44,18 @@ MakeWindow :: proc() {
         tv.has_checkboxes = true
         tv.back_color = 0xC6C6FF
         tv.fore_color = 0x008000
-        tv.line_color = red
+       // tv.line_color = red
         create_treeview(&tv)
         // treeview_create_image_list(&tv, 2)
         // image_list_add_icon(tv.image_list, "shell32.dll", 167, false)
         // image_list_add_icon(tv.image_list, "shell32.dll", 42, false)
 
-        n1 := new_treenode("Vinod", 0, 0, 0x0000FF)
-            n1_1 := new_treenode("Translator", 1)
-            n1_2 := new_treenode("Get Love", 1)
-        n2 = new_treenode("Vinayak", 0, 1)
-            n2_1 = new_treenode("Married man", 1)
-            n2_2 := new_treenode("Jobless", 1)
+        n1 := new_treenode("Asia", 0x0000FF)
+            n1_1 := new_treenode("India")
+            n1_2 := new_treenode("China")
+        n2 = new_treenode("Europe")
+            n2_1 = new_treenode("France")
+            n2_2 := new_treenode("Portugal")
 
         treeview_add_node(&tv, &n1)
             treeview_add_node(&tv, &n1_1, &n1)
@@ -91,9 +91,19 @@ form_load :: proc(s : ^Control, e : ^EventArgs) {
    
 }
 
+clicked := 0
+
 frm_click :: proc(c : ^Control, e : ^EventArgs) {
     //ui.control_set_back_color(&tv, 0x00FF00)
     //  n2.fore_color = 0x00FFFF
     //  n2.back_color = 0xFF8000
     // ui.treeview_set_node_color(&tv, &n2)
+    print("Starting work...")
+    if clicked == 0 {
+        ui.treeview_expand_node(&tv, &n2)
+        clicked = 1
+        } else if clicked == 1 {
+            ui.treeview_collapse_node(&tv, &n2)
+        }
+    
 }
