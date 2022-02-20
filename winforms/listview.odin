@@ -33,3 +33,15 @@
 		lv := lv_ctor(f, x, y, w, h)
 		return lv
 	}
+
+
+
+	@private label_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, 
+                                                    sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
+    context = runtime.default_context()
+    lv := control_cast(ListView, ref_data)
+
+    	switch msg { 
+		}
+		return DefSubclassProc(hw, msg, wp, lp)
+	}
