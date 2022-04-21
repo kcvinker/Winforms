@@ -41,6 +41,7 @@ SizeIncrement :: struct {width, height : int,}
 Area :: struct {width, height : int,}
 WordValue :: enum {Low, High}
 
+to_str :: proc(value : any) -> string {return fmt.tprint(value)}
 image_list_add_icon :: proc(himl : HimageList, fPath : string, indx : int, smIcon : bool) -> i32 {
 	hIco : Hicon
 	uRet : u32

@@ -342,26 +342,18 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
 
-@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) 
-{    
-    if item == .lb_hwnd 
-    {
-        for c in frm._combo_list 
-        {        
-            if c.lb_handle == hw 
-            {
+@private find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) {    
+    if item == .lb_hwnd {
+        for c in frm._combo_list {        
+            if c.lb_handle == hw {
                 ci = c
                 ok = true
                 break
             }
         }
-    } 
-    else 
-    {
-        for c in frm._combo_list 
-        {        
-            if c.tb_handle == hw 
-            {
+    } else {
+        for c in frm._combo_list {        
+            if c.tb_handle == hw {
                 ci = c
                 ok = true
                 break
@@ -372,14 +364,11 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 }
 
 
-@private display_msg :: proc(umsg : u32, ) 
-{
+@private display_msg :: proc(umsg : u32, ) {
     @static counter : int = 1
     mmap := make_mes_map()
-    for k, v in mmap 
-    {
-        if v == umsg 
-        {
+    for k, v in mmap {
+        if v == umsg {
             ptf("message number - [%d] - %s\n", counter, k)
             counter += 1
             break
@@ -466,7 +455,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 frm._is_loaded = true
                 if frm.load != nil {
                     ea := new_event_args()
-                    frm.load(frm, &ea)
+                    frm->load(&ea)
                     return 0
                 }
             }
@@ -476,10 +465,10 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 ea := new_event_args()
                 b_flag := Bool(wp)
                 if !b_flag {
-                    if frm.de_activate != nil do frm.de_activate(frm, &ea)
+                    if frm.de_activate != nil do frm->de_activate(&ea)
                 }
                 else {
-                    if frm.activate != nil {frm.activate(frm, &ea)}
+                    if frm.activate != nil {frm->activate(&ea)}
                 }
             }
 
@@ -500,13 +489,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 kea := new_key_event_args(wp)
                 frm.key_press(frm, &kea)
                 return 0
-            }
-        
-        
-            if frm.right_click != nil {
-                mea := new_event_args()
-                frm.right_click(frm, &mea)
-            }
+            }           
 
         case WM_LBUTTONDOWN:   
             frm._mdown_happened = true     
@@ -527,14 +510,15 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.left_mouse_up(frm, &mea)                
             }
-            if frm._mdown_happened do SendMessage(frm.handle, CM_LMOUSECLICK, 0, 0) 
+            if frm._mdown_happened {
+                frm._mdown_happened = false
+                SendMessage(frm.handle, CM_LMOUSECLICK, 0, 0) 
+            }
             
-        case CM_LMOUSECLICK :
-            frm._mdown_happened = false
+        case CM_LMOUSECLICK :            
             if frm.mouse_click != nil {
-                ea := new_event_args()
-                frm.mouse_click(frm, &ea)
-                return 0
+                ea := new_event_args()                
+                frm->mouse_click(&ea)                
             }
             
         case WM_RBUTTONUP :            
@@ -542,14 +526,15 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.right_mouse_up(frm, &mea)
             } 
-            if frm._mrdown_happened do SendMessage(frm.handle, CM_RMOUSECLICK, 0, 0)           
+            if frm._mrdown_happened {
+                frm._mrdown_happened = false
+                SendMessage(frm.handle, CM_RMOUSECLICK, 0, 0)   
+            }        
 
-        case CM_RMOUSECLICK :
-            frm._mrdown_happened = false
+        case CM_RMOUSECLICK :            
             if frm.right_click != nil {
                 ea := new_event_args()
-                frm.right_click(frm, &ea)
-                return 0
+                frm.right_click(frm, &ea)                
             }
 
         case WM_LBUTTONDBLCLK :
@@ -576,8 +561,8 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                         frm.mouse_enter(frm, &ea)
                     }
                 }
-            }
-            //---------------------------------------
+            } //---------------------------------------
+
             if frm.mouse_move != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.mouse_move(frm, &mea)
@@ -595,6 +580,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 frm._is_mouse_tracking = false
                 frm._is_mouse_entered = false
             }
+
             if frm.mouse_leave != nil {
                 ea := new_event_args()
                 frm.mouse_leave(frm, &ea)
@@ -638,6 +624,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 return 0
             }
             return 0
+
         case WM_MOVE :                   
             frm.xpos = get_x_lparam(lp)
             frm.ypos = get_y_lparam(lp)
@@ -658,6 +645,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
                 return Lresult(1)
             }
             return 0
+
         case WM_SYSCOMMAND :
             sys_msg := uint(wp & 0xFFF0)
             switch sys_msg {

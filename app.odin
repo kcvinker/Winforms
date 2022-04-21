@@ -38,12 +38,21 @@ MakeWindow :: proc() {
         create_form(&frm)
     }     
     
-    lv = new_listview(&frm)
-
+    lv = new_listview(&frm)    
+    lv.width = 450
+    lv.show_grid_lines = true
     create_listview(&lv)
+    listview_add_column(&lv, "col1", 150)
+    listview_add_column(&lv, "col2", 100)
+    listview_add_column(&lv, "col3", 80)
 
+    li1 := new_listview_item("Item One")
+    li2 := new_listview_item("Item Two")
+
+    listview_add_item(&lv, &li1)
+    listview_add_item(&lv, &li2)
     
-    //print(U32MAX)
+    //print(U32MAX) if a == b {}
     
   
     start_form()  
@@ -69,6 +78,6 @@ form_load :: proc(s : ^Control, e : ^EventArgs) {
 clicked := 0
 
 frm_click :: proc(c : ^Control, e : ^EventArgs) {
-    print("form clicked")
+    print("form clicked with new select call operator")
     
 }
