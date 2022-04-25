@@ -429,7 +429,10 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             mea := new_mouse_event_args(msg, wp, lp)
             cmb.left_mouse_up(cmb, &mea)
             }
-            if cmb._mdown_happened do SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
+            if cmb._mdown_happened {
+                cmb._mdown_happened = false
+                SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
         case CM_LMOUSECLICK :
             if cmb.mouse_click != nil {
@@ -443,7 +446,10 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             mea := new_mouse_event_args(msg, wp, lp)
             cmb.right_mouse_up(cmb, &mea)
             }
-            if cmb._mrdown_happened do SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
+            if cmb._mrdown_happened {
+                cmb._mrdown_happened = false
+                SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
+            }
 
         case CM_RMOUSECLICK :
             cmb._mrdown_happened = false

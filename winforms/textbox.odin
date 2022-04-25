@@ -248,7 +248,10 @@ create_textbox :: proc(tb : ^TextBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.left_mouse_up(tb, &mea)
             }
-            if tb._mdown_happened do SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
+            if tb._mdown_happened {
+                tb._mdown_happened = false
+                SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
         case CM_LMOUSECLICK :
             tb._mdown_happened = false
@@ -270,7 +273,10 @@ create_textbox :: proc(tb : ^TextBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.right_mouse_up(tb, &mea)
             }
-            if tb._mrdown_happened do SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0) 
+            if tb._mrdown_happened {
+                tb._mrdown_happened = false
+                SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
+            } 
             
         case CM_RMOUSECLICK :
             tb._mrdown_happened = false

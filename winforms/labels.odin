@@ -201,7 +201,10 @@ create_label :: proc(lb : ^Label) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.left_mouse_up(lb, &mea)
             }
-            if lb._mdown_happened do SendMessage(lb.handle, CM_LMOUSECLICK, 0, 0) 
+            if lb._mdown_happened {
+                lb._mdown_happened = false
+                SendMessage(lb.handle, CM_LMOUSECLICK, 0, 0)
+            } 
 
         case CM_LMOUSECLICK :
             lb._mdown_happened = false
@@ -223,7 +226,10 @@ create_label :: proc(lb : ^Label) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.right_mouse_up(lb, &mea)
             }
-            if lb._mrdown_happened do SendMessage(lb.handle, CM_RMOUSECLICK, 0, 0)
+            if lb._mrdown_happened {
+                lb._mdown_happened = false
+                SendMessage(lb.handle, CM_RMOUSECLICK, 0, 0)
+            }
 
         case CM_RMOUSECLICK :
             lb._mrdown_happened = false

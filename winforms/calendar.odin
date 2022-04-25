@@ -261,7 +261,10 @@ create_calendar :: proc(cal : ^Calendar) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.left_mouse_up(cal, &mea)
             }
-            if cal._mdown_happened do SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0)             
+            if cal._mdown_happened {
+                cal._mdown_happened = false
+                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0) 
+            }            
 
         case CM_LMOUSECLICK :            
             cal._mdown_happened = false
@@ -283,7 +286,10 @@ create_calendar :: proc(cal : ^Calendar) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.right_mouse_up(cal, &mea)
             }
-            if cal._mrdown_happened do SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0) 
+            if cal._mrdown_happened {
+                cal._mrdown_happened = false
+                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0) 
+            }
             
         case CM_RMOUSECLICK :           
             cal._mrdown_happened = false

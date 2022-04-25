@@ -452,7 +452,10 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lbx.left_mouse_up(lbx, &mea)
             }
-            if lbx._mdown_happened do SendMessage(lbx.handle, CM_LMOUSECLICK, 0, 0)             
+            if lbx._mdown_happened {
+                lbx._mdown_happened = false
+                SendMessage(lbx.handle, CM_LMOUSECLICK, 0, 0)   
+            }          
         
         case CM_LMOUSECLICK :
             lbx._mdown_happened = false
@@ -473,7 +476,10 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lbx.right_mouse_up(lbx, &mea)
             }
-            if lbx._mrdown_happened do SendMessage(lbx.handle, CM_RMOUSECLICK, 0, 0) 
+            if lbx._mrdown_happened {
+                lbx._mrdown_happened = false
+                SendMessage(lbx.handle, CM_RMOUSECLICK, 0, 0) 
+            }
 
         case CM_RMOUSECLICK :
             lbx._mrdown_happened = false

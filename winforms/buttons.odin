@@ -379,7 +379,10 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.left_mouse_up(btn, &mea)
 			}
-			if btn._mdown_happened do SendMessage(btn.handle, CM_LMOUSECLICK, 0, 0)
+			if btn._mdown_happened {
+				btn._mdown_happened = false
+				SendMessage(btn.handle, CM_LMOUSECLICK, 0, 0)
+			}
 			
 		case CM_LMOUSECLICK :
 			btn._mdown_happened = false	
@@ -397,7 +400,10 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.right_mouse_up(btn, &mea)
 			}
-			if btn._mrdown_happened do SendMessage(btn.handle, CM_RMOUSECLICK, 0, 0)
+			if btn._mrdown_happened {
+				btn._mrdown_happened = false
+				SendMessage(btn.handle, CM_RMOUSECLICK, 0, 0)
+			}
 			 
 		case CM_RMOUSECLICK :
 			btn._mrdown_happened = false

@@ -299,7 +299,10 @@ DTT_SHADOWCOLOR :: 4
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.left_mouse_up(pb, &mea)
             }
-            if pb._mdown_happened do SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0)
+            if pb._mdown_happened {
+                pb._mdown_happened = false
+                SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
         case CM_LMOUSECLICK :
             pb._mdown_happened = false
@@ -321,7 +324,10 @@ DTT_SHADOWCOLOR :: 4
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.right_mouse_up(pb, &mea)
             }
-            if pb._mrdown_happened do SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0) 
+            if pb._mrdown_happened {
+                pb._mrdown_happened = false
+                SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0) 
+            }
             
         case CM_RMOUSECLICK :
             pb._mrdown_happened = false

@@ -179,7 +179,10 @@ create_radiobutton :: proc(rb : ^RadioButton) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.left_mouse_up(rb, &mea)
             }
-            if rb._mdown_happened do SendMessage(rb.handle, CM_LMOUSECLICK, 0, 0)
+            if rb._mdown_happened {
+                rb._mdown_happened = false
+                SendMessage(rb.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
         case CM_LMOUSECLICK :
             if rb.mouse_click != nil {
@@ -201,7 +204,10 @@ create_radiobutton :: proc(rb : ^RadioButton) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.right_mouse_up(rb, &mea)
             }
-            if rb._mrdown_happened do SendMessage(rb.handle, CM_RMOUSECLICK, 0, 0)
+            if rb._mrdown_happened {
+                rb._mrdown_happened = false
+                SendMessage(rb.handle, CM_RMOUSECLICK, 0, 0)
+            }
         
         case CM_RMOUSECLICK :
             rb._mrdown_happened = false

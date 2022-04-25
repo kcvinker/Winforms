@@ -170,7 +170,10 @@ create_checkbox :: proc(cb : ^CheckBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.left_mouse_up(cb, &mea)
             }
-            if cb._mdown_happened do SendMessage(cb.handle, CM_LMOUSECLICK, 0, 0)
+            if cb._mdown_happened {
+                cb._mdown_happened = false
+                SendMessage(cb.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
         case CM_LMOUSECLICK :
             if cb.mouse_click != nil {
@@ -192,7 +195,10 @@ create_checkbox :: proc(cb : ^CheckBox) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.right_mouse_up(cb, &mea)
             }
-            if cb._mrdown_happened do SendMessage(cb.handle, CM_RMOUSECLICK, 0, 0)
+            if cb._mrdown_happened {
+                cb._mrdown_happened = false
+                SendMessage(cb.handle, CM_RMOUSECLICK, 0, 0)
+            }
         
         case CM_RMOUSECLICK :
             cb._mrdown_happened = false

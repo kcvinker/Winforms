@@ -355,7 +355,10 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.left_mouse_up(dtp, &mea)
             }
-            if dtp._mdown_happened do SendMessage(dtp.handle, CM_LMOUSECLICK, 0, 0)             
+            if dtp._mdown_happened {
+                dtp._mdown_happened = false
+                SendMessage(dtp.handle, CM_LMOUSECLICK, 0, 0)    
+            }         
 
         case CM_LMOUSECLICK :
             dtp._mdown_happened = false
@@ -377,7 +380,10 @@ create_datetimepicker :: proc(dtp : ^DateTimePicker) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.right_mouse_up(dtp, &mea)
             }
-            if dtp._mrdown_happened do SendMessage(dtp.handle, CM_RMOUSECLICK, 0, 0) 
+            if dtp._mrdown_happened {
+                dtp._mrdown_happened = false
+                SendMessage(dtp.handle, CM_RMOUSECLICK, 0, 0) 
+            }
             
         case CM_RMOUSECLICK :
             dtp._mrdown_happened = false

@@ -357,7 +357,10 @@ create_trackbar :: proc(tkb : ^TrackBar) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.left_mouse_up(tkb, &mea)
             }
-            if tkb._mdown_happened do SendMessage(tkb.handle, CM_LMOUSECLICK, 0, 0)
+            if tkb._mdown_happened {
+                tkb._mdown_happened = false
+                SendMessage(tkb.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
         case CM_LMOUSECLICK :
             tkb._mdown_happened = false
@@ -379,7 +382,10 @@ create_trackbar :: proc(tkb : ^TrackBar) {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.right_mouse_up(tkb, &mea)
             }
-            if tkb._mrdown_happened do SendMessage(tkb.handle, CM_LMOUSECLICK, 0, 0) 
+            if tkb._mrdown_happened {
+                tkb._mrdown_happened = false
+                SendMessage(tkb.handle, CM_LMOUSECLICK, 0, 0)
+            } 
             
         case CM_RMOUSECLICK :
             tkb._mrdown_happened = false
