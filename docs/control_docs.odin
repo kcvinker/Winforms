@@ -54,3 +54,6 @@ control_set_fore_color1 :: proc(ctl : ^Control, clr : uint) // set the fore colo
 control_enable :: proc(ctl : ^Control, bstate : bool) // Enable or disable a control at runtime
 
 control_visibile :: proc(ctl : ^Control, bstate : bool) // Show or hide a control at runtime.
+create_control :: proc(c : ^Control) // To create a any control
+create_controls :: proc(ctls : ..^Control) // To create more than one control at once. 
+

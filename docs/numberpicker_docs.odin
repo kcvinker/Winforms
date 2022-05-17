@@ -39,7 +39,7 @@ new_numberpicker :: proc(parent : ^Form) -> NumberPicker
 new_numberpicker :: proc(parent : ^Form, x, y, w, h : int) -> NumberPicker 
 
 // Functions
-create_numberpicker :: proc(np : ^NumberPicker, )  // Create the handle NumberPicker
+create_control :: proc(c : ^Control) // To create NumberPicker
 numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) // Set the max & min range for NumberPicker. This is used when you want to set the range after you create the control. Before creation, you can use min_range & max_range fields.
 
 // Example

@@ -3,6 +3,8 @@ import "core:runtime"
 import "core:fmt"
 //import "core:slice"
 
+WcListBoxW : wstring
+
 ListBox :: struct {
     using control : Control,
     items : [dynamic]string,
@@ -20,6 +22,7 @@ ListBox :: struct {
 }
 
 @private lbox_ctor :: proc(p : ^Form, x, y, w, h : int) -> ListBox {
+    if WcListBoxW == nil do WcListBoxW = to_wstring("Button")
     lbx : ListBox
     lbx.kind = .List_Box
     lbx.parent = p
@@ -32,6 +35,9 @@ ListBox :: struct {
     lbx.fore_color = def_fore_clr
     lbx._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
     lbx._ex_style = 0
+    lbx._cls_name = WcListBoxW
+	lbx._before_creation = cast(CreateDelegate) lbx_before_creation
+	lbx._after_creation = cast(CreateDelegate) lbx_after_creation
     return lbx
 }
 
@@ -348,32 +354,40 @@ listbox_clear_items :: proc(lbx : ^ListBox)  {
     
 }
 
-// Create handle for ListBox type.
-create_listbox :: proc(lbx : ^ListBox) {
-    _global_ctl_id += 1  
-    lbx.control_id = _global_ctl_id  
-    set_lbox_style_internal(lbx)
-    lbx.handle = CreateWindowEx(  lbx._ex_style, 
-                                    to_wstring("Listbox"), 
-                                    to_wstring(lbx.text),
-                                    lbx._style, 
-                                    i32(lbx.xpos), 
-                                    i32(lbx.ypos), 
-                                    i32(lbx.width), 
-                                    i32(lbx.height),
-                                    lbx.parent.handle, 
-                                    direct_cast(lbx.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if lbx.handle != nil {          
-        lbx._is_created = true          
-        setfont_internal(lbx)
-        set_subclass(lbx, lbx_wnd_proc) 
-        lbx_additem_internal(lbx)
-              
-    }
+@private lbx_before_creation :: proc(lbx : ^ListBox) {set_lbox_style_internal(lbx)}
+
+@private lbx_after_creation :: proc(lbx : ^ListBox) {	
+	set_subclass(lbx, lbx_wnd_proc) 
+    lbx_additem_internal(lbx)
+
 }
+
+// Create handle for ListBox type.
+// create_listbox :: proc(lbx : ^ListBox) {
+//     _global_ctl_id += 1  
+//     lbx.control_id = _global_ctl_id  
+//     set_lbox_style_internal(lbx)
+//     lbx.handle = CreateWindowEx(  lbx._ex_style, 
+//                                     to_wstring("Listbox"), 
+//                                     to_wstring(lbx.text),
+//                                     lbx._style, 
+//                                     i32(lbx.xpos), 
+//                                     i32(lbx.ypos), 
+//                                     i32(lbx.width), 
+//                                     i32(lbx.height),
+//                                     lbx.parent.handle, 
+//                                     direct_cast(lbx.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if lbx.handle != nil {          
+//         lbx._is_created = true          
+//         setfont_internal(lbx)
+//         set_subclass(lbx, lbx_wnd_proc) 
+//         lbx_additem_internal(lbx)
+              
+//     }
+// }
 
 listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
     if !lbx.multi_selection {

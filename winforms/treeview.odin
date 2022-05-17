@@ -262,7 +262,9 @@ new_treeview :: proc{new_tv1, new_tv2}
     tv.height = h           // By default a treeview has buttons and lines. Every user might need that.
     tv._style = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT | TVS_DISABLEDRAGDROP
     tv._ex_style = 0
-    //tv._child_list = TreeNodeArray(new([dynamic]^TreeNode))
+    tv._cls_name = WcTreeViewClassW
+    tv._before_creation = cast(CreateDelegate) tv_before_creation
+	tv._after_creation = cast(CreateDelegate) tv_after_creation
     return tv
 }
 
@@ -510,43 +512,62 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
     if tv.no_buttons && tv.no_lines do tv._style ~= TVS_LINESATROOT
 }
 
-// Create the handle of a tree view
-create_treeview :: proc(tv : ^TreeView) {
-    _global_ctl_id += 1
-    tv.control_id = _global_ctl_id 
-    tv_adjust_styles(tv)
-    tv.handle = CreateWindowEx(   tv._ex_style,  
-                                    WcTreeViewClassW, 
-                                    to_wstring(tv.text),
-                                    tv._style, 
-                                    i32(tv.xpos), 
-                                    i32(tv.ypos), 
-                                    i32(tv.width), 
-                                    i32(tv.height),
-                                    tv.parent.handle, 
-                                    direct_cast(tv.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if tv.handle != nil 
-    {
-        tv._is_created = true
-        set_subclass(tv, tv_wnd_proc) 
-        setfont_internal(tv)
-        if tv.back_color != 0xFFFFFF {
-            cref := get_color_ref(tv.back_color)
-            SendMessage(tv.handle, TVM_SETBKCOLOR, 0, direct_cast(cref, Lparam) ) 
-        }
-        if tv.fore_color != def_fore_clr {
-            cref := get_color_ref(tv.fore_color)
-            SendMessage(tv.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, Lparam) ) 
-        }
-        if tv.line_color != def_fore_clr  {
-            cref := get_color_ref(tv.line_color)
-            SendMessage(tv.handle, TVM_SETLINECOLOR, 0, direct_cast(cref, Lparam) ) 
-        }      
+@private tv_before_creation :: proc(tv : ^TreeView) {tv_adjust_styles(tv)}
+
+@private tv_after_creation :: proc(tv : ^TreeView) {	
+	set_subclass(tv, tv_wnd_proc) 
+    setfont_internal(tv)
+    if tv.back_color != 0xFFFFFF {
+        cref := get_color_ref(tv.back_color)
+        SendMessage(tv.handle, TVM_SETBKCOLOR, 0, direct_cast(cref, Lparam) ) 
     }
+    if tv.fore_color != def_fore_clr {
+        cref := get_color_ref(tv.fore_color)
+        SendMessage(tv.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, Lparam) ) 
+    }
+    if tv.line_color != def_fore_clr  {
+        cref := get_color_ref(tv.line_color)
+        SendMessage(tv.handle, TVM_SETLINECOLOR, 0, direct_cast(cref, Lparam) ) 
+    }      
 }
+
+// Create the handle of a tree view
+// create_treeview :: proc(tv : ^TreeView) {
+//     _global_ctl_id += 1
+//     tv.control_id = _global_ctl_id 
+//     tv_adjust_styles(tv)
+//     tv.handle = CreateWindowEx(   tv._ex_style,  
+//                                     WcTreeViewClassW, 
+//                                     to_wstring(tv.text),
+//                                     tv._style, 
+//                                     i32(tv.xpos), 
+//                                     i32(tv.ypos), 
+//                                     i32(tv.width), 
+//                                     i32(tv.height),
+//                                     tv.parent.handle, 
+//                                     direct_cast(tv.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if tv.handle != nil 
+//     {
+//         tv._is_created = true
+//         set_subclass(tv, tv_wnd_proc) 
+//         setfont_internal(tv)
+//         if tv.back_color != 0xFFFFFF {
+//             cref := get_color_ref(tv.back_color)
+//             SendMessage(tv.handle, TVM_SETBKCOLOR, 0, direct_cast(cref, Lparam) ) 
+//         }
+//         if tv.fore_color != def_fore_clr {
+//             cref := get_color_ref(tv.fore_color)
+//             SendMessage(tv.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, Lparam) ) 
+//         }
+//         if tv.line_color != def_fore_clr  {
+//             cref := get_color_ref(tv.line_color)
+//             SendMessage(tv.handle, TVM_SETLINECOLOR, 0, direct_cast(cref, Lparam) ) 
+//         }      
+//     }
+// }
 
 @private tv_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {      
     context = runtime.default_context()   

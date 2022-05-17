@@ -49,6 +49,9 @@ new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 	b.font = p.font
 	b._ex_style = 0
 	b._style = WS_CHILD | WS_TABSTOP | WS_VISIBLE | BS_NOTIFY
+	b._cls_name = WcButtonW
+	b._before_creation = cast(CreateDelegate) btn_before_creation
+	b._after_creation = cast(CreateDelegate) btn_after_creation
 	return b
 }
 
@@ -83,40 +86,49 @@ new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 
 // }
 
-// Create the Button Hwnd
-create_button :: proc(btn : ^Button)
-{	
-	_global_ctl_id += 1
-	btn.control_id = _global_ctl_id
-	if btn._draw_mode == .Default do check_initial_color_change(btn)	
-	btn.handle = CreateWindowEx(  btn._ex_style, 
-									WcButtonW, //to_wstring("Button"), 
-									to_wstring(btn.text),
-                                    btn._style, 
-									i32(btn.xpos), 
-									i32(btn.ypos), 
-                                    i32(btn.width), 
-									i32(btn.height),
-                                    btn.parent.handle, 
-									direct_cast(btn.control_id, Hmenu), 
-									app.h_instance, 
-									nil )
-	
-	if btn.handle != nil 
-	{
-		btn._is_created = true
-		if btn._draw_mode != .Default && !btn._added_in_draw_list 
-		{
-			append(&btn.parent._cdraw_childs, btn.handle)
-		}
-		set_subclass(btn, btn_wnd_proc)
-		setfont_internal(btn) 		
-		
-	}	
+@private btn_before_creation :: proc(b : ^Button) {if b._draw_mode == .Default do check_initial_color_change(b)}
+
+@private btn_after_creation :: proc(b : ^Button) {
+	if b._draw_mode != .Default && !b._added_in_draw_list {
+		append(&b.parent._cdraw_childs, b.handle)
+	}
+	set_subclass(b, btn_wnd_proc)
 }
 
+// Create the Button Hwnd
+// create_button :: proc(btn : ^Button)
+// {	
+// 	_global_ctl_id += 1
+// 	btn.control_id = _global_ctl_id
+// 	if btn._draw_mode == .Default do check_initial_color_change(btn)	
+// 	btn.handle = CreateWindowEx(  btn._ex_style, 
+// 									WcButtonW, //to_wstring("Button"), 
+// 									to_wstring(btn.text),
+//                                     btn._style, 
+// 									i32(btn.xpos), 
+// 									i32(btn.ypos), 
+//                                     i32(btn.width), 
+// 									i32(btn.height),
+//                                     btn.parent.handle, 
+// 									direct_cast(btn.control_id, Hmenu), 
+// 									app.h_instance, 
+// 									nil )
+	
+// 	if btn.handle != nil 
+// 	{
+// 		btn._is_created = true
+// 		if btn._draw_mode != .Default && !btn._added_in_draw_list 
+// 		{
+// 			append(&btn.parent._cdraw_childs, btn.handle)
+// 		}
+// 		set_subclass(btn, btn_wnd_proc)
+// 		setfont_internal(btn) 		
+		
+// 	}	
+// }
+
 // Create more than one buttons. It's handy when you need to create plenty of buttons.
-create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
+//create_buttons :: proc(btns : ..^Button) { for b in btns do create_button(b) }
 
 @private check_initial_color_change :: proc(btn : ^Button) 
 {

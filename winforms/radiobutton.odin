@@ -44,6 +44,9 @@ RadioButton :: struct {
     rb._ex_style = 0
     rb._size_incr.width = 20
     rb._size_incr.height = 3
+    rb._cls_name = WcRadioBtnClassW
+    rb._before_creation = cast(CreateDelegate) rb_before_creation
+	rb._after_creation = cast(CreateDelegate) rb_after_creation
     return rb
 } 
 
@@ -108,39 +111,50 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) {
     }
 }
 
+@private rb_before_creation :: proc(rb : ^RadioButton) {
+    rb_adjust_styles(rb)
+}
+
+@private rb_after_creation :: proc(rb : ^RadioButton) {
+    set_subclass(rb, rb_wnd_proc) 
+    if rb.auto_size do calculate_ctl_size(rb)
+    if rb.checked {
+        SendMessage(rb.handle, BM_SETCHECK, Wparam(0x0001), 0)
+    }
+}
 
 
 
 // Create the handle of a progress bar
-create_radiobutton :: proc(rb : ^RadioButton) {
-    _global_ctl_id += 1
-    rb.control_id = _global_ctl_id 
-    rb_adjust_styles(rb)
-    rb.handle = CreateWindowEx(   rb._ex_style, 
-                                    WcRadioBtnClassW, 
-                                    to_wstring(rb.text),
-                                    rb._style, 
-                                    i32(rb.xpos), 
-                                    i32(rb.ypos), 
-                                    i32(rb.width), 
-                                    i32(rb.height),
-                                    rb.parent.handle, 
-                                    direct_cast(rb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
+// create_radiobutton :: proc(rb : ^RadioButton) {
+//     _global_ctl_id += 1
+//     rb.control_id = _global_ctl_id 
+//     rb_adjust_styles(rb)
+//     rb.handle = CreateWindowEx(   rb._ex_style, 
+//                                     WcRadioBtnClassW, 
+//                                     to_wstring(rb.text),
+//                                     rb._style, 
+//                                     i32(rb.xpos), 
+//                                     i32(rb.ypos), 
+//                                     i32(rb.width), 
+//                                     i32(rb.height),
+//                                     rb.parent.handle, 
+//                                     direct_cast(rb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
     
-    if rb.handle != nil {
-        rb._is_created = true
-        set_subclass(rb, rb_wnd_proc) 
-        setfont_internal(rb)
-        if rb.auto_size do calculate_ctl_size(rb)
-        if rb.checked {
-            SendMessage(rb.handle, BM_SETCHECK, Wparam(0x0001), 0)
-        }
+//     if rb.handle != nil {
+//         rb._is_created = true
+//         set_subclass(rb, rb_wnd_proc) 
+//         setfont_internal(rb)
+//         if rb.auto_size do calculate_ctl_size(rb)
+//         if rb.checked {
+//             SendMessage(rb.handle, BM_SETCHECK, Wparam(0x0001), 0)
+//         }
         
  
-    }
-}
+//     }
+// }
 
 @private rb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {    
     

@@ -93,6 +93,7 @@ DateTimePicker :: struct {
     _cal_style : Dword,
 
 
+
     calendar_opened,
     value_changed,    
     calendar_closed : EventHandler,
@@ -139,7 +140,8 @@ DateTimePicker :: struct {
 
 // End of API Types
 
-@private dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker {   
+@private dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker 
+{   
 
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
         is_dtp_class_inited = true
@@ -156,6 +158,9 @@ DateTimePicker :: struct {
     dtp.ypos = y
     dtp.width = w
     dtp.height = h  
+    dtp._cls_name = WcDTPClassW
+    dtp._before_creation = cast(CreateDelegate) dtp_before_creation
+	dtp._after_creation = cast(CreateDelegate) dtp_after_creation
 
     dtp._style = 0x52000004 //WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT
     dtp._ex_style = WS_EX_LEFT
@@ -240,40 +245,53 @@ set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
     } 
 }
 
-// Create handle of a DateTimePicker control.
-create_datetimepicker :: proc(dtp : ^DateTimePicker) {
-    _global_ctl_id += 1     
-    dtp.control_id = _global_ctl_id 
-    set_style_internal(dtp)
-    dtp.handle = CreateWindowEx(  dtp._ex_style, 
-                                    WcDTPClassW, 
-                                    to_wstring(dtp.text),
-                                    dtp._style, 
-                                    i32(dtp.xpos), 
-                                    i32(dtp.ypos), 
-                                    i32(dtp.width), 
-                                    i32(dtp.height),
-                                    dtp.parent.handle, 
-                                    direct_cast(dtp.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if dtp.handle != nil {
-        // print("dtp handle - ", dtp.handle)
-        
-        dtp._is_created = true
-        setfont_internal(dtp)
-        set_subclass(dtp, dtp_wnd_proc) 
-        if dtp.format == .Custom {          
-            SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
-        }  
-        if dtp._cal_style > 0 {
-            SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
-        } 
-        //print("month cal style - ", mst)
-        //print_dtpinfo(dtp._dtp_info)
-    }
+@private dtp_before_creation :: proc(dtp : ^DateTimePicker) {set_style_internal(dtp)}
+
+@private dtp_after_creation :: proc(dtp : ^DateTimePicker) {
+    set_subclass(dtp, dtp_wnd_proc)
+    if dtp.format == .Custom {          
+        SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
+    }  
+    if dtp._cal_style > 0 {
+        SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
+    } 
+
 }
+
+// Create handle of a DateTimePicker control.
+// create_datetimepicker :: proc(dtp : ^DateTimePicker) {
+//     _global_ctl_id += 1     
+//     dtp.control_id = _global_ctl_id 
+//     set_style_internal(dtp)
+//     dtp.handle = CreateWindowEx(  dtp._ex_style, 
+//                                     WcDTPClassW, 
+//                                     to_wstring(dtp.text),
+//                                     dtp._style, 
+//                                     i32(dtp.xpos), 
+//                                     i32(dtp.ypos), 
+//                                     i32(dtp.width), 
+//                                     i32(dtp.height),
+//                                     dtp.parent.handle, 
+//                                     direct_cast(dtp.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if dtp.handle != nil {
+//         // print("dtp handle - ", dtp.handle)
+        
+//         dtp._is_created = true
+//         setfont_internal(dtp)
+//         set_subclass(dtp, dtp_wnd_proc) 
+//         if dtp.format == .Custom {          
+//             SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
+//         }  
+//         if dtp._cal_style > 0 {
+//             SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
+//         } 
+//         //print("month cal style - ", mst)
+//         //print_dtpinfo(dtp._dtp_info)
+//     }
+// }
 
 
 @private dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        

@@ -16,8 +16,8 @@ new_button :: proc(parent : ^Form, txt : string, x, y : int) -> Button
 new_button :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> Button
 
 // Functions
-create_button :: proc(btn : ^Button) // Creates button handle.
-create_buttons :: proc(btns : ..^Button) // Created more than one button handles at once. Easy when you need to create too many buttons.
+create_control :: proc(c : ^Control) // To create a Button
+
 
 set_button_gradient :: proc(btn : ^Button, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom) 
 /* Info.

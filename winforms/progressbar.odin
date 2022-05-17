@@ -73,7 +73,9 @@ BarTheme :: enum {System_Color, Custom_Color }
     pb.max_value = 100
     pb.step = 1
     pb._theme = .System_Color
-    
+    pb._cls_name = WcProgressClassW
+    pb._before_creation = cast(CreateDelegate) pb_before_creation
+	pb._after_creation = cast(CreateDelegate) pb_after_creation
 
     pb._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH 
     pb._ex_style = WS_EX_STATICEDGE
@@ -181,37 +183,46 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) {
     SendMessage(pb.handle, PBM_SETSTEP, Wparam(i32(pb.step)), 0)
 }
 
-// Create the handle of a progress bar
-create_progressbar :: proc(pb : ^ProgressBar) {
-    _global_ctl_id += 1
-    pb.control_id = _global_ctl_id 
+@private pb_before_creation :: proc(pb : ^ProgressBar) {
     pb_adjust_styles(pb)
-    pb.handle = CreateWindowEx(   pb._ex_style, 
-                                    WcProgressClassW, 
-                                    to_wstring(pb.text),
-                                    pb._style, 
-                                    i32(pb.xpos), 
-                                    i32(pb.ypos), 
-                                    i32(pb.width), 
-                                    i32(pb.height),
-                                    pb.parent.handle, 
-                                    direct_cast(pb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if pb.handle != nil {
-        pb._is_created = true
-        set_subclass(pb, pb_wnd_proc) 
-        setfont_internal(pb)
-        pb_set_range_internal(pb)
-        // if pb._theme == .custom_color {
-        //     SetWindowTheme(pb.handle, empty_wstring, empty_wstring)
-        //     SendMessage(pb.handle, PBM_SETBARCOLOR, 0, Lparam(get_color_ref(pb.fore_color)))
-        //     if pb.back_color != 0xFFFFFF do SendMessage(pb.handle, PBM_SETBKCOLOR, 0, Lparam(get_color_ref(pb.back_color)))
-        // }
- 
-    }
 }
+
+@private pb_after_creation :: proc(pb : ^ProgressBar) {
+    pb_set_range_internal(pb)
+    
+}
+
+// Create the handle of a progress bar
+// create_progressbar :: proc(pb : ^ProgressBar) {
+//     _global_ctl_id += 1
+//     pb.control_id = _global_ctl_id 
+//     pb_adjust_styles(pb)
+//     pb.handle = CreateWindowEx(   pb._ex_style, 
+//                                     WcProgressClassW, 
+//                                     to_wstring(pb.text),
+//                                     pb._style, 
+//                                     i32(pb.xpos), 
+//                                     i32(pb.ypos), 
+//                                     i32(pb.width), 
+//                                     i32(pb.height),
+//                                     pb.parent.handle, 
+//                                     direct_cast(pb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if pb.handle != nil {
+//         pb._is_created = true
+//         set_subclass(pb, pb_wnd_proc) 
+//         setfont_internal(pb)
+//         pb_set_range_internal(pb)
+//         // if pb._theme == .custom_color {
+//         //     SetWindowTheme(pb.handle, empty_wstring, empty_wstring)
+//         //     SendMessage(pb.handle, PBM_SETBARCOLOR, 0, Lparam(get_color_ref(pb.fore_color)))
+//         //     if pb.back_color != 0xFFFFFF do SendMessage(pb.handle, PBM_SETBKCOLOR, 0, Lparam(get_color_ref(pb.back_color)))
+//         // }
+ 
+//     }
+// }
 
 TMT_FILLCOLOR :: 3802
 DTT_COLORPROP :: 128

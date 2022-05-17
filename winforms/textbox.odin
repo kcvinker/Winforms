@@ -39,7 +39,7 @@ TextBox :: struct {
 }
 
 @private tb_ctor :: proc(p : ^Form, w : int = 200, h : int = 0) -> TextBox {
-    if WcEditClassW == nil do WcEditClassW = to_wstring("Edit")
+    if WcEditClassW == nil do WcEditClassW = to_wstring("EDIT")
     tb : TextBox
     tb.kind = .Text_Box
     tb.width = w
@@ -51,11 +51,14 @@ TextBox :: struct {
     tb.hide_selection = true
     tb.back_color = def_back_clr
     tb.fore_color = def_fore_clr
-    tb.focus_rect_color = 0x4F4FFF
+    tb.focus_rect_color = 0x007FFF
+    //tb._draw_focus_rct = true
     tb._frc_ref = get_color_ref(tb.focus_rect_color)
-    tb._style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPCHILDREN
-    tb._ex_style = WS_EX_WINDOWEDGE | WS_EX_STATICEDGE // WS_EX_WINDOWEDGE WS_EX_CLIENTEDGE WS_EX_STATICEDGE
-    
+    tb._style = WS_BORDER | WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOVSCROLL | WS_TABSTOP  // | WS_CLIPCHILDREN
+    tb._ex_style = WS_EX_WINDOWEDGE // WS_EX_CLIENTEDGE // WS_EX_STATICEDGE // WS_EX_WINDOWEDGE WS_EX_CLIENTEDGE WS_EX_STATICEDGE WS_EX_WINDOWEDGE //| 
+    tb._cls_name = WcEditClassW
+    tb._before_creation = cast(CreateDelegate) tb_before_creation
+    tb._after_creation = cast(CreateDelegate) tb_after_creation
     return tb
 }
 
@@ -129,38 +132,51 @@ textbox_clear_all :: proc(tb : ^TextBox) {
     if tb._is_created do SetWindowText(tb.handle, to_wstring(""))
 }
 
-// Create the handle of TextBox control.
-create_textbox :: proc(tb : ^TextBox) {
-    _global_ctl_id += 1     
-    tb.control_id = _global_ctl_id 
+@private tb_before_creation :: proc(tb : ^TextBox) {
     adjust_styles(tb)
-    tb.handle = CreateWindowEx(   tb._ex_style, 
-                                    WcEditClassW, //to_wstring("Edit"), 
-                                    to_wstring(tb.text),
-                                    tb._style, 
-                                    i32(tb.xpos), 
-                                    i32(tb.ypos), 
-                                    i32(tb.width), 
-                                    i32(tb.height),
-                                    tb.parent.handle, 
-                                    direct_cast(tb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if tb.handle != nil {
-        tb._is_created = true
-        //mdw := Wparam(make_dword(3,  4))
-        // emty_wstr := to_wstring(" 0")
-        // SetWindowTheme(tb.handle, emty_wstr,emty_wstr)
-        set_subclass(tb, tb_wnd_proc) 
-        setfont_internal(tb)
-        //SendMessage(tb.parent.handle, WM_UPDATEUISTATE, mdw, 0)
-        if len(tb.cue_banner) > 0 {
-            up := cast(uintptr) to_wstring(tb.cue_banner)
-            SendMessage(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )
-        }     
-    }
 }
+
+@private tb_after_creation :: proc(tb : ^TextBox) {    
+    set_subclass(tb, tb_wnd_proc)
+    if len(tb.cue_banner) > 0 {
+        up := cast(uintptr) to_wstring(tb.cue_banner)
+        SendMessage(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )
+    }     
+}
+
+
+// Create the handle of TextBox control.
+// create_textbox :: proc(tb : ^TextBox) {
+//     _global_ctl_id += 1     
+//     tb.control_id = _global_ctl_id 
+//     adjust_styles(tb)
+//     tb.handle = CreateWindowEx(   tb._ex_style, 
+//                                     WcEditClassW, //to_wstring("Edit"), 
+//                                     to_wstring(tb.text),
+//                                     tb._style, 
+//                                     i32(tb.xpos), 
+//                                     i32(tb.ypos), 
+//                                     i32(tb.width), 
+//                                     i32(tb.height),
+//                                     tb.parent.handle, 
+//                                     direct_cast(tb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if tb.handle != nil {
+//         tb._is_created = true
+//         //mdw := Wparam(make_dword(3,  4))
+//         // emty_wstr := to_wstring(" 0")
+//         // SetWindowTheme(tb.handle, emty_wstr,emty_wstr)
+//         set_subclass(tb, tb_wnd_proc) 
+//         setfont_internal(tb)
+//         //SendMessage(tb.parent.handle, WM_UPDATEUISTATE, mdw, 0)
+//         if len(tb.cue_banner) > 0 {
+//             up := cast(uintptr) to_wstring(tb.cue_banner)
+//             SendMessage(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )
+//         }     
+//     }
+// }
 
 
 
@@ -172,17 +188,16 @@ create_textbox :: proc(tb : ^TextBox) {
     
     switch msg {   
         case WM_PAINT :
-            // if tb._draw_focus_rct {
-            //     ps : PAINTSTRUCT
-            //     hdc := BeginPaint(tb.handle, &ps)
-            //     frame_brush := CreateSolidBrush(tb._frc_ref)
-            //     FrameRect(hdc, &ps.rcPaint, frame_brush)
-            //     SetBkMode(hdc, Opaque)
-            //     SetBackColor(hdc, get_color_ref(tb.back_color))
-            //     EndPaint(tb.handle, &ps)
-            //     return 1
-            // }
-        
+            if tb._draw_focus_rct {
+                ps : PAINTSTRUCT
+                hdc := BeginPaint(tb.handle, &ps)
+                frame_brush := CreateSolidBrush(tb._frc_ref)
+                FrameRect(hdc, &ps.rcPaint, frame_brush)
+                SetBkMode(hdc, Opaque)
+                SetBackColor(hdc, get_color_ref(tb.back_color))
+                EndPaint(tb.handle, &ps)
+                return 0
+            }        
 
             if tb.paint != nil {
                 ps : PAINTSTRUCT
@@ -204,7 +219,9 @@ create_textbox :: proc(tb : ^TextBox) {
                 //SetBackColor(dc_handle, get_color_ref(tb.back_color))
                 tb._bk_brush = CreateSolidBrush(get_color_ref(tb.back_color))
                 return to_lresult(tb._bk_brush)
-            } 
+            } //else do return 0 
+
+            //-------------------------
 
         case CM_CTLCOMMAND :
             ncode := hiword_wparam(wp)
@@ -232,8 +249,9 @@ create_textbox :: proc(tb : ^TextBox) {
             if tb.left_mouse_down != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.left_mouse_down(tb, &mea)
-                return 0
+                //return 0
             }
+            //return 0
             
 
         case WM_RBUTTONDOWN :
@@ -258,7 +276,7 @@ create_textbox :: proc(tb : ^TextBox) {
             if tb.mouse_click != nil {
                 ea := new_event_args()
                 tb.mouse_click(tb, &ea)
-                return 0
+                //return 0
             }
         
         case WM_LBUTTONDBLCLK :
@@ -305,6 +323,7 @@ create_textbox :: proc(tb : ^TextBox) {
                     tb.mouse_enter(tb, &ea)
                 }
             }
+
         
         case WM_MOUSELEAVE :
             tb._is_mouse_entered = false
@@ -314,6 +333,12 @@ create_textbox :: proc(tb : ^TextBox) {
             }
 
         case WM_SETFOCUS :
+            tb._draw_focus_rct = true
+            // if SetFocus(tb.handle) == nil {
+
+            //     return 0
+            // }
+            //return 1
             
             // tb._draw_focus_rct = true
             // InvalidateRect(hw, nil, true)
@@ -345,15 +370,17 @@ create_textbox :: proc(tb : ^TextBox) {
 
         //     print("change ui state")
 
-        case WM_MOUSEACTIVATE :
+       // case WM_MOUSEACTIVATE :
             //print("WM_MOUSEACTIVATE")
 
         case WM_KILLFOCUS:
-           //tb._draw_focus_rct = false
+            
+           tb._draw_focus_rct = false
             if tb.lost_focus != nil {
+                
                 ea := new_event_args()
                 tb.lost_focus(tb, &ea)
-                return 0
+                //return 0
             }
             
             
@@ -362,11 +389,14 @@ create_textbox :: proc(tb : ^TextBox) {
             if tb.key_down != nil {
                 kea := new_key_event_args(wp)
                 tb.key_down(tb, &kea)
+                return 0 
             }
+
         case WM_KEYUP :
             if tb.key_up != nil {
                 kea := new_key_event_args(wp)
                 tb.key_up(tb, &kea)
+                return 0
             }
 
         case WM_CHAR :  
@@ -374,13 +404,14 @@ create_textbox :: proc(tb : ^TextBox) {
                 kea := new_key_event_args(wp)
                 tb.key_press(tb, &kea)
             }          
-            SendMessage(tb.handle, CM_TBTXTCHANGED, 0, 0)
+           SendMessage(tb.handle, CM_TBTXTCHANGED, 0, 0)
             
         case CM_TBTXTCHANGED :
             if tb.text_changed != nil {
                 ea:= new_event_args()
                 tb.text_changed(tb, &ea)
             }
+            
 
         case WM_DESTROY:
             tb_dtor(tb)
@@ -388,7 +419,7 @@ create_textbox :: proc(tb : ^TextBox) {
 
         
         
-        //case : return DefSubclassProc(hw, msg, wp, lp)
+        case : return DefSubclassProc(hw, msg, wp, lp)
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

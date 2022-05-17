@@ -22,4 +22,4 @@ new_label :: proc(parent : ^Form) -> Label
 new_label :: proc(parent : ^Form, txt : string, w : int = 0, h : int = 0) -> Label
 
 // Functions
-create_label :: proc(lb : ^Label) // Create the label handle.
+create_control :: proc(c : ^Control) // To create Label

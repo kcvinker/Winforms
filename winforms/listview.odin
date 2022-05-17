@@ -178,6 +178,9 @@ new_listview :: proc{lv_ctor1, lv_ctor2}
 	lv.multi_selection = true
 	lv._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | LVS_ALIGNLEFT | LVS_REPORT | WS_BORDER 
 	lv._ex_style = 0
+	lv._cls_name = WcListViewClassW
+	lv._before_creation = cast(CreateDelegate) lv_before_creation
+	lv._after_creation = cast(CreateDelegate) lv_after_creation
 
 	return lv
 }
@@ -268,31 +271,39 @@ listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_i
 	SendMessage(lv.handle, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, Lparam(lxs) )
 }
 
-create_listview :: proc(lv : ^ListView) {
-	_global_ctl_id += 1
-    lv.control_id = _global_ctl_id 
-   	//lv_adjust_styles(lv)
-    lv.handle = CreateWindowEx(   lv._ex_style,  
-                                    WcListViewClassW, 
-                                    to_wstring(lv.text),
-                                    lv._style, 
-                                    i32(lv.xpos), 
-                                    i32(lv.ypos), 
-                                    i32(lv.width), 
-                                    i32(lv.height),
-                                    lv.parent.handle, 
-                                    direct_cast(lv.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if lv.handle != nil 
-    {
-        lv._is_created = true
-        set_subclass(lv, lv_wnd_proc) 
-        setfont_internal(lv)
-        lv_set_extended_styles(lv)
-    }
+@private lv_before_creation :: proc(lv : ^ListView) {print("creating lv - ", lv.control_id)}
+
+@private lv_after_creation :: proc(lv : ^ListView) {	
+	set_subclass(lv, lv_wnd_proc) 
+    lv_set_extended_styles(lv)
+
 }
+
+// create_listview :: proc(lv : ^ListView) {
+// 	_global_ctl_id += 1
+//     lv.control_id = _global_ctl_id 
+//    	//lv_adjust_styles(lv)
+//     lv.handle = CreateWindowEx(   lv._ex_style,  
+//                                     WcListViewClassW, 
+//                                     to_wstring(lv.text),
+//                                     lv._style, 
+//                                     i32(lv.xpos), 
+//                                     i32(lv.ypos), 
+//                                     i32(lv.width), 
+//                                     i32(lv.height),
+//                                     lv.parent.handle, 
+//                                     direct_cast(lv.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if lv.handle != nil 
+//     {
+//         lv._is_created = true
+//         set_subclass(lv, lv_wnd_proc) 
+//         setfont_internal(lv)
+//         lv_set_extended_styles(lv)
+//     }
+// }
 
 
 @private lv_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, 

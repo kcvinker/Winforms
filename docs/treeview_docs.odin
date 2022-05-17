@@ -38,7 +38,7 @@ new_treeview :: proc(parent : ^Form) -> TreeView
 new_treeview :: proc(parent : ^Form, x, y, w, h : int) -> TreeView 
 
 // Functions
-create_treeview :: proc(tv : ^TreeView)  // Create the handle of TreeView control.
+create_control :: proc(c : ^Control) // To create a TreeView control.
 treeview_add_node :: proc(tv : ^TreeView, node : ^TreeNode, parent : ^TreeNode = nil) 
     // Adding a new node to tree view. This can be a root node or a child node.
     // Parameters :

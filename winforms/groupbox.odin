@@ -3,6 +3,8 @@ package winforms
 // import "core:fmt"
 import "core:runtime"
 
+WcGroupBoxW : wstring
+
 GroupBox :: struct {
     using control : Control,
 
@@ -14,6 +16,7 @@ GroupBox :: struct {
 @private gb_count : int = 1
 
 @private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> GroupBox {
+    if WcGroupBoxW == nil do WcGroupBoxW = to_wstring("Button")
     gb : GroupBox
     using gb
         kind = .Group_Box
@@ -26,6 +29,9 @@ GroupBox :: struct {
         height = h
         back_color = p.back_color
         fore_color = p.fore_color
+        _cls_name = WcGroupBoxW
+	    _before_creation = cast(CreateDelegate) gb_before_creation
+	    _after_creation = cast(CreateDelegate) gb_after_creation
         
         _style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TEXT | BS_TOP
         _ex_style = WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
@@ -52,34 +58,42 @@ GroupBox :: struct {
 // Groupbox control's constructor
 new_groupbox :: proc{gb_ctor1, gb_ctor2}
 
-create_groupbox :: proc(gb : ^GroupBox) {
-    _global_ctl_id += 1     
-    gb.control_id = _global_ctl_id 
-    //set_style_internal(gb)
-    if gb.back_color != gb.parent.back_color do gb._paint_bkg = true
-    gb.handle = CreateWindowEx(  gb._ex_style, 
-                                    to_wstring("Button"), 
-                                    to_wstring(gb.text),
-                                    gb._style, 
-                                    i32(gb.xpos), 
-                                    i32(gb.ypos), 
-                                    i32(gb.width), 
-                                    i32(gb.height),
-                                    gb.parent.handle, 
-                                    direct_cast(gb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
+@private gb_before_creation :: proc(gb : ^GroupBox) {if gb.back_color != gb.parent.back_color do gb._paint_bkg = true}
+
+@private gb_after_creation :: proc(gb : ^GroupBox) {	
+	set_subclass(gb, gb_wnd_proc) 
+    SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
+
+}
+
+// create_groupbox :: proc(gb : ^GroupBox) {
+//     _global_ctl_id += 1     
+//     gb.control_id = _global_ctl_id 
+//     //set_style_internal(gb)
+//     if gb.back_color != gb.parent.back_color do gb._paint_bkg = true
+//     gb.handle = CreateWindowEx(  gb._ex_style, 
+//                                     to_wstring("Button"), 
+//                                     to_wstring(gb.text),
+//                                     gb._style, 
+//                                     i32(gb.xpos), 
+//                                     i32(gb.ypos), 
+//                                     i32(gb.width), 
+//                                     i32(gb.height),
+//                                     gb.parent.handle, 
+//                                     direct_cast(gb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
     
-    if gb.handle != nil {              
-        gb._is_created = true
-        setfont_internal(gb)
-        set_subclass(gb, gb_wnd_proc)
-        SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
+//     if gb.handle != nil {              
+//         gb._is_created = true
+//         setfont_internal(gb)
+//         set_subclass(gb, gb_wnd_proc)
+//         SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
         
 
         
-    }
-}
+//     }
+// }
 
 @private gb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
     context = runtime.default_context()

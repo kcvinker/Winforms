@@ -53,7 +53,7 @@ new_datetimepicker :: proc(parent : ^Form, x, y : int) -> DateTimePicker
 new_datetimepicker :: proc(parent : ^Form, x, y, w, h : int) -> DateTimePicker
 
 // Functions
-create_datetimepicker :: proc(dtp : ^DateTimePicker) // create dtp handle
+create_control :: proc(c : ^Control) // To create DTP
 set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) 
         /* To set custom format in datetimepicker
             ----Parameter

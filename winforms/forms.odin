@@ -225,6 +225,11 @@ start_form :: proc()
 show_form :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
 hide_form :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
 set_form_state :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
+print_point :: proc(mea : ^MouseEventArgs) {
+    @static x : int = 1
+    fmt.printf("[%d] X: %d,  Y: %d\n", x, mea.x, mea.y)
+    x+= 1
+}
 
 // Set the colors to draw a gradient background in form.
 set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom) 
@@ -253,6 +258,7 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = 
     win_class.lpszClassName = to_wstring(app.class_name)
 
     res := RegisterClassEx(&win_class)
+    //print("I have reached here")
     if res == 0 {print("reg window class error -- ", GetLastError())}
     //icc_ex := INITCOMMONCONTROLSEX{dw_size = size_of(INITCOMMONCONTROLSEX), dw_icc = ICC_STANDARD_CLASSES}
     //InitCommonControlsEx(&icc_ex)

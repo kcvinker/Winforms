@@ -9,6 +9,7 @@ PaintEventHandler :: proc(sender : ^Control, e : ^PaintEventArgs)
 SizeEventHandler :: proc(sender : ^Control, e : ^SizeEventArgs)
 LBoxEventHandler :: proc(sender : ^Control, e : string)
 TreeEventHandler :: proc(sender : ^TreeView, e : ^TreeEventArgs)
+CreateDelegate :: proc(ctl : ^Control)
 
 
 

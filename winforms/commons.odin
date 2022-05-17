@@ -269,3 +269,33 @@ Test :: proc() {
 
 
 }
+
+create_control :: proc(c : ^Control) {
+	_global_ctl_id += 1  
+    c.control_id = _global_ctl_id  
+	c._before_creation(c)
+    c.handle = CreateWindowEx(   c._ex_style, 
+                                    c._cls_name, 
+                                    to_wstring(c.text),
+                                    c._style, 
+                                    i32(c.xpos), 
+                                    i32(c.ypos), 
+                                    i32(c.width), 
+                                    i32(c.height),
+                                    c.parent.handle, 
+                                    direct_cast(c.control_id, Hmenu), 
+                                    app.h_instance, 
+                                    nil )
+    
+    if c.handle != nil {          
+        c._is_created = true           
+        setfont_internal(c)         
+		c._after_creation(c)              
+    }
+}
+
+create_controls :: proc(ctls : ..^Control) {
+	for c in ctls {
+		create_control(c)
+	}
+}

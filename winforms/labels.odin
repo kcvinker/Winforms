@@ -2,6 +2,8 @@ package winforms
 import "core:runtime"
 //import "core:time"
 
+WcLabelW : wstring
+
 // this is for labels
 @private _lb_count := 0
 @private _lb_height_incr :: 3
@@ -25,6 +27,7 @@ Label :: struct {
 LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
 
 @private label_ctor :: proc(p : ^Form, txt : string = "") -> Label {
+    if WcLabelW == nil do WcLabelW = to_wstring("Static")
     _lb_count += 1
     lb : Label
     lb.auto_size = true
@@ -42,6 +45,9 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     lb._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED
     lb._size_incr.width = 2
     lb._size_incr.height = 3 
+    lb._cls_name = WcLabelW
+    lb._before_creation = cast(CreateDelegate) lbl_before_creation
+    lb._after_creation = cast(CreateDelegate) lbl_after_creation
     return lb
 }
 
@@ -62,8 +68,15 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     return lb
 }
 
+@private new_label3 :: proc(parent : ^Form, x, y : int, txt : string) -> Label {
+    lb := label_ctor(parent, txt)    
+    lb.xpos = x
+    lb.ypos = y
+    return lb
+}
+
 // Label control's constructor
-new_label :: proc{new_label1, new_label2}
+new_label :: proc{new_label1, new_label2, new_label3}
 
 
 
@@ -129,38 +142,49 @@ new_label :: proc{new_label1, new_label2}
     }
 }
 
-
-// Create the handle of Label control.
-create_label :: proc(lb : ^Label) {
+@private lbl_before_creation :: proc(lb : ^Label) {
     if lb.border_style != .No_Border do adjust_border(lb)
     check_for_autosize(lb)
     adjust_alignment(lb)
-    _global_ctl_id += 1  
-    lb.control_id = _global_ctl_id  
-    lb.handle = CreateWindowEx(   lb._ex_style, 
-                                    to_wstring("Static"), 
-                                    to_wstring(lb.text),
-                                    lb._style, 
-                                    i32(lb.xpos), 
-                                    i32(lb.ypos), 
-                                    i32(lb.width), 
-                                    i32(lb.height),
-                                    lb.parent.handle, 
-                                    direct_cast(lb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
+}
+
+@private lbl_after_creation :: proc(lb : ^Label) {
+    if lb.auto_size do calculate_ctl_size(lb) 
+    set_subclass(lb, label_wnd_proc) 
+}
+
+
+// Create the handle of Label control.
+// create_label :: proc(lb : ^Label) {
+//     if lb.border_style != .No_Border do adjust_border(lb)
+//     check_for_autosize(lb)
+//     adjust_alignment(lb)
+//     _global_ctl_id += 1  
+//     lb.control_id = _global_ctl_id  
+//     lb.handle = CreateWindowEx(   lb._ex_style, 
+//                                     to_wstring("Static"), 
+//                                     to_wstring(lb.text),
+//                                     lb._style, 
+//                                     i32(lb.xpos), 
+//                                     i32(lb.ypos), 
+//                                     i32(lb.width), 
+//                                     i32(lb.height),
+//                                     lb.parent.handle, 
+//                                     direct_cast(lb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
     
-    if lb.handle != nil {  
-        //print("Original label - ", lb.handle)
-        lb._is_created = true              
-        if lb.auto_size do calculate_ctl_size(lb) 
-        setfont_internal(lb)
-        set_subclass(lb, label_wnd_proc) 
+//     if lb.handle != nil {  
+//         //print("Original label - ", lb.handle)
+//         lb._is_created = true              
+//         if lb.auto_size do calculate_ctl_size(lb) 
+//         setfont_internal(lb)
+//         set_subclass(lb, label_wnd_proc) 
         
               
-    }
+//     }
 
-}
+// }
 
 
 

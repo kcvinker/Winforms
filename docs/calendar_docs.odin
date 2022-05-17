@@ -21,7 +21,6 @@ new_calendar :: proc(parent : ^Form) -> Calendar
 new_calendar :: proc(parent : ^Form, x, y : int) -> Calendar
 
 // Functions
-create_calendar :: proc(cal : ^Calendar) // Create the handle of Calendar control.
-
+create_control :: proc(c : ^Control) // To create a Calendar
 
 

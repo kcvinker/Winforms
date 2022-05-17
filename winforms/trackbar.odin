@@ -88,6 +88,9 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     tkb._style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS 
     tkb._ex_style = 0
     tkb.text = "my track"
+    tkb._cls_name = WcTrackbarClassW
+    tkb._before_creation = cast(CreateDelegate) tkb_before_creation
+	tkb._after_creation = cast(CreateDelegate) tkb_after_creation
     return tkb
 }
 
@@ -255,35 +258,44 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     }     
 }
 
+@private tkb_before_creation :: proc(tkb : ^TrackBar) {tkb_adjust_styles(tkb)}
+
+@private tkb_after_creation :: proc(tkb : ^TrackBar) {	
+	set_subclass(tkb, tkb_wnd_proc) 
+    //setfont_internal(tkb)
+    // SendMessage(tkb.handle, TBM_SETTHUMBLENGTH, Wparam(i32(100)), 0)
+    tkb_set_range_internal(tkb)
+
+}
 
 
-create_trackbar :: proc(tkb : ^TrackBar) {
-    _global_ctl_id += 1
-    tkb.control_id = _global_ctl_id 
-    tkb_adjust_styles(tkb)
-    tkb.handle = CreateWindowEx(   tkb._ex_style, 
-                                    WcTrackbarClassW, 
-                                    to_wstring(tkb.text),
-                                    tkb._style, 
-                                    i32(tkb.xpos), 
-                                    i32(tkb.ypos), 
-                                    i32(tkb.width), 
-                                    i32(tkb.height),
-                                    tkb.parent.handle, 
-                                    direct_cast(tkb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
+// create_trackbar :: proc(tkb : ^TrackBar) {
+//     _global_ctl_id += 1
+//     tkb.control_id = _global_ctl_id 
+//     tkb_adjust_styles(tkb)
+//     tkb.handle = CreateWindowEx(   tkb._ex_style, 
+//                                     WcTrackbarClassW, 
+//                                     to_wstring(tkb.text),
+//                                     tkb._style, 
+//                                     i32(tkb.xpos), 
+//                                     i32(tkb.ypos), 
+//                                     i32(tkb.width), 
+//                                     i32(tkb.height),
+//                                     tkb.parent.handle, 
+//                                     direct_cast(tkb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
     
-    if tkb.handle != nil {
-        tkb._is_created = true
-        set_subclass(tkb, tkb_wnd_proc) 
-        //setfont_internal(tkb)
-        // SendMessage(tkb.handle, TBM_SETTHUMBLENGTH, Wparam(i32(100)), 0)
-        tkb_set_range_internal(tkb)
+//     if tkb.handle != nil {
+//         tkb._is_created = true
+//         set_subclass(tkb, tkb_wnd_proc) 
+//         //setfont_internal(tkb)
+//         // SendMessage(tkb.handle, TBM_SETTHUMBLENGTH, Wparam(i32(100)), 0)
+//         tkb_set_range_internal(tkb)
        
         
-    }
-}
+//     }
+// }
 
 
 

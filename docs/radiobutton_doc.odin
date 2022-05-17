@@ -23,6 +23,6 @@ new_radiobutton :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> Radio
 
 
 // Functions
-create_radiobutton :: proc(rb : ^RadioButton) // Create the handle of radio button.
+create_control :: proc(c : ^Control) // To create radio button.
 radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool) // Set the checked state of radio button.
 radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) // Set the check-on-click behaviour.

@@ -8,6 +8,7 @@ import "core:mem"
 
 import  ui "winforms"
 
+
 // Global declarations
 
     Control :: ui.Control
@@ -41,7 +42,7 @@ MakeWindow :: proc() {
     lv = new_listview(&frm)    
     lv.width = 450
     lv.show_grid_lines = true
-    create_listview(&lv)
+    create_control(&lv)
     listview_add_column(&lv, "col1", 150)
     listview_add_column(&lv, "col2", 100)
     listview_add_column(&lv, "col3", 80)

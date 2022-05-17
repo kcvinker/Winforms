@@ -46,6 +46,9 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     c.xpos = x
     c.ypos = y
     c._style = WS_CHILD | WS_VISIBLE //| MCS_DAYSTATE
+    c._cls_name = WcCalenderClassW
+    c._before_creation = cast(CreateDelegate) cal_before_creation
+	c._after_creation = cast(CreateDelegate) cal_after_creation
 
     return c
 }
@@ -136,35 +139,46 @@ new_calendar :: proc{new_cal1, new_cal2}
     if c.short_day_names do c._style |= MCS_SHORTDAYSOFWEEK
 }
 
-// Create the handle of a Calendar control.
-create_calendar :: proc(cal : ^Calendar) {    
-    set_cal_style(cal)
-    _global_ctl_id += 1  
-    cal.control_id = _global_ctl_id  
-    cal.handle = CreateWindowEx(   cal._ex_style, 
-                                    WcCalenderClassW, //to_wstring("SysMonthCal32"), 
-                                    to_wstring(cal.text),
-                                    cal._style, 
-                                    i32(cal.xpos), 
-                                    i32(cal.ypos), 
-                                    i32(cal.width), 
-                                    i32(cal.height),
-                                    cal.parent.handle, 
-                                    direct_cast(cal.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if cal.handle != nil { 
-        cal._is_created = true 
-        setfont_internal(cal) 
-        set_subclass(cal, cal_wnd_proc) 
-        rc : Rect
-        SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(Lparam, &rc))
-        SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
-              
-    }
-
+@private cal_before_creation :: proc(c : ^Calendar) {
+    set_cal_style(c)
 }
+@private cal_after_creation :: proc(cal : ^Calendar) {
+    set_subclass(cal, cal_wnd_proc) 
+    rc : Rect
+    SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(Lparam, &rc))
+    SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
+    
+}
+
+// Create the handle of a Calendar control.
+// create_calendar :: proc(cal : ^Calendar) {    
+//     set_cal_style(cal)
+//     _global_ctl_id += 1  
+//     cal.control_id = _global_ctl_id  
+//     cal.handle = CreateWindowEx(   cal._ex_style, 
+//                                     WcCalenderClassW, //to_wstring("SysMonthCal32"), 
+//                                     to_wstring(cal.text),
+//                                     cal._style, 
+//                                     i32(cal.xpos), 
+//                                     i32(cal.ypos), 
+//                                     i32(cal.width), 
+//                                     i32(cal.height),
+//                                     cal.parent.handle, 
+//                                     direct_cast(cal.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if cal.handle != nil { 
+//         cal._is_created = true 
+//         setfont_internal(cal) 
+//         set_subclass(cal, cal_wnd_proc) 
+//         rc : Rect
+//         SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(Lparam, &rc))
+//         SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
+              
+//     }
+
+// }
 
 @private cal_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, 
                                                     sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {

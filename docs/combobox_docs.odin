@@ -31,7 +31,7 @@ new_combobox :: proc(parent : ^Form) -> ComboBox
 new_combobox :: proc(parent : ^Form, w, h : int ) -> ComboBox 
 
 // Functions
-create_combo :: proc(cmb : ^ComboBox) // Create the handle of ComboBox
+create_control :: proc(c : ^Control) // To create a Combo
 combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) // Set the style of combo box.
         // style - enum values - {tb_combo, lb_combo} 
 

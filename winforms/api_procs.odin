@@ -18,7 +18,7 @@ utf8_to_utf16 :: proc(s: string, allocator := context.temp_allocator) -> []u16 {
    if len(s) < 1 { return nil }
    b := transmute([]byte)s
    cstr := raw_data(b)
-   n := MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, cast(cstring) cstr, i32(len(s)), nil, 0)
+   n := MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, cast(cstring) cstr, -1, nil, 0)
    if n == 0 {return nil}
    text := make([]u16, n+1, allocator)
    n1 := MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, cast(cstring) cstr, i32(len(s)), raw_data(text), n)
@@ -137,7 +137,7 @@ foreign user32 {
    @(link_name="BeginPaint") BeginPaint :: proc(hw : Hwnd, lp_paint : ^PAINTSTRUCT) -> Hdc ---
    @(link_name="EndPaint") EndPaint :: proc(hw : Hwnd, lp_paint : ^PAINTSTRUCT) -> Bool ---
    @(link_name="GetClassLongPtrW") GetClassLongPtr :: proc(hw : Hwnd, indx : i32) -> u64 ---
-   @(link_name="GetClassLongW") GetClassLong :: proc(hw : Hwnd, indx : i32) -> u64 ---
+   //@(link_name="GetClassLongW") GetClassLong :: proc(hw : Hwnd, indx : i32) -> u64 ---
    @(link_name="DestroyWindow") DestroyWindow :: proc(hw : Hwnd) -> Bool ---
    @(link_name="GetCursorPos") GetCursorPos :: proc(pt : ^Point) -> Bool ---
    @(link_name="ScreenToClient") ScreenToClient :: proc(hw : Hwnd, pt : ^Point) -> Bool ---

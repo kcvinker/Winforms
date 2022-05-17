@@ -51,6 +51,8 @@ Control :: struct
 	_subclass_id : int,
 	_wndproc_ptr : SUBCLASSPROC,
 	_size_incr : SizeIncrement,
+	_cls_name : wstring,
+	_before_creation, _after_creation : CreateDelegate,
 	
 	clr_changed : bool,
 	
@@ -97,8 +99,15 @@ Control :: struct
 
 // This is used to set the defualt font right creating the control handle.
 @private setfont_internal :: proc(ctl : ^Control) {
-	if ctl.font.handle != ctl.parent.font.handle do CreateFont_handle(&ctl.font, ctl.handle)
-	SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
+	isOkay : bool 
+	if ctl.font.handle != ctl.parent.font.handle do isOkay = true
+	if ctl.font._def_font_changed do isOkay = true
+	if isOkay {
+		CreateFont_handle(&ctl.font, ctl.handle)
+		SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
+	} 
+	
+	
 }
 
 // Enable or disable a control or form.
@@ -137,6 +146,7 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : bool = fal
 	underline = fu
 	_def_font_changed = true	
 	if ctl.handle != nil { // Only set the font if control handle is created.
+		print("thoooo")
 		CreateFont_handle(&ctl.font, ctl.handle) 
 		SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
 		if ctl.kind == .Label { // Label need special care only because of the autosize property
@@ -145,6 +155,19 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fb : bool = fal
 		}		
 	}
 }
+
+control_set_font_name :: proc(ctl : ^Control, fn : string) {
+	ctl.font._def_font_changed = true
+	ctl.font.name = fn
+	if ctl._is_created do control_set_font(ctl, fn, ctl.font.size)
+}
+ control_set_font_size :: proc(ctl : ^Control, fsz : int, ) {
+	ctl.font._def_font_changed = true
+	ctl.font.size = fsz
+	if ctl._is_created do control_set_font(ctl, ctl.font.name, fsz)
+
+}
+
 
 // To set the position of a control or form
 control_set_position :: proc(ctl : ^Control, x, y : int) {
@@ -285,6 +308,9 @@ control_SetFocus :: proc(ctl : Control) {
     //         ptf("low word - %d, hi word - %d\n", loword_wparam(mdw), hiword_wparam(mdw))
 	
 }
+
+set_focus :: proc(hwnd : Hwnd) {SetFocus(hwnd)}
+
 
 
 

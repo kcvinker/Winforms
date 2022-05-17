@@ -5,6 +5,8 @@ import "core:fmt"
 import "core:runtime"
 //import "core:reflect"
 
+WcComboW : wstring
+
 DropDownStyle :: enum {Tb_Combo, Lb_Combo,}
 
 ComboBox :: struct {
@@ -18,6 +20,7 @@ ComboBox :: struct {
     _bk_brush : Hbrush,
     _old_hwnd : Hwnd,
     _hbrush : Hbrush,
+    _old_ctl_id : Uint,
 
     selection_changed,
     selection_committed,
@@ -71,6 +74,7 @@ ComboInfo :: struct {
 
 
 @private cmb_ctor :: proc(p : ^Form, w : int = 130, h : int = 30) -> ComboBox {
+    if WcComboW == nil do WcComboW = to_wstring("ComboBox")
     cmb : ComboBox
     cmb.kind = .Combo_Box
     cmb.parent = p
@@ -86,6 +90,9 @@ ComboInfo :: struct {
     cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN 
     cmb._ex_style = WS_EX_CLIENTEDGE    // WS_EX_WINDOWEDGE WS_EX_STATICEDGE
     //cmb._txt_style = DT_SINGLELINE | DT_VCENTER 
+    cmb._cls_name = WcComboW
+    cmb._before_creation = cast(CreateDelegate) cmb_before_creation
+	cmb._after_creation = cast(CreateDelegate) cmb_after_creation
     return cmb
 }
 
@@ -127,10 +134,12 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
         }        
         cmb.combo_style = style   
         cmb.p_recreate_enabled = true  
-        sel_indx := combo_get_selected_index(cmb)   
+        //sel_indx := combo_get_selected_index(cmb)   
         DestroyWindow(cmb.handle)
-        recreate_combo(cmb)
-        if sel_indx != -1 do combo_set_selected_index(cmb, sel_indx)        
+       // recreate_combo(cmb)
+        create_control(cmb)
+
+        //if sel_indx != -1 do combo_set_selected_index(cmb, sel_indx)        
     } 
 }
 
@@ -204,7 +213,8 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T ) {
             a_string := fmt.tprint(i)
             append(&cmb.items, a_string)  
         }  
-    }         
+    }
+    // IMPORTANT - add code for update combo items
 }
 
 @private additem_internal :: proc(cmb : ^ComboBox) {
@@ -249,36 +259,58 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     // TODO - clear dynamic array of combo.
 }
 
-create_combo :: proc(cmb : ^ComboBox) {
-    _global_ctl_id += 1
-    cmb.control_id = _global_ctl_id      
-    if cmb.combo_style == .Lb_Combo do cmb._style |= CBS_DROPDOWNLIST
-    cmb.handle = CreateWindowEx(  cmb._ex_style, 
-                                    to_wstring("ComboBox"), 
-                                    to_wstring(cmb.text),
-                                    cmb._style, 
-                                    i32(cmb.xpos), 
-                                    i32(cmb.ypos), 
-                                    i32(cmb.width), 
-                                    i32(cmb.height),
-                                    cmb.parent.handle, 
-                                    direct_cast(cmb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if cmb.handle != nil {         
-        cmb._is_created = true 
-        cmb._old_hwnd = cmb.handle       
-        setfont_internal(cmb)
-        set_subclass(cmb, cmb_wnd_proc) 
-        if len(cmb.items) > 0 do additem_internal(cmb)
-        get_combo_info(cmb)
-        if cmb.selected_index > -1 { // User wants to set the selected index.
-            combo_set_selected_index(cmb, cmb.selected_index)
-        }       
+@private cmb_before_creation :: proc(cmb : ^ComboBox) { 
+    if !cmb.p_recreate_enabled && cmb.combo_style == .Lb_Combo {
+        cmb._style |= CBS_DROPDOWNLIST 
     }
-
+    if cmb.p_recreate_enabled do cmb.control_id = cmb._old_ctl_id
 }
+
+@private cmb_after_creation :: proc(cmb : ^ComboBox) {
+	set_subclass(cmb, cmb_wnd_proc) 
+    cmb._old_hwnd = cmb.handle 
+    cmb._old_ctl_id = cmb.control_id
+    if len(cmb.items) > 0 do additem_internal(cmb)
+    if cmb.p_recreate_enabled {
+        update_combo_info(cmb)
+        cmb.p_recreate_enabled = false
+    } else do get_combo_info(cmb)
+
+    if cmb.selected_index > -1 { // User wants to set the selected index.
+        combo_set_selected_index(cmb, cmb.selected_index)
+    } 
+}
+
+// create_combo :: proc(cmb : ^ComboBox) {
+//     _global_ctl_id += 1
+//     cmb.control_id = _global_ctl_id      
+//     if cmb.combo_style == .Lb_Combo do cmb._style |= CBS_DROPDOWNLIST
+//     cmb.handle = CreateWindowEx(  cmb._ex_style, 
+//                                     to_wstring("ComboBox"), 
+//                                     to_wstring(cmb.text),
+//                                     cmb._style, 
+//                                     i32(cmb.xpos), 
+//                                     i32(cmb.ypos), 
+//                                     i32(cmb.width), 
+//                                     i32(cmb.height),
+//                                     cmb.parent.handle, 
+//                                     direct_cast(cmb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if cmb.handle != nil {         
+//         cmb._is_created = true 
+//         cmb._old_hwnd = cmb.handle       
+//         setfont_internal(cmb)
+//         set_subclass(cmb, cmb_wnd_proc) 
+//         if len(cmb.items) > 0 do additem_internal(cmb)
+//         get_combo_info(cmb)
+//         if cmb.selected_index > -1 { // User wants to set the selected index.
+//             combo_set_selected_index(cmb, cmb.selected_index)
+//         }       
+//     }
+
+// }
 
 
 @private 

@@ -2,7 +2,7 @@ package winforms
 
 import "core:runtime"
 
-
+WcCheckBoxW : wstring 
 
 CheckBox :: struct {
     using control : Control,
@@ -18,6 +18,7 @@ CheckBox :: struct {
 @private cb_count : int
 
 @private cb_ctor :: proc(p : ^Form, txt : string = "") -> CheckBox {
+    if WcCheckBoxW == nil do WcCheckBoxW = to_wstring("Button")	
     cb_count += 1
     cb : CheckBox
     cb.kind = .Check_Box
@@ -37,6 +38,9 @@ CheckBox :: struct {
     cb.auto_size = true
     cb._size_incr.width = 20
     cb._size_incr.height = 3
+    cb._cls_name = WcCheckBoxW
+    cb._before_creation = cast(CreateDelegate) cb_before_creation
+	cb._after_creation = cast(CreateDelegate) cb_after_creation
     return cb
 }
 
@@ -68,33 +72,42 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
     return cb
 }
 
-// Create handle of a checkbox control.
-create_checkbox :: proc(cb : ^CheckBox) {
-    _global_ctl_id += 1
-    cb.control_id = _global_ctl_id    
-    adjust_style(cb)
-    cb.handle = CreateWindowEx(   cb._ex_style, 
-                                    to_wstring("Button"),
-                                    to_wstring(cb.text),
-                                    cb._style, 
-                                    i32(cb.xpos), 
-                                    i32(cb.ypos), 
-                                    i32(cb.width), 
-                                    i32(cb.height),
-                                    cb.parent.handle, 
-                                    direct_cast(cb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
-    if cb.handle != nil {  
-        append(&cb.parent._cdraw_childs, cb.handle)      
-        cb._is_created = true        
-        setfont_internal(cb)
-        set_subclass(cb, cb_wnd_proc) 
-        if cb.auto_size do calculate_ctl_size(cb)
-        //ptf("global ctl id of label - %d\n", _global_ctl_id)       
-    }
+@private cb_before_creation :: proc(cb : ^CheckBox) {adjust_style(cb)}
+
+@private cb_after_creation :: proc(cb : ^CheckBox) {	
+	set_subclass(cb, cb_wnd_proc) 
+    append(&cb.parent._cdraw_childs, cb.handle)
+    if cb.auto_size do calculate_ctl_size(cb)
+
 }
+
+// Create handle of a checkbox control.
+// create_checkbox :: proc(cb : ^CheckBox) {
+//     _global_ctl_id += 1
+//     cb.control_id = _global_ctl_id    
+//     adjust_style(cb)
+//     cb.handle = CreateWindowEx(   cb._ex_style, 
+//                                     to_wstring("Button"),
+//                                     to_wstring(cb.text),
+//                                     cb._style, 
+//                                     i32(cb.xpos), 
+//                                     i32(cb.ypos), 
+//                                     i32(cb.width), 
+//                                     i32(cb.height),
+//                                     cb.parent.handle, 
+//                                     direct_cast(cb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if cb.handle != nil {  
+//         append(&cb.parent._cdraw_childs, cb.handle)      
+//         cb._is_created = true        
+//         setfont_internal(cb)
+//         set_subclass(cb, cb_wnd_proc) 
+//         if cb.auto_size do calculate_ctl_size(cb)
+//         //ptf("global ctl id of label - %d\n", _global_ctl_id)       
+//     }
+// }
 
 @private adjust_style :: proc(cb : ^CheckBox) {
     if cb.text_alignment == .Right {

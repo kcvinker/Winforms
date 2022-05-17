@@ -7,6 +7,7 @@ import "core:strconv"
 // Constants ----------
     is_np_inited : bool = false
     ICC_UPDOWN_CLASS :: 0x10
+    WcNumPickerW : wstring
     
     UD_MAXVAL :: 0x7fff
     UD_MINVAL :: (-UD_MAXVAL)
@@ -72,6 +73,7 @@ NMUPDOWN :: struct {
     if !is_np_inited { // Then we need to initialize the date class control.
         is_np_inited = true
         app.iccx.dwIcc = ICC_UPDOWN_CLASS
+        WcNumPickerW = to_wstring("msctls_updown32")
         InitCommonControlsEx(&app.iccx)
     }
     np : NumberPicker
@@ -88,6 +90,9 @@ NMUPDOWN :: struct {
     np.min_range = 0
     np.max_range = 100
     np.decimal_precision = 0
+    np._cls_name = WcNumPickerW
+	np._before_creation = cast(CreateDelegate) np_before_creation
+	np._after_creation = cast(CreateDelegate) np_after_creation
     
     np._style =  WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_SETBUDDYINT |  UDS_AUTOBUDDY | UDS_HOTTRACK
     np._buddy_style = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP | WS_CLIPCHILDREN 
@@ -209,9 +214,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
     SetWindowText(tb._buddy_handle, to_wstring(wst))  
 }
 
-
-
-create_numberpicker :: proc(np : ^NumberPicker, ) {
+@private np_before_creation :: proc(np : ^NumberPicker) {
     if !is_np_inited {
         icex : INITCOMMONCONTROLSEX
         icex.dwSize = size_of(icex)
@@ -219,10 +222,10 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
         InitCommonControlsEx(&icex)  
         is_np_inited = true
     }
-    _global_ctl_id += 1     
-    np.control_id = _global_ctl_id 
     set_np_styles(np)
-    
+}
+
+@private np_after_creation :: proc(np : ^NumberPicker) {	
     np._buddy_handle = CreateWindowEx( np._buddy_exstyle, 
                                         to_wstring("Edit"), 
                                         nil,
@@ -235,32 +238,75 @@ create_numberpicker :: proc(np : ^NumberPicker, ) {
                                         direct_cast(np.control_id, Hmenu), 
                                         app.h_instance, 
                                         nil )
-
-    np.handle = CreateWindowEx(  np._ex_style, 
-                                    to_wstring("msctls_updown32"), 
-                                    nil,
-                                    np._style, 
-                                    0, 0, 0, 0, // We don't need to set size & pos. Leave it to win32.
-                                    np.parent.handle, 
-                                    direct_cast(np.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    
+	
     if np.handle != nil && np._buddy_handle != nil {
-      // print("np handle - ", np.handle) 
-        nph = np.handle
-        SendMessage(np.handle, UDM_SETBUDDY, convert_to(Wparam, np._buddy_handle), 0)       
-        np._is_created = true        
+        // print("np handle - ", np.handle) 
+       // nph = np.handle
+        SendMessage(np.handle, UDM_SETBUDDY, convert_to(Wparam, np._buddy_handle), 0)                
         set_np_subclass(np, np_wnd_proc, buddy_wnd_proc) 
-        if np.font.handle != np.parent.font.handle do CreateFont_handle(&np.font, np._buddy_handle)
-	    SendMessage(np._buddy_handle, WM_SETFONT, Wparam(np.font.handle), Lparam(1))
+        if np.font.handle != np.parent.font.handle || np.font.handle == nil do CreateFont_handle(&np.font, np._buddy_handle)
+        SendMessage(np._buddy_handle, WM_SETFONT, Wparam(np.font.handle), Lparam(1))
         np_set_range_internal(np) 
         if np.format_string == "" do np.format_string = fmt.tprintf("%%.%df", np.decimal_precision)
         np_display_value_internal(np)  
         set_mouse_leave_info(np)
-        
+            
     }
+
 }
+
+
+
+// create_numberpicker :: proc(np : ^NumberPicker, ) {
+//     if !is_np_inited {
+//         icex : INITCOMMONCONTROLSEX
+//         icex.dwSize = size_of(icex)
+//         icex.dwIcc = ICC_UPDOWN_CLASS
+//         InitCommonControlsEx(&icex)  
+//         is_np_inited = true
+//     }
+//     _global_ctl_id += 1     
+//     np.control_id = _global_ctl_id 
+//     set_np_styles(np)
+    
+//     np._buddy_handle = CreateWindowEx( np._buddy_exstyle, 
+//                                         to_wstring("Edit"), 
+//                                         nil,
+//                                         np._buddy_style, 
+//                                         i32(np.xpos), 
+//                                         i32(np.ypos), 
+//                                         i32(np.width), 
+//                                         i32(np.height),
+//                                         np.parent.handle, 
+//                                         direct_cast(np.control_id, Hmenu), 
+//                                         app.h_instance, 
+//                                         nil )
+
+//     np.handle = CreateWindowEx(  np._ex_style, 
+//                                     to_wstring("msctls_updown32"), 
+//                                     nil,
+//                                     np._style, 
+//                                     0, 0, 0, 0, // We don't need to set size & pos. Leave it to win32.
+//                                     np.parent.handle, 
+//                                     direct_cast(np.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+    
+//     if np.handle != nil && np._buddy_handle != nil {
+//       // print("np handle - ", np.handle) 
+//         nph = np.handle
+//         SendMessage(np.handle, UDM_SETBUDDY, convert_to(Wparam, np._buddy_handle), 0)       
+//         np._is_created = true        
+//         set_np_subclass(np, np_wnd_proc, buddy_wnd_proc) 
+//         if np.font.handle != np.parent.font.handle do CreateFont_handle(&np.font, np._buddy_handle)
+// 	    SendMessage(np._buddy_handle, WM_SETFONT, Wparam(np.font.handle), Lparam(1))
+//         np_set_range_internal(np) 
+//         if np.format_string == "" do np.format_string = fmt.tprintf("%%.%df", np.decimal_precision)
+//         np_display_value_internal(np)  
+//         set_mouse_leave_info(np)
+        
+//     }
+// }
 
 @private np_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
     context = runtime.default_context()

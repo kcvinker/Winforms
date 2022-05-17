@@ -17,7 +17,7 @@ ListBox :: struct {
 new_listbox :: proc(parent : ^Form) -> ListBox 
 
 // Functions------------------------------------------
-create_listbox :: proc(lbx : ^ListBox) // Create the handle of a listbox
+create_control :: proc(c : ^Control) // To create ListBox
 
 listbox_add_item :: proc(lbx : ^ListBox, item : $T) // Add an item to listbox
 

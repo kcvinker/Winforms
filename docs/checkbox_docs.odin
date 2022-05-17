@@ -14,5 +14,4 @@ new_checkbox ::  proc(parent : ^Form, txt : string, x, y : int) -> CheckBox
 new_checkbox ::  proc(parent : ^Form, txt : string, x, y, w, h : int) -> CheckBox
 
 // Functions
-create_checkbox :: proc(cb : ^CheckBox) // Create the handle of check box
-
+create_control :: proc(c : ^Control) // To create a Checkbox
