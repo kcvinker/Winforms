@@ -6,7 +6,7 @@ import ui "winforms"
 import "core:fmt"
 import "core:strconv"
 import "core:strings"
-// import "core:mem"
+import "core:mem"
 
 Control :: ui.Control
 Form :: ui.Form
@@ -158,17 +158,17 @@ calculate_rate :: proc() {
 tbRate_onKeyUp :: proc(c : ^Control, e : ^KeyEventArgs) {
 	if len(timeStr) > 0 {
 		rate, _ = strconv.parse_int(ui.control_get_text(tbRate))
-		print(rate)
+		//print(rate)
 		if rate > 0 do calculate_rate()
 	}
 }
 
 
 main :: proc() {
-	// track: mem.Tracking_Allocator
-    // mem.tracking_allocator_init(&track, context.allocator)
-    // context.allocator = mem.tracking_allocator(&track)
+	track: mem.Tracking_Allocator
+    mem.tracking_allocator_init(&track, context.allocator)
+    context.allocator = mem.tracking_allocator(&track)
     make_ui()
-    // for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
-    // for bf in track.bad_free_array { ptf("%v allocation %p was freed badly\n", bf.location, bf.memory) }  
+    for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
+    for bf in track.bad_free_array { ptf("%v allocation %p was freed badly\n", bf.location, bf.memory) }  
 }

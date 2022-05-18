@@ -54,9 +54,11 @@ MakeWindow :: proc() {
     listview_add_item(&lv, &li2)
     
     //print(U32MAX) if a == b {}
-    
+    lang := ini_readkey(`E:\OneDrive Folder\OneDrive\Programming\Odin\Winforms\af.ini`, "Controls", "ename")
+    print("ini text - ", lang)
+    defer delete(lang)
   
-    start_form()  
+    start_form() 
     
 }
 

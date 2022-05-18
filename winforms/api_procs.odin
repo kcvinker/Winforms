@@ -89,7 +89,6 @@ FILETIME_as_unix_nanoseconds :: proc "contextless" (ft: FILETIME) -> i64 {
 }
 
 
-
 foreign import "system:user32.lib"
 @(default_calling_convention = "std")
 foreign user32 {
@@ -179,6 +178,14 @@ foreign kernel32 {
    @(link_name="GetSystemTime") GetSystemTime :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="GetLocalTime") GetLocalTime :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="Sleep") Sleep :: proc(milli_sec : Dword) ---
+   
+   @(link_name="GetPrivateProfileStringA") GetPrivateProfileString :: proc(lpAppName : cstring,
+                                                                           lpKeyName : cstring,
+                                                                           lpDefault : cstring,
+                                                                           lpReturn : ^byte,
+                                                                           nSize : Dword,
+                                                                           lpFileName : cstring) -> Dword ---
+
 
 } // Kernel32 library
 

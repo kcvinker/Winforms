@@ -206,11 +206,12 @@ control_set_text :: proc(ctl : ^Control, txt : string) {
 
 // To get the text from the control or form. 
 // Note :- This is not applicable for all controls.
+// IMPORTANT := delete the string after use
 control_get_text :: proc(ctl : Control, alloc := context.allocator) -> string {	 
 	tlen := GetWindowTextLength(ctl.handle) 	
 	mem_chunks := make([]Wchar, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
-	defer delete(mem_chunks)	
+	//defer delete(mem_chunks)	
 	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))
 	return wstring_to_utf8(wsBuffer, -1)	
 }
@@ -221,7 +222,7 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 	tlen := GetWindowTextLength(ctl.handle) 	
 	mem_chunks := make([]Wchar, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
-	defer delete(mem_chunks)	
+	//defer delete(mem_chunks)	
 	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))	
 	return wsBuffer[:tlen]	
 }
