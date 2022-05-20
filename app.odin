@@ -43,21 +43,33 @@ MakeWindow :: proc() {
     lv.width = 450
     lv.show_grid_lines = true
     create_control(&lv)
-    listview_add_column(&lv, "col1", 150)
-    listview_add_column(&lv, "col2", 100)
-    listview_add_column(&lv, "col3", 80)
+    listview_add_column(&lv, "Names", 150)
+    listview_add_column(&lv, "Jobs", 100)
+    listview_add_column(&lv, "Age", 80)
+    listview_add_column(&lv, "Salaries", 100)
 
-    li1 := new_listview_item("Item One")
-    li2 := new_listview_item("Item Two")
+   // li1 := new_listview_item("Item One")
+    //li2 := new_listview_item("Item Two")
 
-    listview_add_item(&lv, &li1)
-    listview_add_item(&lv, &li2)
+    // listview_add_item(&lv, &li1)
+    // listview_add_item(&lv, &li2)
+
+    // listview_add_row(&lv, "Vinod", "Translator", 39, 40000)
+    // listview_add_row(&lv, "Vinayak", "DTP staff", 32, 15000)
+
+    listview_add_row(&lv, "Vinod")
+    listview_add_row(&lv, "Vinayak")
+
+    listview_add_subitems(&lv, 0, "Translator", 39, 40000)
+    listview_add_subitems(&lv, 1, "DTP staff", 32, 15000)
     
     //print(U32MAX) if a == b {}
-    lang := ini_readkey(`E:\OneDrive Folder\OneDrive\Programming\Odin\Winforms\af.ini`, "Controls", "ename")
-    print("ini text - ", lang)
-    defer delete(lang)
-  
+    // lang := ini_readkey(`E:\OneDrive Folder\OneDrive\Programming\Odin\Winforms\af.ini`, "Controls", "ename")
+    // print("ini text - ", lang)
+    // defer delete(lang)
+
+    //lv_get_coulmn_count(&lv)
+    
     start_form() 
     
 }

@@ -42,17 +42,8 @@ Area :: struct {width, height : int,}
 WordValue :: enum {Low, High}
 
 to_str :: proc(value : any) -> string {return fmt.tprint(value)}
-image_list_add_icon :: proc(himl : HimageList, fPath : string, indx : int, smIcon : bool) -> i32 {
-	hIco : Hicon
-	uRet : u32
-	if smIcon {
-		uRet = ExtractIconEx(to_wstring(fPath), i32(indx), nil, &hIco, 1)
-	} else do uRet = ExtractIconEx(to_wstring(fPath), i32(indx), &hIco, nil, 1)
-	if uRet == 0 do return -1
-	iRet := ImageList_ReplaceIcon(himl, -1, hIco)
-	DestroyIcon(hIco)
-	return iRet
-}
+
+
 
 
 
@@ -270,6 +261,7 @@ Test :: proc() {
 
 }
 
+// Create a Control. Use this for all controls. 
 create_control :: proc(c : ^Control) {
 	_global_ctl_id += 1  
     c.control_id = _global_ctl_id  

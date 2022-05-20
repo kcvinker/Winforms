@@ -143,28 +143,28 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
     } 
 }
 
-@private recreate_combo :: proc(cmb : ^ComboBox) {
-    cmb.handle = CreateWindowEx(  cmb._ex_style, 
-                                    to_wstring("ComboBox"), 
-                                    to_wstring(cmb.text),
-                                    cmb._style, 
-                                    i32(cmb.xpos), 
-                                    i32(cmb.ypos), 
-                                    i32(cmb.width), 
-                                    i32(cmb.height),
-                                    cmb.parent.handle, 
-                                    direct_cast(cmb.control_id, Hmenu), 
-                                    app.h_instance, 
-                                    nil )
-    if cmb.handle != nil {
-        cmb._is_created = true        
-        SendMessage(cmb.handle, WM_SETFONT, Wparam(cmb.font.handle), Lparam(1))
-        set_subclass(cmb, cmb_wnd_proc) 
-        additem_internal(cmb)
-        update_combo_info(cmb)
-        cmb.p_recreate_enabled = false // Once re-created, we need to turn it off.
-    }
-}
+// @private recreate_combo :: proc(cmb : ^ComboBox) {
+//     cmb.handle = CreateWindowEx(  cmb._ex_style, 
+//                                     to_wstring("ComboBox"), 
+//                                     to_wstring(cmb.text),
+//                                     cmb._style, 
+//                                     i32(cmb.xpos), 
+//                                     i32(cmb.ypos), 
+//                                     i32(cmb.width), 
+//                                     i32(cmb.height),
+//                                     cmb.parent.handle, 
+//                                     direct_cast(cmb.control_id, Hmenu), 
+//                                     app.h_instance, 
+//                                     nil )
+//     if cmb.handle != nil {
+//         cmb._is_created = true        
+//         SendMessage(cmb.handle, WM_SETFONT, Wparam(cmb.font.handle), Lparam(1))
+//         set_subclass(cmb, cmb_wnd_proc) 
+//         additem_internal(cmb)
+//         update_combo_info(cmb)
+//         cmb.p_recreate_enabled = false // Once re-created, we need to turn it off.
+//     }
+// }
 
 combo_add_item :: proc(cmb : ^ComboBox, item : $T ) {
     sitem : string

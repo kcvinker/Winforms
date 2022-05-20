@@ -7,6 +7,7 @@
 package winforms
 
 import "core:runtime"
+//import "core:fmt"
 
 // Constants
 	IccListViewClass :: 0x1
@@ -29,6 +30,7 @@ import "core:runtime"
 	LVS_ALIGNTOP :: 0x0
 	LVS_ALIGNLEFT :: 0x800
 	LVS_ALIGNMASK :: 0xc00
+	
 
 	LVS_EX_GRIDLINES :: 0x1
 	LVS_EX_SUBITEMIMAGES :: 0x2
@@ -122,6 +124,7 @@ import "core:runtime"
 ListView :: struct {
 	using control : Control,
 	item_alignment : enum {Left, Top},
+	column_alignment : ColumnAlignment,
 	view_style : ListViewStyle,
 	hide_selection : bool,
 	multi_selection : bool,	
@@ -135,6 +138,7 @@ ListView :: struct {
 
 	_col_index : i32,
 	_index : i32,
+	_imgList : ImageList,
 
 
 }
@@ -145,6 +149,7 @@ ListViewItem :: struct {
 	back_color : uint,
 	fore_color : uint,
 	font : Font,
+	image_index : int,
 	//sub_items : [dynamic]ListViewSubItem,
 
 }
@@ -155,7 +160,10 @@ ListViewSubItem :: struct {
 	font : Font,
 }
 
+
+
 ListViewStyle :: enum {List, Report, }
+ColumnAlignment :: enum {left, right, center,}
 
 new_listview :: proc{lv_ctor1, lv_ctor2}
 
@@ -176,6 +184,7 @@ new_listview :: proc{lv_ctor1, lv_ctor2}
 	lv.view_style = .Report
 	lv.show_grid_lines = true
 	lv.multi_selection = true
+	lv.full_row_select = true
 	lv._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | LVS_ALIGNLEFT | LVS_REPORT | WS_BORDER 
 	lv._ex_style = 0
 	lv._cls_name = WcListViewClassW
@@ -197,11 +206,12 @@ new_listview :: proc{lv_ctor1, lv_ctor2}
 
 new_listview_item :: proc{listview_item_ctor1, listview_item_ctor2}
 
-@private lv_item_ctor :: proc(txt : string, bgc : uint, fgc : uint) -> ListViewItem {
+@private lv_item_ctor :: proc(txt : string, bgc : uint, fgc : uint, img : int = -1) -> ListViewItem {
 	lvi : ListViewItem
 	lvi.back_color = bgc
 	lvi.fore_color = fgc
 	lvi.text = txt
+	lvi.image_index = img
 	return lvi
 }
 
@@ -217,33 +227,98 @@ new_listview_item :: proc{listview_item_ctor1, listview_item_ctor2}
 
 @private lv_dtor :: proc(lv : ^ListView) {
 	delete(lv.items)
+	if lv._imgList.handle != nil do ImageList_Destroy(lv._imgList.handle)
 }
 
-listview_add_column :: proc(lv : ^ListView, txt : string, width : int) {
+@private
+lv_get_header :: proc(lvh : Hwnd) -> Hwnd {return cast(Hwnd) cast(uintptr) SendMessage(lvh, LVM_GETHEADER, 0, 0)}
+
+lv_get_coulmn_count :: proc (lv : ^ListView) -> int {
+	x:= cast(int) SendMessage(lv_get_header(lv.handle), 0x1200, 0, 0) // I don't what is this 0x1200 means.	
+	return x
+}
+
+listview_add_column :: proc(lv : ^ListView, txt : string, width : int, img : bool = false, imgOnRight : bool = false) {
 	lvc : LVCOLUMN
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM
-	lvc.fmt =  LVCFMT_LEFT
+	lvc.fmt = cast(i32) lv.column_alignment
 	lvc.cx = i32(width)
 	lvc.pszText = to_wstring(txt)
 
-	if lv._is_created {
-		SendMessage(lv.handle, LVM_INSERTCOLUMNW, Wparam(lv._col_index), direct_cast(&lvc, Lparam) )
-		lv._col_index += 1
+	if img {
+		lvc.mask |= LVCF_IMAGE
+		lvc.fmt |= LVCFMT_COL_HAS_IMAGES | LVCFMT_IMAGE
 	}
+
+	if imgOnRight do lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT	
+
+	if lv._is_created {
+		res := cast(bool) SendMessage(lv.handle, LVM_INSERTCOLUMNW, Wparam(lv._col_index), direct_cast(&lvc, Lparam) )
+		if res do lv._col_index += 1
+	}
+}
+
+listview_add_row :: proc{lv_addrow1, lv_addrow2}
+
+@private
+lv_addrow1 :: proc(lv : ^ListView, items : ..any, ) {
+	iLen := len(items)
+	if iLen > 0 {
+		sItems : [dynamic]string
+		defer delete(sItems)
+		for j in items {
+			if value, is_str := j.(string) ; is_str { // Magic -- type assert
+				append(&sItems, value)				
+			} else {				
+				append(&sItems, to_str(j))				
+			}
+		}
+
+		lvItem := listview_item_ctor1(sItems[0])
+		listview_add_item(lv, &lvItem)	
+
+		for i := 1; i < iLen; i += 1 {
+			lvi : LVITEM
+			lvi.iSubItem = i32(i)
+			lvi.pszText = to_wstring(to_str(sItems[i]))
+			iIndx := i32(lvItem.index)
+			SendMessage(lv.handle, LVM_SETITEMTEXT, Wparam(iIndx), direct_cast(&lvi, Lparam) )
+
+		}		
+	}
+}
+
+@private
+lv_addrow2 :: proc(lv : ^ListView, item_txt : any) {
+	sItem : string
+	if value, is_str := item_txt.(string) ; is_str { // Magic -- type assert
+		sItem = value			
+	} else {
+		sItem = to_str(item_txt)					
+	}
+	lvItem := listview_item_ctor1(sItem)
+	listview_add_item(lv, &lvItem)
 }
 
 listview_add_item :: proc(lv : ^ListView, lvi : ^ListViewItem) {
 	item : LVITEM
 	using item
-		mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM | LVIF_STATE
+		mask = LVIF_TEXT | LVIF_PARAM | LVIF_STATE
+		if lvi.image_index > -1 do mask |= LVIF_IMAGE
 		state = 0
 		stateMask = 0
 		iItem = lv._index
+		lvi.index = int(lv._index)
+		iImage = cast(i32) lvi.image_index
 		pszText = to_wstring(lvi.text)
 		cchTextMax = i32(len(lvi.text))
 		lParam = direct_cast(lvi, Lparam)
 	SendMessage(lv.handle, LVM_INSERTITEMW, 0, direct_cast(&item, Lparam))
+	lv._index += 1
 }
+
+
+
 
 listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_indx : int) {
 	lvi : LVITEM
@@ -253,9 +328,35 @@ listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_i
 	SendMessage(lv.handle, LVM_SETITEMTEXT, Wparam(iIndx), direct_cast(&lvi, Lparam) )
 }
 
+
+listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any) {
+	sItems : [dynamic]string
+	defer delete(sItems)
+	for j in items {
+		if value, is_str := j.(string) ; is_str { // Magic -- type assert
+			append(&sItems, value)				
+		} else {			
+			append(&sItems, to_str(j))				
+		}
+	}
+
+	sub_indx : i32 = 1
+	for txt in sItems {
+		lvi : LVITEM
+		lvi.iSubItem = sub_indx
+		lvi.pszText = to_wstring(txt)
+		iIndx := i32(item_indx)
+		SendMessage(lv.handle, LVM_SETITEMTEXT, Wparam(iIndx), direct_cast(&lvi, Lparam) )
+		sub_indx += 1
+	}
+	
+
+}
+
 @private lv_adjust_styles :: proc(lv : ^ListView) {	
 	if lv.edit_label do lv._style |= LVS_EDITLABELS
 	if !lv.hide_selection do lv._style |= LVS_SHOWSELALWAYS
+	if lv.view_style == .Report && lv.full_row_select do lv._ex_style |= LVS_EX_FULLROWSELECT
 	
 
 }
@@ -276,6 +377,12 @@ listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_i
 @private lv_after_creation :: proc(lv : ^ListView) {	
 	set_subclass(lv, lv_wnd_proc) 
     lv_set_extended_styles(lv)
+	if lv._imgList.handle != nil {	// We need to set the image list to list view.
+		SendMessage(lv.handle, 
+					LVM_SETIMAGELIST, 
+					cast(Wparam) lv._imgList.image_type, 
+					direct_cast(lv._imgList.handle, Lparam))
+	}
 
 }
 
