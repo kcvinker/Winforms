@@ -106,6 +106,8 @@ draw_ellipse :: proc(dch : Hdc, rc : Rect) {
 	cntr += 1
 }
 
+
+
 concat_number1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 concat_number2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 

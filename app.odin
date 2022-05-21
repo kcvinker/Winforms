@@ -42,12 +42,23 @@ MakeWindow :: proc() {
     lv = new_listview(&frm)    
     lv.width = 450
     lv.show_grid_lines = true
+    lv.has_checkboxes = true
+    //lv.view_mode = ListViewViews.List
+    //lv.edit_label = true
     create_control(&lv)
-    listview_add_column(&lv, "Names", 150)
-    listview_add_column(&lv, "Jobs", 100)
-    listview_add_column(&lv, "Age", 80)
-    listview_add_column(&lv, "Salaries", 100)
+    
 
+    //cS := new_listview_column("Salaries", 70, ColumnAlignment.right)
+    
+    listview_add_column(&lv, "✔", 50)
+    listview_add_column(&lv, "Names", 130)
+    
+    listview_add_column(&lv, "Jobs", 80 )
+    listview_add_column(&lv, "Age", 50)
+    listview_add_column(&lv, "Salaries", 70)
+    
+   // listview_set_column_order(lv, 1, 2, 3, 4, 0 )
+    //listview_set_column_order(lv, 1, 2, 3, 4, 0 )
    // li1 := new_listview_item("Item One")
     //li2 := new_listview_item("Item Two")
 
@@ -57,11 +68,12 @@ MakeWindow :: proc() {
     // listview_add_row(&lv, "Vinod", "Translator", 39, 40000)
     // listview_add_row(&lv, "Vinayak", "DTP staff", 32, 15000)
 
-    listview_add_row(&lv, "Vinod")
-    listview_add_row(&lv, "Vinayak")
 
-    listview_add_subitems(&lv, 0, "Translator", 39, 40000)
-    listview_add_subitems(&lv, 1, "DTP staff", 32, 15000)
+    
+
+    listview_add_row(&lv, "", "Vinod", "Translator", 39, 40000)
+    listview_add_row(&lv, "", "Vinayak", "DTP staff", 32, 15000)
+    listview_add_row(&lv, "", "Malu", "House wife", 26, 1000)
     
     //print(U32MAX) if a == b {}
     // lang := ini_readkey(`E:\OneDrive Folder\OneDrive\Programming\Odin\Winforms\af.ini`, "Controls", "ename")
@@ -69,6 +81,7 @@ MakeWindow :: proc() {
     // defer delete(lang)
 
     //lv_get_coulmn_count(&lv)
+   // listview_set_column_order(lv, 1, 2, 3, 4, 0 )
     
     start_form() 
     
