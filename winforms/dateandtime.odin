@@ -15,6 +15,8 @@ DateTime :: struct{
 
 WeekDays :: enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }
 
+new_date_time :: proc{dt_ctor, dt_ctor2}
+
 @private dt_ctor :: proc() -> DateTime {
     dt : DateTime
     st : SYSTEMTIME
@@ -31,7 +33,22 @@ WeekDays :: enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday
     return dt
 }
 
-@private systime_to_datetime :: proc(st : SYSTEMTIME) -> DateTime {
+@private
+dt_ctor2 :: proc(iYear, iMonth, iDay, iHour, iMin, iSec : int) -> DateTime {
+    dt : DateTime
+    dt.year = iYear
+    dt.month = iMonth
+    dt.day = iDay
+    dt.hour = iHour
+    dt.minute = iMin
+    dt.second = iSec
+    dt.millisecond = 0
+    dt.day_of_week = WeekDays(0)  
+    return dt
+} 
+
+@private 
+systime_to_datetime :: proc(st : SYSTEMTIME) -> DateTime {
     dt : DateTime
     dt.year = int(st.wYear)
     dt.month = int(st.wMonth)
@@ -42,6 +59,20 @@ WeekDays :: enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday
     dt.millisecond = int(st.wMilliseconds)
     dt.day_of_week = WeekDays(st.wDayOfWeek)   
     return dt
+}
+
+@private 
+datetime_to_systime :: proc(dt : DateTime) -> SYSTEMTIME {
+    st : SYSTEMTIME
+    st.wYear = Word(dt.year)
+    st.wMonth = Word(dt.month)
+    st.wDay = Word(dt.day)
+    st.wHour = Word(dt.hour)
+    st.wMinute = Word(dt.minute)
+    st.wSecond = Word(dt.second)
+    st.wMilliseconds = Word(dt.millisecond)
+    st.wDayOfWeek = Word(dt.day_of_week)   
+    return st
 }
 
 current_time :: proc() -> DateTime {

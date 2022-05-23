@@ -24,6 +24,7 @@ import  ui "winforms"
 
     frm : ui.Form
     lv : ui.ListView
+	dtp : ui.DateTimePicker
     
 //
 
@@ -44,8 +45,14 @@ MakeWindow :: proc() {
     lv.show_grid_lines = true
     lv.has_checkboxes = true
     //lv.view_mode = ListViewViews.List
-    //lv.edit_label = true
-    create_control(&lv)
+    //lv.edit_label = 
+    
+	
+	dtp = new_datetimepicker(&frm, lv.width + 20, 50, 180, 30)
+	dtp.format = DtpFormat.Custom
+	dtp.format_string = "HH:mm:ss"
+	create_controls(&lv, &dtp)
+	
     
 
     //cS := new_listview_column("Salaries", 70, ColumnAlignment.right)
@@ -57,17 +64,7 @@ MakeWindow :: proc() {
     listview_add_column(&lv, "Age", 50)
     listview_add_column(&lv, "Salaries", 70)
     
-   // listview_set_column_order(lv, 1, 2, 3, 4, 0 )
-    //listview_set_column_order(lv, 1, 2, 3, 4, 0 )
-   // li1 := new_listview_item("Item One")
-    //li2 := new_listview_item("Item Two")
-
-    // listview_add_item(&lv, &li1)
-    // listview_add_item(&lv, &li2)
-
-    // listview_add_row(&lv, "Vinod", "Translator", 39, 40000)
-    // listview_add_row(&lv, "Vinayak", "DTP staff", 32, 15000)
-
+   
 
     
 
@@ -75,9 +72,9 @@ MakeWindow :: proc() {
     listview_add_row(&lv, "", "Vinayak", "DTP staff", 32, 15000)
     listview_add_row(&lv, "", "Malu", "House wife", 26, 1000)
     
-    //print(U32MAX) if a == b {}
+    print("lv handle", lv.handle) 
     // lang := ini_readkey(`E:\OneDrive Folder\OneDrive\Programming\Odin\Winforms\af.ini`, "Controls", "ename")
-    // print("ini text - ", lang)
+   
     // defer delete(lang)
 
     //lv_get_coulmn_count(&lv)
@@ -106,6 +103,7 @@ form_load :: proc(s : ^Control, e : ^EventArgs) {
 clicked := 0
 
 frm_click :: proc(c : ^Control, e : ^EventArgs) {
-    print("form clicked with new select call operator")
+    //print("form clicked with new select call operator")
+    
     
 }

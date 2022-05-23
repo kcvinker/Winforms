@@ -83,7 +83,8 @@ draw_ellipse :: proc(dch : Hdc, rc : Rect) {
 	return wstring_to_utf8(wsBuffer, -1)
 }
 
-@private calculate_ctl_size :: proc(c : ^Control) {
+@private 
+calculate_ctl_size :: proc(c : ^Control) {
     hdc := GetDC(c.handle)
     defer DeleteDC(hdc)
     ctl_size : Size            
@@ -95,16 +96,26 @@ draw_ellipse :: proc(dch : Hdc, rc : Rect) {
 	//print("ctl size - ", ctl_size)
 }
 
-@private in_range :: proc(value, min_val, max_val : i32) -> bool {
+@private 
+in_range :: proc(value, min_val, max_val : i32) -> bool {
 	if value > min_val && value < max_val do return true
 	return false
 }
 
-@private alert :: proc(txt : string) {
+@private 
+alert :: proc(txt : string) {
 	@static cntr : int = 1
 	ptf("%s - [%d]\n", txt, cntr)
 	cntr += 1
 }
+
+@private 
+alert2 :: proc(txt : string, data : any) {
+	@static cntr : int = 1
+	ptf("[%d] %s - %s\n", cntr, txt, fmt.tprint(data))
+	cntr += 1
+}
+
 
 
 
@@ -174,12 +185,14 @@ loword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return 
 hiword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return Word(x >> 16)}
 
 
-@private select_gdi_object :: proc(hd : Hdc, obj : $T) {
+@private 
+select_gdi_object :: proc(hd : Hdc, obj : $T) {
 	gdi_obj := cast(Hgdiobj) obj
 	SelectObject(hd, gdi_obj)
 }
 
-@private delete_gdi_object :: proc(obj : $T) {
+@private 
+delete_gdi_object :: proc(obj : $T) {
 	gdi_obj := cast(Hgdiobj) obj
 	DeleteObject(gdi_obj)
 }
@@ -187,7 +200,8 @@ hiword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return 
 
 
 
-@private dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) {
+@private 
+dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) {
 	for i := 0 ; i < len(arr) ; i += 1 {
 		if arr[i] == item {
 			index = i
@@ -198,7 +212,8 @@ hiword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return 
 	return index, is_found
 } 
 
-@private static_array_search :: proc(arr : []$T, item : T) -> (index : int, is_found : bool) {
+@private 
+static_array_search :: proc(arr : []$T, item : T) -> (index : int, is_found : bool) {
 	for i := 0 ; i < len(arr) ; i += 1 {
 		if arr[i] == item {
 			index = i
@@ -214,7 +229,8 @@ array_search :: proc{	dynamic_array_search,
 }
 
 // This proc will return an Hbrush to paint the window or a button in gradient colors.
-@private create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {	
+@private 
+create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {	
 	t_brush : Hbrush
 	mem_hdc : Hdc = CreateCompatibleDC(hdc)
 	hbmp : Hbitmap = CreateCompatibleBitmap(hdc, rct.right, rct.bottom)
@@ -246,7 +262,8 @@ array_search :: proc{	dynamic_array_search,
 }
 
 
-@private print_rect :: proc(rc : Rect) {
+@private 
+print_rect :: proc(rc : Rect) {
 	ptf("top : %d\n", rc.top)
 	ptf("bottom : %d\n", rc.bottom)
 	ptf("left : %d\n", rc.left)

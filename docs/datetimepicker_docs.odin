@@ -6,6 +6,13 @@ DateTimePicker :: struct {
                 // Possible values - {Long = 1, Short = 2, Time = 4, Custom = 8}
                 
     format_string : string, // Custom format string for dtp.
+				/* Format string Examples
+					* To display 29-05-2022 - use dd-MM-yyyy
+					* To display 05:35:41 AM - use hh:mm:ss tt
+					* To display 24Hrs format - use HH:mm:ss
+					* To display custom text, use text in single quotes.
+						-e.g: To display Select Time : 05:35:40 - use 'Select Time - 'hh:mm:ss				
+				*/
                 // See this page to know more about custom format strings
                 // https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.datetimepicker.customformat?view=windowsdesktop-6.0
 
@@ -57,6 +64,20 @@ create_control :: proc(c : ^Control) // To create DTP
 set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) 
         /* To set custom format in datetimepicker
             ----Parameter
-                ---- fmt_string - A string value. Please see the above link to know more.
+                1. dtp - Pointer to the DateTimePicker struct
+                2. fmt_string - A string value. Please see the above link to know more.
         */
 
+dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) // Set the time in dtp
+    /* Parameter
+            1. dtp - Pointer to the DateTimePicker struct
+            2. dt_value - A DateTime value to be set in dtp.
+    */
+
+
+// Example code
+// This code assumes frm is a Form struct.
+dtp = new_datetimepicker(&frm, 20, 50, 180, 30) // Create a dtp struct with given location & size
+dtp.format = DtpFormat.Custom   // Set the dtp format to custom
+dtp.format_string = "'Time - 'HH:mm:ss"     // Set the format string.(Note the single quotes)
+create_control(&dtp)    // Create the dtp control.

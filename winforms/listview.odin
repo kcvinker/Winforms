@@ -87,7 +87,11 @@ import "core:runtime"
 	LVM_SETITEMTEXT :: (LVM_FIRST+116)
 	LVM_SETIMAGELIST :: (LVM_FIRST+3)
 
+	// U64_MAX := max(u64)
+	LVN_FIRST :: 4294967196 //(U64_MAX - 100) + 1
+
 	LV_WM_SETREDRAW :: 0x000B
+	LVN_COLUMNCLICK ::      (LVN_FIRST-8) 
 
 
 	LVITEM :: struct {
@@ -550,6 +554,18 @@ listview_clear_items :: proc (lv : ^ListView) {
 
 }
 
+listview_delete_column :: proc (lv : ^ListView) {
+	//LVM_DELETECOLUMN
+}
+
+listview_get_item :: proc (lv : ^ListView) {
+	 
+}
+
+listview_get_row :: proc (lv : ^ListView) -> []string {
+	 return nil
+}
+
 
 /*-------------------------------------------------------------------------------------------------------
 *											↓ Private Helper functions ↓
@@ -622,6 +638,12 @@ lv_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
 			case WM_DESTROY :
 				lv_dtor(lv)
 				remove_subclass(lv)
+
+			case CM_NOTIFY :
+				nmcd := direct_cast(lp, ^NMCUSTOMDRAW)	
+				if nmcd.hdr.code == LVN_COLUMNCLICK do alert2("nmcd.code" , nmcd.hdr.code)
+
+
 		}
 	return DefSubclassProc(hw, msg, wp, lp)
 }

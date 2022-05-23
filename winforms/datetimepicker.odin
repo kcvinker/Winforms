@@ -1,7 +1,8 @@
 
-package winforms
+package winforms		// Notes : write func for setting value by user.
 
-//import "core:fmt"
+// import "core:strings"
+import "core:fmt"
 import "core:runtime"
 //import "core:strings"
 
@@ -27,6 +28,7 @@ WcDTPClassW : wstring
 
     DTM_FIRST :: 0x1000
     DTM_SETFORMATW :: DTM_FIRST + 50
+	DTM_SETFORMATA :: 0x1005
     DTM_GETDATETIMEPICKERINFO :: DTM_FIRST + 14
     DTM_SETMCCOLOR :: DTM_FIRST + 6
     DTM_GETMCSTYLE :: (DTM_FIRST + 12)
@@ -86,26 +88,19 @@ DateTimePicker :: struct {
     show_updown : b64,
     short_day_names : b64,
 
-
    // _fmt_str : string,
     _value_change_count : int,
     _bk_brush : Hbrush,   
     _cal_style : Dword,
 
-
-
     calendar_opened,
     value_changed,    
     calendar_closed : EventHandler,
     text_changed : DateTimeEventHandler,
-    
-
-
-
 }
 
 // Api Types
-    NMDATETIMECHANGE :: struct{
+    NMDATETIMECHANGE :: struct {
         nmhdr : NMHDR,
         dwFlags : Dword,
         st : SYSTEMTIME,
@@ -140,8 +135,8 @@ DateTimePicker :: struct {
 
 // End of API Types
 
-@private dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker 
-{   
+@private 
+dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker {   
 
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
         is_dtp_class_inited = true
@@ -168,17 +163,20 @@ DateTimePicker :: struct {
 }
 
 
-@private new_dtp1 :: proc(parent : ^Form) -> DateTimePicker {
+@private 
+new_dtp1 :: proc(parent : ^Form) -> DateTimePicker {
     d := dtp_ctor(parent, 10, 10, 120, 30)
     return d
 }
 
-@private new_dtp2 :: proc(parent : ^Form, x, y : int) -> DateTimePicker {
+@private 
+new_dtp2 :: proc(parent : ^Form, x, y : int) -> DateTimePicker {
     d := dtp_ctor(parent, x, y, 120, 30)
     return d
 }
 
-@private new_dtp3 :: proc(parent : ^Form, x, y, w, h : int) -> DateTimePicker {
+@private 
+new_dtp3 :: proc(parent : ^Form, x, y, w, h : int) -> DateTimePicker {
     d := dtp_ctor(parent,x, y, w, h)    
     return d
 }
@@ -186,7 +184,8 @@ DateTimePicker :: struct {
 // DateTimePicker constructor.
 new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
 
-@private set_style_internal :: proc(dtp : ^DateTimePicker) {
+@private 
+set_style_internal :: proc(dtp : ^DateTimePicker) {
     switch dtp.format {
         case .Custom :
             dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT | DTS_APPCANPARSE 
@@ -210,9 +209,15 @@ new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
 
     if dtp.right_align do dtp._style |= DTS_RIGHTALIGN
     if dtp.show_updown do dtp._style ~= DTS_UPDOWN
-
 }
     
+dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) {
+    dtp.value = dt_value
+    if dtp._is_created {
+        sysTm := datetime_to_systime(dt_value)
+        SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&sysTm, Lparam))
+    }
+}
 
 
 // @private get_dtp_info :: proc(dp : ^DateTimePicker) {
@@ -245,12 +250,21 @@ set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
     } 
 }
 
-@private dtp_before_creation :: proc(dtp : ^DateTimePicker) {set_style_internal(dtp)}
+@private 
+dtp_before_creation :: proc(dtp : ^DateTimePicker) {set_style_internal(dtp)}
 
-@private dtp_after_creation :: proc(dtp : ^DateTimePicker) {
+@private 
+dtp_after_creation :: proc(dtp : ^DateTimePicker) {
     set_subclass(dtp, dtp_wnd_proc)
     if dtp.format == .Custom {          
-        SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
+		fmt_str := fmt.tprintf("%v\x00", dtp.format_string)	// Creating a null terminated string.
+        SendMessage(dtp.handle, DTM_SETFORMATA, 0, convert_to(Lparam, raw_data(fmt_str)))
+		/*
+		Here, we have a strange situation. Since, we are working with unicode string, we need...
+		to use the W version functions & messages. So, here DTM_SETFORMATW is the candidate. 
+		But it won't work. For some unknown reason, only DTM_SETFORMATA is working here. So we need...
+		to pass a null terminated c string ptr to this function. Why MS, why ?
+		*/
     }  
     if dtp._cal_style > 0 {
         SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
@@ -258,40 +272,6 @@ set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
 
 }
 
-// Create handle of a DateTimePicker control.
-// create_datetimepicker :: proc(dtp : ^DateTimePicker) {
-//     _global_ctl_id += 1     
-//     dtp.control_id = _global_ctl_id 
-//     set_style_internal(dtp)
-//     dtp.handle = CreateWindowEx(  dtp._ex_style, 
-//                                     WcDTPClassW, 
-//                                     to_wstring(dtp.text),
-//                                     dtp._style, 
-//                                     i32(dtp.xpos), 
-//                                     i32(dtp.ypos), 
-//                                     i32(dtp.width), 
-//                                     i32(dtp.height),
-//                                     dtp.parent.handle, 
-//                                     direct_cast(dtp.control_id, Hmenu), 
-//                                     app.h_instance, 
-//                                     nil )
-    
-//     if dtp.handle != nil {
-//         // print("dtp handle - ", dtp.handle)
-        
-//         dtp._is_created = true
-//         setfont_internal(dtp)
-//         set_subclass(dtp, dtp_wnd_proc) 
-//         if dtp.format == .Custom {          
-//             SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
-//         }  
-//         if dtp._cal_style > 0 {
-//             SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
-//         } 
-//         //print("month cal style - ", mst)
-//         //print_dtpinfo(dtp._dtp_info)
-//     }
-// }
 
 
 @private dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
@@ -320,6 +300,7 @@ set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
                         dtp.text_changed(dtp, &dtea )
                         // After invoking the event, send this message to set the time in dtp
                         if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&dtea.dt_struct, Lparam))
+                        
                     }
                 case DTN_DROPDOWN :
                     if dtp.calendar_opened != nil {
