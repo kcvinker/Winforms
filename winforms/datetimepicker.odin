@@ -242,7 +242,7 @@ dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) {
 
 // Set custom date format for a DTP control.
 // To see how to create a custom format, see the docs.
-set_dtp_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
+dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
     dtp.format_string = fmt_string
     dtp.format = .Custom
     if dtp._is_created {        
@@ -274,7 +274,8 @@ dtp_after_creation :: proc(dtp : ^DateTimePicker) {
 
 
 
-@private dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
+@private 
+dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
     context = runtime.default_context()
     dtp := control_cast(DateTimePicker, ref_data)
     //display_msg(msg)

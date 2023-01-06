@@ -4,7 +4,7 @@ import "core:fmt"
 
 	ptf :: fmt.printf
 	MSG_FIXED_VALUE :: 9000
-	CM_NOTIFY :: MSG_FIXED_VALUE + 1 
+	CM_NOTIFY :: MSG_FIXED_VALUE + 1
 	CM_CTLLCOLOR :: MSG_FIXED_VALUE + 2
 	CM_LABELDRAW :: MSG_FIXED_VALUE + 3
 	CM_LMOUSECLICK :: MSG_FIXED_VALUE + 4
@@ -18,13 +18,15 @@ import "core:fmt"
 	CM_GBFORECOLOR :: MSG_FIXED_VALUE + 12
 	CM_HSCROLL :: MSG_FIXED_VALUE + 13
 	CM_TVNODEEXPAND :: MSG_FIXED_VALUE + 14
-	
+
 
 // My Own messages
 
 // All controls has a default back & fore color.
 def_back_clr :: 0xFFFFFF
 def_fore_clr :: 0x000000
+
+
 
 // Controls like window & button wants to paint themselve with a gradient brush.
 // In that cases, we need an option for painting in two directions.
@@ -51,7 +53,7 @@ current_time_internal :: proc() -> Time {
 	ftime : FILETIME
 	GetSysTimeAsFileTime(&ftime)
 	ns := FILETIME_as_unix_nanoseconds(ftime)
-	return Time{_nano_sec = ns} 
+	return Time{_nano_sec = ns}
 }
 
 current_filetime :: proc(tm : TimeMode) -> i64 {
@@ -74,51 +76,54 @@ draw_ellipse :: proc(dch : Hdc, rc : Rect) {
 	Ellipse(dch, rc.left, rc.top, rc.right, rc.bottom)
 }
 
-@private get_ctrl_text_internal :: proc(hw : Hwnd, alloc := context.allocator) -> string {
-	tlen := GetWindowTextLength(hw) 	
+@private
+get_ctrl_text_internal :: proc(hw : Hwnd, alloc := context.allocator) -> string {
+	tlen := GetWindowTextLength(hw)
 	mem_chunks := make([]Wchar, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
-	defer delete(mem_chunks)	
+	//defer delete(mem_chunks)
 	GetWindowText(hw, wsBuffer, i32(len(mem_chunks)))
 	return wstring_to_utf8(wsBuffer, -1)
 }
 
-@private 
-calculate_ctl_size :: proc(c : ^Control) {
-    hdc := GetDC(c.handle)
-    defer DeleteDC(hdc)
-    ctl_size : Size            
-    select_gdi_object(hdc, c.font.handle)
-    GetTextExtentPoint32(hdc, to_wstring(c.text), i32(len(c.text)), &ctl_size )
-    c.width = int(ctl_size.width) + c._size_incr.width
-    c.height = int(ctl_size.height) + c._size_incr.height       
-    MoveWindow(c.handle, i32(c.xpos), i32(c.ypos), i32(c.width), i32(c.height), true )
-	//print("ctl size - ", ctl_size)
+
+
+@private
+calculate_ctl_size :: proc(ctl : ^Control) {
+	ss : Size
+    SendMessage(ctl.handle, BCM_GETIDEALSIZE, 0, direct_cast( &ss, Lparam))
+    ctl.width = int(ss.width)
+    ctl.height = int(ss.height)
+    MoveWindow(ctl.handle, i32(ctl.xpos), i32(ctl.ypos), ss.width, ss.height, true)
 }
 
-@private 
+
+@private
 in_range :: proc(value, min_val, max_val : i32) -> bool {
 	if value > min_val && value < max_val do return true
 	return false
 }
 
-@private 
+@private
 alert :: proc(txt : string) {
 	@static cntr : int = 1
 	ptf("%s - [%d]\n", txt, cntr)
 	cntr += 1
 }
 
-@private 
+@private
 alert2 :: proc(txt : string, data : any) {
 	@static cntr : int = 1
 	ptf("[%d] %s - %s\n", cntr, txt, fmt.tprint(data))
 	cntr += 1
 }
 
+@private
 
 
 
+
+concat_number :: proc{concat_number1, concat_number2}
 concat_number1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 concat_number2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 
@@ -152,20 +157,20 @@ get_win_rect :: proc(hw : Hwnd) -> Rect {
 make_dword :: proc(lo_val, hi_val, : $T) -> Dword {
 	hv := cast(Word) hi_val
     lv := cast(Word) lo_val
-	dw_val := Dword(Dword(lv) | (Dword(hv)) << 16) 
+	dw_val := Dword(Dword(lv) | (Dword(hv)) << 16)
 	return dw_val
 }
 // left = loword, right side - highword
 
 // There a lot of time we need to convert a handle like HBrush to HGDIOBJ.
-// This proc will help for it. 
+// This proc will help for it.
 to_hgdi_obj :: proc(value : $T ) -> Hgdiobj {return cast(Hgdiobj) value}
 to_lresult :: proc(value : $T) -> Lresult {
 	up := cast(uintptr) value
 	return cast(Lresult) up
 }
 
-concat_number :: proc{concat_number1, concat_number2}
+
 
 // If we want to get the virtual key code (VK_KEY_NUMPAD1 etc) from lparam...
 // in any keyboard related message, this proc helps to extract it
@@ -185,13 +190,13 @@ loword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return 
 hiword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return Word(x >> 16)}
 
 
-@private 
+@private
 select_gdi_object :: proc(hd : Hdc, obj : $T) {
 	gdi_obj := cast(Hgdiobj) obj
 	SelectObject(hd, gdi_obj)
 }
 
-@private 
+@private
 delete_gdi_object :: proc(obj : $T) {
 	gdi_obj := cast(Hgdiobj) obj
 	DeleteObject(gdi_obj)
@@ -200,7 +205,7 @@ delete_gdi_object :: proc(obj : $T) {
 
 
 
-@private 
+@private
 dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) {
 	for i := 0 ; i < len(arr) ; i += 1 {
 		if arr[i] == item {
@@ -210,9 +215,9 @@ dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_fo
 		}
 	}
 	return index, is_found
-} 
+}
 
-@private 
+@private
 static_array_search :: proc(arr : []$T, item : T) -> (index : int, is_found : bool) {
 	for i := 0 ; i < len(arr) ; i += 1 {
 		if arr[i] == item {
@@ -222,31 +227,31 @@ static_array_search :: proc(arr : []$T, item : T) -> (index : int, is_found : bo
 		}
 	}
 	return index, is_found
-} 
+}
 
 array_search :: proc{	dynamic_array_search,
 						static_array_search,
 }
 
 // This proc will return an Hbrush to paint the window or a button in gradient colors.
-@private 
-create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {	
+@private
+create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {
 	t_brush : Hbrush
 	mem_hdc : Hdc = CreateCompatibleDC(hdc)
 	hbmp : Hbitmap = CreateCompatibleBitmap(hdc, rct.right, rct.bottom)
-	loop_end : i32 = rct.bottom if gs == .Top_To_Bottom else rct.right 
-	
-	SelectObject(mem_hdc, Hgdiobj(hbmp))	
-	i : i32		
+	loop_end : i32 = rct.bottom if gs == .Top_To_Bottom else rct.right
+
+	SelectObject(mem_hdc, Hgdiobj(hbmp))
+	i : i32
 	for i = 0; i < loop_end; i += 1 {
 		t_rct : Rect
-		r, g, b : uint	
+		r, g, b : uint
 
 		r = gc.color1.red + uint((i * i32(gc.color2.red - gc.color1.red) / loop_end))
         g = gc.color1.green + uint((i * i32(gc.color2.green - gc.color1.green) / loop_end))
         b = gc.color1.blue + uint((i * i32(gc.color2.blue - gc.color1.blue) / loop_end))
 		t_brush = CreateSolidBrush(get_color_ref(r, g, b))
-		
+
 		t_rct.left = 0 if gs == .Top_To_Bottom else i
 		t_rct.top = i if gs == .Top_To_Bottom else 0
 		t_rct.right = rct.right if gs == .Top_To_Bottom else i + 1
@@ -262,7 +267,7 @@ create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc
 }
 
 
-@private 
+@private
 print_rect :: proc(rc : Rect) {
 	ptf("top : %d\n", rc.top)
 	ptf("bottom : %d\n", rc.bottom)
@@ -280,28 +285,34 @@ Test :: proc() {
 
 }
 
-// Create a Control. Use this for all controls. 
+// Create a Control. Use this for all controls.
 create_control :: proc(c : ^Control) {
-	_global_ctl_id += 1  
-    c.control_id = _global_ctl_id  
+	_global_ctl_id += 1
+    c.control_id = _global_ctl_id
 	c._before_creation(c)
-    c.handle = CreateWindowEx(   c._ex_style, 
-                                    c._cls_name, 
+	width : i32 = 0
+	height : i32 = 0
+	if c.kind != ControlKind.Number_Picker {
+		width = i32(c.width)
+		height = i32(c.height)
+	}
+    c.handle = CreateWindowEx(   c._ex_style,
+                                    c._cls_name,
                                     to_wstring(c.text),
-                                    c._style, 
-                                    i32(c.xpos), 
-                                    i32(c.ypos), 
-                                    i32(c.width), 
-                                    i32(c.height),
-                                    c.parent.handle, 
-                                    direct_cast(c.control_id, Hmenu), 
-                                    app.h_instance, 
+                                    c._style,
+                                    i32(c.xpos),
+                                    i32(c.ypos),
+                                    width,
+                                    height,
+                                    c.parent.handle,
+                                    direct_cast(c.control_id, Hmenu),
+                                    app.h_instance,
                                     nil )
-    
-    if c.handle != nil {          
-        c._is_created = true           
-        setfont_internal(c)         
-		c._after_creation(c)              
+
+    if c.handle != nil {
+        c._is_created = true
+        setfont_internal(c)
+		c._after_creation(c)
     }
 }
 

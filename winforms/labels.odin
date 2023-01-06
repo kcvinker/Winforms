@@ -98,40 +98,25 @@ new_label :: proc{new_label1, new_label2, new_label3}
 }
 
 @private adjust_alignment :: proc(lb : ^Label) {
-    if lb.multi_line {
-        switch lb.text_alignment {
-            case .Top_Left : lb._txt_align = DT_TOP | DT_LEFT | DT_WORDBREAK
-            case .Top_Center : lb._txt_align = DT_TOP | DT_CENTER | DT_WORDBREAK
-            case .Top_Right : lb._txt_align = DT_TOP | DT_RIGHT | DT_WORDBREAK
+    switch lb.text_alignment {
+        case .Top_Left : lb._txt_align = DT_TOP | DT_LEFT 
+        case .Top_Center : lb._txt_align = DT_TOP | DT_CENTER 
+        case .Top_Right : lb._txt_align = DT_TOP | DT_RIGHT 
 
-            case .Mid_Left : lb._txt_align = DT_VCENTER | DT_LEFT | DT_WORDBREAK
-            case .Center : lb._txt_align = DT_VCENTER | DT_CENTER | DT_WORDBREAK 
-            case .Mid_Right : lb._txt_align = DT_VCENTER | DT_RIGHT | DT_WORDBREAK
+        case .Mid_Left : lb._txt_align = DT_VCENTER | DT_LEFT 
+        case .Center : lb._txt_align = DT_VCENTER | DT_CENTER  
+        case .Mid_Right : lb._txt_align = DT_VCENTER | DT_RIGHT 
 
-            case .Bottom_Left : lb._txt_align = DT_BOTTOM | DT_LEFT | DT_WORDBREAK
-            case .Bottom_Center : lb._txt_align = DT_BOTTOM | DT_CENTER | DT_WORDBREAK
-            case .Bottom_Right : lb._txt_align = DT_BOTTOM | DT_RIGHT   | DT_WORDBREAK         
-        }
-    
-    } else {
-        switch lb.text_alignment {
-            case .Top_Left : lb._txt_align = DT_TOP | DT_LEFT  | DT_SINGLELINE 
-            case .Top_Center : lb._txt_align = DT_TOP | DT_CENTER | DT_SINGLELINE
-            case .Top_Right : lb._txt_align = DT_TOP | DT_RIGHT | DT_SINGLELINE
-
-            case .Mid_Left : lb._txt_align = DT_VCENTER | DT_LEFT  | DT_SINGLELINE
-            case .Center : lb._txt_align =  DT_VCENTER | DT_CENTER | DT_SINGLELINE
-            case .Mid_Right : lb._txt_align = DT_VCENTER | DT_RIGHT | DT_SINGLELINE
-
-            case .Bottom_Left : lb._txt_align = DT_BOTTOM | DT_LEFT | DT_SINGLELINE
-            case .Bottom_Center : lb._txt_align = DT_BOTTOM | DT_CENTER | DT_SINGLELINE
-            case .Bottom_Right : lb._txt_align = DT_BOTTOM | DT_RIGHT | DT_SINGLELINE 
-        }
-
+        case .Bottom_Left : lb._txt_align = DT_BOTTOM | DT_LEFT 
+        case .Bottom_Center : lb._txt_align = DT_BOTTOM | DT_CENTER 
+        case .Bottom_Right : lb._txt_align = DT_BOTTOM | DT_RIGHT            
     }
 
-   
-
+    if lb.multi_line {
+        lb._txt_align |= DT_WORDBREAK    
+    } else {
+       lb._txt_align |= DT_SINGLELINE
+    }
 }
 
 @private set_lbl_bk_clr :: proc(lb :^Label, clr : uint) {
@@ -142,49 +127,32 @@ new_label :: proc{new_label1, new_label2, new_label3}
     }
 }
 
+@private 
+calculate_label_size :: proc(lb : ^Label) { 
+    // Labels are creating with zero width & height. 
+    // We need to find appropriate size if it is an auto sized label.
+    hdc := GetDC(lb.handle)
+    defer DeleteDC(hdc)
+    ctl_size : Size            
+    select_gdi_object(hdc, lb.font.handle)
+    GetTextExtentPoint32(hdc, to_wstring(lb.text), i32(len(lb.text)), &ctl_size )
+    lb.width = int(ctl_size.width) //+ lb._size_incr.width
+    lb.height = int(ctl_size.height) //+ lb._size_incr.height       
+    MoveWindow(lb.handle, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), true )
+}
+
 @private lbl_before_creation :: proc(lb : ^Label) {
     if lb.border_style != .No_Border do adjust_border(lb)
     check_for_autosize(lb)
-    adjust_alignment(lb)
+    //adjust_alignment(lb)
 }
 
 @private lbl_after_creation :: proc(lb : ^Label) {
-    if lb.auto_size do calculate_ctl_size(lb) 
+    if lb.auto_size do calculate_label_size(lb) 
     set_subclass(lb, label_wnd_proc) 
 }
 
 
-// Create the handle of Label control.
-// create_label :: proc(lb : ^Label) {
-//     if lb.border_style != .No_Border do adjust_border(lb)
-//     check_for_autosize(lb)
-//     adjust_alignment(lb)
-//     _global_ctl_id += 1  
-//     lb.control_id = _global_ctl_id  
-//     lb.handle = CreateWindowEx(   lb._ex_style, 
-//                                     to_wstring("Static"), 
-//                                     to_wstring(lb.text),
-//                                     lb._style, 
-//                                     i32(lb.xpos), 
-//                                     i32(lb.ypos), 
-//                                     i32(lb.width), 
-//                                     i32(lb.height),
-//                                     lb.parent.handle, 
-//                                     direct_cast(lb.control_id, Hmenu), 
-//                                     app.h_instance, 
-//                                     nil )
-    
-//     if lb.handle != nil {  
-//         //print("Original label - ", lb.handle)
-//         lb._is_created = true              
-//         if lb.auto_size do calculate_ctl_size(lb) 
-//         setfont_internal(lb)
-//         set_subclass(lb, label_wnd_proc) 
-        
-              
-//     }
-
-// }
 
 
 

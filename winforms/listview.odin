@@ -1,7 +1,7 @@
 
 /*
 	Created on : 20-Feb-2022 9:00:25 AM
-		Name : ListView type
+		Name : ListView type 
 		*/
 
 package winforms
@@ -53,6 +53,8 @@ import "core:runtime"
 	LVS_EX_SINGLEROW :: 0x40000
 	LVS_EX_SNAPTOGRID :: 0x80000
 	LVS_EX_SIMPLESELECT :: 0x100000
+	LVS_NOCOLUMNHEADER  :: 0x4000
+    LVS_NOSORTHEADER    :: 0x8000
 
 	LVCF_FMT :: 0x1
 	LVCF_WIDTH :: 0x2
@@ -131,8 +133,8 @@ ListView :: struct {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a
 	using control : Control,
 	item_alignment : enum {Left, Top},
 	column_alignment : ColumnAlignment,
+	
 	view_style : ListViewStyle,
-	view_mode : ListViewViews,
 	hide_selection : bool,
 	multi_selection : bool,	
 	has_checkboxes : bool, 
@@ -141,6 +143,7 @@ ListView :: struct {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a
 	one_click_activate : bool, 
 	hot_track_select : bool, 
 	edit_label : bool,
+	no_header : bool,
 	items : [dynamic]ListViewItem,
 	columns : [dynamic]^ListViewColumn,
 
@@ -182,8 +185,8 @@ ListViewSubItem :: struct {
 
 
 
-ListViewStyle :: enum {Lisst, Report, }
-ListViewViews :: enum {Icon, Details, Small_Icon, List, Tile, }
+//ListViewStyle :: enum {Normal, Report, }
+ListViewStyle :: enum {Large_Icon, Report, Small_Icon, List, Tile, }
 ColumnAlignment :: enum {left, right, center,}
 
 /*----------------------------------------------------------------------------------------------------
@@ -206,8 +209,7 @@ lv_ctor :: proc(f : ^Form, x, y, w, h : int) -> ListView {
 	lv.xpos = x
 	lv.ypos = y
 	lv.width = w
-	lv.height = h
-	lv.view_mode = .Details
+	lv.height = h	
 	lv.view_style = .Report
 	lv.show_grid_lines = true
 	//lv.multi_selection = true
@@ -248,7 +250,7 @@ lv_dtor :: proc(lv : ^ListView) {
 new_listview_column :: proc{lv_col_ctor1, lv_col_ctor2, lv_col_ctor3}
 
 @private
-lv_col_ctor1 :: proc(txt : string, width : int, pos : int = -1 ) -> ListViewColumn {
+lv_col_ctor1 :: proc(txt : string, width : int ) -> ListViewColumn {
 	lvc : ListViewColumn
 	lvc.text = txt
 	lvc.width = width	
@@ -260,7 +262,7 @@ lv_col_ctor1 :: proc(txt : string, width : int, pos : int = -1 ) -> ListViewColu
 }
 
 @private
-lv_col_ctor2 :: proc(txt : string, pos : int = -1 ) -> ListViewColumn {	
+lv_col_ctor2 :: proc(txt : string ) -> ListViewColumn {	
 	lvc : ListViewColumn
 	lvc.text = txt
 	lvc.width = 100	
@@ -272,7 +274,7 @@ lv_col_ctor2 :: proc(txt : string, pos : int = -1 ) -> ListViewColumn {
 }
 
 @private
-lv_col_ctor3 :: proc(txt : string, width : int, col_align : ColumnAlignment, pos : int = -1  ) -> ListViewColumn {
+lv_col_ctor3 :: proc(txt : string, width : int, col_align : ColumnAlignment  ) -> ListViewColumn {
 	lvc : ListViewColumn
 	lvc.text = txt
 	lvc.width = width	
@@ -359,7 +361,7 @@ lv_addCol3 :: proc(lv : ^ListView, txt : string, width : int, align : ColumnAlig
 @private
 lv_add_column :: proc(lv : ^ListView, lvCol : ^ListViewColumn) {
 	lvc : LVCOLUMN
-	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_ORDER
 	lvc.fmt = cast(i32) lvCol.alignment
 	lvc.cx = i32(lvCol.width)
 	lvc.pszText = to_wstring(lvCol.text)	
@@ -372,10 +374,10 @@ lv_add_column :: proc(lv : ^ListView, lvCol : ^ListViewColumn) {
 	if lvCol.image_on_right do lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT	
 	
 	if lv._is_created {
-		SendMessage(	lv.handle, 
-										LVM_INSERTCOLUMNW, 
-										Wparam(lv._col_index), 
-										direct_cast(&lvc, Lparam) )
+		SendMessage(lv.handle, 
+					LVM_INSERTCOLUMNW, 
+					Wparam(lv._col_index), 
+					direct_cast(&lvc, Lparam) )
 
 		 
 		lv._col_index += 1
@@ -392,6 +394,7 @@ listview_add_row :: proc{lv_addrow1, lv_addrow2}
 
 @private
 lv_addrow1 :: proc(lv : ^ListView, items : ..any, ) {
+	if lv.view_style != ListViewStyle.Report do return
 	iLen := len(items)
 	if iLen > 0 {
 		sItems : [dynamic]string
@@ -468,6 +471,7 @@ listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_i
 
 // Add a list of sub items to an item in list view
 listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any) {
+	if lv.view_style != ListViewStyle.Report do return
 	sItems : [dynamic]string
 	defer delete(sItems)
 	for j in items {
@@ -495,31 +499,28 @@ listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any) {
 *--------------------------------------------------------------------------------------------------------*/
 
 // Set the column order of list view. 
-// Example - 
-//	listview_set_column_order(lv, 2, 1, 0) will set the column indices in the same order.
-
-listview_set_column_order :: proc(lv : ListView, col_order : ..int) {
-	colArr : [dynamic]i32
-	defer delete(colArr)
-	for i in col_order { append(&colArr, i32(i)) }
+// Example - listview_set_column_order(lv, 2, 1, 0) 
+// This will set the column indices in the same order.
+listview_set_column_order :: proc(lv : ListView, col_order : ..i32) {	
+	if lv._is_created {
+		SendMessage(lv.handle,
+					 LVM_SETCOLUMNORDERARRAY, 
+					 cast(Wparam) len(col_order),
+					 direct_cast(raw_data(col_order), Lparam))
+	}
 	
-	res := SendMessage(lv.handle,
-				 LVM_SETCOLUMNORDERARRAY, 
-				 cast(Wparam) len(colArr),
-				 cast(Lparam) cast(uintptr) &colArr[0])
-	print("res ", res)
 }
 
 // Returns the column count of this list view
 listview_get_coulmn_count :: proc (lv : ^ListView) -> int {
-	x:= cast(int) SendMessage(lv_get_header(lv.handle), 0x1200, 0, 0) // I don't what is this 0x1200 means.	
+	x:= cast(int) SendMessage(lv_get_header(lv.handle), 0x1200, 0, 0) // I don't know what is this 0x1200 means.	
 	return x
 }
 
-listview_set_view :: proc (lv : ^ListView, view : ListViewViews) {
-	lv.view_mode = view
+listview_set_style :: proc (lv : ^ListView, view : ListViewStyle) {
+	lv.view_style = view
 	if lv._is_created {
-		SendMessage(lv.handle, LVM_SETVIEW, Wparam(lv.view_mode), 0)
+		SendMessage(lv.handle, LVM_SETVIEW, Wparam(lv.view_style), 0)
 	}
 }
 
@@ -539,11 +540,17 @@ listview_end_update :: proc (lv : ^ListView) {
 listview_delete_item :: proc{lv_del_item1, lv_del_item2}
 
 lv_del_item1 :: proc (lv : ^ListView, item : ListViewItem) {
-
+	if lv._is_created {
+		SendMessage(lv.handle, LVM_DELETEITEM, Wparam(i32(item.index)), 0)
+	
+	}
 }
 
 lv_del_item2 :: proc (lv : ^ListView, item_index : int) {
-
+	if lv._is_created {
+		SendMessage(lv.handle, LVM_DELETEITEM, Wparam(i32(item_index)), 0)
+	
+	}
 }
 
 listview_delete_selected_item :: proc (lv : ^ListView ) {
@@ -578,15 +585,23 @@ lv_get_header :: proc(lvh : Hwnd) -> Hwnd {return cast(Hwnd) cast(uintptr) SendM
 
 
 
-@private
-lv_set_column_order :: proc(lv : ^ListView) {
-
-}
-
 @private 
 lv_adjust_styles :: proc(lv : ^ListView) {	
+	#partial switch lv.view_style {
+		case .Large_Icon :
+			lv._style |= LVS_ICON
+		case .Report :
+			lv._style |= LVS_REPORT
+		case .Small_Icon :
+			lv._style |= LVS_SMALLICON
+		case .List :
+			lv._style |= LVS_LIST	
+	}	
+	
 	if lv.edit_label do lv._style |= LVS_EDITLABELS
 	if !lv.hide_selection do lv._style |= LVS_SHOWSELALWAYS
+	if lv.no_header do lv._style |= LVS_NOCOLUMNHEADER 
+	
 
 
 }
@@ -615,7 +630,7 @@ lv_before_creation :: proc(lv : ^ListView) {
 lv_after_creation :: proc(lv : ^ListView) {	
 	set_subclass(lv, lv_wnd_proc) 
     lv_set_extended_styles(lv)
-	SendMessage(lv.handle, LVM_SETVIEW, Wparam(lv.view_mode), 0)
+	if lv.view_style == .Tile do SendMessage(lv.handle, LVM_SETVIEW, Wparam(0x0004), 0)
 	if lv._imgList.handle != nil {	// We need to set the image list to list view.
 		SendMessage(lv.handle, 
 					LVM_SETIMAGELIST, 
@@ -633,7 +648,7 @@ lv_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
 												sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
 	context = runtime.default_context()
 	lv := control_cast(ListView, ref_data)
-
+	//display_msg(msg)
 		switch msg { 
 			case WM_DESTROY :
 				lv_dtor(lv)
@@ -642,6 +657,7 @@ lv_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
 			case CM_NOTIFY :
 				nmcd := direct_cast(lp, ^NMCUSTOMDRAW)	
 				if nmcd.hdr.code == LVN_COLUMNCLICK do alert2("nmcd.code" , nmcd.hdr.code)
+				//LVN_COLUMNCLICK
 
 
 		}

@@ -66,34 +66,7 @@ new_groupbox :: proc{gb_ctor1, gb_ctor2}
 
 }
 
-// create_groupbox :: proc(gb : ^GroupBox) {
-//     _global_ctl_id += 1     
-//     gb.control_id = _global_ctl_id 
-//     //set_style_internal(gb)
-//     if gb.back_color != gb.parent.back_color do gb._paint_bkg = true
-//     gb.handle = CreateWindowEx(  gb._ex_style, 
-//                                     to_wstring("Button"), 
-//                                     to_wstring(gb.text),
-//                                     gb._style, 
-//                                     i32(gb.xpos), 
-//                                     i32(gb.ypos), 
-//                                     i32(gb.width), 
-//                                     i32(gb.height),
-//                                     gb.parent.handle, 
-//                                     direct_cast(gb.control_id, Hmenu), 
-//                                     app.h_instance, 
-//                                     nil )
-    
-//     if gb.handle != nil {              
-//         gb._is_created = true
-//         setfont_internal(gb)
-//         set_subclass(gb, gb_wnd_proc)
-//         SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
-        
 
-        
-//     }
-// }
 
 @private gb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
     context = runtime.default_context()

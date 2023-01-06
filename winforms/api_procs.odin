@@ -4,6 +4,7 @@ package winforms
 
 //import "core:strings"
 //import "core:fmt"
+// import "core"
 
 //=================================== Functions===================================
 
@@ -88,6 +89,10 @@ FILETIME_as_unix_nanoseconds :: proc "contextless" (ft: FILETIME) -> i64 {
 	return (t - 0x019db1ded53e8000) * 100
 }
 
+// enable_window :: proc(hw : Hwnd, bEnable : bool) -> Bool {
+//    return EnableWindow(hw, bEnable)
+// }
+
 
 foreign import "system:user32.lib"
 @(default_calling_convention = "std")
@@ -96,13 +101,13 @@ foreign user32 {
    @(link_name="LoadIconW") LoadIcon :: proc(instance: Hinstance, icon_name: wstring) -> Hicon ---
    @(link_name="LoadCursorW") LoadCursor :: proc(instance: Hinstance, cursor_name: wstring) -> Hcursor ---
 
-   @(link_name="CreateWindowExW") CreateWindowEx :: proc(  ex_style: u32, 
-                                                            class_name, title: wstring, 
-                                                            style: u32, 
-                                                            #any_int x, y, w, h: i32, 
-                                                            parent: Hwnd, 
-                                                            menu: Hmenu, 
-                                                            instance: Hinstance, 
+   @(link_name="CreateWindowExW") CreateWindowEx :: proc(  ex_style: u32,
+                                                            class_name, title: wstring,
+                                                            style: u32,
+                                                            #any_int x, y, w, h: i32,
+                                                            parent: Hwnd,
+                                                            menu: Hmenu,
+                                                            instance: Hinstance,
                                                             param: rawptr) -> Hwnd ---
 
    @(link_name="SetWindowLongPtrW") SetWindowLongPtr :: proc(wnd: Hwnd, index: i32, new_long: LongPtr) -> LongPtr ---
@@ -142,18 +147,20 @@ foreign user32 {
    @(link_name="ScreenToClient") ScreenToClient :: proc(hw : Hwnd, pt : ^Point) -> Bool ---
    @(link_name="WindowFromPoint") WindowFromPoint :: proc(pt : Point) -> Hwnd ---
    @(link_name="EnableWindow") EnableWindow :: proc(hw : Hwnd, bEnable : bool) -> Bool ---
+   @(link_name="HideCaret") HideCaret :: proc(hw : Hwnd) -> Bool ---
+   @(link_name="PtInRect") PtInRect :: proc(lprc : ^Rect, pt : Point) -> Bool ---
    @(link_name="SetFocus") SetFocus :: proc(hw : Hwnd) -> Hwnd ---
    @(link_name="GetFocus") GetFocus :: proc() -> Hwnd ---
    @(link_name="SetActiveWindow") SetActiveWindow :: proc(hw : Hwnd) -> Hwnd ---
    @(link_name="GetDCEx") GetDCEx :: proc(hw : Hwnd, clp_rgn : Hrgn, flags : Dword) -> Hdc ---
    @(link_name="GetWindowRect") GetWindowRect :: proc(hw : Hwnd, pRc : ^Rect) -> Bool ---
    @(link_name="DestroyIcon") DestroyIcon :: proc(hIco : Hicon) -> Bool ---
-   @(link_name="LoadImageW") LoadImage :: proc(hInst : Hinstance, 
+   @(link_name="LoadImageW") LoadImage :: proc(hInst : Hinstance,
                                                 img_name : wstring,
                                                 img_type : u32,
                                                 cx, cy : i32,
                                                 fuLoad : u32 ) -> Handle ---
-   
+
 
 
 } // User32 library
@@ -178,7 +185,7 @@ foreign kernel32 {
    @(link_name="GetSystemTime") GetSystemTime :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="GetLocalTime") GetLocalTime :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="Sleep") Sleep :: proc(milli_sec : Dword) ---
-   
+
    @(link_name="GetPrivateProfileStringA") GetPrivateProfileString :: proc(lpAppName : cstring,
                                                                            lpKeyName : cstring,
                                                                            lpDefault : cstring,
@@ -210,11 +217,11 @@ foreign gdi32 {
    @(link_name="SetBkMode") SetBkMode :: proc(hdc : Hdc, mode : i32) -> i32 ---
    @(link_name="Rectangle") Rectangle :: proc(hdc : Hdc, left, top, right, bottom : i32) -> Bool ---
    @(link_name="CreatePen") CreatePen :: proc(style, #any_int width : i32, cref : ColorRef) -> Hpen ---
-   @(link_name="GetTextExtentPoint32W") GetTextExtentPoint32 :: proc(dch : Hdc, 
-                                                                        lp_string : wstring, 
-                                                                        str_len : i32, 
+   @(link_name="GetTextExtentPoint32W") GetTextExtentPoint32 :: proc(dch : Hdc,
+                                                                        lp_string : wstring,
+                                                                        str_len : i32,
                                                                         psize : ^Size) -> Bool ---
-   @(link_name="SetBkColor") SetBackColor :: proc(dchandle : Hdc, cref : ColorRef) -> ColorRef ---   
+   @(link_name="SetBkColor") SetBackColor :: proc(dchandle : Hdc, cref : ColorRef) -> ColorRef ---
    @(link_name="GetStockObject") GetStockObject :: proc(fn_object : i32) -> Hgdiobj ---
    @(link_name="SaveDC") SaveDC :: proc(dch : Hdc) -> i32 ---
    @(link_name="RestoreDC") RestoreDC :: proc(dch : Hdc, ndc : i32) -> Bool ---
@@ -223,7 +230,7 @@ foreign gdi32 {
    @(link_name="Polyline") Polyline :: proc(dch : Hdc, pArr : rawptr, #any_int cpt : i32) -> Bool ---
    @(link_name="MoveToEx") MoveToEx :: proc(dch : Hdc, #any_int x, y : i32, lppt : ^Point) -> Bool ---
    @(link_name="LineTo") LineTo :: proc(dch : Hdc, #any_int x, y : i32) -> Bool ---
-   
+
 
 } // Gdi32 library
 
@@ -234,9 +241,9 @@ foreign Comctl32 {
    @(link_name="DefSubclassProc") DefSubclassProc :: proc(hw : Hwnd, ms : u32, wpm : Wparam, lpm : Lparam) -> Lresult ---
    @(link_name="RemoveWindowSubclass") RemoveWindowSubclass :: proc(hw : Hwnd, pfn : SUBCLASSPROC, uid : UintPtr) -> Bool ---
    @(link_name="InitCommonControlsEx") InitCommonControlsEx :: proc(picc_ex : ^INITCOMMONCONTROLSEX) -> Bool ---
-   @(link_name="ImageList_Create") ImageList_Create :: proc(#any_int cx, cy : i32, 
-                                                            flags : u32, 
-                                                            #any_int cIntial, 
+   @(link_name="ImageList_Create") ImageList_Create :: proc(#any_int cx, cy : i32,
+                                                            flags : u32,
+                                                            #any_int cIntial,
                                                             cGrow : i32) -> HimageList ---
    @(link_name="ImageList_Destroy") ImageList_Destroy :: proc(himl : HimageList) -> Bool ---
    @(link_name="ImageList_Add") ImageList_Add :: proc(himl : HimageList, hbmImg : Hbitmap, hbmMask : Hbitmap) -> i32 ---
@@ -252,39 +259,39 @@ foreign UxTheme {
    @(link_name="SetWindowTheme") SetWindowTheme :: proc(hw : Hwnd, sub_app : wstring, sub_id : wstring) -> Hresult ---
    @(link_name="OpenThemeData") OpenThemeData :: proc(hw : Hwnd, cls_list : wstring) -> Htheme ---
    @(link_name="CloseThemeData") CloseThemeData :: proc(htd : Htheme) -> Hresult ---
-   @(link_name="DrawThemeEdge") DrawThemeEdge :: proc(htd : Htheme, 
-                                                      hdc : Hdc, 
+   @(link_name="DrawThemeEdge") DrawThemeEdge :: proc(htd : Htheme,
+                                                      hdc : Hdc,
                                                       partId, stateId : i32,
                                                       pRect : ^Rect,
                                                       uEdge : u32,
                                                       uFlags: u32,
                                                       pContRect : ^Rect) -> Hresult ---
 
-   @(link_name="DrawThemeBackground") DrawThemeBackground :: proc(htd : Htheme, 
-                                                                  hdc : Hdc, 
+   @(link_name="DrawThemeBackground") DrawThemeBackground :: proc(htd : Htheme,
+                                                                  hdc : Hdc,
                                                                   partId, stateId : i32,
                                                                   pRect : ^Rect,
                                                                   pClipRect : ^Rect) -> Hresult ---
 
-   @(link_name="GetThemeColor") GetThemeColor :: proc(htd : Htheme, 
-                                                      hdc : Hdc, 
+   @(link_name="GetThemeColor") GetThemeColor :: proc(htd : Htheme,
+                                                      hdc : Hdc,
                                                       partId, stateId : i32,
                                                       propId : i32,
                                                       clr : ^ColorRef) -> Hresult ---
 
-    @(link_name="DrawThemeBackgroundEx") DrawThemeBackgroundEx :: proc(htd : Htheme, 
-                                                      hdc : Hdc, 
+    @(link_name="DrawThemeBackgroundEx") DrawThemeBackgroundEx :: proc(htd : Htheme,
+                                                      hdc : Hdc,
                                                       partId, stateId : i32,
                                                       pRect : ^Rect,
-                                                      opts : ^DTBGOPTS) -> Hresult ---                                                  
+                                                      opts : ^DTBGOPTS) -> Hresult ---
 }
 
 
 foreign import "system:shell32.lib"
 @(default_calling_convention = "std")
 foreign shell32 {
-   @(link_name="ExtractIconExW") ExtractIconEx :: proc(  lpszFile : wstring, 
-                                                         iconIndex : i32, 
+   @(link_name="ExtractIconExW") ExtractIconEx :: proc(  lpszFile : wstring,
+                                                         iconIndex : i32,
                                                          pLgicon : ^Hicon,
                                                          pSmIcon : ^Hicon,
                                                          nIcons : u32 ) -> u32 ---

@@ -1,5 +1,5 @@
 // Created on : 19-May-22 08:03:33 AM
-// This module handles the image list section
+// This module handles the image list section  --NOTe - Add gdi plus function for reading jpeg file
 
 package winforms
 
@@ -50,8 +50,7 @@ ColorOptions :: enum {
     Default_Color, 
     Color_4 = 4, 
     Color_8 = 8, 
-    Color_16 = 
-    16, 
+    Color_16 = 16, 
     Color_24 = 24 , 
     Color32 = 32, 
     Color_DDB = 0x000000FE,

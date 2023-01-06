@@ -192,23 +192,7 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) {
     
 }
 
-// Create the handle of a progress bar
-// create_progressbar :: proc(pb : ^ProgressBar) {
-//     _global_ctl_id += 1
-//     pb.control_id = _global_ctl_id 
-//     pb_adjust_styles(pb)
-//     pb.handle = CreateWindowEx(   pb._ex_style, 
-//                                     WcProgressClassW, 
-//                                     to_wstring(pb.text),
-//                                     pb._style, 
-//                                     i32(pb.xpos), 
-//                                     i32(pb.ypos), 
-//                                     i32(pb.width), 
-//                                     i32(pb.height),
-//                                     pb.parent.handle, 
-//                                     direct_cast(pb.control_id, Hmenu), 
-//                                     app.h_instance, 
-//                                     nil )
+
     
 //     if pb.handle != nil {
 //         pb._is_created = true

@@ -9,7 +9,7 @@ Button :: struct {
     // Button supports all common events that Control type offers.
 }
 
-// Constructors
+// Constructors 
 new_button :: proc(parent : ^Form) -> Button
 new_button :: proc(parent : ^Form, txt : string) -> Button 
 new_button :: proc(parent : ^Form, txt : string, x, y : int) -> Button

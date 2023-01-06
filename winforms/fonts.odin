@@ -8,11 +8,10 @@ Font :: struct
 {
 	name : string,
 	size : int,
-	bold : bool,
+	weight : FontWeight,
 	underline : bool,
 	italics : bool,
-	handle : Hfont,
-	_weight : int,
+	handle : Hfont,	
 	_def_font_changed : bool,
 
 
@@ -23,21 +22,19 @@ new_font_1 :: proc() -> Font
 	f : Font
 	f.name = _def_font_name
 	f.size = _def_font_size
-	f._weight = 400
-	f.bold = false
+	f.weight = FontWeight.Normal	
 	f.underline = false
 	f.italics = false
 	f._def_font_changed = false
 	return f
 }
 
-new_font_2 :: proc(fn : string , fs : int, fb: bool = false, fw : int = 400, fi : bool = false, fu : bool = false) -> Font 
+new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, fi : bool = false, fu : bool = false) -> Font 
 {
 	f : Font
 	f.name = fn
-	f.size = fs
-	f._weight = fw
-	f.bold = fb
+	f.size = fs	
+	f.weight = fw
 	f.underline = fu
 	f.italics = fi
 	f._def_font_changed = true
@@ -48,14 +45,13 @@ new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
 
 
-CreateFont_handle :: proc(fnt : ^Font, hw : Hwnd = nil)
-{	
-	if fnt.bold {fnt._weight = 600}
+CreateFont_handle :: proc(fnt : ^Font, hw : Hwnd = nil) {	
 	dc_hwnd : Hdc = GetDC(hw)
 	font_height : i32 = MulDiv(i32(fnt.size), GetDeviceCaps(dc_hwnd, LOGPIXELSY), 72)
 	ReleaseDC(hw, dc_hwnd)
 	b_value := bool(false)
-	fnt.handle = CreateFont(font_height, 0, 0, 0, i32(fnt._weight), Dword(fnt.italics),
+
+	fnt.handle = CreateFont(font_height, 0, 0, 0, i32(fnt.weight), Dword(fnt.italics),
 								Dword(fnt.underline), 
 								Dword(b_value), 
 								Dword(1),
@@ -105,3 +101,13 @@ FF_MODERN      :: 48
 FF_DECORATIVE  :: 80
 
 LOGPIXELSY :: 90
+
+FontWeight :: enum {
+	Light = 300,
+    Normal = 400,
+    Medium = 500,
+    Semi_Bold = 600,
+    Bold = 700,
+    Extra_Bold = 800,
+    Ultra_Bold = 900,
+}

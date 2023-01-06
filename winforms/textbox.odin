@@ -87,21 +87,15 @@ new_textbox :: proc{new_tb1, new_tb2}
     if tb.multi_line do tb._style |= ES_MULTILINE | ES_WANTRETURN
     if !tb.hide_selection do tb._style |= ES_NOHIDESEL
     if tb.read_only do tb._style |= ES_READONLY
-    if tb.text_case == .Lower_Case {
-        tb._style |= ES_LOWERCASE
-    } else if tb.text_case == .Upper_Case {
-        tb._style |= ES_UPPERCASE
-    }
-    if tb.text_type == .Number_Only {
-        tb._style |= ES_NUMBER
-    } else if tb.text_type == .Password_Char {
-        tb._style |= ES_PASSWORD
-    }
-    if tb.text_alignment == .Center {
-        tb._style |= ES_CENTER
-    } else if tb.text_alignment == .Right {
-        tb._style |= ES_RIGHT
-    }
+
+    if tb.text_case == .Lower_Case { tb._style |= ES_LOWERCASE } 
+    else if tb.text_case == .Upper_Case { tb._style |= ES_UPPERCASE }
+
+    if tb.text_type == .Number_Only { tb._style |= ES_NUMBER }
+    else if tb.text_type == .Password_Char { tb._style |= ES_PASSWORD }
+
+    if tb.text_alignment == .Center { tb._style |= ES_CENTER }
+    else if tb.text_alignment == .Right { tb._style |= ES_RIGHT }
 }
 
 @private set_tb_bk_clr :: proc(tb : ^TextBox, clr : uint) {
