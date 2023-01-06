@@ -31,13 +31,9 @@ Currently, it's a work in progress project.
 ## Improvements
 NumberPicker improved.
 
-![image](https://user-images.githubusercontent.com/8840907/211100904-d9aa4845-4c5d-4c14-b1ee-ef9a9a41dade.png)
+![image](https://user-images.githubusercontent.com/8840907/211117713-ef6eef41-f100-4baf-971d-82cffeee2d19.png)
 
-Old NumberPicker control. You can see the strange drawing on it's border.
-
-![image](https://user-images.githubusercontent.com/8840907/211101062-6bebe8aa-9fe2-45c4-ac11-026a9c9eb7e4.png)
-
-New NumberPicker. See the perfect border ?
+See the difference in old & new NumberPickers. Old one had white gaps even after painted with back color. And it's borders are looking weird. But new NumberPicker had a perfect back color drawing with even more accurate borer. 
 
 
 
