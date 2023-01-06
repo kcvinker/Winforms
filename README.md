@@ -28,7 +28,13 @@ Currently, it's a work in progress project.
 ![image](https://user-images.githubusercontent.com/8840907/154816848-c0114182-1c33-4d72-b3b9-66cb037f99d3.png)
 
 
+## Improvements
+NumberPicker improved.
+![image](https://user-images.githubusercontent.com/8840907/211100904-d9aa4845-4c5d-4c14-b1ee-ef9a9a41dade.png)
+Old NumberPicker control. You can see the strange drawing on it's border.
 
+![image](https://user-images.githubusercontent.com/8840907/211101062-6bebe8aa-9fe2-45c4-ac11-026a9c9eb7e4.png)
+New NumberPicker. See the perfect border ?
 
 
 
