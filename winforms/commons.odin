@@ -17,7 +17,9 @@ import "core:fmt"
 	CM_COMBOTBCOLOR :: MSG_FIXED_VALUE + 11
 	CM_GBFORECOLOR :: MSG_FIXED_VALUE + 12
 	CM_HSCROLL :: MSG_FIXED_VALUE + 13
-	CM_TVNODEEXPAND :: MSG_FIXED_VALUE + 14
+	CM_VSCROLL :: MSG_FIXED_VALUE + 14
+	CM_TVNODEEXPAND :: MSG_FIXED_VALUE + 15
+
 
 
 // My Own messages
@@ -34,6 +36,7 @@ def_fore_clr :: 0x000000
 GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
 TextAlignment :: enum {Top_Left, Top_Center, Top_Right, Mid_Left, Center, Mid_Right, Bottom_Left, Bottom_Center, Bottom_Right}
 SimpleTextAlignment :: enum {Left, Center, Right}
+TicPosition :: enum {Down_Side, Up_Side, Left_Side, Right_Side, Both_Side} // For trackbar
 
 
 TimeMode :: enum {Nano_Sec, Micro_Sec, Milli_Sec}

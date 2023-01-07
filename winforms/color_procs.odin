@@ -11,7 +11,7 @@ RgbColor :: struct {red, green, blue : uint,}
    rc : RgbColor
    rc.red = r
    rc.green = g
-   rc.blue = b   
+   rc.blue = b
    return rc
 }
 
@@ -28,8 +28,8 @@ _get_rgb_color :: proc(clr : uint) -> RgbColor {
    rc : RgbColor
    rc.red = clr >> 16
    rc.green = (clr & 0x00ff00) >> 8
-   rc.blue = clr & 0x0000ff    
-   return rc   
+   rc.blue = clr & 0x0000ff
+   return rc
 }
 
 
@@ -38,17 +38,18 @@ _get_rgb_color :: proc(clr : uint) -> RgbColor {
 	rst := (rc.blue << 16) | (rc.green << 8) | rc.red
 	return cast(ColorRef) rst
 }
-@private get_color_ref2 :: proc(r, g, b : uint) -> ColorRef {	
+@private get_color_ref2 :: proc(r, g, b : uint) -> ColorRef {
 	return ColorRef((b << 16) | (g << 8) | r)
 	//return cast(ColorRef) rst
 }
 
-@private get_color_ref3 :: proc(rc : RgbColor) -> ColorRef {	
+@private get_color_ref3 :: proc(rc : RgbColor) -> ColorRef {
 	return ColorRef((rc.blue << 16) | (rc.green << 8) | rc.red)
 	//return cast(ColorRef) rst
 }
 
 get_color_ref :: proc{get_color_ref1, get_color_ref2, get_color_ref3}
+get_solid_brush :: proc(clr : uint) -> Hbrush { return CreateSolidBrush(get_color_ref(clr))}
 //---------------------------------------------------------
 
 change_color_uint :: proc(clr : uint, adj : f64) -> RgbColor {
@@ -64,18 +65,18 @@ change_color_uint :: proc(clr : uint, adj : f64) -> RgbColor {
 
 change_color :: proc(clr : uint, adj : f64) -> ColorRef {
    rc := change_color_uint(clr, adj)
-   crf := get_color_ref(rc)   
+   crf := get_color_ref(rc)
    return crf
 }
 
-change_color_rgb :: proc(rc : ^RgbColor, adj : f64) {   
+change_color_rgb :: proc(rc : ^RgbColor, adj : f64) {
    rc.red = cast(uint) (f64(rc.red) * adj)
    rc.green = cast(uint) (f64( rc.green) * adj)
    rc.blue = cast(uint) (f64( rc.blue) * adj)
    if rc.red > 255 do rc.red = 255
    if rc.green > 255 do rc.green = 255
    if rc.blue > 255 do rc.blue = 255
-   
+
 }
 
 change_color_get_uint :: proc(rgbc : RgbColor, adj : f64) -> ColorRef {
@@ -86,7 +87,7 @@ change_color_get_uint :: proc(rgbc : RgbColor, adj : f64) -> ColorRef {
    if rc.red > 255 do rc.red = 255
    if rc.green > 255 do rc.green = 255
    if rc.blue > 255 do rc.blue = 255
-   crf := get_color_ref(rc)   
+   crf := get_color_ref(rc)
    return crf
 
 }
@@ -94,8 +95,8 @@ change_color_get_uint :: proc(rgbc : RgbColor, adj : f64) -> ColorRef {
 change_gradient_color :: proc(gc : GradientColors, adj : f64) -> GradientColors {
    ngc : GradientColors = gc
    change_color_rgb(&ngc.color1, adj)
-   change_color_rgb(&ngc.color2, adj) 
-   return ngc  
+   change_color_rgb(&ngc.color2, adj)
+   return ngc
 }
 
 
@@ -114,7 +115,7 @@ print_rgb:: proc(rc : RgbColor)
    return clr
 }
 
-@private rgb_to_uint2 :: proc(r, g, b : int) -> uint {  
+@private rgb_to_uint2 :: proc(r, g, b : int) -> uint {
    ur := cast(uint) r
    ug := cast(uint) g
    ub := cast(uint) b

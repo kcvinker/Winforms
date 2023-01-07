@@ -411,6 +411,10 @@ window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> L
             ctl_hw := direct_cast(lp, Hwnd)
             return SendMessage(ctl_hw, WM_HSCROLL, wp, lp)
 
+        case WM_VSCROLL:
+            ctl_hw := direct_cast(lp, Hwnd)
+            return SendMessage(ctl_hw, WM_VSCROLL, wp, lp)
+
 
         case WM_PAINT :
             if frm.paint != nil {

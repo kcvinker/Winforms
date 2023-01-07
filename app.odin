@@ -27,6 +27,7 @@ import  ui "winforms"
 	dtp : ui.DateTimePicker
     lb1 : ui.Label
     lbx : ui.ListBox
+    tk : ui.TrackBar
 
 //
 
@@ -70,7 +71,13 @@ MakeWindow :: proc() {
     npk.mouse_leave = np_mouse_leave
 
 
-    create_controls(&npk)
+    tk = new_trackbar(&frm, 25, 110, 206, 40)
+    // tk.cust_draw = true
+    // tk.channel_style = ChannelStyle.classic
+    tk.sel_range = true
+    // tk.channel_color = 0xff00fc
+    // tk.tic_color = 0x00bb44
+    create_controls(&npk, &tk)
 
     //cS := new_listview_column("Salaries", 70, ColumnAlignment.right)
 

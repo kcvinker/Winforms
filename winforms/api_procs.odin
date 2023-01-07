@@ -14,6 +14,11 @@ to_string :: proc(value : wstring) -> string {return wstring_to_utf8(value, -1)}
 lo_word :: #force_inline proc "contextless" (x: Dword) -> Word {return Word(x & 0xffff)}
 hi_word :: #force_inline proc "contextless" (x: Dword) -> Word {return Word(x >> 16)}
 
+lo_word_wpm :: #force_inline proc "contextless" (x: Wparam) -> Word {return Word(x & 0xffff)}
+hi_word_wpm :: #force_inline proc "contextless" (x: Wparam) -> Word {return Word(x >> 16)}
+
+
+
 
 utf8_to_utf16 :: proc(s: string, allocator := context.temp_allocator) -> []u16 {
    if len(s) < 1 { return nil }
