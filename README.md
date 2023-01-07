@@ -28,7 +28,12 @@ Currently, it's a work in progress project.
 ![image](https://user-images.githubusercontent.com/8840907/154816848-c0114182-1c33-4d72-b3b9-66cb037f99d3.png)
 
 
+## Improvements
+NumberPicker improved.
 
+![image](https://user-images.githubusercontent.com/8840907/211117713-ef6eef41-f100-4baf-971d-82cffeee2d19.png)
+
+See the difference in old & new NumberPickers. Old one had white gaps even after painted with back color. And it's borders are looking weird. But new NumberPicker had a perfect back color drawing with even more accurate borer. 
 
 
 
