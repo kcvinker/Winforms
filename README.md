@@ -35,6 +35,8 @@ NumberPicker improved.
 
 See the difference in old & new NumberPickers. Old one had white gaps even after painted with back color. And it's borders are looking weird. But new NumberPicker had a perfect back color drawing with even more accurate borer. 
 
+TrackBar improved
+![image](https://user-images.githubusercontent.com/8840907/211165815-8149286b-99c1-407d-8382-e6bfefed05fe.png)
 
 
 
