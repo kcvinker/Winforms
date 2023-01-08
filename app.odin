@@ -28,6 +28,7 @@ import  ui "winforms"
     lb1 : ui.Label
     lbx : ui.ListBox
     tk : ui.TrackBar
+    tb : ui.TextBox
 
 //
 
@@ -77,8 +78,11 @@ MakeWindow :: proc() {
     tk.sel_range = true
     // tk.channel_color = 0xff00fc
     // tk.tic_color = 0x00bb44
-    create_controls(&npk, &tk)
 
+
+    tb = new_textbox(&frm, 120, 24, 200, 55)
+    tb.fore_color = 0x005534
+    create_controls(&npk, &tk, &tb)
     //cS := new_listview_column("Salaries", 70, ColumnAlignment.right)
 
     // listview_add_column(&lv, "✔", 50)

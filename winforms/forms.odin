@@ -45,15 +45,15 @@ start_app :: proc() -> Application
 {
     appl : Application
     appl.global_font = new_font(def_font_name, def_font_size)
-    appl.class_name = "WingLib_Form"
+    appl.class_name = "WingLib Window in Odin"
     appl.h_instance = GetModuleHandle(nil)
     appl.screen_width = int(GetSystemMetrics(0))
     appl.screen_height = int(GetSystemMetrics(1))
 
     appl.iccx.dwSize = size_of(appl.iccx)
     appl.iccx.dwIcc = ICC_STANDARD_CLASSES
-    InitCommonControlsEx(&appl.iccx)    // We just initializing standard common controls.
-
+    InitCommonControlsEx(&appl.iccx)    // Iinitializing standard common controls.
+    // fmt.println("init commoms")
     return appl
 }
 
@@ -441,7 +441,7 @@ window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> L
             } else {
                 return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
             }
-             //return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
+            //  return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
         case WM_CTLCOLORSTATIC :
             ctl_hwnd := direct_cast(lp, Hwnd)
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
