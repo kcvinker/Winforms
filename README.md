@@ -1,7 +1,7 @@
 # Winforms
 A simple GUI library for Odin programming language.
 
-It is built upon win api functions. So it needs Windows 64 bit to run.
+It is built upon win32 API functions. So it needs Windows 64 bit to run.
 Currently, it's a work in progress project.
 
 ## Control List
@@ -36,7 +36,15 @@ NumberPicker improved.
 See the difference in old & new NumberPickers. Old one had white gaps even after painted with back color. And it's borders are looking weird. But new NumberPicker had a perfect back color drawing with even more accurate borer. 
 
 TrackBar improved
+
 ![image](https://user-images.githubusercontent.com/8840907/211165815-8149286b-99c1-407d-8382-e6bfefed05fe.png)
+
+TextBox improved.
+
+![image](https://user-images.githubusercontent.com/8840907/211176545-f8cc8e0b-e420-4067-b9c2-452e851e4ea4.png)
+
+See the changes ?.
+
 
 
 
