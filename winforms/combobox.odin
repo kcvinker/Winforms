@@ -19,10 +19,12 @@ ComboBox :: struct {
 
     _bk_brush : Hbrush,
     _old_hwnd : Hwnd,
-    _hbrush : Hbrush,
     _old_ctl_id : Uint,
     _edit_subclass_id : UintPtr,
+    _myrc : Rect,
+    _main : bool,
 
+    // Events
     selection_changed,
     selection_committed,
     selection_cancelled,
@@ -101,7 +103,6 @@ new_combobox :: proc{new_combo1, new_combo2}
     if !cmb.p_recreate_enabled {
         delete_gdi_object(cmb.font.handle)
         delete_gdi_object(cmb._bk_brush)
-        delete_gdi_object(cmb._hbrush)
         delete(cmb.items)
     }
 }
@@ -216,6 +217,21 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     // TODO - clear dynamic array of combo.
 }
 
+@private check_mouse_leave :: proc(cmb: ^ComboBox) -> bool {
+    /* Since combo box is a combination of button, edit and list box...
+     * we need to take extra care for handling mouse enter & leave messages.
+     * So we are checking whether the current mouse pos is in our...
+     * control rect or not. To do that check, we need to convert the mouse...
+     * points into our window's client coordinate level. */
+    pt : Point
+    GetCursorPos(&pt)
+    ScreenToClient(cmb.parent.handle, &pt)
+    res := cast(bool) PtInRect(&cmb._myrc, pt)
+    // Inverting the result because, PtInRect will return true if mouse is inside rect.
+    // We just want the opposite of that.
+    return !res
+}
+
 @private cmb_before_creation :: proc(cmb : ^ComboBox) {
     if cmb.combo_style == .Lb_Combo {
         cmb._style |= CBS_DROPDOWNLIST
@@ -233,6 +249,9 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
         _global_ctl_id += 1
     	cmb.control_id = _global_ctl_id
     }
+
+    // Set back color brush
+    cmb._bk_brush = get_solid_brush(cmb.back_color)
 }
 
 @private cmb_after_creation :: proc(cmb : ^ComboBox) {
@@ -258,9 +277,10 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     if cmb.selected_index > -1 { // User wants to set the selected index.
         combo_set_selected_index(cmb, cmb.selected_index)
     }
+
+    // Lastly, we need to collect the control rect for managing mouse enter & leave events
+    set_rect(&cmb._myrc, i32(cmb.xpos), i32(cmb.ypos), i32(cmb.width + cmb.xpos), i32(cmb.height + cmb.ypos))
 }
-
-
 
 
 @private
@@ -281,17 +301,6 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
         case WM_DESTROY:
             cmb_dtor(cmb)
             remove_subclass(cmb)
-
-        //case CM_NOTIFY :
-
-        // case CM_CTLLCOLOR :
-        //     //print("CM_CTLLCOLOR combo")
-        //     hdc := direct_cast(wp, Hdc)
-        //     //SetTextColor(hdc, get_color_ref(cmb.fore_color))
-        //     //SetBackColor(hdc, get_color_ref(cmb.back_color))
-        //     SetBkMode(hdc, Transparent)
-        //     cmb._hbrush = CreateSolidBrush(get_color_ref(cmb.back_color))
-        //     return to_lresult(cmb._hbrush)
 
         case CM_CTLCOMMAND :
             ncode := hiword_wparam(wp)
@@ -362,15 +371,6 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             }
 
 
-        case CM_COMBOTBCOLOR : // We will receive this message only if combo_style == tb_list
-            if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {
-                dc_handle := direct_cast(wp, Hdc)
-                SetBkMode(dc_handle, Transparent)
-                if cmb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.fore_color))
-                if cmb._bk_brush == nil do cmb._bk_brush = CreateSolidBrush(get_color_ref(cmb.back_color))
-                return to_lresult(cmb._bk_brush)
-            }
-
         case WM_PARENTNOTIFY :
             wp_lw := loword_wparam(wp)
             switch wp_lw {
@@ -400,12 +400,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
                 return 0
             }
 
-        case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mrdown_happened = true
-            if cmb.right_mouse_down != nil {
-            mea := new_mouse_event_args(msg, wp, lp)
-            cmb.right_mouse_down(cmb, &mea)
-            }
+
         case WM_LBUTTONUP :  // Only work in lb_comb and the triange btn of tb_combo
             if cmb.left_mouse_up != nil {
             mea := new_mouse_event_args(msg, wp, lp)
@@ -421,6 +416,13 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             ea := new_event_args()
             cmb.mouse_click(cmb, &ea)
             return 0
+            }
+
+         case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo
+            cmb._mrdown_happened = true
+            if cmb.right_mouse_down != nil {
+            mea := new_mouse_event_args(msg, wp, lp)
+            cmb.right_mouse_down(cmb, &mea)
             }
 
         case WM_RBUTTONUP :
@@ -447,7 +449,6 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
                 cmb.mouse_scroll(cmb, &mea)
             }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-           //print("mouse entered")
             if cmb._is_mouse_entered {
                 if cmb.mouse_move != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
@@ -455,34 +456,25 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
                 }
             } else {
                 cmb._is_mouse_entered = true
+                cmb._main = true
                 if cmb.mouse_enter != nil  {
                     ea := new_event_args()
                     cmb.mouse_enter(cmb, &ea)
                 }
             }
-            //end case--------------------
 
-            case WM_MOUSELEAVE :
-               // print("mouse leaved combo")
-                cmb._is_mouse_entered = false
-                if cmb.mouse_leave != nil {
-                    ea := new_event_args()
-                    cmb.mouse_leave(cmb, &ea)
+        case WM_MOUSELEAVE : // Main Proc
+            if cmb.mouse_leave != nil || cmb.mouse_enter != nil || cmb.mouse_move != nil {
+                if check_mouse_leave(cmb) {
+                    cmb._main = true
+                    cmb._is_mouse_entered = false
+                    if cmb.mouse_leave != nil {
+                        ea := new_event_args()
+                        cmb.mouse_leave(cmb, &ea)
+                    }
                 }
+            }
 
-            case WM_KEYDOWN : // only works in lb_combo style
-                if cmb.key_down != nil {
-                    kea := new_key_event_args(wp)
-                    cmb.key_down(cmb, &kea)
-                }
-
-            case WM_KEYUP : // only works in lb_combo style
-                if cmb.key_up != nil {
-                    kea := new_key_event_args(wp)
-                    cmb.key_up(cmb, &kea)
-                }
-
-            case : return DefSubclassProc(hw, msg, wp, lp)
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }
@@ -495,6 +487,109 @@ edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_
     switch msg {
         case WM_DESTROY:
             RemoveWindowSubclass(hw, edit_wnd_proc, sc_id)
+
+        case CM_CTLLCOLOR :
+            if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {
+                dc_handle := direct_cast(wp, Hdc)
+                // SetBkMode(dc_handle, Transparent)
+                if cmb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.fore_color))
+                if cmb.back_color != def_back_clr do SetBackColor(dc_handle, get_color_ref(cmb.back_color))
+                return to_lresult(cmb._bk_brush)
+            }
+
+        case WM_KEYDOWN : // only works in Tb_combo style
+            if cmb.key_down != nil {
+                kea := new_key_event_args(wp)
+                cmb.key_down(cmb, &kea)
+            }
+
+        case WM_KEYUP : // only works in Tb_combo style
+            if cmb.key_up != nil {
+                kea := new_key_event_args(wp)
+                cmb.key_up(cmb, &kea)
+            }
+
+        case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo
+            cmb._mdown_happened = true
+            if cmb.left_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                cmb.left_mouse_down(cmb, &mea)
+                return 0
+            }
+
+
+        case WM_LBUTTONUP :  // Only work in lb_comb and the triange btn of tb_combo
+            if cmb.left_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                cmb.left_mouse_up(cmb, &mea)
+            }
+            if cmb._mdown_happened {
+                cmb._mdown_happened = false
+                SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
+            }
+
+        case CM_LMOUSECLICK :
+            if cmb.mouse_click != nil {
+                ea := new_event_args()
+                cmb.mouse_click(cmb, &ea)
+                return 0
+            }
+
+        case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo
+            cmb._mrdown_happened = true
+            if cmb.right_mouse_down != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                cmb.right_mouse_down(cmb, &mea)
+            }
+
+
+        case WM_RBUTTONUP :
+            if cmb.right_mouse_up != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                cmb.right_mouse_up(cmb, &mea)
+            }
+            if cmb._mrdown_happened {
+                cmb._mrdown_happened = false
+                SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
+            }
+
+        case CM_RMOUSECLICK :
+            cmb._mrdown_happened = false
+            if cmb.right_click != nil {
+                ea := new_event_args()
+                cmb.right_click(cmb, &ea)
+                return 0
+            }
+
+        case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
+            if cmb._is_mouse_entered {
+                if cmb.mouse_move != nil {
+                    mea := new_mouse_event_args(msg, wp, lp)
+                    cmb.mouse_move(cmb, &mea)
+                }
+            } else {
+                cmb._is_mouse_entered = true
+                cmb._main = false
+                if cmb.mouse_enter != nil  {
+                    ea := new_event_args()
+                    cmb.mouse_enter(cmb, &ea)
+                }
+            }
+
+        case WM_MOUSELEAVE : // Edit Proc
+            if cmb.combo_style == .Tb_Combo && (cmb.mouse_leave != nil || cmb.mouse_enter != nil || cmb.mouse_move != nil) {
+                if check_mouse_leave(cmb) {
+                    cmb._main = true
+                    cmb._is_mouse_entered = false
+                    if cmb.mouse_leave != nil {
+                        ea := new_event_args()
+                        cmb.mouse_leave(cmb, &ea)
+                    }
+                }
+            }
+
+
+
     }
 
     return DefSubclassProc(hw, msg, wp, lp)

@@ -87,6 +87,12 @@ MakeWindow :: proc() {
 
     cmb = new_combobox(&frm, 130, 25, 50, 185)
     combo_add_items(&cmb, "Vinod", "Vinayak", "Vineetha")
+    // cmb.combo_style = DropDownStyle.Lb_Combo
+    cmb.mouse_enter = combo_mouse_enter
+    cmb.mouse_leave = combo_mouse_leave
+
+    // cmb.back_color = 0xccff66
+    // cmb.fore_color = 0x00ff66
 
     btn = new_button(&frm, "Click Me", 100, 28, 50, 230)
     btn.mouse_click = btn_click
@@ -171,3 +177,6 @@ btn_click :: proc(c : ^Control, e : ^EventArgs) {
     print("We can change combo style now")
     ui.combo_set_style(&cmb, ui.DropDownStyle.Lb_Combo)
 }
+
+combo_mouse_enter :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse entered in main ", cmb._main) }
+combo_mouse_leave :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse leaved in main ", cmb._main) }

@@ -272,11 +272,18 @@ create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc
 
 @private
 print_rect :: proc(rc : Rect) {
-	ptf("top : %d\n", rc.top)
-	ptf("bottom : %d\n", rc.bottom)
 	ptf("left : %d\n", rc.left)
+	ptf("top : %d\n", rc.top)
 	ptf("right : %d\n", rc.right)
+	ptf("bottom : %d\n", rc.bottom)
 	print("----------------------------------------------------")
+}
+
+@private set_rect :: proc(rc : ^Rect, left, top, right, bottom: i32) {
+	rc.left = left
+	rc.top = top
+	rc.right = right
+	rc.bottom = bottom
 }
 
 Test :: proc() {
