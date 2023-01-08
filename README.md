@@ -31,8 +31,10 @@ TextBox improved.
 ![image](https://user-images.githubusercontent.com/8840907/211176545-f8cc8e0b-e420-4067-b9c2-452e851e4ea4.png)
 
 See the changes ?.
+When I wrote this library, I don't have access to Windows 11. Six months later, I got my new laptop with Win 11. After a few days, I just ran some sample code and noticed that text box is looking weird. And after spending a few hours, I found the reason. I handled the WM_CTLCOLREDIT message wrongly. But at that time, I don;t have enough time to alter the code. So I postponed the task.
 
 ComboBox improved:
+
 Old combo box module was a spaghetti code. Later I did the same ui library project in D & Python. Then I have realized that this could have been done without any complexity. So now, I completely re-Arranged the module and made it as simple as possible. I think I removed 100+ lines of code.
 
 
