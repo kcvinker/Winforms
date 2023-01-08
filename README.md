@@ -45,8 +45,11 @@ TextBox improved.
 
 See the changes ?.
 
+ComboBox improved:
+Old combo box module was a spaghetti code. Later I did the same ui library project in D & Python. Then I have realized that this could have been done without any complexity. So now, I completely re-Arranged the module and made it as simple as possible. I think I removed 100+ lines of code.
 
 
+ 
 
 
 ## Example --
