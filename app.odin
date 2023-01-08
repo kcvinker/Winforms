@@ -29,6 +29,8 @@ import  ui "winforms"
     lbx : ui.ListBox
     tk : ui.TrackBar
     tb : ui.TextBox
+    cmb : ui.ComboBox
+    btn : ui.Button
 
 //
 
@@ -82,7 +84,18 @@ MakeWindow :: proc() {
 
     tb = new_textbox(&frm, 120, 24, 200, 55)
     tb.fore_color = 0x005534
-    create_controls(&npk, &tk, &tb)
+
+    cmb = new_combobox(&frm, 130, 25, 50, 185)
+    combo_add_items(&cmb, "Vinod", "Vinayak", "Vineetha")
+
+    btn = new_button(&frm, "Click Me", 100, 28, 50, 230)
+    btn.mouse_click = btn_click
+
+
+
+
+    create_controls(&npk, &tk, &tb, &cmb, &btn)
+
     //cS := new_listview_column("Salaries", 70, ColumnAlignment.right)
 
     // listview_add_column(&lv, "✔", 50)
@@ -142,6 +155,8 @@ frm_click :: proc(c : ^Control, e : ^EventArgs) {
 
 frm_mouse_down :: proc(c : ^Control, e : ^MouseEventArgs) {
     ui.print_point(e)
+    ind := ui.combo_get_selected_index(&cmb)
+    print(ind)
 }
 
 np_mouse_enter :: proc(c : ^Control, e : ^EventArgs) {
@@ -150,4 +165,9 @@ np_mouse_enter :: proc(c : ^Control, e : ^EventArgs) {
 
 np_mouse_leave :: proc(c : ^Control, e : ^EventArgs) {
     print("np mouse levae")
+}
+
+btn_click :: proc(c : ^Control, e : ^EventArgs) {
+    print("We can change combo style now")
+    ui.combo_set_style(&cmb, ui.DropDownStyle.Lb_Combo)
 }

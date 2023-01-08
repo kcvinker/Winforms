@@ -73,7 +73,7 @@ new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 	return btn
 }
 
-@private new_button4 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> Button
+@private new_button4 :: proc(parent : ^Form, txt : string, w, h, x, y: int) -> Button
 {
 	btn := btn_ctor(parent, txt, x, y, w, h)
 	return btn

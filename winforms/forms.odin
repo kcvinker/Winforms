@@ -83,7 +83,8 @@ Form :: struct
     _draw_mode : FormDrawMode,
     _cdraw_childs : [dynamic]Hwnd,
     _udraw_ids : map[Uint]Hwnd,
-    _combo_list : [dynamic]ComboInfo,
+    // _combo_list : [dynamic]ComboInfo,
+    _combo_data : [dynamic]ComboData,
 
 
 
@@ -154,7 +155,8 @@ form_dtor :: proc(frm : ^Form)
     delete_gdi_object(frm.font.handle)
     delete(frm._udraw_ids)
     delete(frm._cdraw_childs)
-    delete(frm._combo_list)
+    // delete(frm._combo_list)
+    delete(frm._combo_data)
 }
 
 @private
@@ -233,6 +235,7 @@ start_form :: proc()
 show_form :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
 hide_form :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
 set_form_state :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
+
 print_point :: proc(mea : ^MouseEventArgs) {
     @static x : int = 1
     fmt.printf("[%d] X: %d,  Y: %d\n", x, mea.x, mea.y)
@@ -357,28 +360,6 @@ set_back_clr_internal :: proc(f : ^Form, hdc : Hdc) {
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
 
-@private
-find_combo_data :: proc(frm : ^Form, hw : Hwnd, item : FindHwnd) -> ( ci : ComboInfo, ok : bool) {
-    if item == .lb_hwnd {
-        for c in frm._combo_list {
-            if c.lb_handle == hw {
-                ci = c
-                ok = true
-                break
-            }
-        }
-    } else {
-        for c in frm._combo_list {
-            if c.tb_handle == hw {
-                ci = c
-                ok = true
-                break
-            }
-        }
-    }
-    return ci, ok
-}
-
 
 @private // Display windows message names in wndproc function.
 display_msg :: proc(umsg : u32, ) {
@@ -388,6 +369,30 @@ display_msg :: proc(umsg : u32, ) {
     counter += 1
 }
 
+// It's a private function. Combobox module is the caller.
+collect_combo_data :: proc(frm: ^Form, cd : ComboData) {append(&frm._combo_data, cd)}
+
+// It's a private function. Combobox module is the caller.
+update_combo_data :: proc(frm: ^Form, cd : ComboData) {
+    for c in &frm._combo_data {
+        if c.combo_id == cd.combo_id {
+            c.combo_hwnd = cd.combo_hwnd
+            c.list_box_hwnd = cd.list_box_hwnd
+            return
+        }
+    }
+}
+
+@private
+find_combo_data :: proc(frm : ^Form, list_hwnd : Hwnd) -> Hwnd {
+    // We will search for the appropriate date in our combo data list.
+    for cd in frm._combo_data {
+        if cd.list_box_hwnd == list_hwnd {
+            return cd.combo_hwnd
+        }
+    }
+    return nil
+}
 
 @private
 window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> Lresult
@@ -435,27 +440,24 @@ window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> L
 
         case WM_CTLCOLOREDIT :
             ctl_hwnd := direct_cast(lp, Hwnd)
-            ci, is_combo := find_combo_data(frm, ctl_hwnd, FindHwnd.tb_hwnd)
-            if is_combo {
-                if !ci.no_tb_msg do return SendMessage(ci.combo_handle, CM_COMBOTBCOLOR, wp, 0)
-            } else {
-                return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
-            }
-            //  return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, 0)
+            return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+
         case WM_CTLCOLORSTATIC :
             ctl_hwnd := direct_cast(lp, Hwnd)
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
 
         case WM_CTLCOLORLISTBOX :
+            /* If user uses a ComboBox, it contains a ListBox in it.
+             * So, 'ctlHwnd' might be a handle of that ListBox. Or it might be a normal ListBox too.
+             * So, we need to check it before disptch this message to that listbox.
+             * Because, if it is from Combo's listbox, there is no Wndproc function for that ListBox. */
             ctl_hwnd := direct_cast(lp, Hwnd)
-            //print("list box handle - ", ctl_hwnd)
-            ci, is_combo := find_combo_data(frm, ctl_hwnd, FindHwnd.lb_hwnd)
-            if is_combo
-            {
-                return SendMessage(ci.combo_handle, CM_COMBOLBCOLOR, wp, 0)
-            }
-            else
-            { // Need and else statement when e create ListBox
+            cmb_hwnd := find_combo_data(frm, ctl_hwnd)
+            if cmb_hwnd != nil {
+                // This message is from a combo's listbox. Divert it to that combo box.
+                return SendMessage(cmb_hwnd, CM_COMBOLBCOLOR, wp, lp)
+            } else {
+                // This message is from a normal listbox. send it to it's wndproc.
                 return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
             }
 

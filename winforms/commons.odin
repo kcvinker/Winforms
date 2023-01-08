@@ -290,12 +290,17 @@ Test :: proc() {
 
 // Create a Control. Use this for all controls.
 create_control :: proc(c : ^Control) {
-	_global_ctl_id += 1
-    c.control_id = _global_ctl_id
+	// If it's a Combobox, it knows how to manage contril ID.
+	if c.kind != ControlKind.Combo_Box {
+		_global_ctl_id += 1
+    	c.control_id = _global_ctl_id
+	}
+
 	c._before_creation(c)
 	width : i32 = 0
 	height : i32 = 0
 	if c.kind != ControlKind.Number_Picker {
+		// NumberPicker needs zero width & height. It can find it's size later.
 		width = i32(c.width)
 		height = i32(c.height)
 	}
