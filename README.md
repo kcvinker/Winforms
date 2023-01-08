@@ -5,21 +5,8 @@ It is built upon win32 API functions. So it needs Windows 64 bit to run.
 Currently, it's a work in progress project.
 
 ## Control List
-1. Form
-2. Button
-3. Calendar
-4. CheckBox
-5. ComboBox
-6. DateTimePicker
-7. GroupBox
-8. Label
-9. ListBox
-10. TextBox
-11. NumberPicker (Updown Control)
-12. ProgressBar
-13. RadioButton
-14. TrackBar
-15. TreeView
+Button, Calendar, CheckBox, ComboBox, DateTimePicker, GroupBox, Label, ListBox, TextBox
+NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView
 
 ## Screenshot
 
