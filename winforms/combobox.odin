@@ -15,14 +15,13 @@ ComboBox :: struct {
     items : [dynamic]string, // Don't forget to delete it when combo box deing destroyed.
     visible_item_count : int,
     selected_index : int,
-    p_recreate_enabled : bool, // Used when we need to recreate existing combo
+    _recreate_enabled : bool, // Used when we need to recreate existing combo
 
     _bk_brush : Hbrush,
-    _old_hwnd : Hwnd,
+    // _old_hwnd : Hwnd,
     _old_ctl_id : Uint,
     _edit_subclass_id : UintPtr,
     _myrc : Rect,
-    _main : bool,
 
     // Events
     selection_changed,
@@ -100,7 +99,7 @@ new_combobox :: proc{new_combo1, new_combo2}
 }
 
 @private cmb_dtor :: proc(cmb : ^ComboBox) {
-    if !cmb.p_recreate_enabled {
+    if !cmb._recreate_enabled {
         delete_gdi_object(cmb.font.handle)
         delete_gdi_object(cmb._bk_brush)
         delete(cmb.items)
@@ -114,7 +113,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
     if cmb._is_created {
         if cmb.combo_style == style do return
         cmb.combo_style = style
-        cmb.p_recreate_enabled = true
+        cmb._recreate_enabled = true
         DestroyWindow(cmb.handle)
         create_control(cmb)
     } else {
@@ -227,8 +226,9 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     GetCursorPos(&pt)
     ScreenToClient(cmb.parent.handle, &pt)
     res := cast(bool) PtInRect(&cmb._myrc, pt)
-    // Inverting the result because, PtInRect will return true if mouse is inside rect.
-    // We just want the opposite of that.
+
+    /* Inverting the result because, PtInRect will return true if mouse is inside rect.
+     * We just want the opposite of that. */
     return !res
 }
 
@@ -243,8 +243,11 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
      * If this is the first time a combo is created, we can use...
      * global control ID. But if a combo is recreating, then...
      * we must use the old comb's control ID. */
-    if cmb.p_recreate_enabled {
+    if cmb._recreate_enabled {
         cmb.control_id = cmb._old_ctl_id
+
+        // Collect the selected index if any
+        cmb.selected_index = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     } else {
         _global_ctl_id += 1
     	cmb.control_id = _global_ctl_id
@@ -256,14 +259,19 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
 
 @private cmb_after_creation :: proc(cmb : ^ComboBox) {
 	set_subclass(cmb, cmb_wnd_proc)
-    cmb._old_hwnd = cmb.handle
+    // cmb._old_hwnd = cmb.handle
     cmb._old_ctl_id = cmb.control_id
     cd : ComboData = get_combo_info(cmb)
 
     // Collecting child controls info
-    if cmb.p_recreate_enabled {
-        cmb.p_recreate_enabled = false
+    if cmb._recreate_enabled {
+        cmb._recreate_enabled = false
         update_combo_data(cmb.parent, cd)
+
+        // If selected index was a valid number, set the selection again.
+        if cmb.selected_index != -1 {
+            SendMessage(cmb.handle, CB_SETCURSEL, Wparam(i32(cmb.selected_index)), 0)
+        }
     } else {
         collect_combo_data(cmb.parent, cd)
     }
@@ -456,7 +464,6 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
                 }
             } else {
                 cmb._is_mouse_entered = true
-                cmb._main = true
                 if cmb.mouse_enter != nil  {
                     ea := new_event_args()
                     cmb.mouse_enter(cmb, &ea)
@@ -466,7 +473,6 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
         case WM_MOUSELEAVE : // Main Proc
             if cmb.mouse_leave != nil || cmb.mouse_enter != nil || cmb.mouse_move != nil {
                 if check_mouse_leave(cmb) {
-                    cmb._main = true
                     cmb._is_mouse_entered = false
                     if cmb.mouse_leave != nil {
                         ea := new_event_args()
@@ -569,7 +575,6 @@ edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_
                 }
             } else {
                 cmb._is_mouse_entered = true
-                cmb._main = false
                 if cmb.mouse_enter != nil  {
                     ea := new_event_args()
                     cmb.mouse_enter(cmb, &ea)
@@ -579,7 +584,6 @@ edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_
         case WM_MOUSELEAVE : // Edit Proc
             if cmb.combo_style == .Tb_Combo && (cmb.mouse_leave != nil || cmb.mouse_enter != nil || cmb.mouse_move != nil) {
                 if check_mouse_leave(cmb) {
-                    cmb._main = true
                     cmb._is_mouse_entered = false
                     if cmb.mouse_leave != nil {
                         ea := new_event_args()

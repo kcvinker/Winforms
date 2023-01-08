@@ -178,5 +178,5 @@ btn_click :: proc(c : ^Control, e : ^EventArgs) {
     ui.combo_set_style(&cmb, ui.DropDownStyle.Lb_Combo)
 }
 
-combo_mouse_enter :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse entered in main ", cmb._main) }
-combo_mouse_leave :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse leaved in main ", cmb._main) }
+combo_mouse_enter :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse entered in main ") }
+combo_mouse_leave :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse leaved in main ") }
