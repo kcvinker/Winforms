@@ -15,10 +15,11 @@ ComboBox :: struct {
     items : [dynamic]string, // Don't forget to delete it when combo box deing destroyed.
     visible_item_count : int,
     selected_index : int,
+    selected_item : string,
     _recreate_enabled : bool, // Used when we need to recreate existing combo
 
     _bk_brush : Hbrush,
-    // _old_hwnd : Hwnd,
+
     _old_ctl_id : Uint,
     _edit_subclass_id : UintPtr,
     _myrc : Rect,
@@ -190,6 +191,15 @@ combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)  {
     cmb.selected_index = indx
 }
 
+combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)  {
+    sitem := fmt.tprint(item)
+    wp : i32 = -1
+    indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, Wparam(wp), direct_cast(to_wstring(sitem), Lparam))
+    if indx == LB_ERR do return
+    SendMessage(cmb.handle, CB_SETCURSEL, Wparam(indx), 0)
+    cmb.selected_index = int(indx)
+    cmb.selected_item = sitem
+}
 
 combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
     indx := int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
