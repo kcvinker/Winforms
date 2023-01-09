@@ -175,7 +175,7 @@ np_mouse_leave :: proc(c : ^Control, e : ^EventArgs) {
 
 btn_click :: proc(c : ^Control, e : ^EventArgs) {
     print("We can change combo style now")
-    ui.set_prop(&cmb, "selected_item", "Vinod")
+    ui.combo_set_selected_item(&cmb, "Vinod")
     // ui.testproc(&cmb, cmb.back_color)
 }
 

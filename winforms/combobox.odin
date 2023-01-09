@@ -16,16 +16,13 @@ ComboBox :: struct {
     items : [dynamic]string, // Don't forget to delete it when combo box deing destroyed.
     visible_item_count : int,
     selected_index : int,
+    selected_item : string,
     _recreate_enabled : bool, // Used when we need to recreate existing combo
 
     _bk_brush : Hbrush,
-    // _old_hwnd : Hwnd,
     _old_ctl_id : Uint,
     _edit_subclass_id : UintPtr,
     _myrc : Rect,
-
-    // set_prop: PropSetter,
-    props: ComboBoxProps,
 
     // Events
     selection_changed,
@@ -48,7 +45,7 @@ ComboData :: struct {
     combo_id : u32,
 }
 
-ComboBoxProps :: enum {style, selected_index, selected_item, back_color, }
+// ComboBoxProps :: enum {style, selected_index, selected_item, back_color, }
 // ComboPropSetter :: proc(ctl: ^ComboBox, prop: ComboBoxProps, value: $T)
 
 new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData {
@@ -193,25 +190,29 @@ combo_get_selected_index :: proc(cmb : ^ComboBox) -> int {
     return cmb.selected_index
 }
 
+
+
 combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)  {
     SendMessage(cmb.handle, CB_SETCURSEL, Wparam(i32(indx)), 0)
     cmb.selected_index = indx
 }
 
 combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T) {
-    value := fmt.tprint(item)
+    sitem := fmt.tprint(item)
     wp : i32 = -1
-    indx := SendMessage(cmb.handle, CB_FINDSTRINGEXACT, Wparam(wp), direct_cast(&value, Lparam))
+    indx := SendMessage(cmb.handle, CB_FINDSTRINGEXACT, Wparam(wp), direct_cast(to_wstring(sitem), Lparam))
     if indx == LB_ERR do return
     SendMessage(cmb.handle, CB_SETCURSEL, Wparam(i32(indx)), 0)
     cmb.selected_index = int(indx)
+    cmb.selected_item = sitem
 }
 
 
 combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
     indx := int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     if indx > -1 {
-        return cmb.items[indx]
+        cmb.selected_item = cmb.items[indx]
+        return cmb.selected_item
     } else do return ""
 }
 
@@ -637,10 +638,3 @@ edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_
     return DefSubclassProc(hw, msg, wp, lp)
 }
 
-testproc :: proc(cmb: ^ComboBox, p: $T) {
-    id := typeid_of(type_of(p))
-	info: ^runtime.Type_Info
-	info = type_info_of(id)
-    // print(typeid_of(type_of(info)))
-    print(info.id)
-}
