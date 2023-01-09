@@ -3,6 +3,7 @@ package winforms
 
 import "core:fmt"
 import "core:runtime"
+import "core:strings"
 //import "core:reflect"
 
 WcComboW : wstring
@@ -22,6 +23,9 @@ ComboBox :: struct {
     _old_ctl_id : Uint,
     _edit_subclass_id : UintPtr,
     _myrc : Rect,
+
+    // set_prop: PropSetter,
+    props: ComboBoxProps,
 
     // Events
     selection_changed,
@@ -43,6 +47,9 @@ ComboData :: struct {
     edit_hwnd : Hwnd,
     combo_id : u32,
 }
+
+ComboBoxProps :: enum {style, selected_index, selected_item, back_color, }
+// ComboPropSetter :: proc(ctl: ^ComboBox, prop: ComboBoxProps, value: $T)
 
 new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData {
     cd : ComboData
@@ -82,6 +89,7 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData {
     cmb._cls_name = WcComboW
     cmb._before_creation = cast(CreateDelegate) cmb_before_creation
 	cmb._after_creation = cast(CreateDelegate) cmb_after_creation
+    // cmb.set_prop = combo_set_prop
     return cmb
 }
 
@@ -190,6 +198,15 @@ combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)  {
     cmb.selected_index = indx
 }
 
+combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T) {
+    value := fmt.tprint(item)
+    wp : i32 = -1
+    indx := SendMessage(cmb.handle, CB_FINDSTRINGEXACT, Wparam(wp), direct_cast(&value, Lparam))
+    if indx == LB_ERR do return
+    SendMessage(cmb.handle, CB_SETCURSEL, Wparam(i32(indx)), 0)
+    cmb.selected_index = int(indx)
+}
+
 
 combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
     indx := int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
@@ -215,6 +232,19 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     SendMessage(cmb.handle, CB_DELETESTRING, 0, 0)
     // TODO - clear dynamic array of combo.
 }
+
+@private combo_set_colors :: proc(cmb: ^ComboBox, bg: bool, value: uint) {
+    if bg {
+        cmb.back_color = value
+        cmb._bk_brush = get_solid_brush(cmb.back_color)
+    } else {
+        cmb.fore_color = value
+    }
+
+    redraw_ctl1(cmb)
+}
+
+
 
 @private check_mouse_leave :: proc(cmb: ^ComboBox) -> bool {
     /* Since combo box is a combination of button, edit and list box...
@@ -262,6 +292,7 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     // cmb._old_hwnd = cmb.handle
     cmb._old_ctl_id = cmb.control_id
     cd : ComboData = get_combo_info(cmb)
+    // fmt.println("item handle ", cd.edit_hwnd)
 
     // Collecting child controls info
     if cmb._recreate_enabled {
@@ -309,6 +340,8 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
         case WM_DESTROY:
             cmb_dtor(cmb)
             remove_subclass(cmb)
+
+
 
         case CM_CTLCOMMAND :
             ncode := hiword_wparam(wp)
@@ -497,11 +530,16 @@ edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_
         case CM_CTLLCOLOR :
             if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {
                 dc_handle := direct_cast(wp, Hdc)
-                // SetBkMode(dc_handle, Transparent)
+                // fmt.println("label color ", hw)
                 if cmb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.fore_color))
                 if cmb.back_color != def_back_clr do SetBackColor(dc_handle, get_color_ref(cmb.back_color))
                 return to_lresult(cmb._bk_brush)
             }
+
+
+        // case WM_SETTEXT:
+        //     fmt.println("label set text ", lp)
+
 
         case WM_KEYDOWN : // only works in Tb_combo style
             if cmb.key_down != nil {
@@ -597,4 +635,12 @@ edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_
     }
 
     return DefSubclassProc(hw, msg, wp, lp)
+}
+
+testproc :: proc(cmb: ^ComboBox, p: $T) {
+    id := typeid_of(type_of(p))
+	info: ^runtime.Type_Info
+	info = type_info_of(id)
+    // print(typeid_of(type_of(info)))
+    print(info.id)
 }

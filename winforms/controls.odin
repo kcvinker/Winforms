@@ -1,6 +1,8 @@
 
 package winforms
 
+import "core:runtime"
+
 _global_subclass_id : int = 2001
 _global_ctl_id : Uint = 100
 
@@ -93,13 +95,12 @@ set_subclass :: proc(ctl : ^Control, fn_ptr : SUBCLASSPROC ) {
 	_global_subclass_id += 1
 }
 
-
-
 @private
 remove_subclass :: proc(ctl : ^Control) { // This will get called when control's wndproc receive wm_destroy message.
 	RemoveWindowSubclass(ctl.handle, ctl._wndproc_ptr, UintPtr(ctl._subclass_id) )
 	//ptf("Removed control - %s\n", ctl.kind)
 }
+
 
 // This is used to set the defualt font right creating the control handle.
 @private
@@ -115,9 +116,9 @@ setfont_internal :: proc(ctl : ^Control) {
 
 redraw :: proc{redraw_ctl1, redraw_ctl2}
 @private
-redraw_ctl1 :: proc(ctl : ^Control) { if ctl._is_created do InvalidateRect(ctl.handle, nil, true) }
+redraw_ctl1 :: proc(ctl : ^Control) { if ctl._is_created do InvalidateRect(ctl.handle, nil, false) }
 @private
-redraw_ctl2:: proc(ctl : Control) { if ctl._is_created do InvalidateRect(ctl.handle, nil, true) }
+redraw_ctl2:: proc(ctl : Control) { if ctl._is_created do InvalidateRect(ctl.handle, nil, false) }
 
 // Enable or disable a control or form.
 control_enable :: proc(ctl : ^Control, bstate : bool) {

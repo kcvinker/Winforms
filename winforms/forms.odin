@@ -444,6 +444,7 @@ window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> L
 
         case WM_CTLCOLORSTATIC :
             ctl_hwnd := direct_cast(lp, Hwnd)
+            // fmt.println("label color ", ctl_hwnd)
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
 
         case WM_CTLCOLORLISTBOX :
@@ -455,15 +456,17 @@ window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> L
             cmb_hwnd := find_combo_data(frm, ctl_hwnd)
             if cmb_hwnd != nil {
                 // This message is from a combo's listbox. Divert it to that combo box.
+
                 return SendMessage(cmb_hwnd, CM_COMBOLBCOLOR, wp, lp)
             } else {
                 // This message is from a normal listbox. send it to it's wndproc.
                 return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
             }
 
-            // case WM_CTLCOLORBTN :
-            //     ctl_hwnd := direct_cast(lp, Hwnd)
-            //     return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
+        case LB_GETITEMHEIGHT :
+            fmt.println("LB_GETITEMHEIGHT")
+                // ctl_hwnd := direct_cast(lp, Hwnd)
+                // return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
 
         case WM_COMMAND :
             ctl_hwnd := direct_cast(lp, Hwnd)
