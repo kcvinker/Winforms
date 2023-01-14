@@ -325,7 +325,7 @@ draw_frame_gr :: proc (hd : Hdc, rc : Rect, rgbc : RgbColor, rc_size : i32, pw :
 {
 	rct := rc
 	if rc_size != 0 do InflateRect(&rct, rc_size, rc_size )
-	clr := change_color_get_uint(rgbc, 0.5)
+	clr := change_color_get_ref(rgbc, 0.5)
 	frame_pen := CreatePen(PS_SOLID, pw, clr)
 	select_gdi_object(hd, frame_pen)
 	Rectangle(hd, rct.left, rct.top, rct.right, rct.bottom)

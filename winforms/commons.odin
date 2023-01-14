@@ -186,6 +186,13 @@ get_virtual_key :: proc(value : Lparam) -> u32 {
 get_x_lparam :: proc(lpm : Lparam) -> int { return int(i16(loword_lparam(lpm)))}
 get_y_lparam :: proc(lpm : Lparam) -> int { return int(i16(hiword_lparam(lpm)))}
 
+get_mouse_points :: proc(lpm : Lparam) -> Point { // Used in mouse messages
+	pt : Point
+	pt.x = i32(loword_lparam(lpm))
+	pt.y = i32(hiword_lparam(lpm))
+	return pt
+}
+
 
 loword_wparam :: #force_inline proc "contextless" (x : Wparam) -> Word { return Word(x & 0xffff)}
 hiword_wparam :: #force_inline proc "contextless" (x : Wparam) -> Word { return Word(x >> 16)}

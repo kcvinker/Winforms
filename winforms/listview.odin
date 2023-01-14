@@ -1,7 +1,7 @@
 
 /*
 	Created on : 20-Feb-2022 9:00:25 AM
-		Name : ListView type 
+		Name : ListView type
 		*/
 
 package winforms
@@ -30,7 +30,7 @@ import "core:runtime"
 	LVS_ALIGNTOP :: 0x0
 	LVS_ALIGNLEFT :: 0x800
 	LVS_ALIGNMASK :: 0xc00
-	
+
 
 	LVS_EX_GRIDLINES :: 0x1
 	LVS_EX_SUBITEMIMAGES :: 0x2
@@ -93,7 +93,14 @@ import "core:runtime"
 	LVN_FIRST :: 4294967196 //(U64_MAX - 100) + 1
 
 	LV_WM_SETREDRAW :: 0x000B
-	LVN_COLUMNCLICK ::      (LVN_FIRST-8) 
+	LVN_COLUMNCLICK ::      (LVN_FIRST-8)
+
+	DEF_HDR_TXT_FLAG : Uint : DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX
+
+	HDM_FIRST ::0x1200
+	HDM_LAYOUT :: (HDM_FIRST + 5)
+	HDM_HITTEST ::(HDM_FIRST + 6)
+	HDM_GETITEMRECT :: (HDM_FIRST + 7)
 
 
 	LVITEM :: struct {
@@ -110,7 +117,7 @@ import "core:runtime"
 		iGroupId : i32,
 		cColumns : u32,
 		puColumns : ^u32,
-		piColFmt  : ^i32, 
+		piColFmt  : ^i32,
 		iGroup  : i32,
 	}
 
@@ -127,29 +134,49 @@ import "core:runtime"
 		cxDefault : i32,
 		cxIdeal : i32,
 	}
+
+	HDHITTESTINFO :: struct {
+		pt : Point,
+        flags : uint,
+        iItem : int,
+	}
+
+	HD_LAYOUT :: struct {
+		prc : ^Rect,
+		pwpos : ^WINDOWPOS,
+	}
+
+
 // Constants End
 
 ListView :: struct {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a property
 	using control : Control,
 	item_alignment : enum {Left, Top},
 	column_alignment : ColumnAlignment,
-	
+
 	view_style : ListViewStyle,
 	hide_selection : bool,
-	multi_selection : bool,	
-	has_checkboxes : bool, 
-	full_row_select : bool, 
-	show_grid_lines : bool, 
-	one_click_activate : bool, 
-	hot_track_select : bool, 
+	multi_selection : bool,
+	has_checkboxes : bool,
+	full_row_select : bool,
+	show_grid_lines : bool,
+	one_click_activate : bool,
+	hot_track_select : bool,
 	edit_label : bool,
 	no_header : bool,
+	hdr_back_color, hdr_fore_color : uint,
+	hdr_height : int,
+
+	hdr_clickable : bool,
 	items : [dynamic]ListViewItem,
-	columns : [dynamic]^ListViewColumn,
+	columns : [dynamic]ListViewColumn,
 
 	_col_index : i32,
 	_index : i32,
 	_imgList : ImageList,
+	_hdr_hwnd : Hwnd,
+	_hdr_index : i32,
+	_hdr_bkbrush, _hdr_hotbrush : Hbrush,
 
 
 }
@@ -157,11 +184,14 @@ ListView :: struct {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a
 ListViewColumn :: struct {
 	text : string,
 	width : int,
-	//position : int,
+	pLvc : ^LVCOLUMN,
 	index : int,
-	has_image, 
-	image_on_right : bool,
+	image_index : int,
+	has_image, image_on_right : bool,
 	alignment : ColumnAlignment,
+	hdr_align : SimpleTextAlignment,
+	_hdr_text_flag : Uint, // For header text alignment
+
 }
 
 ListViewItem :: struct {
@@ -195,7 +225,7 @@ ColumnAlignment :: enum {left, right, center,}
 // Create a new ListView struct
 new_listview :: proc{lv_ctor1, lv_ctor2}
 
-@private 
+@private
 lv_ctor :: proc(f : ^Form, x, y, w, h : int) -> ListView {
 	if WcListViewClassW == nil {
         WcListViewClassW = to_wstring("SysListView32")
@@ -209,13 +239,19 @@ lv_ctor :: proc(f : ^Form, x, y, w, h : int) -> ListView {
 	lv.xpos = x
 	lv.ypos = y
 	lv.width = w
-	lv.height = h	
+	lv.height = h
 	lv.view_style = .Report
 	lv.show_grid_lines = true
 	//lv.multi_selection = true
 	lv.full_row_select = true
-	lv._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS  | LVS_REPORT | WS_BORDER | LVS_ALIGNLEFT | LVS_SINGLESEL
+	lv._style = WS_VISIBLE | WS_CHILD | LVS_REPORT | WS_BORDER | LVS_ALIGNLEFT | LVS_SINGLESEL
 	lv._ex_style = 0
+	lv.hdr_clickable = true
+	lv.hdr_back_color = 0xb3cccc
+	lv.hdr_fore_color = 0x000000
+	lv._hdr_index = -1
+	lv.hdr_height = 25
+
 	lv._cls_name = WcListViewClassW
 	lv._before_creation = cast(CreateDelegate) lv_before_creation
 	lv._after_creation = cast(CreateDelegate) lv_after_creation
@@ -223,23 +259,26 @@ lv_ctor :: proc(f : ^Form, x, y, w, h : int) -> ListView {
 	return lv
 }
 
-@private 
+@private
 lv_ctor1 :: proc(f : ^Form) -> ListView {
 	lv := lv_ctor(f, 10, 10, 200, 180)
 	return lv
 }
 
-@private 
+@private
 lv_ctor2 :: proc(f : ^Form, x, y, w, h : int) -> ListView {
 	lv := lv_ctor(f, x, y, w, h)
 	return lv
 }
 
-@private 
+@private
 lv_dtor :: proc(lv : ^ListView) {
 	delete(lv.items)
 	delete(lv.columns)
 	if lv._imgList.handle != nil do ImageList_Destroy(lv._imgList.handle)
+	if lv._hdr_bkbrush != nil do delete_gdi_object(lv._hdr_bkbrush)
+	if lv._hdr_hotbrush != nil do delete_gdi_object(lv._hdr_hotbrush)
+
 }
 
 
@@ -253,22 +292,26 @@ new_listview_column :: proc{lv_col_ctor1, lv_col_ctor2, lv_col_ctor3}
 lv_col_ctor1 :: proc(txt : string, width : int ) -> ListViewColumn {
 	lvc : ListViewColumn
 	lvc.text = txt
-	lvc.width = width	
+	lvc.width = width
 	lvc.has_image = false
 	lvc.image_on_right =false
+	lvc.image_index = -1
 	lvc.alignment = .left
+	lvc._hdr_text_flag = DEF_HDR_TXT_FLAG
 	//lvc.position = pos
 	return lvc
 }
 
 @private
-lv_col_ctor2 :: proc(txt : string ) -> ListViewColumn {	
+lv_col_ctor2 :: proc(txt : string ) -> ListViewColumn {
 	lvc : ListViewColumn
 	lvc.text = txt
-	lvc.width = 100	
+	lvc.width = 100
 	lvc.has_image = false
 	lvc.image_on_right =false
+	lvc.image_index = -1
 	lvc.alignment = .left
+	lvc._hdr_text_flag = DEF_HDR_TXT_FLAG
 	//lvc.position = pos
 	return lvc
 }
@@ -277,10 +320,12 @@ lv_col_ctor2 :: proc(txt : string ) -> ListViewColumn {
 lv_col_ctor3 :: proc(txt : string, width : int, col_align : ColumnAlignment  ) -> ListViewColumn {
 	lvc : ListViewColumn
 	lvc.text = txt
-	lvc.width = width	
+	lvc.width = width
 	lvc.has_image = false
 	lvc.image_on_right =false
+	lvc.image_index = -1
 	lvc.alignment = col_align
+	lvc._hdr_text_flag = DEF_HDR_TXT_FLAG
 	//lvc.position = pos
 	return lvc
 }
@@ -292,7 +337,7 @@ lv_col_ctor3 :: proc(txt : string, width : int, col_align : ColumnAlignment  ) -
 // Create new list view item.
 new_listview_item :: proc{listview_item_ctor1, listview_item_ctor2, listview_item_ctor3}
 
-@private 
+@private
 lv_item_ctor :: proc(txt : string, bgc : uint, fgc : uint, img : int = -1) -> ListViewItem {
 	lvi : ListViewItem
 	lvi.back_color = bgc
@@ -302,19 +347,19 @@ lv_item_ctor :: proc(txt : string, bgc : uint, fgc : uint, img : int = -1) -> Li
 	return lvi
 }
 
-@private 
+@private
 listview_item_ctor1 :: proc(txt : string) -> ListViewItem {
 	lvi := lv_item_ctor(txt, white, black)
 	return lvi
 }
 
-@private 
+@private
 listview_item_ctor2 :: proc(txt : string, bk_clr, fr_clr : uint) -> ListViewItem {
 	lvi := lv_item_ctor(txt, bk_clr, fr_clr)
 	return lvi
 }
 
-@private 
+@private
 listview_item_ctor3 :: proc(txt : string, img : int) -> ListViewItem {
 	lvi := lv_item_ctor(txt, white, black, img)
 	return lvi
@@ -329,12 +374,15 @@ listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 
 @private
 lv_addCol1 :: proc(lv : ^ListView, txt : string, width : int, img : bool = false, imgOnRight : bool = false) {
-	lvc : ListViewColumn 
+	lvc : ListViewColumn
 	lvc.text = txt
-	lvc.width = width	
+	lvc.width = width
 	lvc.has_image = img
 	lvc.image_on_right =imgOnRight
+	lvc.image_index = -1
 	lvc.index = int(lv._col_index)
+	lv._col_index += 1
+	lvc._hdr_text_flag = DEF_HDR_TXT_FLAG
 
 	lv_add_column(lv, &lvc)
 }
@@ -342,54 +390,60 @@ lv_addCol1 :: proc(lv : ^ListView, txt : string, width : int, img : bool = false
 @private
 lv_addCol2 :: proc(lv : ^ListView, lvc : ^ListViewColumn) {
 	lvc.index = int(lv._col_index)
+	if lvc.hdr_align != .Center do set_hdr_text_flag(lvc)
+	lv._col_index += 1
 	lv_add_column(lv, lvc)
 }
 
 @private
 lv_addCol3 :: proc(lv : ^ListView, txt : string, width : int, align : ColumnAlignment) {
-	lvc : ListViewColumn 
+	lvc : ListViewColumn
 	lvc.text = txt
-	lvc.width = width	
+	lvc.width = width
 	lvc.has_image = false
 	lvc.image_on_right = false
 	lvc.index = int(lv._col_index)
+	lvc.image_index = -1
 	lvc.alignment = align
+	lv._col_index += 1
+	lvc._hdr_text_flag = DEF_HDR_TXT_FLAG
 
 	lv_add_column(lv, &lvc)
 }
 
+// Here is the actual add column work happening.
 @private
 lv_add_column :: proc(lv : ^ListView, lvCol : ^ListViewColumn) {
 	lvc : LVCOLUMN
-	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM | LVCF_ORDER
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM
 	lvc.fmt = cast(i32) lvCol.alignment
-	lvc.cx = i32(lvCol.width)
-	lvc.pszText = to_wstring(lvCol.text)	
-	
+	lvc.cx = i32((lvCol^).width)
+	lvc.pszText = to_wstring(lvCol.text)
+
 	if lvCol.has_image {
 		lvc.mask |= LVCF_IMAGE
 		lvc.fmt |= LVCFMT_COL_HAS_IMAGES | LVCFMT_IMAGE
+		lvc.iImage = i32(lvCol.image_index)
 	}
-	
-	if lvCol.image_on_right do lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT	
-	
+
+	if lvCol.image_on_right do lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT
+
 	if lv._is_created {
-		SendMessage(lv.handle, 
-					LVM_INSERTCOLUMNW, 
-					Wparam(lv._col_index), 
+		SendMessage(lv.handle,
+					LVM_INSERTCOLUMNW,
+					Wparam(lvCol.index),
 					direct_cast(&lvc, Lparam) )
 
-		 
-		lv._col_index += 1
-		append(&lv.columns, lvCol)
-	}
+		// print("LVM_INSERTCOLUMNW res ", res, lvCol.text)
+	} else do lvCol.pLvc = &lvc
+	append(&lv.columns, lvCol^) // We need to add columns if lv is not created now.
 }
 
 
 /*-------------------------------------------------------------------------------------------------------
 *									↓ ListView Add Row functions ↓
 *--------------------------------------------------------------------------------------------------------*/
-// Add an item and sub items(if any) to list view. 
+// Add an item and sub items(if any) to list view.
 listview_add_row :: proc{lv_addrow1, lv_addrow2}
 
 @private
@@ -401,14 +455,14 @@ lv_addrow1 :: proc(lv : ^ListView, items : ..any, ) {
 		defer delete(sItems)
 		for j in items {
 			if value, is_str := j.(string) ; is_str { // Magic -- type assert
-				append(&sItems, value)				
-			} else {				
-				append(&sItems, to_str(j))				
+				append(&sItems, value)
+			} else {
+				append(&sItems, to_str(j))
 			}
 		}
 
 		lvItem := listview_item_ctor1(sItems[0])
-		listview_add_item(lv, &lvItem)	
+		listview_add_item(lv, &lvItem)
 
 		for i := 1; i < iLen; i += 1 {
 			lvi : LVITEM
@@ -416,8 +470,8 @@ lv_addrow1 :: proc(lv : ^ListView, items : ..any, ) {
 			lvi.pszText = to_wstring(to_str(sItems[i]))
 			iIndx := i32(lvItem.index)
 			SendMessage(lv.handle, LVM_SETITEMTEXT, Wparam(iIndx), direct_cast(&lvi, Lparam) )
+		}
 
-		}		
 	}
 }
 
@@ -425,9 +479,9 @@ lv_addrow1 :: proc(lv : ^ListView, items : ..any, ) {
 lv_addrow2 :: proc(lv : ^ListView, item_txt : any) {
 	sItem : string
 	if value, is_str := item_txt.(string) ; is_str { // Magic -- type assert
-		sItem = value			
+		sItem = value
 	} else {
-		sItem = to_str(item_txt)					
+		sItem = to_str(item_txt)
 	}
 	lvItem := listview_item_ctor1(sItem)
 	listview_add_item(lv, &lvItem)
@@ -453,6 +507,7 @@ listview_add_item :: proc(lv : ^ListView, lvi : ^ListViewItem) {
 		cchTextMax = i32(len(lvi.text))
 		lParam = direct_cast(lvi, Lparam)
 	SendMessage(lv.handle, LVM_INSERTITEMW, 0, direct_cast(&item, Lparam))
+	append(&lv.items, lvi^)
 	lv._index += 1
 }
 
@@ -476,9 +531,9 @@ listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any) {
 	defer delete(sItems)
 	for j in items {
 		if value, is_str := j.(string) ; is_str { // Magic -- type assert
-			append(&sItems, value)				
-		} else {			
-			append(&sItems, to_str(j))				
+			append(&sItems, value)
+		} else {
+			append(&sItems, to_str(j))
 		}
 	}
 
@@ -494,26 +549,27 @@ listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any) {
 }
 
 
-/*-------------------------------------------------------------------------------------------------------
-*									↓ General Public functions ↓
-*--------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------\
+ *									↓ General Public functions ↓
+\*--------------------------------------------------------------------------------------------------------*/
 
-// Set the column order of list view. 
-// Example - listview_set_column_order(lv, 2, 1, 0) 
+// Set the column order of list view.
+// Example - listview_set_column_order(lv, 2, 1, 0)
 // This will set the column indices in the same order.
-listview_set_column_order :: proc(lv : ListView, col_order : ..i32) {	
+listview_set_column_order :: proc(lv : ListView, col_order : ..i32) {
+	// print("set col order")
 	if lv._is_created {
 		SendMessage(lv.handle,
-					 LVM_SETCOLUMNORDERARRAY, 
+					 LVM_SETCOLUMNORDERARRAY,
 					 cast(Wparam) len(col_order),
 					 direct_cast(raw_data(col_order), Lparam))
 	}
-	
+
 }
 
 // Returns the column count of this list view
 listview_get_coulmn_count :: proc (lv : ^ListView) -> int {
-	x:= cast(int) SendMessage(lv_get_header(lv.handle), 0x1200, 0, 0) // I don't know what is this 0x1200 means.	
+	x:= cast(int) SendMessage(lv_get_header(lv.handle), 0x1200, 0, 0) // I don't know what is this 0x1200 means.
 	return x
 }
 
@@ -542,14 +598,14 @@ listview_delete_item :: proc{lv_del_item1, lv_del_item2}
 lv_del_item1 :: proc (lv : ^ListView, item : ListViewItem) {
 	if lv._is_created {
 		SendMessage(lv.handle, LVM_DELETEITEM, Wparam(i32(item.index)), 0)
-	
+
 	}
 }
 
 lv_del_item2 :: proc (lv : ^ListView, item_index : int) {
 	if lv._is_created {
 		SendMessage(lv.handle, LVM_DELETEITEM, Wparam(i32(item_index)), 0)
-	
+
 	}
 }
 
@@ -566,7 +622,7 @@ listview_delete_column :: proc (lv : ^ListView) {
 }
 
 listview_get_item :: proc (lv : ^ListView) {
-	 
+
 }
 
 listview_get_row :: proc (lv : ^ListView) -> []string {
@@ -585,8 +641,8 @@ lv_get_header :: proc(lvh : Hwnd) -> Hwnd {return cast(Hwnd) cast(uintptr) SendM
 
 
 
-@private 
-lv_adjust_styles :: proc(lv : ^ListView) {	
+@private
+lv_adjust_styles :: proc(lv : ^ListView) {
 	#partial switch lv.view_style {
 		case .Large_Icon :
 			lv._style |= LVS_ICON
@@ -595,27 +651,89 @@ lv_adjust_styles :: proc(lv : ^ListView) {
 		case .Small_Icon :
 			lv._style |= LVS_SMALLICON
 		case .List :
-			lv._style |= LVS_LIST	
-	}	
-	
+			lv._style |= LVS_LIST
+	}
+
 	if lv.edit_label do lv._style |= LVS_EDITLABELS
 	if !lv.hide_selection do lv._style |= LVS_SHOWSELALWAYS
-	if lv.no_header do lv._style |= LVS_NOCOLUMNHEADER 
-	
+	if lv.no_header do lv._style |= LVS_NOCOLUMNHEADER
+
 
 
 }
 
-@private 
+@private
 lv_set_extended_styles :: proc(lv : ^ListView) {
 	lxs : Dword
-	if lv.show_grid_lines do lxs |= LVS_EX_GRIDLINES	
+	if lv.show_grid_lines do lxs |= LVS_EX_GRIDLINES
 	if lv.has_checkboxes do lxs |= LVS_EX_CHECKBOXES
-	if lv.full_row_select do lxs |= LVS_EX_FULLROWSELECT	
+	if lv.full_row_select do lxs |= LVS_EX_FULLROWSELECT
 	if lv.one_click_activate do lxs |= LVS_EX_ONECLICKACTIVATE
 	if lv.hot_track_select do lxs |= LVS_EX_TRACKSELECT
 
 	SendMessage(lv.handle, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, Lparam(lxs) )
+}
+
+@private
+set_hdr_text_flag :: proc(lvc: ^ListViewColumn) {
+	// print("worked")
+	if lvc.hdr_align == .Left {
+		lvc._hdr_text_flag = DT_SINGLELINE | DT_VCENTER | DT_LEFT | DT_NOPREFIX
+	} else if lvc.hdr_align == .Right {
+		lvc._hdr_text_flag = DT_SINGLELINE | DT_VCENTER | DT_RIGHT | DT_NOPREFIX
+	}
+}
+
+@private
+draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> Lresult {
+
+
+	if len(lv.columns) > 0 {
+		hd_index := cast(i32) cast(uintptr) nmcd.dwItemSpec
+		col := lv.columns[hd_index]
+		// print("hdr drawing started ", col.width, hd_index)
+
+		if col.index > 0 do nmcd.rc.left += 1
+		if lv.hdr_clickable {
+
+			if (nmcd.uItemState & CDIS_SELECTED) == CDIS_SELECTED {
+				// Header is clicked. So we will change the back color.
+				FillRect(nmcd.hdc, &nmcd.rc, lv._hdr_bkbrush)
+			} else {
+				if hd_index == lv._hdr_index {
+					// Mouse pointer is on header. So we will change the back color.
+					FillRect(nmcd.hdc, &nmcd.rc, lv._hdr_hotbrush)
+				} else {
+					FillRect(nmcd.hdc, &nmcd.rc, lv._hdr_bkbrush)
+				}
+			}
+
+			if (nmcd.uItemState & CDIS_SELECTED) == CDIS_SELECTED {
+				/* Here we are mimicing dot net's same technique.
+					* We will change the rect's left and top a little bit when header got clicked.
+					* So user will feel the header is pressed. */
+				nmcd.rc.left += 2;
+				nmcd.rc.top += 2;
+			}
+		} else {
+			FillRect(nmcd.hdc, &nmcd.rc, lv._hdr_bkbrush);
+		}
+
+		// SelectObject(nmcd.hdc, this.mHdrFont.handle);
+		// SetTextColor(nmcd.hdc, get_color_ref(lv.hdr_fore_color))
+		// coltxt := to_wstring(col.text)
+		SetBkMode(nmcd.hdc, 1) // TRANSPARENT
+		res := DrawText(nmcd.hdc, to_wstring(col.text), -1, &nmcd.rc, col._hdr_text_flag)
+		// print("draw text res ", col._hdr_text_flag, col.text)
+		return CDRF_SKIPDEFAULT
+	}
+	else {
+		FillRect(nmcd.hdc, &nmcd.rc, lv._hdr_bkbrush);
+	}
+	return CDRF_DODEFAULT
+
+	// print("hdr drawing finished")
+
 }
 
 
@@ -623,41 +741,117 @@ lv_set_extended_styles :: proc(lv : ^ListView) {
 @private // This will executed right before a list view is created
 lv_before_creation :: proc(lv : ^ListView) {
 	lv_adjust_styles(lv)
+	lv._hdr_bkbrush = create_hbrush(lv.hdr_back_color)
+	lv._hdr_hotbrush = CreateSolidBrush(change_color(lv.hdr_back_color, 1.12))
+
 
 }
 
 @private // This will executed right after a list view is created
-lv_after_creation :: proc(lv : ^ListView) {	
-	set_subclass(lv, lv_wnd_proc) 
+lv_after_creation :: proc(lv : ^ListView) {
+	set_subclass(lv, lv_wnd_proc)
     lv_set_extended_styles(lv)
 	if lv.view_style == .Tile do SendMessage(lv.handle, LVM_SETVIEW, Wparam(0x0004), 0)
 	if lv._imgList.handle != nil {	// We need to set the image list to list view.
-		SendMessage(lv.handle, 
-					LVM_SETIMAGELIST, 
-					cast(Wparam) lv._imgList.image_type, 
+		SendMessage(lv.handle,
+					LVM_SETIMAGELIST,
+					cast(Wparam) lv._imgList.image_type,
 					direct_cast(lv._imgList.handle, Lparam))
 	}
+
+	if len(lv.columns) > 0 {
+		for col in lv.columns {
+			SendMessage(lv.handle, LVM_INSERTCOLUMNW, Wparam(col.index), direct_cast(col.pLvc, Lparam))
+		}
+	}
+
+	// Let's collect the header handle and subclass it.
+	lv._hdr_hwnd = Hwnd(cast(uintptr) SendMessage(lv.handle, LVM_GETHEADER, 0, 0))
+	SetWindowSubclass(lv._hdr_hwnd, SUBCLASSPROC(hdr_wnd_proc), UintPtr(_global_subclass_id), to_dwptr(lv))
+	_global_subclass_id += 1
+	// print("hdr drawing coooo ")
 }
 
 
 
 
 
-@private 
-lv_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, 
+@private
+lv_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
 												sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
 	context = runtime.default_context()
 	lv := control_cast(ListView, ref_data)
 	//display_msg(msg)
-		switch msg { 
+		switch msg {
 			case WM_DESTROY :
 				lv_dtor(lv)
 				remove_subclass(lv)
 
 			case CM_NOTIFY :
-				nmcd := direct_cast(lp, ^NMCUSTOMDRAW)	
-				if nmcd.hdr.code == LVN_COLUMNCLICK do alert2("nmcd.code" , nmcd.hdr.code)
+				nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
+				// if nmcd.hdr.code == LVN_COLUMNCLICK do alert2("nmcd.code" , nmcd.hdr.code)
 				//LVN_COLUMNCLICK
+
+			case WM_NOTIFY:
+				// Message from header.
+				nmh := direct_cast(lp, ^NMHDR)
+				switch nmh.code {
+				case NM_CUSTOMDRAW :  // Let's draw header back & fore colors
+					nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
+					switch nmcd.dwDrawStage {
+					case CDDS_PREPAINT:
+						return CDRF_NOTIFYITEMDRAW
+					case CDDS_ITEMPREPAINT:
+						// print("hdr item prepaint ")
+						return draw_header(lv, nmcd)
+						// return CDRF_SKIPDEFAULT
+					}
+
+				}
+
+
+
+		}
+	return DefSubclassProc(hw, msg, wp, lp)
+}
+
+@private
+hdr_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
+												sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
+	context = runtime.default_context()
+	lv := control_cast(ListView, ref_data)
+	// display_msg(msg)
+		switch msg {
+			case WM_DESTROY :
+				RemoveWindowSubclass(hw, hdr_wnd_proc, UintPtr(sc_id) )
+				// print("Removed header subclassing result ", res)
+
+			case WM_MOUSEMOVE:
+				hti : HDHITTESTINFO
+				hti.pt = get_mouse_points(lp)
+				lv._hdr_index = i32(SendMessage(hw, HDM_HITTEST, 0, direct_cast(&hti, Lparam)))
+
+			case WM_MOUSELEAVE:
+				lv._hdr_index = -1
+
+			case HDM_LAYOUT:
+				phl := direct_cast(lp, ^HD_LAYOUT)
+				res := DefSubclassProc(hw, msg, wp, lp)
+				phl.pwpos.cy = i32(lv.hdr_height)
+				return res
+
+			case WM_PAINT:
+				DefSubclassProc(hw, msg, wp, lp)
+				hrc : Rect
+                SendMessage(hw, HDM_GETITEMRECT, Wparam(len(lv.columns) - 1), direct_cast(&hrc, Lparam))
+                rc : Rect = {hrc.right + 1, hrc.top, i32(lv.width), hrc.bottom}
+                hdc : Hdc = GetDC(hw)
+                FillRect(hdc, &rc, lv._hdr_bkbrush)
+                ReleaseDC(hw, hdc)
+                return 0
+
+
+
 
 
 		}
