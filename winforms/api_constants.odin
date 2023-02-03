@@ -37,6 +37,9 @@ SW_SHOWMAXIMIZED :: 3
 SW_SHOW :: 5
 
 
+
+
+
 // Get window long ptr Constants
 GWL_EXSTYLE              :: -20
 GWLP_HINSTANCE           :: -6

@@ -8,13 +8,13 @@ import "core:runtime"
 
 ICC_DATE_CLASSES :: 0x100
 is_dtp_class_inited : bool = false
-WcDTPClassW : wstring 
- 
+WcDTPClassW : wstring
+
 
 //#region dtp styles
     //DTN_FIRST :: i64(-740)   //~u64(0) - 740  // 0xFFFFFFFFFFFFFD1C
     //DTN_LAST :: ~u64(0) - 745 - 1
-    //DTN_FIRST2 :: i64(-753)      //~u64(0) - 753  // 0xFFFFFFFFFFFFFD0F 
+    //DTN_FIRST2 :: i64(-753)      //~u64(0) - 753  // 0xFFFFFFFFFFFFFD0F
     //DTN_LAST2 ::  ~u64(0) - 799 - 1
     DtnFirst :: u64(4294966556)
     DTN_DATETIMECHANGE :: u64(4294966537) //DTN_FIRST2-6
@@ -79,7 +79,7 @@ DateTimePicker :: struct {
     format : DtpFormat,
     format_string : string,
     right_align : b64,
-    four_digit_year : b64,    
+    four_digit_year : b64,
     value : DateTime,
     show_week_num : b64,
     no_today_circle : b64,
@@ -90,11 +90,11 @@ DateTimePicker :: struct {
 
    // _fmt_str : string,
     _value_change_count : int,
-    _bk_brush : Hbrush,   
+    _bk_brush : Hbrush,
     _cal_style : Dword,
 
     calendar_opened,
-    value_changed,    
+    value_changed,
     calendar_closed : EventHandler,
     text_changed : DateTimeEventHandler,
 }
@@ -135,8 +135,8 @@ DateTimePicker :: struct {
 
 // End of API Types
 
-@private 
-dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker {   
+@private
+dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker {
 
     if !is_dtp_class_inited { // Then we need to initialize the date class control.
         is_dtp_class_inited = true
@@ -147,12 +147,12 @@ dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker {
 
     dtp : DateTimePicker
     dtp.kind = .Date_Time_Picker
-    dtp.parent = p    
+    dtp.parent = p
     dtp.font = p.font
     dtp.xpos = x
     dtp.ypos = y
     dtp.width = w
-    dtp.height = h  
+    dtp.height = h
     dtp._cls_name = WcDTPClassW
     dtp._before_creation = cast(CreateDelegate) dtp_before_creation
 	dtp._after_creation = cast(CreateDelegate) dtp_after_creation
@@ -163,44 +163,44 @@ dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> DateTimePicker {
 }
 
 
-@private 
+@private
 new_dtp1 :: proc(parent : ^Form) -> DateTimePicker {
     d := dtp_ctor(parent, 10, 10, 120, 30)
     return d
 }
 
-@private 
+@private
 new_dtp2 :: proc(parent : ^Form, x, y : int) -> DateTimePicker {
     d := dtp_ctor(parent, x, y, 120, 30)
     return d
 }
 
-@private 
+@private
 new_dtp3 :: proc(parent : ^Form, x, y, w, h : int) -> DateTimePicker {
-    d := dtp_ctor(parent,x, y, w, h)    
+    d := dtp_ctor(parent,x, y, w, h)
     return d
 }
 
 // DateTimePicker constructor.
 new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
 
-@private 
+@private
 set_style_internal :: proc(dtp : ^DateTimePicker) {
     switch dtp.format {
         case .Custom :
-            dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT | DTS_APPCANPARSE 
+            dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT | DTS_APPCANPARSE
         case .Long :
             dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT
         case .Short :
-            if dtp.four_digit_year { 
-                dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT 
+            if dtp.four_digit_year {
+                dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT
             } else {
-                dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT 
+                dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT
             }
         case .Time :
-            dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_TIMEFORMAT        
+            dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_TIMEFORMAT
     }
-    
+
     if dtp.show_week_num do dtp._cal_style |= MCS_WEEKNUMBERS
     if dtp.no_today_circle do dtp._cal_style |= MCS_NOTODAYCIRCLE
     if dtp.no_today do dtp._cal_style |= MCS_NOTODAY
@@ -210,7 +210,7 @@ set_style_internal :: proc(dtp : ^DateTimePicker) {
     if dtp.right_align do dtp._style |= DTS_RIGHTALIGN
     if dtp.show_updown do dtp._style ~= DTS_UPDOWN
 }
-    
+
 dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) {
     dtp.value = dt_value
     if dtp._is_created {
@@ -223,13 +223,13 @@ dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) {
 // @private get_dtp_info :: proc(dp : ^DateTimePicker) {
 //     di : DATETIMEPICKERINFO
 //     di.cbSize = size_of(di)
-//     SendMessage(dp.handle, DTM_GETDATETIMEPICKERINFO, Wparam(0), direct_cast(&di, Lparam ))    
+//     SendMessage(dp.handle, DTM_GETDATETIMEPICKERINFO, Wparam(0), direct_cast(&di, Lparam ))
 //     using dp._dtp_info
 //     tb_handle = di.hwndEdit
 //     ud_handle = di.hwndUD
 //     dd_handle = di.hwndDropDown
-//     dtp_handle = dp.handle    
-   
+//     dtp_handle = dp.handle
+
 // }
 
 // print_dtpinfo :: proc(di : DtpInfo) {
@@ -245,41 +245,46 @@ dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) {
 dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
     dtp.format_string = fmt_string
     dtp.format = .Custom
-    if dtp._is_created {        
+    if dtp._is_created {
         SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(Lparam, to_wstring(dtp.format_string)))
-    } 
+    }
 }
 
-@private 
+@private
 dtp_before_creation :: proc(dtp : ^DateTimePicker) {set_style_internal(dtp)}
 
-@private 
+@private
 dtp_after_creation :: proc(dtp : ^DateTimePicker) {
     set_subclass(dtp, dtp_wnd_proc)
-    if dtp.format == .Custom {          
+    if dtp.format == .Custom {
 		fmt_str := fmt.tprintf("%v\x00", dtp.format_string)	// Creating a null terminated string.
         SendMessage(dtp.handle, DTM_SETFORMATA, 0, convert_to(Lparam, raw_data(fmt_str)))
 		/*
 		Here, we have a strange situation. Since, we are working with unicode string, we need...
-		to use the W version functions & messages. So, here DTM_SETFORMATW is the candidate. 
+		to use the W version functions & messages. So, here DTM_SETFORMATW is the candidate.
 		But it won't work. For some unknown reason, only DTM_SETFORMATA is working here. So we need...
 		to pass a null terminated c string ptr to this function. Why MS, why ?
 		*/
-    }  
+    }
     if dtp._cal_style > 0 {
         SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._cal_style, Lparam))
-    } 
+    }
 
+}
+
+@private dtp_finalize :: proc(dtp: ^DateTimePicker, scid: UintPtr) {
+    RemoveWindowSubclass(dtp.handle, dtp_wnd_proc, scid)
 }
 
 
 
-@private 
-dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {        
+@private
+dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {
     context = runtime.default_context()
     dtp := control_cast(DateTimePicker, ref_data)
     //display_msg(msg)
-    switch msg {   
+    switch msg {
+        case WM_DESTROY: dtp_finalize(dtp, sc_id)
         case WM_PAINT :
             if dtp.paint != nil {
                 ps : PAINTSTRUCT
@@ -293,7 +298,7 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
         case CM_NOTIFY :
             nm := direct_cast(lp, ^NMHDR)
             switch nm.code {
-                case DtnUserStr :                      
+                case DtnUserStr :
                     if dtp.text_changed != nil {
                         dts := direct_cast(lp, ^NMDATETIMESTRINGW)
                         dtea : DateTimeEvent
@@ -301,7 +306,7 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
                         dtp.text_changed(dtp, &dtea )
                         // After invoking the event, send this message to set the time in dtp
                         if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&dtea.dt_struct, Lparam))
-                        
+
                     }
                 case DTN_DROPDOWN :
                     if dtp.calendar_opened != nil {
@@ -316,7 +321,7 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
                     if dtp._value_change_count == 0 {
                         dtp._value_change_count = 1
                         dtc := direct_cast(lp, ^NMDATETIMECHANGE)
-                        dtp.value = systime_to_datetime(dtc.st)                    
+                        dtp.value = systime_to_datetime(dtc.st)
                         if dtp.value_changed != nil {
                             ea := new_event_args()
                             dtp.value_changed(dtp, &ea)
@@ -335,8 +340,8 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
                     }
             }
 
-        case WM_LBUTTONDOWN:                       
-            dtp._mdown_happened = true            
+        case WM_LBUTTONDOWN:
+            dtp._mdown_happened = true
             if dtp.left_mouse_down != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.left_mouse_down(dtp, &mea)
@@ -350,15 +355,15 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
                 dtp.right_mouse_down(dtp, &mea)
             }
 
-        case WM_LBUTTONUP :     
+        case WM_LBUTTONUP :
             if dtp.left_mouse_up != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.left_mouse_up(dtp, &mea)
             }
             if dtp._mdown_happened {
                 dtp._mdown_happened = false
-                SendMessage(dtp.handle, CM_LMOUSECLICK, 0, 0)    
-            }         
+                SendMessage(dtp.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
         case CM_LMOUSECLICK :
             dtp._mdown_happened = false
@@ -367,7 +372,7 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
                 dtp.mouse_click(dtp, &ea)
                 return 0
             }
-        
+
         case WM_LBUTTONDBLCLK :
             if dtp.double_click != nil {
                 ea := new_event_args()
@@ -382,9 +387,9 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
             }
             if dtp._mrdown_happened {
                 dtp._mrdown_happened = false
-                SendMessage(dtp.handle, CM_RMOUSECLICK, 0, 0) 
+                SendMessage(dtp.handle, CM_RMOUSECLICK, 0, 0)
             }
-            
+
         case CM_RMOUSECLICK :
             dtp._mrdown_happened = false
             if dtp.right_click != nil {
@@ -397,32 +402,32 @@ dtp_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: U
             if dtp.mouse_scroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.mouse_scroll(dtp, &mea)
-            }	
-            
+            }
+
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
             if dtp._is_mouse_entered {
                 if dtp.mouse_move != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    dtp.mouse_move(dtp, &mea)                    
+                    dtp.mouse_move(dtp, &mea)
                 }
             }
             else {
                 dtp._is_mouse_entered = true
                 if dtp.mouse_enter != nil  {
                     ea := new_event_args()
-                    dtp.mouse_enter(dtp, &ea)                    
+                    dtp.mouse_enter(dtp, &ea)
                 }
             }
-        
-        case WM_MOUSELEAVE :            
-            dtp._is_mouse_entered = false
-            if dtp.mouse_leave != nil {               
-                ea := new_event_args()
-                dtp.mouse_leave(dtp, &ea)                
-            } 
 
-        
-           
+        case WM_MOUSELEAVE :
+            dtp._is_mouse_entered = false
+            if dtp.mouse_leave != nil {
+                ea := new_event_args()
+                dtp.mouse_leave(dtp, &ea)
+            }
+
+
+
 
         case : return DefSubclassProc(hw, msg, wp, lp)
     }

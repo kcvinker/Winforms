@@ -7,7 +7,7 @@ import "core:runtime"
 ICC_PROGRESS_CLASS :: 0x20
 
 // Constants
-    
+
     PBS_SMOOTH :: 0x1
     PBS_VERTICAL :: 0x4
     PBS_MARQUEE :: 0x8
@@ -32,7 +32,8 @@ ICC_PROGRESS_CLASS :: 0x20
 
 // Constants End
 
-WcProgressClassW : wstring 
+WcProgressClassW : wstring
+
 ProgressBar :: struct {
     using control : Control,
     min_value,
@@ -41,7 +42,7 @@ ProgressBar :: struct {
     style : BarStyle,
     orientation : BarAlign,
     value : int,
-    
+
 
     _theme : BarTheme,
     _is_paused : bool,
@@ -77,11 +78,11 @@ BarTheme :: enum {System_Color, Custom_Color }
     pb._before_creation = cast(CreateDelegate) pb_before_creation
 	pb._after_creation = cast(CreateDelegate) pb_after_creation
 
-    pb._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH 
+    pb._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH
     pb._ex_style = WS_EX_STATICEDGE
 
     return pb
-} 
+}
 
 @private pb_dtor :: proc(pb : ^ProgressBar) {
     if pb._hvstm != nil do CloseThemeData(pb._hvstm)
@@ -104,8 +105,8 @@ new_progressbar :: proc{pb_new1, pb_new2}
     if pb.orientation == .Vertical do pb._style |= PBS_VERTICAL
 }
 
-// Remove visual styles from progress bar. 
-// You can set back color & fore color now. 
+// Remove visual styles from progress bar.
+// You can set back color & fore color now.
 // progressbar_set_theme :: proc(pb : ^ProgressBar, border : bool, fclr : uint, bclr : uint = 0xFFFFFF) {
 //     pb._theme = .custom_color
 //     pb.fore_color = fclr
@@ -116,25 +117,25 @@ new_progressbar :: proc{pb_new1, pb_new2}
 // Increment progress bar value one step.
 progressbar_increment :: proc(pb : ^ProgressBar) {SendMessage(pb.handle, PBM_STEPIT, 0, 0)}
 
-// Start marquee animation in progress bar. 
-progressbar_start_marquee :: proc(pb : ^ProgressBar, speed : int = 30) {  
+// Start marquee animation in progress bar.
+progressbar_start_marquee :: proc(pb : ^ProgressBar, speed : int = 30) {
     if pb.style == .Marquee {
         pb._style |= PBS_MARQUEE
         SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(1), Lparam(i32(speed)))
-    }    
+    }
 }
 
 // Pause marquee animation in progress bar
-progressbar_pause_marquee :: proc(pb : ^ProgressBar) { 
-    if pb.style == .Marquee {        
+progressbar_pause_marquee :: proc(pb : ^ProgressBar) {
+    if pb.style == .Marquee {
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(0), Lparam(0))
         pb._is_paused = true
     }
 }
 
 // Restart marquee animation in a paused progress bar
-progressbar_restart_marquee :: proc(pb : ^ProgressBar) { 
+progressbar_restart_marquee :: proc(pb : ^ProgressBar) {
     if pb.style == .Marquee && pb._is_paused {
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(1), Lparam(0))
         pb._is_paused = false
@@ -142,17 +143,17 @@ progressbar_restart_marquee :: proc(pb : ^ProgressBar) {
 }
 
 // Stop marquee animation in progress bar.
-progressbar_stop_marquee :: proc(pb : ^ProgressBar) {  
+progressbar_stop_marquee :: proc(pb : ^ProgressBar) {
     if pb.style == .Marquee {
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(0), Lparam(0))
         pb._style ~= PBS_MARQUEE
-        SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )        
+        SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
     }
 }
 
-// Toggle the style of progress bar. 
+// Toggle the style of progress bar.
 // If it is a block style, it will be marquee and vice versa.
-progressbar_change_style :: proc(pb : ^ProgressBar) { 
+progressbar_change_style :: proc(pb : ^ProgressBar) {
     if pb.style == .Block {
         pb._style |= PBS_MARQUEE
         SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
@@ -165,7 +166,7 @@ progressbar_change_style :: proc(pb : ^ProgressBar) {
 }
 
 // Set the value for progress bar. Only applicable for block styles
-progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) { 
+progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) {
     if pb.style == .Block {
         SendMessage(pb.handle, PBM_SETPOS, Wparam(i32(ival)), 0)
         pb.value = ival
@@ -189,46 +190,35 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) {
 
 @private pb_after_creation :: proc(pb : ^ProgressBar) {
     pb_set_range_internal(pb)
-    
+
 }
 
 
-    
-//     if pb.handle != nil {
-//         pb._is_created = true
-//         set_subclass(pb, pb_wnd_proc) 
-//         setfont_internal(pb)
-//         pb_set_range_internal(pb)
-//         // if pb._theme == .custom_color {
-//         //     SetWindowTheme(pb.handle, empty_wstring, empty_wstring)
-//         //     SendMessage(pb.handle, PBM_SETBARCOLOR, 0, Lparam(get_color_ref(pb.fore_color)))
-//         //     if pb.back_color != 0xFFFFFF do SendMessage(pb.handle, PBM_SETBKCOLOR, 0, Lparam(get_color_ref(pb.back_color)))
-//         // }
- 
-//     }
-// }
+@private pb_finalize :: proc(pb: ^ProgressBar, scid: UintPtr) {
+    RemoveWindowSubclass(pb.handle, pb_wnd_proc, scid)
+}
+
 
 TMT_FILLCOLOR :: 3802
 DTT_COLORPROP :: 128
 DTT_SHADOWCOLOR :: 4
 
-@private pb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {    
-    
+@private pb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {
+
     context = runtime.default_context()
    // ps : PAINTSTRUCT
     //frb := CreateSolidBrush(get_color_ref(0x0000FF))
     pb := control_cast(ProgressBar, ref_data)
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY :
-            remove_subclass(pb)
+        case WM_DESTROY : pb_finalize(pb, sc_id)
 
-        
+
 
        // case WM_ERASEBKGND :
-            
+
           // if lp == 4 {
-               
+
                 // if pb._theme == .custom_color {
                 //     hdc := direct_cast(wp, Hdc)
                 //     rc := get_rect(hw)
@@ -243,8 +233,8 @@ DTT_SHADOWCOLOR :: 4
 
                 // }
            //}
-        case WM_PAINT :             
-         
+        case WM_PAINT :
+
             if pb.paint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
@@ -266,10 +256,10 @@ DTT_SHADOWCOLOR :: 4
             //         ret := DrawThemeBackgroundEx(ht, hdc, flg, 1, &ps.rcPaint, &dopt)
             //         print("dtd res - ", ret)
             //     }
-                
+
             //     EndPaint(hw, &ps)
             //     CloseThemeData(ht)
-            //     return 1 // DefSubclassProc(hw, msg, wp, lp) 
+            //     return 1 // DefSubclassProc(hw, msg, wp, lp)
             // }
            // return 0
         case WM_LBUTTONDOWN:
@@ -280,7 +270,7 @@ DTT_SHADOWCOLOR :: 4
                 pb.left_mouse_down(pb, &mea)
                 return 0
             }
-            
+
 
         case WM_RBUTTONDOWN :
             pb._mrdown_happened = true
@@ -288,7 +278,7 @@ DTT_SHADOWCOLOR :: 4
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.right_mouse_down(pb, &mea)
             }
-            
+
         case WM_LBUTTONUP :
             if pb.left_mouse_up != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -306,7 +296,7 @@ DTT_SHADOWCOLOR :: 4
                 pb.mouse_click(pb, &ea)
                 return 0
             }
-        
+
         case WM_LBUTTONDBLCLK :
             if pb.double_click != nil {
                 ea := new_event_args()
@@ -321,9 +311,9 @@ DTT_SHADOWCOLOR :: 4
             }
             if pb._mrdown_happened {
                 pb._mrdown_happened = false
-                SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0) 
+                SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0)
             }
-            
+
         case CM_RMOUSECLICK :
             pb._mrdown_happened = false
             if pb.right_click != nil {
@@ -336,7 +326,7 @@ DTT_SHADOWCOLOR :: 4
             if pb.mouse_scroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.mouse_scroll(pb, &mea)
-            }	
+            }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
             if pb._is_mouse_entered {
                 if pb.mouse_move != nil {
@@ -351,16 +341,16 @@ DTT_SHADOWCOLOR :: 4
                     pb.mouse_enter(pb, &ea)
                 }
             }
-        
+
         case WM_MOUSELEAVE :
             pb._is_mouse_entered = false
             if pb.mouse_leave != nil {
                 ea := new_event_args()
                 pb.mouse_leave(pb, &ea)
             }
-            
-                
-               
+
+
+
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

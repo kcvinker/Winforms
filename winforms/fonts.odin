@@ -1,7 +1,7 @@
 package winforms
 // import "core:fmt"
 
-_def_font_name :: "Calibri"
+_def_font_name :: "Tahoma"
 _def_font_size :: 12
 
 Font :: struct
@@ -11,29 +11,29 @@ Font :: struct
 	weight : FontWeight,
 	underline : bool,
 	italics : bool,
-	handle : Hfont,	
+	handle : Hfont,
 	_def_font_changed : bool,
 
 
 }
 
-new_font_1 :: proc() -> Font 
+new_font_1 :: proc() -> Font
 {
 	f : Font
 	f.name = _def_font_name
 	f.size = _def_font_size
-	f.weight = FontWeight.Normal	
+	f.weight = FontWeight.Normal
 	f.underline = false
 	f.italics = false
 	f._def_font_changed = false
 	return f
 }
 
-new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, fi : bool = false, fu : bool = false) -> Font 
+new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, fi : bool = false, fu : bool = false) -> Font
 {
 	f : Font
 	f.name = fn
-	f.size = fs	
+	f.size = fs
 	f.weight = fw
 	f.underline = fu
 	f.italics = fi
@@ -45,19 +45,32 @@ new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
 
 
-CreateFont_handle :: proc(fnt : ^Font, hw : Hwnd = nil) {	
+CreateFont_handle :: proc(fnt : ^Font, hw : Hwnd = nil) {
 	dc_hwnd : Hdc = GetDC(hw)
-	font_height : i32 = MulDiv(i32(fnt.size), GetDeviceCaps(dc_hwnd, LOGPIXELSY), 72)
+	font_height : Long = -MulDiv(i32(fnt.size), GetDeviceCaps(dc_hwnd, LOGPIXELSY), 72)
 	ReleaseDC(hw, dc_hwnd)
 	b_value := bool(false)
 
-	fnt.handle = CreateFont(font_height, 0, 0, 0, i32(fnt.weight), Dword(fnt.italics),
-								Dword(fnt.underline), 
-								Dword(b_value), 
-								Dword(1),
-								OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-								DEFAULT_QUALITY, DEFAULT_PITCH, to_wstring(fnt.name))
-	
+	// fnt.handle = CreateFont(font_height, 0, 0, 0, i32(fnt.weight), Dword(fnt.italics),
+	// 							Dword(fnt.underline),
+	// 							Dword(b_value),
+	// 							Dword(1),
+	// 							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+	// 							DEFAULT_QUALITY, DEFAULT_PITCH, to_wstring(fnt.name))
+	// Changed this and used this function from 19-jan-2023
+	lf : LOGFONT
+	lf.lfItalic = cast(byte)fnt.italics
+	lf.lfUnderline = cast(byte)fnt.underline
+	lf.lfFaceName = to_wstring(fnt.name)
+	lf.lfHeight = font_height
+	lf.lfWeight = cast(Long)fnt.weight
+	lf.lfCharSet = DEFAULT_CHARSET
+	lf.lfOutPrecision = OUT_DEFAULT_PRECIS
+	lf.lfClipPrecision = CLIP_DEFAULT_PRECIS
+	lf.lfQuality = DEFAULT_QUALITY
+	lf.lfPitchAndFamily = DEFAULT_PITCH
+	fnt.handle = CreateFontIndirect(&lf)
+
 }
 
 
@@ -82,12 +95,15 @@ CLIP_TT_ALWAYS        :: 32
 CLIP_DFA_DISABLE      :: 64
 CLIP_EMBEDDED         :: 128
 
+DEFAULT_CHARSET :: 1
 
 DEFAULT_QUALITY :: 0
 DRAFT_QUALITY :: 1
 PROOF_QUALITY :: 2
 NONANTIALIASED_QUALITY :: 3
 ANTIALIASED_QUALITY :: 4
+CLEARTYPE_QUALITY :: 5
+CLEARTYPE_NATURAL_QUALITY :: 6
 
 DEFAULT_PITCH  :: 0
 FIXED_PITCH    :: 1

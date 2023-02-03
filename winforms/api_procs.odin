@@ -185,7 +185,7 @@ foreign kernel32 {
                                                                       wchar_str: wstring, wchar: i32,
                                                                       multi_str: cstring, multi: i32,
                                                                       default_char: cstring, used_default_char: ^Bool) -> i32 ---
-   @(link_name="MulDiv") MulDiv :: proc(nNumber, nNumerator, nDenominator : i32) -> i32 ---
+   @(link_name="MulDiv") MulDiv :: proc(nNumber, nNumerator, nDenominator : i32) -> Long ---
    @(link_name="GetSystemTimeAsFileTime") GetSysTimeAsFileTime :: proc(pfile_time : ^FILETIME) ---
    @(link_name="GetSystemTime") GetSystemTime :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="GetLocalTime") GetLocalTime :: proc(sys_time : ^SYSTEMTIME) ---
@@ -210,6 +210,7 @@ foreign gdi32 {
                                                    iCharSet, iOutPrecision, iClipPrecision : Dword,
                                                    iQuality, iPitchAndFamily : Dword,
                                                    pszFaceName : wstring ) -> Hfont ---
+   @(link_name="CreateFontIndirectW") CreateFontIndirect :: proc(^LOGFONT) -> Hfont ---
    @(link_name="GetDeviceCaps") GetDeviceCaps :: proc(hdc: Hdc, index : i32) -> i32 ---
    @(link_name="FillRect") FillRect :: proc(hdc: Hdc, rct : ^Rect, hb : Hbrush) -> i32 ---
    @(link_name="DeleteObject") DeleteObject :: proc(hgdi_obj: Hgdiobj) -> Bool ---
@@ -235,6 +236,8 @@ foreign gdi32 {
    @(link_name="Polyline") Polyline :: proc(dch : Hdc, pArr : rawptr, #any_int cpt : i32) -> Bool ---
    @(link_name="MoveToEx") MoveToEx :: proc(dch : Hdc, #any_int x, y : i32, lppt : ^Point) -> Bool ---
    @(link_name="LineTo") LineTo :: proc(dch : Hdc, #any_int x, y : i32) -> Bool ---
+   @(link_name="RoundRect") RoundRect :: proc(dch : Hdc, left, top, right, bottom, width, height : i32) -> Bool ---
+   @(link_name="FillPath") FillPath :: proc(dch : Hdc) -> Bool ---
 
 
 } // Gdi32 library

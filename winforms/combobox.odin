@@ -73,8 +73,8 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData {
     cmb.ypos = y
     cmb.width = w
     cmb.height = h
-    cmb.back_color = def_back_clr
-    cmb.fore_color = def_fore_clr
+    cmb.back_color = app.clr_white
+    cmb.fore_color = app.clr_black
     cmb._ex_style = 0
     cmb.selected_index = -1
     cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN
@@ -99,13 +99,7 @@ new_combobox :: proc{new_combo1, new_combo2}
     return cmb
 }
 
-@private cmb_dtor :: proc(cmb : ^ComboBox) {
-    if !cmb._recreate_enabled {
-        delete_gdi_object(cmb.font.handle)
-        delete_gdi_object(cmb._bk_brush)
-        delete(cmb.items)
-    }
-}
+
 
 combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
     /* There is no other way to change the dropdown style of an existing combo box.
@@ -300,6 +294,15 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     set_rect(&cmb._myrc, i32(cmb.xpos), i32(cmb.ypos), i32(cmb.width + cmb.xpos), i32(cmb.height + cmb.ypos))
 }
 
+@private cmb_finalize :: proc(cmb: ^ComboBox, scid: UintPtr) {
+    if !cmb._recreate_enabled {
+        delete_gdi_object(cmb.font.handle)
+        delete_gdi_object(cmb._bk_brush)
+        delete(cmb.items)
+    }
+    RemoveWindowSubclass(cmb.handle, cmb_wnd_proc, scid)
+}
+
 
 @private
 cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
@@ -316,9 +319,7 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
                 EndPaint(hw, &ps)
                 return 0
             }
-        case WM_DESTROY:
-            cmb_dtor(cmb)
-            remove_subclass(cmb)
+        case WM_DESTROY: cmb_finalize(cmb, sc_id)
 
         case CM_CTLCOMMAND :
             ncode := hiword_wparam(wp)
@@ -501,8 +502,7 @@ edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_
     context = runtime.default_context()
     cmb := control_cast(ComboBox, ref_data)
     switch msg {
-        case WM_DESTROY:
-            RemoveWindowSubclass(hw, edit_wnd_proc, sc_id)
+        case WM_DESTROY: RemoveWindowSubclass(hw, edit_wnd_proc, sc_id)
 
         case CM_CTLLCOLOR :
             if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {

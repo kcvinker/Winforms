@@ -61,9 +61,6 @@ NumberPicker :: struct {
     _bg_clr_ref : ColorRef,
     _linex : i32,
 
-
-
-
     // Events
     button_paint,
     text_paint : PaintEventHandler,
@@ -96,8 +93,8 @@ NMUPDOWN :: struct {
     np.xpos = x
     np.ypos = y
     np.step = 1
-    np.back_color = def_back_clr
-    np.fore_color = def_fore_clr
+    np.back_color = app.clr_white
+    np.fore_color = app.clr_black
     np.min_range = 0
     np.max_range = 100
     np.decimal_precision = 0
@@ -115,12 +112,7 @@ NMUPDOWN :: struct {
     return np
 }
 
-@private np_dtor :: proc(np : ^NumberPicker) {
-    delete_gdi_object(np._bk_brush)
-    // RemoveWindowSubclass(np.handle, np._wndproc_ptr, UintPtr(np._subclass_id) )
-	// RemoveWindowSubclass(np._buddy_handle, np._buddy_proc, UintPtr(np._buddy_sc_id) )
 
-}
 
 @private np_ctor1 :: proc(parent : ^Form) -> NumberPicker {
     np := np_ctor(parent,10, 10, 80, 25 )
@@ -286,7 +278,10 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
 }
 
 
-
+@private np_finalize :: proc(np: ^NumberPicker, scid: UintPtr) {
+    delete_gdi_object(np._bk_brush)
+    RemoveWindowSubclass(np.handle, np_wnd_proc, scid)
+}
 
 
 @private np_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {
@@ -294,9 +289,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
     np := control_cast(NumberPicker, ref_data)
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY :
-            np_dtor(np)
-            RemoveWindowSubclass(hw, np_wnd_proc, sc_id )
+        case WM_DESTROY : np_finalize(np, sc_id)
 
         case WM_PAINT :
             if np.paint != nil {
@@ -364,8 +357,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
     tb := control_cast(NumberPicker, ref_data)
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY:
-            RemoveWindowSubclass(hw, buddy_wnd_proc, sc_id)
+        case WM_DESTROY: RemoveWindowSubclass(hw, buddy_wnd_proc, sc_id)
         case WM_PAINT :
             // if tb.paint != nil {
             //     ps : PAINTSTRUCT
@@ -375,6 +367,8 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
             //     EndPaint(hw, &ps)
             //     return 0
             // }
+            /* We are drawing the edge line over the edit border.
+             * Because, we need our edit & updown look like a single control. */
             DefSubclassProc(hw, msg, wp, lp)
             hdc : Hdc = GetDC(hw)
             DrawEdge(hdc, &tb._tbrc, BDR_SUNKENOUTER, tb._top_edge_flag) // Right code
@@ -468,13 +462,9 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
 @private set_np_subclass :: proc(np : ^NumberPicker, np_func, buddy_func : SUBCLASSPROC ) {
 	np_dwp := cast(DwordPtr)(cast(uintptr) np)
 	SetWindowSubclass(np.handle, np_func, UintPtr(_global_subclass_id), np_dwp )
-	np._subclass_id = _global_subclass_id
-	np._wndproc_ptr = np_func
 	_global_subclass_id += 1
 
 	SetWindowSubclass(np._buddy_handle, buddy_func, UintPtr(_global_subclass_id), np_dwp )
-	np._buddy_sc_id = _global_subclass_id
-	np._buddy_proc = buddy_func
 	_global_subclass_id += 1
 }
 

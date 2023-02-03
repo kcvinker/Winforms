@@ -106,18 +106,18 @@ new_calendar :: proc{new_cal1, new_cal2}
     }
 
     MCGRIDINFO :: struct {
-        cbSize : Uint,       
-        dwPart : Dword,      
-        dwFlags : Dword,      
-        iCalendar : i32,        
-        iRow : i32,        
-        iCol : i32,        
-        bSelecte : bool,       
+        cbSize : Uint,
+        dwPart : Dword,
+        dwFlags : Dword,
+        iCalendar : i32,
+        iRow : i32,
+        iCol : i32,
+        bSelecte : bool,
         stStart : SYSTEMTIME,
         stEnd : SYSTEMTIME,
-        rc : Rect,       
-        pszName : wstring,      
-        cchNam : size_t, 
+        rc : Rect,
+        pszName : wstring,
+        cchNam : size_t,
     }
 
     NMMOUSE :: struct {
@@ -143,49 +143,23 @@ new_calendar :: proc{new_cal1, new_cal2}
     set_cal_style(c)
 }
 @private cal_after_creation :: proc(cal : ^Calendar) {
-    set_subclass(cal, cal_wnd_proc) 
+    set_subclass(cal, cal_wnd_proc)
     rc : Rect
     SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(Lparam, &rc))
     SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
-    
+
 }
 
-// Create the handle of a Calendar control.
-// create_calendar :: proc(cal : ^Calendar) {    
-//     set_cal_style(cal)
-//     _global_ctl_id += 1  
-//     cal.control_id = _global_ctl_id  
-//     cal.handle = CreateWindowEx(   cal._ex_style, 
-//                                     WcCalenderClassW, //to_wstring("SysMonthCal32"), 
-//                                     to_wstring(cal.text),
-//                                     cal._style, 
-//                                     i32(cal.xpos), 
-//                                     i32(cal.ypos), 
-//                                     i32(cal.width), 
-//                                     i32(cal.height),
-//                                     cal.parent.handle, 
-//                                     direct_cast(cal.control_id, Hmenu), 
-//                                     app.h_instance, 
-//                                     nil )
-    
-//     if cal.handle != nil { 
-//         cal._is_created = true 
-//         setfont_internal(cal) 
-//         set_subclass(cal, cal_wnd_proc) 
-//         rc : Rect
-//         SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(Lparam, &rc))
-//         SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
-              
-//     }
+@private cal_finalize :: proc(cal: ^Calendar, scid: UintPtr) {
+    RemoveWindowSubclass(cal.handle, cal_wnd_proc, scid)
+}
 
-// }
-
-@private cal_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, 
+@private cal_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
                                                     sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
     context = runtime.default_context()
     cal := control_cast(Calendar, ref_data)
-   //display_msg(msg)                                 
-    switch msg {  
+   //display_msg(msg)
+    switch msg {
 
         case WM_PAINT :
             if cal.paint != nil {
@@ -196,7 +170,7 @@ new_calendar :: proc{new_cal1, new_cal2}
                 EndPaint(hw, &ps)
                 return 0
             }
-            
+
         case CM_NOTIFY :
             nm := direct_cast(lp, ^NMHDR)
             //print("nm.code - ", nm.code)
@@ -209,7 +183,7 @@ new_calendar :: proc{new_cal1, new_cal2}
                         cal.value_changed(cal, &ea)
                     }
 
-                case MCN_SELCHANGE :                    
+                case MCN_SELCHANGE :
                     nms := direct_cast(lp, ^NMSELCHANGE)
                     cal.value = systime_to_datetime(nms.stSelStart)
                     if cal.selection_changed != nil {
@@ -226,37 +200,37 @@ new_calendar :: proc{new_cal1, new_cal2}
                         cal.view_changed(cal, &ea)
                     }
             }
-        
+
          case WM_MOUSEHWHEEL:
             if cal.mouse_scroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.mouse_scroll(cal, &mea)
-            }	
-            
+            }
+
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
             if cal._is_mouse_entered {
                 if cal.mouse_move != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    cal.mouse_move(cal, &mea)                    
+                    cal.mouse_move(cal, &mea)
                 }
             } else {
                 cal._is_mouse_entered = true
                 if cal.mouse_enter != nil  {
                     ea := new_event_args()
-                    cal.mouse_enter(cal, &ea)                    
+                    cal.mouse_enter(cal, &ea)
                 }
             }
-        
-        case WM_MOUSELEAVE :                      
+
+        case WM_MOUSELEAVE :
             cal._is_mouse_entered = false
-            if cal.mouse_leave != nil {               
+            if cal.mouse_leave != nil {
                 ea := new_event_args()
-                cal.mouse_leave(cal, &ea)                
-            } 
-        
-        
-            case WM_LBUTTONDOWN:                       
-            cal._mdown_happened = true            
+                cal.mouse_leave(cal, &ea)
+            }
+
+
+            case WM_LBUTTONDOWN:
+            cal._mdown_happened = true
             if cal.left_mouse_down != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.left_mouse_down(cal, &mea)
@@ -270,24 +244,24 @@ new_calendar :: proc{new_cal1, new_cal2}
                 cal.right_mouse_down(cal, &mea)
             }
 
-        case WM_LBUTTONUP :     
+        case WM_LBUTTONUP :
             if cal.left_mouse_up != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.left_mouse_up(cal, &mea)
             }
             if cal._mdown_happened {
                 cal._mdown_happened = false
-                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0) 
-            }            
+                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0)
+            }
 
-        case CM_LMOUSECLICK :            
+        case CM_LMOUSECLICK :
             cal._mdown_happened = false
             if cal.mouse_click != nil {
                 ea := new_event_args()
                 cal.mouse_click(cal, &ea)
                 return 0
             }
-        
+
         case WM_LBUTTONDBLCLK :
             if cal.double_click != nil {
                 ea := new_event_args()
@@ -302,20 +276,21 @@ new_calendar :: proc{new_cal1, new_cal2}
             }
             if cal._mrdown_happened {
                 cal._mrdown_happened = false
-                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0) 
+                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0)
             }
-            
-        case CM_RMOUSECLICK :           
+
+        case CM_RMOUSECLICK :
             cal._mrdown_happened = false
             if cal.right_click != nil {
                 ea := new_event_args()
                 cal.right_click(cal, &ea)
                 return 0
             }
-       
+        case WM_DESTROY: cal_finalize(cal, sc_id)
 
-        
-        
+
+
+
             case :
             return DefSubclassProc(hw, msg, wp, lp)
 

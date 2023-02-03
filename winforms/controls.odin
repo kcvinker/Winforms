@@ -50,11 +50,10 @@ Control :: struct
 	_is_created : b64,
 	_is_mouse_tracking, _is_mouse_entered : bool,
 	_mdown_happened, _mrdown_happened : bool,
-	_subclass_id : int,
-	_wndproc_ptr : SUBCLASSPROC,
 	_size_incr : SizeIncrement,
 	_cls_name : wstring,
 	_before_creation, _after_creation : CreateDelegate,
+	_draw_flag: uint,
 
 
 	clr_changed : bool,
@@ -90,16 +89,10 @@ control_cast :: proc($T : typeid, refd : DwordPtr) -> ^T { return cast(^T) (cast
 @private
 set_subclass :: proc(ctl : ^Control, fn_ptr : SUBCLASSPROC ) {
 	SetWindowSubclass(ctl.handle, fn_ptr, UintPtr(_global_subclass_id), to_dwptr(ctl) )
-	ctl._subclass_id = _global_subclass_id
-	ctl._wndproc_ptr = fn_ptr
 	_global_subclass_id += 1
 }
 
-@private
-remove_subclass :: proc(ctl : ^Control) { // This will get called when control's wndproc receive wm_destroy message.
-	RemoveWindowSubclass(ctl.handle, ctl._wndproc_ptr, UintPtr(ctl._subclass_id) )
-	//ptf("Removed control - %s\n", ctl.kind)
-}
+
 
 
 // This is used to set the defualt font right creating the control handle.
@@ -245,7 +238,7 @@ set_back_color1 :: proc(ctl : ^Control, clr : uint) {
 	#partial switch ctl.kind {
 		case .Button:
 			btn := cast(^Button) ctl
-			set_button_backcolor(btn, clr)
+			btn_backcolor_control(btn, clr)
 		case .Tree_View :
 			treeview_set_back_color(ctl, clr)
 
@@ -258,12 +251,12 @@ set_back_color1 :: proc(ctl : ^Control, clr : uint) {
 }
 
 @private
-set_back_color2 :: proc(ctl : ^Control, clr : RgbColor) {
+set_back_color2 :: proc(ctl : ^Control, clr : Color) {
 	uclr := rgb_to_uint(clr)
 	#partial switch ctl.kind {
 		case .Button:
 			btn := cast(^Button) ctl
-			set_button_backcolor(btn, uclr)
+			// btn_backcolor_control(btn, uclr)
 	}
 }
 
@@ -277,7 +270,7 @@ set_fore_color1 :: proc(ctl : ^Control, clr : uint) {
 	#partial switch ctl.kind {
 		case .Button :
 			btn := cast(^Button) ctl
-			set_button_forecolor(btn, clr)
+			btn_forecolor_control(btn, clr)
 		case .Tree_View :
 			//tv := cast(^Tree_View) ctl
 			ctl.back_color = clr
@@ -288,17 +281,17 @@ set_fore_color1 :: proc(ctl : ^Control, clr : uint) {
 
 		case : // for all other controls
 			ctl.fore_color = clr
-			if ctl._is_created do InvalidateRect(ctl.handle, nil, true)
+			if ctl._is_created do InvalidateRect(ctl.handle, nil, false)
 	}
 }
 
 @private
-set_fore_color2 :: proc(ctl : ^Control, clr : RgbColor) {
+set_fore_color2 :: proc(ctl : ^Control, clr : Color) {
 	uclr := rgb_to_uint(clr)
 	#partial switch ctl.kind {
 		case .Button :
 			btn := cast(^Button) ctl
-			set_button_forecolor(btn, uclr)
+			// set_button_forecolor(btn, uclr)
 	}
 }
 
@@ -324,6 +317,117 @@ control_SetFocus :: proc(ctl : Control) {
 }
 
 set_focus :: proc(hwnd : Hwnd) {SetFocus(hwnd)}
+
+
+// Common control message handlers
+
+// Left Mouse down, up, click
+	ctrl_left_mousedown_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
+		ctl._mdown_happened = true
+		if ctl.left_mouse_down != nil {
+			mea := new_mouse_event_args(msg, wpm, lpm)
+			ctl.left_mouse_down(ctl, &mea)
+		}
+	}
+
+	ctrl_left_mouseup_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
+		if ctl._mdown_happened {
+			ctl._mdown_happened = false
+			PostMessage(ctl.handle, CM_LMOUSECLICK, 0, 0)
+		}
+		if ctl.left_mouse_up != nil {
+			mea := new_mouse_event_args(msg, wpm, lpm)
+			ctl.left_mouse_up(ctl, &mea)
+		}
+	}
+
+	ctrl_left_mouseclick_handler :: proc(ctl: ^Control) {
+		if ctl.mouse_click != nil {
+			ea := new_event_args()
+			ctl.mouse_click(ctl, &ea)
+		}
+	}
+// End section
+
+// Right mouse down, up, click
+	ctrl_right_mousedown_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
+		ctl._mdown_happened = true
+		if ctl.right_mouse_down != nil {
+			mea := new_mouse_event_args(msg, wpm, lpm)
+			ctl.right_mouse_down(ctl, &mea)
+		}
+	}
+
+	ctrl_right_mouseup_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
+		if ctl._mdown_happened {
+			ctl._mdown_happened = false
+			PostMessage(ctl.handle, CM_RMOUSECLICK, 0, 0)
+		}
+		if ctl.right_mouse_up != nil {
+			mea := new_mouse_event_args(msg, wpm, lpm)
+			ctl.right_mouse_up(ctl, &mea)
+		}
+	}
+
+	ctrl_right_mouseclick_handler :: proc(ctl: ^Control) {
+		if ctl.right_click != nil {
+			ea := new_event_args()
+			ctl.right_click(ctl, &ea)
+		}
+	}
+// End section
+
+// Mouse wheel, enter, move, leave
+	ctrl_mousewheel_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
+		if ctl.mouse_scroll != nil {
+			mea := new_mouse_event_args(msg, wpm, lpm)
+			ctl.mouse_scroll(ctl, &mea)
+		}
+	}
+
+	ctrl_mousemove_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
+		if ctl._is_mouse_entered {
+			if ctl.mouse_move != nil {
+				mea := new_mouse_event_args(msg, wpm, lpm)
+				ctl.mouse_move(ctl, &mea)
+			}
+		}
+		else {
+			ctl._is_mouse_entered = true
+			if ctl.mouse_enter != nil  {
+				ea := new_event_args()
+				ctl.mouse_enter(ctl, &ea)
+			}
+		}
+	}
+
+	ctrl_mouseleave_handler :: proc(ctl: ^Control) {
+		ctl._is_mouse_entered = false
+		if ctl.mouse_leave != nil {
+			ea := new_event_args()
+			ctl.mouse_leave(ctl, &ea)
+		}
+	}
+
+ctrl_setfocus_handler :: proc(ctl: ^Control) {
+	if ctl.got_focus != nil {
+		ea := new_event_args()
+		ctl.got_focus(ctl, &ea)
+	}
+}
+
+ctrl_killfocus_handler :: proc(ctl: ^Control) {
+	if ctl.lost_focus != nil {
+		ea := new_event_args()
+		ctl.lost_focus(ctl, &ea)
+	}
+}
+
+
+// End section
+
+
+
 
 
 

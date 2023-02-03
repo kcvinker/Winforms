@@ -393,13 +393,16 @@ set_value :: proc(tk : ^TrackBar, value: int) {
     if tkb.cust_draw do calculate_tics(tkb)
 
     // Prepare our selection range brush if needed.
-    if tkb.sel_range do tkb._sel_brush = get_solid_brush(tkb.sel_color)
+    // if tkb.sel_range do tkb._sel_brush = get_solid_brush(tkb.sel_color)
 }
 
-@private finalize_trackbar :: proc(tk : ^TrackBar) {
-    delete_gdi_object(tk._bk_brush)
-    delete_gdi_object(tk._sel_brush)
-    delete(tk._tic_data)
+
+
+@private tkb_finalize :: proc(tkb: ^TrackBar, scid: UintPtr) {
+    delete_gdi_object(tkb._bk_brush)
+    delete_gdi_object(tkb._sel_brush)
+    delete(tkb._tic_data)
+    RemoveWindowSubclass(tkb.handle, tkb_wnd_proc, scid)
 }
 
 
@@ -413,9 +416,7 @@ set_value :: proc(tk : ^TrackBar, value: int) {
     tkb := control_cast(TrackBar, ref_data)
    // display_msg(msg)
     switch msg {
-        case WM_DESTROY :
-            finalize_trackbar(tkb)
-            remove_subclass(tkb)
+        case WM_DESTROY : tkb_finalize(tkb, sc_id)
 
 
         case CM_CTLLCOLOR :

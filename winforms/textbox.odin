@@ -53,8 +53,8 @@ TextBox :: struct {
     tb.ypos = 10
     tb.font = p.font
     tb.hide_selection = true
-    tb.back_color = def_back_clr
-    tb.fore_color = def_fore_clr
+    tb.back_color = app.clr_white
+    tb.fore_color = app.clr_black
     tb.focus_rect_color = 0x007FFF
     //tb._draw_focus_rct = true
     tb._frc_ref = get_color_ref(tb.focus_rect_color)
@@ -67,10 +67,7 @@ TextBox :: struct {
     return tb
 }
 
-@private tb_dtor :: proc(tb : ^TextBox) {
-    delete_gdi_object(tb._bk_brush)
 
-}
 
 // TextBox control constructor.
 new_textbox :: proc{new_tb1, new_tb2}
@@ -106,7 +103,7 @@ new_textbox :: proc{new_tb1, new_tb2}
 
 @private set_tb_bk_clr :: proc(tb : ^TextBox, clr : uint) {
     tb.back_color = clr
-    if tb._is_created do InvalidateRect(tb.handle, nil, true)
+    if tb._is_created do InvalidateRect(tb.handle, nil, false)
 }
 
 // Select or de-select all the text in TextBox control.
@@ -142,7 +139,10 @@ textbox_clear_all :: proc(tb : ^TextBox) {
     }
 }
 
-
+@private tb_finalize :: proc(tb: ^TextBox, scid: UintPtr) {
+    delete_gdi_object(tb._bk_brush)
+    RemoveWindowSubclass(tb.handle, tb_wnd_proc, scid)
+}
 
 
 
@@ -178,7 +178,7 @@ textbox_clear_all :: proc(tb : ^TextBox) {
 
             return to_lresult(tb._bk_brush)
 
-            //-------------------------
+
 
         // case CM_CTLCOMMAND :
         //     ncode := hiword_wparam(wp)
@@ -325,9 +325,7 @@ textbox_clear_all :: proc(tb : ^TextBox) {
             }
 
 
-        case WM_DESTROY:
-            tb_dtor(tb)
-            remove_subclass(tb)
+        case WM_DESTROY: tb_finalize(tb, sc_id)
 
 
 

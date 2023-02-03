@@ -4,6 +4,7 @@ package winforms
 
 import "core:fmt"
 import "core:runtime"
+
 nph : Hwnd
 // Some better window colors
 /*
@@ -14,11 +15,17 @@ nph : Hwnd
     0xF0FFF0
     0xEEEEE4
 */
-def_window_color :: 0xF5F5F5
-def_font_name :: "Calibri"
-def_font_size :: 12
+def_window_color :uint: 0xF5F5F5
+def_fore_color :uint: 0x000000
+pure_white :uint: 0xFFFFFF
+pure_black :uint: 0x000000
+def_font_name :: "Tahoma"
+def_font_size :: 11
 empty_wstring := to_wstring(" ") // This is just for testing purpose. Remove it when you finished this lib.
 app := start_app() // Global variable for storing data needed to create a window.
+def_bgc : Color
+def_fgc : Color
+
 //mcd : MouseClickData
 
 /*
@@ -37,6 +44,8 @@ Application :: struct
     start_state : FormState,
     global_font : Font,
     iccx : INITCOMMONCONTROLSEX,
+    clr_white : uint,
+    clr_black : uint,
     //_back_color : uint,
 }
 
@@ -54,6 +63,10 @@ start_app :: proc() -> Application
     appl.iccx.dwIcc = ICC_STANDARD_CLASSES
     InitCommonControlsEx(&appl.iccx)    // Iinitializing standard common controls.
     // fmt.println("init commoms")
+    // def_bgc = new_color(def_window_color)
+    // def_fgc = new_color(def_fore_color)
+    appl.clr_white = pure_white
+    appl.clr_black = pure_black
     return appl
 }
 
@@ -78,8 +91,7 @@ Form :: struct
     closed : EventHandler,
 
     _is_loaded : bool,
-    _gradient_style : GradientStyle,
-    _gradient_color : GradientColors,
+    _gdraw : FormGradient,
     _draw_mode : FormDrawMode,
     _cdraw_childs : [dynamic]Hwnd,
     _udraw_ids : map[Uint]Hwnd,
@@ -109,7 +121,8 @@ StartPosition :: enum
 
 FormStyle :: enum { Default, Fixed_Single, Fixed_3D, Fixed_Dialog, Fixed_Tool, Sizable_Tool, }
 FormState :: enum {Normal = 1, Minimized, Maximized}
-GradientColors :: struct {color1, color2 : RgbColor,}
+FormGradient :: struct {c1, c2 : Color, t2b : bool, }
+
 
 new_form :: proc{new_form1, new_form2}
 
@@ -129,7 +142,8 @@ new_form_internal :: proc(t : string = "", w : int = 500, h : int = 400) -> Form
     f.font = new_font()
     f._draw_mode = .Default
     f.back_color = def_window_color
-    f._gradient_style = .Top_To_Bottom
+    f.fore_color = app.clr_black
+
     f.window_state = .Normal
     f._udraw_ids = make(map[Uint]Hwnd)
     return  f
@@ -157,6 +171,8 @@ form_dtor :: proc(frm : ^Form)
     delete(frm._cdraw_childs)
     // delete(frm._combo_list)
     delete(frm._combo_data)
+
+
 }
 
 @private
@@ -186,7 +202,7 @@ set_form_font_internal :: proc(frm : ^Form)
 create_form :: proc(frm : ^Form )
 {
     if app.main_handle == nil {register_class()}
-    if frm.back_color != def_window_color { frm._draw_mode = .flat_color }
+    if frm.back_color != def_window_color do frm._draw_mode = .flat_color
     set_start_position(frm)
     set_form_style(frm)
     frm.handle = CreateWindowEx(  frm._ex_style,
@@ -243,13 +259,13 @@ print_point :: proc(mea : ^MouseEventArgs) {
 }
 
 // Set the colors to draw a gradient background in form.
-set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, style : GradientStyle = .Top_To_Bottom)
+set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint, top_bottom := true)
 {
-    f._gradient_color.color1 = new_rgb_color(clr1)
-    f._gradient_color.color2 = new_rgb_color(clr2)
+    f._gdraw.c1 = new_color(clr1)
+    f._gdraw.c2 = new_color(clr2)
+    f._gdraw.t2b = top_bottom
     f._draw_mode = .gradient
-    f._gradient_style = style
-    if f._is_created do InvalidateRect(f.handle, nil, true)
+    if f._is_created do InvalidateRect(f.handle, nil, false)
 }
 
 
@@ -270,7 +286,7 @@ register_class :: proc()
     win_class.lpszClassName = to_wstring(app.class_name)
 
     res := RegisterClassEx(&win_class)
-    //print("I have reached here")
+    print("size_of(NMCUSTOMDRAW) ", size_of(NMCUSTOMDRAW))
     if res == 0 {print("reg window class error -- ", GetLastError())}
     //icc_ex := INITCOMMONCONTROLSEX{dw_size = size_of(INITCOMMONCONTROLSEX), dw_icc = ICC_STANDARD_CLASSES}
     //InitCommonControlsEx(&icc_ex)
@@ -352,8 +368,11 @@ set_back_clr_internal :: proc(f : ^Form, hdc : Hdc) {
     rct : Rect
     hbr : Hbrush
     GetClientRect(f.handle, &rct)
-    if f._draw_mode == .flat_color { hbr = CreateSolidBrush(get_color_ref(f.back_color)) }
-    else if f._draw_mode == .gradient { hbr = create_gradient_brush(f._gradient_color, f._gradient_style, hdc, rct) }
+    if f._draw_mode == .flat_color {
+        hbr = CreateSolidBrush(get_color_ref(f.back_color))
+    } else if f._draw_mode == .gradient {
+        hbr = create_gradient_brush(hdc, rct, f._gdraw.c1, f._gdraw.c2, f._gdraw.t2b)
+    }
     FillRect(hdc, &rct, hbr)
     DeleteObject(Hgdiobj(hbr))
 }
@@ -577,8 +596,8 @@ window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> L
                 frm._is_mouse_tracking = true
                 track_mouse_move(hw)
                 if !frm._is_mouse_entered {
+                    frm._is_mouse_entered = true
                     if frm.mouse_enter != nil {
-                        frm._is_mouse_entered = true
                         ea := new_event_args()
                         frm.mouse_enter(frm, &ea)
                     }
@@ -705,13 +724,8 @@ window_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam ) -> L
 
 
         case WM_NOTIFY :
-
-            //nmcd := get_lparam_value(lp, ^NMCUSTOMDRAW)
             nm := direct_cast(lp, ^NMHDR)
             return SendMessage(nm.hwndFrom, CM_NOTIFY, wp, lp )
-
-            //-------------------------------------------------------
-            //is_hwnd := slice.contains(frm._cdraw_childs[:], nmcd.hdr.hwnd_from )
 
         case WM_DESTROY:
             if frm.closed != nil {

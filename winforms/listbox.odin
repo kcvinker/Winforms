@@ -32,8 +32,8 @@ ListBox :: struct {
     lbx.height = h
     lbx.xpos = x
     lbx.ypos = y
-    lbx.back_color = def_back_clr
-    lbx.fore_color = def_fore_clr
+    lbx.back_color = app.clr_white
+    lbx.fore_color = app.clr_black
     lbx._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
     lbx._ex_style = 0
     lbx._cls_name = WcListBoxW
@@ -60,11 +60,7 @@ new_listbox :: proc{lbox_ctor1, lbox_ctor2, lbox_ctor3}
     return lb
 }
 //----------------------------------------------------------------------
-@private lbox_dtor :: proc(lbx : ^ListBox) {
-    delete(lbx.items)
-    delete(lbx._private_sel_indices)
-    delete_gdi_object(lbx._bk_brush)
-}
+
 
 
 
@@ -393,15 +389,21 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
     }
 }
 
+@private lbx_finalize :: proc(lbx: ^ListBox, scid: UintPtr) {
+    delete(lbx.items)
+    delete(lbx._private_sel_indices)
+    delete_gdi_object(lbx._bk_brush)
+    RemoveWindowSubclass(lbx.handle, lbx_wnd_proc, scid)
+}
+
 @private lbx_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
                                                     sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
     context = runtime.default_context()
     lbx := control_cast(ListBox, ref_data)
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY :
-            lbox_dtor(lbx)
-            remove_subclass(lbx)
+        case WM_DESTROY : lbx_finalize(lbx, sc_id)
+
 
         case CM_CTLLCOLOR :
             if lbx.fore_color != def_fore_clr || lbx.back_color != def_back_clr {

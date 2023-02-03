@@ -1,5 +1,6 @@
 package winforms
 import "core:fmt"
+import "core:runtime"
 // My Own messages
 
 	ptf :: fmt.printf
@@ -245,11 +246,11 @@ array_search :: proc{	dynamic_array_search,
 
 // This proc will return an Hbrush to paint the window or a button in gradient colors.
 @private
-create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc, rct : Rect) -> Hbrush {
+create_gradient_brush :: proc(hdc : Hdc, rct : Rect, c1, c2 : Color, t2b : bool = true) -> Hbrush {
 	t_brush : Hbrush
 	mem_hdc : Hdc = CreateCompatibleDC(hdc)
 	hbmp : Hbitmap = CreateCompatibleBitmap(hdc, rct.right, rct.bottom)
-	loop_end : i32 = rct.bottom if gs == .Top_To_Bottom else rct.right
+	loop_end : i32 = rct.bottom if t2b else rct.right
 
 	SelectObject(mem_hdc, Hgdiobj(hbmp))
 	i : i32
@@ -257,15 +258,15 @@ create_gradient_brush :: proc(gc : GradientColors, gs : GradientStyle, hdc : Hdc
 		t_rct : Rect
 		r, g, b : uint
 
-		r = gc.color1.red + uint((i * i32(gc.color2.red - gc.color1.red) / loop_end))
-        g = gc.color1.green + uint((i * i32(gc.color2.green - gc.color1.green) / loop_end))
-        b = gc.color1.blue + uint((i * i32(gc.color2.blue - gc.color1.blue) / loop_end))
+		r = c1.red + uint((i * i32(c2.red - c1.red) / loop_end))
+        g = c1.green + uint((i * i32(c2.green - c1.green) / loop_end))
+        b = c1.blue + uint((i * i32(c2.blue - c1.blue) / loop_end))
 		t_brush = CreateSolidBrush(get_color_ref(r, g, b))
 
-		t_rct.left = 0 if gs == .Top_To_Bottom else i
-		t_rct.top = i if gs == .Top_To_Bottom else 0
-		t_rct.right = rct.right if gs == .Top_To_Bottom else i + 1
-		t_rct.bottom = i + 1 if gs == .Top_To_Bottom else loop_end
+		t_rct.left = 0 if t2b else i
+		t_rct.top = i if t2b else 0
+		t_rct.right = rct.right if t2b else i + 1
+		t_rct.bottom = i + 1 if t2b else loop_end
 		FillRect(mem_hdc, &t_rct, t_brush)
 		DeleteObject(Hgdiobj(t_brush))
 	}
@@ -335,6 +336,8 @@ create_control :: proc(c : ^Control) {
         c._is_created = true
         setfont_internal(c)
 		c._after_creation(c)
+		// context = runtime.default_context()
+
     }
 }
 

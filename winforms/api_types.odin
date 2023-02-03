@@ -65,19 +65,19 @@ HimageList :: distinct Handle
 WNDPROC  :: distinct #type proc "std" (Hwnd, u32, Wparam, Lparam) -> Lresult
 SUBCLASSPROC :: distinct #type proc "std" (Hwnd, u32, Wparam, Lparam, UintPtr, DwordPtr) -> Lresult
 
-WNDCLASSEXW :: struct { 
-	cbSize, 
-	style : u32, 
+WNDCLASSEXW :: struct {
+	cbSize,
+	style : u32,
 	lpfnWndProc: WNDPROC,
-	cbClsExtra, 
-	cbWndExtra: i32, 
-	hInstance: Hinstance, 
-	hIcon: Hicon, 
-	hCursor: Hcursor, 
-	hbrBackground: Hbrush, 
-	lpszMenuName, 
-	lpszClassName: wstring, 
-	hIconSm: Hicon, 
+	cbClsExtra,
+	cbWndExtra: i32,
+	hInstance: Hinstance,
+	hIcon: Hicon,
+	hCursor: Hcursor,
+	hbrBackground: Hbrush,
+	lpszMenuName,
+	lpszClassName: wstring,
+	hIconSm: Hicon,
 }
 
 Point :: struct { x, y: i32,}
@@ -88,7 +88,7 @@ TRACKMOUSEEVENT :: struct {
 	cbSize : Dword,
 	dwFlags : Dword,
 	hwndTrack : Hwnd,
-	dwHoverTime : Dword,	
+	dwHoverTime : Dword,
 }
 
 
@@ -125,8 +125,8 @@ INITCOMMONCONTROLSEX :: struct {
 Size :: struct {width : i32, height : i32,}
 
 DRAWITEMSTRUCT :: struct {
-	ctlType : Uint, 
-	ctlID: Uint, 
+	ctlType : Uint,
+	ctlID: Uint,
 	itemID, itemAction, itemState : Uint,
 	hwndItem : Hwnd,
 	hDC : Hdc,
@@ -143,6 +143,24 @@ PAINTSTRUCT :: struct {
 	rgbReserved : [32]byte,
 }
 
+LOGFONT :: struct {
+	lfHeight : Long,
+	lfWidth : Long,
+	lfEscapement : Long,
+	lfOrientation : Long,
+	lfWeight : Long,
+	lfItalic : byte,
+	lfUnderline : byte,
+	lfStrikeOut : byte,
+	lfCharSet : byte,
+	lfOutPrecision : byte,
+	lfClipPrecision : byte,
+	lfQuality : byte,
+	lfPitchAndFamily : byte,
+	lfFaceName : [^]Wchar,
+}
+
+
 COMBOBOXINFO :: struct {
 	cbSize : Dword,
 	rcItem,
@@ -150,7 +168,7 @@ COMBOBOXINFO :: struct {
 	stateButton : Dword,
 	hwndCombo,
 	hwndItem,
-	hwndList : Hwnd,	
+	hwndList : Hwnd,
 }
 
 FILETIME :: struct {
@@ -172,7 +190,7 @@ SYSTEMTIME :: struct{
 DTBGOPTS :: struct {
 	dwSize : Dword,
 	dwFlags : Dword,
-	rcClip : Rect,	
+	rcClip : Rect,
 }
 
 WINDOWPOS :: struct {
