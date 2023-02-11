@@ -25,12 +25,13 @@ import "core:strconv"
     EN_UPDATE :: 1024
     UDN_FIRST :: (UINT_MAX - 721)
     UDN_DELTAPOS :: (UDN_FIRST - 1)
+    swp_flag : Dword: SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER
 
 // Constants
 
 NumberPicker :: struct {
     using control : Control,
-    button_alignment : ButtonAlignment,
+    btn_on_left: bool,
     text_alignment : SimpleTextAlignment,
     min_range, max_range : f32,
     has_separator : bool,
@@ -127,7 +128,7 @@ NMUPDOWN :: struct {
 new_numberpicker :: proc{np_ctor1, np_ctor2}
 
 @private set_np_styles :: proc(np : ^NumberPicker) {
-    if np.button_alignment == .Left {
+    if np.btn_on_left {
         np._style ~= UDS_ALIGNRIGHT
         np._style |= UDS_ALIGNLEFT
         np._top_edge_flag = BF_TOP
@@ -189,23 +190,19 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
      * There is no magic in it. We just create a big Rect. It can comprise the edit & updown.
      * So, we will map the mouse points into parent's client rect size. Then we will
      * check if those points are inside our big rect. If yes, mouse is on us. Otherwise mouse leaved. */
-    swp_flag : Dword = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER
+    SetRect(&np._myrc, i32(np.xpos), i32(np.ypos), i32(np.xpos + np.width), i32(np.ypos + np.height))
     np._tbrc = get_rect(np._buddy_handle) // Textbox rect
     np._udrc = get_rect(np.handle) // Updown btn rect
+}
 
-    // This is our BIG rect.
-    np._myrc.left = i32(np.xpos)
-    np._myrc.top = i32(np.ypos)
-    np._myrc.right =  i32(np.xpos + np.width)
-    np._myrc.bottom = i32(np.ypos + np.height)
-
+@private resize_buddy :: proc(np : ^NumberPicker) {
     // Here we are adjusting the edit control near to updown control.
-    if np.button_alignment == .Left {
+    if np.btn_on_left {
         SetWindowPos(np._buddy_handle, nil, i32(np.xpos) + np._udrc.right, i32(np.ypos), np._tbrc.right, np._tbrc.bottom, swp_flag)
         np._linex = np._tbrc.left
     } else {
-        SetWindowPos(np._buddy_handle, nil, i32(np.xpos), i32(np.ypos), np._tbrc.right - 1, np._tbrc.bottom, swp_flag)
-        np._linex = np._tbrc.right - 2
+        SetWindowPos(np._buddy_handle, nil, i32(np.xpos), i32(np.ypos), np._tbrc.right - 2, np._tbrc.bottom, swp_flag)
+        np._linex = np._tbrc.right - 3
     }
 }
 
@@ -215,20 +212,6 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
 }
 
 
-// @private check_updated_text :: proc(np : ^NumberPicker) {
-//     // Sometimes user wants to directly type text into edit box.
-//     // In that situations, we need to take special care in processing that text.
-//     // Here, we are collecting users input from WM_KEYDOWN message and keep it...
-//     // in "_updated_text" variable.
-//     new_val, _ := strconv.parse_f32(np._updated_text)
-//     if new_val > np.max_range {
-//         np.value = np.max_range
-//     } else if new_val < np.min_range {
-//         np.value = np.min_range
-//     } else do np.value = new_val
-//     wst := fmt.tprintf(np.format_string, np.value)
-//     SetWindowText(np._buddy_handle, to_wstring(wst))
-// }
 
 @private np_before_creation :: proc(np : ^NumberPicker) {
     if !is_np_inited {
@@ -261,16 +244,19 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
                                         nil )
 
     if np.handle != nil && np._buddy_handle != nil {
-        SendMessage(np.handle, UDM_SETBUDDY, convert_to(Wparam, np._buddy_handle), 0)
+        // Hwnd oldBuddy = Hwnd(SendMessage(np.handle, UDM_SETBUDDY, convert_to(Wparam, np._buddy_handle), 0))
         set_np_subclass(np, np_wnd_proc, buddy_wnd_proc)
         if np.font.handle != np.parent.font.handle || np.font.handle == nil do CreateFont_handle(&np.font, np._buddy_handle)
         SendMessage(np._buddy_handle, WM_SETFONT, Wparam(np.font.handle), Lparam(1))
 
-        SendMessage(np.handle, UDM_SETBUDDY, Wparam(np._buddy_handle), 0)
+        usb := SendMessage(np.handle, UDM_SETBUDDY, Wparam(np._buddy_handle), 0)
+        oldBuddy : Hwnd = direct_cast(usb, Hwnd)
         SendMessage(np.handle, UDM_SETRANGE32, Wparam(np.min_range), Lparam(np.max_range))
 
         if np.format_string == "" do np.format_string = fmt.tprintf("%%.%df", np.decimal_precision)
         set_rects_and_size(np)
+        resize_buddy(np)
+        if oldBuddy != nil do SendMessage(oldBuddy, CM_BUDDY_RESIZE, 0, 0)
         np_display_value_internal(np)
 
     }
@@ -451,6 +437,8 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) {
                     tb.mouse_leave(tb, &ea)
                 }
             }
+
+        case CM_BUDDY_RESIZE: resize_buddy(tb)
 
 
         case : return DefSubclassProc(hw, msg, wp, lp)
