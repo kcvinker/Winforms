@@ -2,7 +2,7 @@
 
 package winforms
 import "core:runtime"
-// import "core:fmt"
+import "core:fmt"
 
 ICC_PROGRESS_CLASS :: 0x20
 
@@ -42,11 +42,14 @@ ProgressBar :: struct {
     style : BarStyle,
     orientation : BarAlign,
     value : int,
+    show_percentage : bool,
 
 
     _theme : BarTheme,
     _is_paused : bool,
     _hvstm : Htheme,
+    speed : i32,
+
 
 
 
@@ -73,6 +76,8 @@ BarTheme :: enum {System_Color, Custom_Color }
     pb.min_value = 0
     pb.max_value = 100
     pb.step = 1
+    pb.speed = 30
+    pb.style = .Block
     pb._theme = .System_Color
     pb._cls_name = WcProgressClassW
     pb._before_creation = cast(CreateDelegate) pb_before_creation
@@ -115,13 +120,17 @@ new_progressbar :: proc{pb_new1, pb_new2}
 // }
 
 // Increment progress bar value one step.
-progressbar_increment :: proc(pb : ^ProgressBar) {SendMessage(pb.handle, PBM_STEPIT, 0, 0)}
+progressbar_increment :: proc(this : ^ProgressBar) {
+    if this._is_created {
+        if (this.value == this.max_value) {this.value = this.step} else {this.value += this.step}
+        SendMessage(this.handle, PBM_STEPIT, 0, 0)
+    }
+
+}
 
 // Start marquee animation in progress bar.
 progressbar_start_marquee :: proc(pb : ^ProgressBar, speed : int = 30) {
     if pb.style == .Marquee {
-        pb._style |= PBS_MARQUEE
-        SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(1), Lparam(i32(speed)))
     }
 }
@@ -144,32 +153,38 @@ progressbar_restart_marquee :: proc(pb : ^ProgressBar) {
 
 // Stop marquee animation in progress bar.
 progressbar_stop_marquee :: proc(pb : ^ProgressBar) {
-    if pb.style == .Marquee {
+    if pb._is_created && pb.style == .Marquee  {
         SendMessage(pb.handle, PBM_SETMARQUEE, Wparam(0), Lparam(0))
-        pb._style ~= PBS_MARQUEE
-        SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
+        // pb._style ~= PBS_MARQUEE
+        // SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
     }
 }
 
 // Toggle the style of progress bar.
 // If it is a block style, it will be marquee and vice versa.
-progressbar_change_style :: proc(pb : ^ProgressBar) {
-    if pb.style == .Block {
-        pb._style |= PBS_MARQUEE
-        SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
-        pb.style = .Marquee
-    } else {
-        pb._style ~= PBS_MARQUEE
-        SetWindowLongPtr(pb.handle, GWL_STYLE, LongPtr(pb._style) )
-        pb.style = .Block
+progressbar_change_style :: proc(this : ^ProgressBar, style: BarStyle, marqueeSpeed: i32 = 0) {
+    if style != this.style && this._is_created {
+        this.value = 0
+        if style == .Block {
+            this._style ~= PBS_MARQUEE
+            this._style |= PBS_SMOOTH
+        } else {
+            this._style ~= PBS_SMOOTH
+            this._style |= PBS_MARQUEE
+        }
+        SetWindowLongPtr(this.handle, GWL_STYLE, LongPtr(this._style) )
+        if style == .Marquee do SendMessage(this.handle, PBM_SETMARQUEE, Wparam(1), Lparam(this.speed));
     }
+    if marqueeSpeed != 0 do this.speed = marqueeSpeed
+    this.style = style
 }
 
 // Set the value for progress bar. Only applicable for block styles
 progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) {
-    if pb.style == .Block {
-        SendMessage(pb.handle, PBM_SETPOS, Wparam(i32(ival)), 0)
+    if pb._is_created && pb.style == .Block {
         pb.value = ival
+        SendMessage(pb.handle, PBM_SETPOS, Wparam(i32(ival)), 0)
+
     }
 }
 
@@ -184,12 +199,39 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int) {
     SendMessage(pb.handle, PBM_SETSTEP, Wparam(i32(pb.step)), 0)
 }
 
+@private pb_draw_percentage :: proc(this: ^ProgressBar, hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam) -> Lresult {
+
+    if this.show_percentage && this.style != .Marquee {
+        ret := DefSubclassProc(hw, msg, wp, lp)
+        ss:Size
+        vtext:= fmt.tprintf("%d%%", this.value)
+        tlen:= i32(len(vtext))
+        wtext:= to_wstring(vtext)
+        hdc: Hdc = GetDC(hw)
+        defer ReleaseDC(hw, hdc)
+        SelectObject(hdc, Hgdiobj(this.font.handle))
+        GetTextExtentPoint32(hdc, wtext, tlen, &ss)
+        x: i32 = (i32(this.width) - ss.width) / 2;
+        y: i32 = (i32(this.height) - ss.height) / 2;
+        SetBkMode(hdc, 1);
+        SetTextColor(hdc, get_color_ref(this.fore_color));
+        TextOut(hdc, x, y, wtext, tlen)
+        return ret
+    } else {
+
+        return DefSubclassProc(hw, msg, wp, lp)
+    }
+
+}
+
 @private pb_before_creation :: proc(pb : ^ProgressBar) {
     pb_adjust_styles(pb)
 }
 
 @private pb_after_creation :: proc(pb : ^ProgressBar) {
+    set_subclass(pb, pb_wnd_proc)
     pb_set_range_internal(pb)
+
 
 }
 
@@ -206,62 +248,22 @@ DTT_SHADOWCOLOR :: 4
 @private pb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {
 
     context = runtime.default_context()
-   // ps : PAINTSTRUCT
-    //frb := CreateSolidBrush(get_color_ref(0x0000FF))
     pb := control_cast(ProgressBar, ref_data)
     //display_msg(msg)
     switch msg {
         case WM_DESTROY : pb_finalize(pb, sc_id)
 
+        case WM_PAINT : return pb_draw_percentage(pb, hw, msg, wp, lp)
 
-
-       // case WM_ERASEBKGND :
-
-          // if lp == 4 {
-
-                // if pb._theme == .custom_color {
-                //     hdc := direct_cast(wp, Hdc)
-                //     rc := get_rect(hw)
-                //     ht := OpenThemeData(hw, to_wstring("PROGRESSS"))
-                //     cref : ColorRef
-                //     iflag := i32(PBThemeData.PP_BAR)
-                //     ret := GetThemeColor(ht, hdc, iflag, 1, TMT_FILLCOLOR, &cref)
-                //     print("dtd res - ", ret)
-                //     ptf("pb color - %X\n", cref)
-                //     CloseThemeData(ht)
-                //     return 0
-
-                // }
-           //}
-        case WM_PAINT :
-
-            if pb.paint != nil {
-                ps : PAINTSTRUCT
-                hdc := BeginPaint(hw, &ps)
-                pea := new_paint_event_args(&ps)
-                pb.paint(pb, &pea)
-                EndPaint(hw, &ps)
-                return 0
-            }
-            // if pb._theme == .custom_color {
+            // if pb.paint != nil {
             //     ps : PAINTSTRUCT
             //     hdc := BeginPaint(hw, &ps)
-            //     ht := OpenThemeData(hw, to_wstring("PROGRESSS"))
-            //     flg := i32(PBTM.PP_CHUNK)
-            //     if ht != nil {
-            //         dopt : DTBGOPTS
-            //         dopt.dwSize = size_of(dopt)
-            //         dopt.dwFlags |= u32(128) | u32(4)
-            //         dopt.rcClip = ps.rcPaint
-            //         ret := DrawThemeBackgroundEx(ht, hdc, flg, 1, &ps.rcPaint, &dopt)
-            //         print("dtd res - ", ret)
-            //     }
-
+            //     pea := new_paint_event_args(&ps)
+            //     pb.paint(pb, &pea)
             //     EndPaint(hw, &ps)
-            //     CloseThemeData(ht)
-            //     return 1 // DefSubclassProc(hw, msg, wp, lp)
+            //     return 0
             // }
-           // return 0
+
         case WM_LBUTTONDOWN:
            // pb._draw_focus_rct = true
             pb._mdown_happened = true
