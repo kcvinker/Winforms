@@ -3,28 +3,25 @@ import "core:runtime"
 import "core:fmt"
 //import "core:slice"
 
-WcListBoxW : wstring
+WcListBoxW : wstring = L("ListBox")
 
 ListBox :: struct {
     using control : Control,
     items : [dynamic]string,
-    has_sort : b64,
-    no_selection : b64,
-    multi_selection : b64,
-    multi_column : b64,
-    key_preview : b64,
-
-    _private_sel_indices : [dynamic]i32,
+    hasSort : b64,
+    noSelection : b64,
+    multiSelection : b64,
+    multiColumn : b64,
+    keyPreview : b64,
+    _selIndices : [dynamic]i32,
     _dummyIndex : int,
-    _bk_brush : Hbrush,
-
-    selection_changed : EventHandler,
-
+    _bkBrush : HBRUSH,
+    onSelectionChanged : EventHandler,
 }
 
-@private lbox_ctor :: proc(p : ^Form, x, y, w, h : int) -> ListBox {
-    if WcListBoxW == nil do WcListBoxW = to_wstring("ListBox")
-    lbx : ListBox
+@private lbox_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^ListBox {
+    // if WcListBoxW == nil do WcListBoxW = to_wstring("ListBox")
+    lbx := new(ListBox)
     lbx.kind = .List_Box
     lbx.parent = p
     lbx.font = p.font
@@ -32,13 +29,13 @@ ListBox :: struct {
     lbx.height = h
     lbx.xpos = x
     lbx.ypos = y
-    lbx.back_color = app.clr_white
-    lbx.fore_color = app.clr_black
+    lbx.backColor = app.clrWhite
+    lbx.foreColor = app.clrBlack
     lbx._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
-    lbx._ex_style = 0
-    lbx._cls_name = WcListBoxW
-	lbx._before_creation = cast(CreateDelegate) lbx_before_creation
-	lbx._after_creation = cast(CreateDelegate) lbx_after_creation
+    lbx._exStyle = 0
+    lbx._clsName = WcListBoxW
+	lbx._fp_beforeCreation = cast(CreateDelegate) lbx_before_creation
+	lbx._fp_afterCreation = cast(CreateDelegate) lbx_after_creation
     lbx._dummyIndex = -1
     return lbx
 }
@@ -46,17 +43,20 @@ ListBox :: struct {
 // Create new listbox type.
 new_listbox :: proc{lbox_ctor1, lbox_ctor2, lbox_ctor3}
 
-@private lbox_ctor1 :: proc(parent : ^Form) -> ListBox {
+@private lbox_ctor1 :: proc(parent : ^Form, rapid: b8 = false) -> ^ListBox {
     lb := lbox_ctor(parent, 10, 10, 180, 200)
+    if rapid do create_control(lb)
     return lb
 }
-@private lbox_ctor2 :: proc(parent : ^Form, x, y : int) -> ListBox {
+@private lbox_ctor2 :: proc(parent : ^Form, x, y : int, rapid: b8 = false) -> ^ListBox {
     lb := lbox_ctor(parent, x, y, 180, 200)
+    if rapid do create_control(lb)
     return lb
 }
 
-@private lbox_ctor3 :: proc(parent : ^Form, x, y, w, h : int) -> ListBox {
+@private lbox_ctor3 :: proc(parent : ^Form, x, y, w, h : int, rapid: b8 = false) -> ^ListBox {
     lb := lbox_ctor(parent, x, y, w, h)
+    if rapid do create_control(lb)
     return lb
 }
 //----------------------------------------------------------------------
@@ -135,11 +135,11 @@ new_listbox :: proc{lbox_ctor1, lbox_ctor2, lbox_ctor3}
 // Constants
 
 @private set_lbox_style_internal :: proc(lbox : ^ListBox) {
-    if lbox.has_sort do lbox._style |= LBS_SORT
-    if lbox.multi_selection do lbox._style |= LBS_EXTENDEDSEL | LBS_MULTIPLESEL
-    if lbox.multi_column do lbox._style |= LBS_MULTICOLUMN
-    if lbox.no_selection do lbox._style |= LBS_NOSEL
-    if lbox.key_preview do lbox._style |= LBS_WANTKEYBOARDINPUT
+    if lbox.hasSort do lbox._style |= LBS_SORT
+    if lbox.multiSelection do lbox._style |= LBS_EXTENDEDSEL | LBS_MULTIPLESEL
+    if lbox.multiColumn do lbox._style |= LBS_MULTICOLUMN
+    if lbox.noSelection do lbox._style |= LBS_NOSEL
+    if lbox.keyPreview do lbox._style |= LBS_WANTKEYBOARDINPUT
 }
 
 // Add an item to listbox.
@@ -151,8 +151,8 @@ listbox_add_item :: proc(lbx : ^ListBox, item : $T) {
         sitem := fmt.tprint(item)
     }
     append(&lbx.items, sitem)
-    if lbx._is_created {
-        SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(sitem), Lparam))
+    if lbx._isCreated {
+        SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(sitem), LPARAM))
     }
 }
 
@@ -171,9 +171,9 @@ listbox_add_items :: proc(lbx : ^ListBox, items : ..any) {
             append(&tempItems, a_string)
         }
     }
-    if lbx._is_created {
+    if lbx._isCreated {
         for item in tempItems {
-            SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), Lparam))
+            SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), LPARAM))
         }
     }
 }
@@ -182,14 +182,14 @@ listbox_add_items :: proc(lbx : ^ListBox, items : ..any) {
 lbx_additem_internal :: proc(lbx : ^ListBox) {
     if len(lbx.items) > 0 {
         for item in lbx.items {
-            SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), Lparam))
+            SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), LPARAM))
         }
     }
 }
 
 // Get the selected index from a single selection listbox
 listbox_get_selected_index :: proc(lbx : ^ListBox) -> int {
-    if !lbx.multi_selection {
+    if !lbx.multiSelection {
         return int(SendMessage(lbx.handle, LB_GETCURSEL, 0, 0))
     }
     return -1
@@ -197,12 +197,12 @@ listbox_get_selected_index :: proc(lbx : ^ListBox) -> int {
 
 // Get the selected indices from a multi selection listbox.
 listbox_get_selected_indices :: proc(lbx : ^ListBox, alloc := context.allocator) -> [dynamic]i32 {
-    if lbx.multi_selection {
+    if lbx.multiSelection {
         num := SendMessage(lbx.handle, LB_GETSELCOUNT, 0, 0)
         if num > 0 {
             buffer := make([dynamic]i32, num, alloc)
             //defer delete(buffer)
-            SendMessage(lbx.handle, LB_GETSELITEMS, direct_cast(num, Wparam), direct_cast(&buffer[0], Lparam))
+            SendMessage(lbx.handle, LB_GETSELITEMS, direct_cast(num, WPARAM), direct_cast(&buffer[0], LPARAM))
             return buffer
         } else do return nil  //err_val
     } else do return nil //err_val
@@ -213,12 +213,12 @@ listbox_get_selected_indices :: proc(lbx : ^ListBox, alloc := context.allocator)
 lb_get_item :: proc(lbx : ^ListBox, #any_int index : int, alloc := context.allocator) -> string {
     if len(lbx.items) > 0 { // Check for items
         indx := i32(index)
-        tlen := int(SendMessage(lbx.handle, LB_GETTEXTLEN, Wparam(indx), 0))
+        tlen := int(SendMessage(lbx.handle, LB_GETTEXTLEN, WPARAM(indx), 0))
         if tlen != LB_ERR { // Check for invalid index
-            memory := make([]Wchar, tlen, alloc)
+            memory := make([]WCHAR, tlen, alloc)
             //defer delete(memory)
             str_buffer : wstring = &memory[0]
-            SendMessage(lbx.handle, LB_GETTEXT, Wparam(indx), convert_to(Lparam, str_buffer))
+            SendMessage(lbx.handle, LB_GETTEXT, WPARAM(indx), convert_to(LPARAM, str_buffer))
             return wstring_to_utf8(str_buffer, -1)
         }
     }
@@ -237,7 +237,7 @@ listbox_get_item :: proc{lb_get_item} //,
 // Get the current selected item from a single selection listbox.
 listbox_get_selected_item :: proc(lbx : ^ListBox) -> string {
     if len(lbx.items) > 0 { // Check for items
-        if !lbx.multi_selection { // Only allow single selection list box's
+        if !lbx.multiSelection { // Only allow single selection list box's
             curr_sel_indx := (SendMessage(lbx.handle, LB_GETCURSEL, 0, 0))
             if curr_sel_indx != LB_ERR { // Checking for a selection
                 return listbox_get_item(lbx, int(curr_sel_indx))
@@ -249,7 +249,7 @@ listbox_get_selected_item :: proc(lbx : ^ListBox) -> string {
 
 // Get selected items from a multi selection listbox.
 listbox_get_selected_items :: proc(lbx : ^ListBox, alloc := context.allocator) -> [dynamic]string {
-    if lbx.multi_selection  { // Only allow multi selection list boxes
+    if lbx.multiSelection  { // Only allow multi selection list boxes
         sel_indices := listbox_get_selected_indices(lbx)
         if len(sel_indices) > 0 { // If there are selections
             result := make([dynamic]string, len(sel_indices), alloc)
@@ -260,29 +260,28 @@ listbox_get_selected_items :: proc(lbx : ^ListBox, alloc := context.allocator) -
             return result
         }
     }
-
     return nil
 }
 
 // Set an item at given index selected
 listbox_set_item_selected :: proc(lbx : ^ListBox, indx : int) {
     lbx._dummyIndex = indx
-    if len(lbx.items) > 0 do SendMessage(lbx.handle, LB_SETCURSEL, Wparam(i32(indx)), 0)
+    if len(lbx.items) > 0 do SendMessage(lbx.handle, LB_SETCURSEL, WPARAM(i32(indx)), 0)
 }
 
 // Select all items of a multi selection ListBox
 listbox_select_all :: proc(lbx : ^ListBox) {
     bflag := true
-    if lbx._is_created && lbx.multi_selection do SendMessage(lbx.handle, LB_SETSEL, Wparam(bflag), Lparam(-1))
+    if lbx._isCreated && lbx.multiSelection do SendMessage(lbx.handle, LB_SETSEL, WPARAM(bflag), LPARAM(-1))
 }
 
 
 // Select a items t given idices
 listbox_set_items_selected :: proc(lbx : ^ListBox, flag : bool, indices : ..int) {
-    if lbx.multi_selection {
+    if lbx.multiSelection {
         //bflag : b32 = false
         for i in indices {
-             SendMessage(lbx.handle, LB_SETSEL, Wparam(flag), Lparam(i32(i)))
+             SendMessage(lbx.handle, LB_SETSEL, WPARAM(flag), LPARAM(i32(i)))
         }
     }
 }
@@ -293,10 +292,10 @@ listbox_set_items_selected :: proc(lbx : ^ListBox, flag : bool, indices : ..int)
 listbox_clear_selection :: proc(lbx : ^ListBox) {
     indx : int = -1
     if len(lbx.items) > 0 {
-        if lbx.multi_selection  {
+        if lbx.multiSelection  {
             bflag : bool = false
-            SendMessage(lbx.handle, LB_SETSEL, Wparam(bflag), -1)
-        } else do SendMessage(lbx.handle, LB_SETCURSEL, Wparam(i32(indx)) , 0)
+            SendMessage(lbx.handle, LB_SETSEL, WPARAM(bflag), -1)
+        } else do SendMessage(lbx.handle, LB_SETCURSEL, WPARAM(i32(indx)) , 0)
     }
 }
 
@@ -309,7 +308,7 @@ lbx_clear_items_internal :: proc(lb : ^ListBox) {
 @private
 lbx_fill_items_internal :: proc(lb : ^ListBox) {
     for item in lb.items {
-        SendMessage(lb.handle, LB_ADDSTRING, 0, convert_to(Lparam, to_wstring(item)))
+        SendMessage(lb.handle, LB_ADDSTRING, 0, convert_to(LPARAM, to_wstring(item)))
     }
 }
 
@@ -317,7 +316,7 @@ lbx_fill_items_internal :: proc(lb : ^ListBox) {
 
 // Delete an item from listbox.
 listbox_delete_item :: proc(lbx : ^ListBox, indx : int) {
-    if len(lbx.items) > 0  && lbx._is_created {
+    if len(lbx.items) > 0  && lbx._isCreated {
         lbx_clear_items_internal(lbx)
         ordered_remove(&lbx.items, indx)
         lbx_fill_items_internal(lbx)
@@ -346,12 +345,12 @@ listbox_find_index :: proc(lbx : ^ListBox, item : any) -> int {
         lb_item = fmt.tprint(item)
     }
     wp : i32 = -1
-    return int(SendMessage(lbx.handle, LB_FINDSTRINGEXACT, Wparam(wp), convert_to(Lparam, to_wstring(lb_item)) ))
+    return int(SendMessage(lbx.handle, LB_FINDSTRINGEXACT, WPARAM(wp), convert_to(LPARAM, to_wstring(lb_item)) ))
 }
 
 // Get the index of the item under mouse pointer.
 listbox_get_hot_index :: proc(lbx : ^ListBox) -> int {
-    if lbx.multi_selection {
+    if lbx.multiSelection {
         return int(SendMessage(lbx.handle, LB_GETCARETINDEX, 0, 0))
     }
     return -1
@@ -359,7 +358,7 @@ listbox_get_hot_index :: proc(lbx : ^ListBox) -> int {
 
 // Get the item under mouse pointer.
 listbox_get_hot_item :: proc(lbx : ^ListBox) -> string {
-    if lbx.multi_selection {
+    if lbx.multiSelection {
         indx := int(SendMessage(lbx.handle, LB_GETCARETINDEX, 0, 0))
         return listbox_get_item( lbx, indx)
     }
@@ -378,27 +377,27 @@ listbox_clear_items :: proc(lbx : ^ListBox)  {
 @private lbx_after_creation :: proc(lbx : ^ListBox) {
 	set_subclass(lbx, lbx_wnd_proc)
     lbx_additem_internal(lbx)
-    if lbx._dummyIndex > -1 do SendMessage(lbx.handle, LB_SETCURSEL, Wparam(i32(lbx._dummyIndex)), 0)
-
+    if lbx._dummyIndex > -1 do SendMessage(lbx.handle, LB_SETCURSEL, WPARAM(i32(lbx._dummyIndex)), 0)
 }
 
 
 listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
-    if !lbx.multi_selection {
-        SendMessage(lbx.handle, LB_SETCURSEL, Wparam(i32(indx)), 0)
+    if !lbx.multiSelection {
+        SendMessage(lbx.handle, LB_SETCURSEL, WPARAM(i32(indx)), 0)
     }
 }
 
-@private lbx_finalize :: proc(lbx: ^ListBox, scid: UintPtr) {
+@private lbx_finalize :: proc(lbx: ^ListBox, scid: UINT_PTR) {
     delete(lbx.items)
-    delete(lbx._private_sel_indices)
-    delete_gdi_object(lbx._bk_brush)
+    delete(lbx._selIndices)
+    delete_gdi_object(lbx._bkBrush)
     RemoveWindowSubclass(lbx.handle, lbx_wnd_proc, scid)
+    free(lbx)
 }
 
-@private lbx_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
-                                                    sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
-    context = runtime.default_context()
+@private lbx_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+                                                    sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+    context = global_context //runtime.default_context()
     lbx := control_cast(ListBox, ref_data)
     //display_msg(msg)
     switch msg {
@@ -406,12 +405,12 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
 
 
         case CM_CTLLCOLOR :
-            if lbx.fore_color != def_fore_clr || lbx.back_color != def_back_clr {
-                dc_handle := direct_cast(wp, Hdc)
+            if lbx.foreColor != def_fore_clr || lbx.backColor != def_back_clr {
+                dc_handle := direct_cast(wp, HDC)
                 SetBkMode(dc_handle, Transparent)
-                if lbx.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(lbx.fore_color))
-                if lbx._bk_brush == nil do lbx._bk_brush = CreateSolidBrush(get_color_ref(lbx.back_color))
-                return to_lresult(lbx._bk_brush)
+                if lbx.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(lbx.foreColor))
+                if lbx._bkBrush == nil do lbx._bkBrush = CreateSolidBrush(get_color_ref(lbx.backColor))
+                return to_lresult(lbx._bkBrush)
             }
 
 
@@ -419,28 +418,28 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
             ncode := hiword_wparam(wp)
             switch ncode {
                 case LBN_DBLCLK :
-                    if lbx.double_click != nil {
+                    if lbx.onDoubleClick != nil {
                         ea := new_event_args()
-                        lbx.double_click(lbx, &ea)
+                        lbx.onDoubleClick(lbx, &ea)
                     }
                 case LBN_KILLFOCUS :
-                    if lbx.lost_focus != nil {
+                    if lbx.onLostFocus != nil {
                         ea := new_event_args()
-                        lbx.lost_focus(lbx, &ea)
+                        lbx.onLostFocus(lbx, &ea)
                     }
                 case LBN_SELCHANGE :
                     sel_indx := SendMessage(lbx.handle, LB_GETCURSEL, 0, 0)
                     if sel_indx != LB_ERR {
-                        if lbx.selection_changed != nil {
+                        if lbx.onSelectionChanged != nil {
                             ea := new_event_args()
-                            lbx.selection_changed(lbx, &ea)
+                            lbx.onSelectionChanged(lbx, &ea)
                         }
                     }
 
                 case LBN_SETFOCUS :
-                    if lbx.got_focus != nil {
+                    if lbx.onGotFocus != nil {
                         ea := new_event_args()
-                        lbx.got_focus(lbx, &ea)
+                        lbx.onGotFocus(lbx, &ea)
                     }
 
 
@@ -450,80 +449,80 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
 
             }
         case WM_LBUTTONDOWN:
-            lbx._mdown_happened = true
-            if lbx.left_mouse_down != nil {
+            lbx._mDownHappened = true
+            if lbx.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                lbx.left_mouse_down(lbx, &mea)
+                lbx.onMouseDown(lbx, &mea)
                 return 0
             }
         case WM_LBUTTONUP :
-            if lbx.left_mouse_up != nil {
+            if lbx.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                lbx.left_mouse_up(lbx, &mea)
+                lbx.onMouseUp(lbx, &mea)
             }
-            if lbx._mdown_happened {
-                lbx._mdown_happened = false
+            if lbx._mDownHappened {
+                lbx._mDownHappened = false
                 SendMessage(lbx.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            lbx._mdown_happened = false
-            if lbx.mouse_click != nil {
+            lbx._mDownHappened = false
+            if lbx.onMouseClick != nil {
                 ea := new_event_args()
-                lbx.mouse_click(lbx, &ea)
+                lbx.onMouseClick(lbx, &ea)
                 return 0
             }
         case WM_RBUTTONDOWN:
-            lbx._mrdown_happened = true
-            if lbx.right_mouse_down != nil {
+            lbx._mRDownHappened = true
+            if lbx.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                lbx.right_mouse_down(lbx, &mea)
+                lbx.onRightMouseDown(lbx, &mea)
             }
 
         case WM_RBUTTONUP :
-            if lbx.right_mouse_up != nil {
+            if lbx.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                lbx.right_mouse_up(lbx, &mea)
+                lbx.onRightMouseUp(lbx, &mea)
             }
-            if lbx._mrdown_happened {
-                lbx._mrdown_happened = false
+            if lbx._mRDownHappened {
+                lbx._mRDownHappened = false
                 SendMessage(lbx.handle, CM_RMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            lbx._mrdown_happened = false
-            if lbx.right_click != nil {
+            lbx._mRDownHappened = false
+            if lbx.onRightClick != nil {
                 ea := new_event_args()
-                lbx.right_click(lbx, &ea)
+                lbx.onRightClick(lbx, &ea)
                 return 0
             }
 
         case WM_MOUSEHWHEEL:
-            if lbx.mouse_scroll != nil {
+            if lbx.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                lbx.mouse_scroll(lbx, &mea)
+                lbx.onMouseScroll(lbx, &mea)
             }
 
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-            if lbx._is_mouse_entered {
-                if lbx.mouse_move != nil {
+            if lbx._isMouseEntered {
+                if lbx.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    lbx.mouse_move(lbx, &mea)
+                    lbx.onMouseMove(lbx, &mea)
                 }
             }
             else {
-                lbx._is_mouse_entered = true
-                if lbx.mouse_enter != nil  {
+                lbx._isMouseEntered = true
+                if lbx.onMouseEnter != nil  {
                     ea := new_event_args()
-                    lbx.mouse_enter(lbx, &ea)
+                    lbx.onMouseEnter(lbx, &ea)
                 }
             }
 
          case WM_MOUSELEAVE :
-            lbx._is_mouse_entered = false
-            if lbx.mouse_leave != nil {
+            lbx._isMouseEntered = false
+            if lbx.onMouseLeave != nil {
                 ea := new_event_args()
-                lbx.mouse_leave(lbx, &ea)
+                lbx.onMouseLeave(lbx, &ea)
             }
 
 

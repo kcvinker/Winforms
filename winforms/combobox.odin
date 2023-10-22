@@ -11,61 +11,61 @@ DropDownStyle :: enum {Tb_Combo, Lb_Combo,}
 
 ComboBox :: struct {
     using control : Control,
-    combo_style : DropDownStyle,
+    comboStyle : DropDownStyle,
     items : [dynamic]string, // Don't forget to delete it when combo box deing destroyed.
-    visible_item_count : int,
-    selected_index : int,
-    selected_item : string,
-    _recreate_enabled : bool, // Used when we need to recreate existing combo
-
-    _bk_brush : Hbrush,
-
-    _old_ctl_id : Uint,
-    _edit_subclass_id : UintPtr,
-    _myrc : Rect,
+    visibleItemCount : int,
+    selectedIndex : int,
+    selectedItem : string,
+    _recreateEnabled : bool, // Used when we need to recreate existing combo
+    _bkBrush : HBRUSH,
+    _oldCtlID : UINT,
+    _editSubclsID : UINT_PTR,
+    _myrc : RECT,
 
     // Events
-    selection_changed,
-    selection_committed,
-    selection_cancelled,
-    text_changed,
-    text_updated,
-    list_opened,
-    list_closed,
-    tb_click,
-    tb_mouse_leave,
-    tb_mouse_enter : EventHandler,
+    onSelectionChanged,
+    onSelectionCommitted,
+    onSelectionCancelled,
+    onTextChanged,
+    onTextUpdated,
+    onListOpened,
+    onListClosed,
+    onTBClick,
+    onTBMouseLeave,
+    onTBMouseEnter : EventHandler,
 }
-
 
 ComboData :: struct {
-    list_box_hwnd : Hwnd,
-    combo_hwnd : Hwnd,
-    edit_hwnd : Hwnd,
-    combo_id : u32,
+    listBoxHwnd : HWND,
+    comboHwnd : HWND,
+    editHwnd : HWND,
+    comboID : u32,
 }
 
-new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData {
+new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData 
+{
     cd : ComboData
-    cd.combo_hwnd = cbi.hwndCombo
-    cd.combo_id = id
-    cd.edit_hwnd = cbi.hwndItem
-    cd.list_box_hwnd = cbi.hwndList
+    cd.comboHwnd = cbi.hwndCombo
+    cd.comboID = id
+    cd.editHwnd = cbi.hwndItem
+    cd.listBoxHwnd = cbi.hwndList
     return cd
 }
 
-@private get_combo_info :: proc(cmb : ^ComboBox) -> ComboData  {
+@private get_combo_info :: proc(cmb : ^ComboBox) -> ComboData  
+{
     // Collect the data from Combobox control.
     cmInfo : COMBOBOXINFO
     cmInfo.cbSize = size_of(cmInfo)
-    SendMessage(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cmInfo, Lparam))
-    cd := new_combo_data(cmInfo, cmb.control_id)
+    SendMessage(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cmInfo, LPARAM))
+    cd := new_combo_data(cmInfo, cmb.controlID)
     return cd
 }
 
-@private cmb_ctor :: proc(p : ^Form, w : int = 130, h : int = 30, x: int = 10, y: int = 10) -> ComboBox {
+@private cmb_ctor :: proc(p : ^Form, w : int = 130, h : int = 30, x: int = 10, y: int = 10) -> ^ComboBox 
+{
     if WcComboW == nil do WcComboW = to_wstring("ComboBox")
-    cmb : ComboBox
+    cmb := new(ComboBox)
     cmb.kind = .Combo_Box
     cmb.parent = p
     cmb.font = p.font
@@ -73,52 +73,62 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData {
     cmb.ypos = y
     cmb.width = w
     cmb.height = h
-    cmb.back_color = app.clr_white
-    cmb.fore_color = app.clr_black
-    cmb._ex_style = 0
-    cmb.selected_index = -1
+    cmb.backColor = app.clrWhite
+    cmb.foreColor = app.clrBlack
+    cmb._exStyle = 0
+    cmb.selectedIndex = -1
     cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN
-    cmb._ex_style = WS_EX_CLIENTEDGE    // WS_EX_WINDOWEDGE WS_EX_STATICEDGE
+    cmb._exStyle = WS_EX_CLIENTEDGE    // WS_EX_WINDOWEDGE WS_EX_STATICEDGE
     //cmb._txt_style = DT_SINGLELINE | DT_VCENTER
-    cmb._cls_name = WcComboW
-    cmb._before_creation = cast(CreateDelegate) cmb_before_creation
-	cmb._after_creation = cast(CreateDelegate) cmb_after_creation
+    cmb._clsName = WcComboW
+    cmb._fp_beforeCreation = cast(CreateDelegate) cmb_before_creation
+	cmb._fp_afterCreation = cast(CreateDelegate) cmb_after_creation
     return cmb
 }
 
-new_combobox :: proc{new_combo1, new_combo2}
+new_combobox :: proc{new_combo1, new_combo2, new_combo3}
 
-@private new_combo1 :: proc(parent : ^Form) -> ComboBox {
+@private new_combo1 :: proc(parent : ^Form, rapid: b8 = false) -> ^ComboBox 
+{
     cmb := cmb_ctor(parent)
-
+    if rapid do create_control(cmb)
     return cmb
 }
 
-@private new_combo2 :: proc(parent : ^Form, w, h, x, y : int ) -> ComboBox {
+@private new_combo2 :: proc(parent : ^Form, x, y : int, rapid: b8 = false ) -> ^ComboBox 
+{
+    cmb := cmb_ctor(parent, x = x, y= y)
+    if rapid do create_control(cmb)
+    return cmb
+}
+
+@private new_combo3 :: proc(parent : ^Form, x, y, w, h : int, rapid: b8 = false ) -> ^ComboBox 
+{
     cmb := cmb_ctor(parent, w, h, x, y)
+    if rapid do create_control(cmb)
     return cmb
 }
 
-
-
-combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) {
+combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) 
+{
     /* There is no other way to change the dropdown style of an existing combo box.
      * We need to destroy the old combo and create a new one with same size and pos.
      * Then make fill it with old combo items. */
-    if cmb._is_created {
-        if cmb.combo_style == style do return
-        cmb.combo_style = style
-        cmb._recreate_enabled = true
+    if cmb._isCreated {
+        if cmb.comboStyle == style do return
+        cmb.comboStyle = style
+        cmb._recreateEnabled = true
         DestroyWindow(cmb.handle)
         create_control(cmb)
     } else {
         // Not now baby
-        cmb.combo_style = style
+        cmb.comboStyle = style
     }
 }
 
 
-combo_add_item :: proc(cmb : ^ComboBox, item : $T ) {
+combo_add_item :: proc(cmb : ^ComboBox, item : $T ) 
+{
     sitem : string
     when T == string {
         sitem = item
@@ -126,27 +136,28 @@ combo_add_item :: proc(cmb : ^ComboBox, item : $T ) {
         sitem := fmt.tprint(an_item)
     }
     append(&cmb.items, sitem)
-    if cmb._is_created {
-        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(sitem), Lparam))
+    if cmb._isCreated {
+        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(sitem), LPARAM))
     }
 }
 
-combo_open_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, Wparam(1), 0) }
-combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, Wparam(0), 0) }
+combo_open_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, WPARAM(1), 0) }
+combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, WPARAM(0), 0) }
 
 
-@private add_items2 :: proc(cmb : ^ComboBox, items : ..any ) {
+@private add_items2 :: proc(cmb : ^ComboBox, items : ..any ) 
+{
     for i in items {
         if value, is_str := i.(string) ; is_str { // Magic -- type assert
             append(&cmb.items, value)
-            if cmb._is_created {
-                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(value), Lparam))
+            if cmb._isCreated {
+                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(value), LPARAM))
             }
         } else {
             a_string := fmt.tprint(i)
             append(&cmb.items, a_string)
-            if cmb._is_created {
-                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(a_string), Lparam))
+            if cmb._isCreated {
+                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(a_string), LPARAM))
             }
         }
     }
@@ -154,7 +165,8 @@ combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPD
 
 combo_add_items :: proc{add_items2}
 
-combo_add_array :: proc(cmb : ^ComboBox, items : []$T ) {
+combo_add_array :: proc(cmb : ^ComboBox, items : []$T ) 
+{
     //print("called once")
     when T == string {
         for i in items {
@@ -169,30 +181,31 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T ) {
     // IMPORTANT - add code for update combo items
 }
 
-@private additem_internal :: proc(cmb : ^ComboBox) {
+@private additem_internal :: proc(cmb : ^ComboBox) 
+{
     for i in cmb.items {
-        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(i), Lparam))
+        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(i), LPARAM))
     }
 }
 
 combo_get_selected_index :: proc(cmb : ^ComboBox) -> int {
-    cmb.selected_index = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
-    return cmb.selected_index
+    cmb.selectedIndex = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
+    return cmb.selectedIndex
 }
 
 combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)  {
-    SendMessage(cmb.handle, CB_SETCURSEL, Wparam(i32(indx)), 0)
-    cmb.selected_index = indx
+    SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(i32(indx)), 0)
+    cmb.selectedIndex = indx
 }
 
 combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)  {
     sitem := fmt.tprint(item)
     wp : i32 = -1
-    indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, Wparam(wp), direct_cast(to_wstring(sitem), Lparam))
+    indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, WPARAM(wp), direct_cast(to_wstring(sitem), LPARAM))
     if indx == LB_ERR do return
-    SendMessage(cmb.handle, CB_SETCURSEL, Wparam(indx), 0)
-    cmb.selected_index = int(indx)
-    cmb.selected_item = sitem
+    SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(indx), 0)
+    cmb.selectedIndex = int(indx)
+    cmb.selectedItem = sitem
 }
 
 combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
@@ -205,13 +218,13 @@ combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
 combo_delete_selected_item :: proc(cmb : ^ComboBox) {
     indx := i32(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     if indx > -1 {
-        SendMessage(cmb.handle, CB_DELETESTRING, Wparam(indx), 0)
+        SendMessage(cmb.handle, CB_DELETESTRING, WPARAM(indx), 0)
         ordered_remove(&cmb.items, int(indx))
     }
 }
 
 combo_delete_item :: proc(cmb : ^ComboBox, indx : int) {
-    SendMessage(cmb.handle, CB_DELETESTRING, direct_cast(i32(indx), Wparam), 0)
+    SendMessage(cmb.handle, CB_DELETESTRING, direct_cast(i32(indx), WPARAM), 0)
     ordered_remove(&cmb.items, indx)
 }
 
@@ -226,7 +239,7 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
      * So we are checking whether the current mouse pos is in our...
      * control rect or not. To do that check, we need to convert the mouse...
      * points into our window's client coordinate level. */
-    pt : Point
+    pt : POINT
     GetCursorPos(&pt)
     ScreenToClient(cmb.parent.handle, &pt)
     res := cast(bool) PtInRect(&cmb._myrc, pt)
@@ -237,7 +250,7 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
 }
 
 @private cmb_before_creation :: proc(cmb : ^ComboBox) {
-    if cmb.combo_style == .Lb_Combo {
+    if cmb.comboStyle == .Lb_Combo {
         cmb._style |= CBS_DROPDOWNLIST
     } else {
         cmb._style |= CBS_DROPDOWN
@@ -247,66 +260,70 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
      * If this is the first time a combo is created, we can use...
      * global control ID. But if a combo is recreating, then...
      * we must use the old comb's control ID. */
-    if cmb._recreate_enabled {
-        cmb.control_id = cmb._old_ctl_id
+    if cmb._recreateEnabled {
+        cmb.controlID = cmb._oldCtlID
 
         // Collect the selected index if any
-        cmb.selected_index = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
+        cmb.selectedIndex = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     } else {
-        _global_ctl_id += 1
-    	cmb.control_id = _global_ctl_id
+        globalCtlID += 1
+    	cmb.controlID = globalCtlID
     }
 
     // Set back color brush
-    cmb._bk_brush = get_solid_brush(cmb.back_color)
+    cmb._bkBrush = get_solid_brush(cmb.backColor)
 }
 
 @private cmb_after_creation :: proc(cmb : ^ComboBox) {
 	set_subclass(cmb, cmb_wnd_proc)
     // cmb._old_hwnd = cmb.handle
-    cmb._old_ctl_id = cmb.control_id
+    cmb._oldCtlID = cmb.controlID
     cd : ComboData = get_combo_info(cmb)
 
     // Collecting child controls info
-    if cmb._recreate_enabled {
-        cmb._recreate_enabled = false
+    if cmb._recreateEnabled {
+        cmb._recreateEnabled = false
         update_combo_data(cmb.parent, cd)
 
         // If selected index was a valid number, set the selection again.
-        if cmb.selected_index != -1 {
-            SendMessage(cmb.handle, CB_SETCURSEL, Wparam(i32(cmb.selected_index)), 0)
+        if cmb.selectedIndex != -1 {
+            SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(i32(cmb.selectedIndex)), 0)
         }
     } else {
         collect_combo_data(cmb.parent, cd)
     }
 
     // Now, subclass the edit control.
-    SetWindowSubclass(cd.edit_hwnd, edit_wnd_proc, cmb._edit_subclass_id, to_dwptr(cmb))
-    cmb._edit_subclass_id += 1 // We don't want to use the same id again and again.
+    SetWindowSubclass(cd.editHwnd, edit_wnd_proc, cmb._editSubclsID, to_dwptr(cmb))
+    cmb._editSubclsID += 1 // We don't want to use the same id again and again.
 
     if len(cmb.items) > 0 do additem_internal(cmb)
 
-    if cmb.selected_index > -1 { // User wants to set the selected index.
-        combo_set_selected_index(cmb, cmb.selected_index)
+    if cmb.selectedIndex > -1 { // User wants to set the selected index.
+        combo_set_selected_index(cmb, cmb.selectedIndex)
     }
 
     // Lastly, we need to collect the control rect for managing mouse enter & leave events
     set_rect(&cmb._myrc, i32(cmb.xpos), i32(cmb.ypos), i32(cmb.width + cmb.xpos), i32(cmb.height + cmb.ypos))
 }
 
-@private cmb_finalize :: proc(cmb: ^ComboBox, scid: UintPtr) {
-    if !cmb._recreate_enabled {
-        delete_gdi_object(cmb.font.handle)
-        delete_gdi_object(cmb._bk_brush)
-        delete(cmb.items)
-    }
+@private cmb_finalize :: proc(cmb: ^ComboBox, scid: UINT_PTR)
+{
     RemoveWindowSubclass(cmb.handle, cmb_wnd_proc, scid)
+    if !cmb._recreateEnabled
+    {
+        delete_gdi_object(cmb.font.handle)
+        delete_gdi_object(cmb._bkBrush)
+        delete(cmb.items)
+        free(cmb)
+    }
 }
 
 
 @private
-cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
-    context = runtime.default_context()
+cmb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM, sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+    // context = runtime.default_context()
+    context = global_context//app.curr_context^
     cmb := control_cast(ComboBox, ref_data)
     //display_msg(msg)
     switch msg {
@@ -326,67 +343,67 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
            // ptf("WM_COMMAND notification code - %d\n", ncode)
             switch ncode {
                 case CBN_SELCHANGE :
-                    if cmb.selection_changed != nil {
+                    if cmb.onSelectionChanged != nil {
                         ea := new_event_args()
-                        cmb.selection_changed(cmb, &ea)
+                        cmb.onSelectionChanged(cmb, &ea)
                     }
                 case CBN_DBLCLK :
 
                 case CBN_SETFOCUS :
-                    if cmb.got_focus != nil {
+                    if cmb.onGotFocus != nil {
                         ea := new_event_args()
-                        cmb.got_focus(cmb, &ea)
+                        cmb.onGotFocus(cmb, &ea)
                     }
                 case CBN_KILLFOCUS :
-                    if cmb.lost_focus != nil {
+                    if cmb.onLostFocus != nil {
                         ea := new_event_args()
-                        cmb.lost_focus(cmb, &ea)
+                        cmb.onLostFocus(cmb, &ea)
                     }
                 case CBN_EDITCHANGE :
-                    if cmb.text_changed != nil {
+                    if cmb.onTextChanged != nil {
                         ea := new_event_args()
-                        cmb.text_changed(cmb, &ea)
+                        cmb.onTextChanged(cmb, &ea)
                     }
                 case CBN_EDITUPDATE :
-                     if cmb.text_updated != nil {
+                     if cmb.onTextUpdated != nil {
                         ea := new_event_args()
-                        cmb.text_updated(cmb, &ea)
+                        cmb.onTextUpdated(cmb, &ea)
                     }
                 case CBN_DROPDOWN :
-                    if cmb.list_opened != nil {
+                    if cmb.onListOpened != nil {
                         ea := new_event_args()
-                        cmb.list_opened(cmb, &ea)
+                        cmb.onListOpened(cmb, &ea)
                     }
                 case CBN_CLOSEUP :
-                    if cmb.list_closed != nil {
+                    if cmb.onListClosed != nil {
                         ea := new_event_args()
-                        cmb.list_closed(cmb, &ea)
+                        cmb.onListClosed(cmb, &ea)
                     }
                 case CBN_SELENDOK :
-                    if cmb.selection_committed != nil {
+                    if cmb.onSelectionCommitted != nil {
                         ea := new_event_args()
-                        cmb.selection_committed(cmb, &ea)
+                        cmb.onSelectionCommitted(cmb, &ea)
                     }
                 case CBN_SELENDCANCEL :
-                    if cmb.selection_cancelled != nil {
+                    if cmb.onSelectionCancelled != nil {
                         ea := new_event_args()
-                        cmb.selection_cancelled(cmb, &ea)
+                        cmb.onSelectionCancelled(cmb, &ea)
                     }
 
             }
 
         case CM_COMBOLBCOLOR :
             //print("color combo list box")
-            if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {
+            if cmb.foreColor != def_fore_clr || cmb.backColor != def_back_clr {
                 //print("combo color rcvd")
-                dc_handle := direct_cast(wp, Hdc)
+                dc_handle := direct_cast(wp, HDC)
                 SetBkMode(dc_handle, Transparent)
-                if cmb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.fore_color))
-                if cmb._bk_brush == nil do cmb._bk_brush = CreateSolidBrush(get_color_ref(cmb.back_color))
-                return to_lresult(cmb._bk_brush)
+                if cmb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.foreColor))
+                if cmb._bkBrush == nil do cmb._bkBrush = CreateSolidBrush(get_color_ref(cmb.backColor))
+                return to_lresult(cmb._bkBrush)
             } else {
-                if cmb._bk_brush == nil do cmb._bk_brush = CreateSolidBrush(get_color_ref(cmb.back_color))
-                return to_lresult(cmb._bk_brush)
+                if cmb._bkBrush == nil do cmb._bkBrush = CreateSolidBrush(get_color_ref(cmb.backColor))
+                return to_lresult(cmb._bkBrush)
             }
 
 
@@ -394,100 +411,100 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
             wp_lw := loword_wparam(wp)
             switch wp_lw {
                 case 512 :  // WM_MOUSEFIRST
-                    if cmb.tb_mouse_enter != nil {
+                    if cmb.onTBMouseEnter != nil {
                         ea := new_event_args()
-                        cmb.tb_mouse_enter(cmb, &ea)
+                        cmb.onTBMouseEnter(cmb, &ea)
                     }
                 case 513 : // WM_LBUTTONDOWN
-                    if cmb.tb_click != nil {
+                    if cmb.onTBClick != nil {
                         ea := new_event_args()
-                        cmb.tb_click(cmb, &ea)
+                        cmb.onTBClick(cmb, &ea)
                     }
                 case 675 : // WM_MOUSELEAVE
-                    if cmb.tb_mouse_leave != nil {
+                    if cmb.onTBMouseLeave != nil {
                         ea := new_event_args()
-                        cmb.tb_mouse_leave(cmb, &ea)
+                        cmb.onTBMouseLeave(cmb, &ea)
                     }
             }
 
 
         case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mdown_happened = true
-            if cmb.left_mouse_down != nil {
+            cmb._mDownHappened = true
+            if cmb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cmb.left_mouse_down(cmb, &mea)
+                cmb.onMouseDown(cmb, &mea)
                 return 0
             }
 
 
         case WM_LBUTTONUP :  // Only work in lb_comb and the triange btn of tb_combo
-            if cmb.left_mouse_up != nil {
+            if cmb.onMouseUp != nil {
             mea := new_mouse_event_args(msg, wp, lp)
-            cmb.left_mouse_up(cmb, &mea)
+            cmb.onMouseUp(cmb, &mea)
             }
-            if cmb._mdown_happened {
-                cmb._mdown_happened = false
+            if cmb._mDownHappened {
+                cmb._mDownHappened = false
                 SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            if cmb.mouse_click != nil {
+            if cmb.onMouseClick != nil {
             ea := new_event_args()
-            cmb.mouse_click(cmb, &ea)
+            cmb.onMouseClick(cmb, &ea)
             return 0
             }
 
          case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mrdown_happened = true
-            if cmb.right_mouse_down != nil {
+            cmb._mRDownHappened = true
+            if cmb.onRightMouseDown != nil {
             mea := new_mouse_event_args(msg, wp, lp)
-            cmb.right_mouse_down(cmb, &mea)
+            cmb.onRightMouseDown(cmb, &mea)
             }
 
         case WM_RBUTTONUP :
-            if cmb.right_mouse_up != nil {
+            if cmb.onRightMouseUp != nil {
             mea := new_mouse_event_args(msg, wp, lp)
-            cmb.right_mouse_up(cmb, &mea)
+            cmb.onRightMouseUp(cmb, &mea)
             }
-            if cmb._mrdown_happened {
-                cmb._mrdown_happened = false
+            if cmb._mRDownHappened {
+                cmb._mRDownHappened = false
                 SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            cmb._mrdown_happened = false
-            if cmb.right_click != nil {
+            cmb._mRDownHappened = false
+            if cmb.onRightClick != nil {
             ea := new_event_args()
-            cmb.right_click(cmb, &ea)
+            cmb.onRightClick(cmb, &ea)
             return 0
             }
 
         case WM_MOUSEHWHEEL:
-            if cmb.mouse_scroll != nil {
+            if cmb.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cmb.mouse_scroll(cmb, &mea)
+                cmb.onMouseScroll(cmb, &mea)
             }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-            if cmb._is_mouse_entered {
-                if cmb.mouse_move != nil {
+            if cmb._isMouseEntered {
+                if cmb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    cmb.mouse_move(cmb, &mea)
+                    cmb.onMouseMove(cmb, &mea)
                 }
             } else {
-                cmb._is_mouse_entered = true
-                if cmb.mouse_enter != nil  {
+                cmb._isMouseEntered = true
+                if cmb.onMouseEnter != nil  {
                     ea := new_event_args()
-                    cmb.mouse_enter(cmb, &ea)
+                    cmb.onMouseEnter(cmb, &ea)
                 }
             }
 
         case WM_MOUSELEAVE : // Main Proc
-            if cmb.mouse_leave != nil || cmb.mouse_enter != nil || cmb.mouse_move != nil {
+            if cmb.onMouseLeave != nil || cmb.onMouseEnter != nil || cmb.onMouseMove != nil {
                 if check_mouse_leave(cmb) {
-                    cmb._is_mouse_entered = false
-                    if cmb.mouse_leave != nil {
+                    cmb._isMouseEntered = false
+                    if cmb.onMouseLeave != nil {
                         ea := new_event_args()
-                        cmb.mouse_leave(cmb, &ea)
+                        cmb.onMouseLeave(cmb, &ea)
                     }
                 }
             }
@@ -498,106 +515,106 @@ cmb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_i
 
 
 @private
-edit_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam, sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
+edit_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM, sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
     context = runtime.default_context()
     cmb := control_cast(ComboBox, ref_data)
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, edit_wnd_proc, sc_id)
 
         case CM_CTLLCOLOR :
-            if cmb.fore_color != def_fore_clr || cmb.back_color != def_back_clr {
-                dc_handle := direct_cast(wp, Hdc)
+            if cmb.foreColor != def_fore_clr || cmb.backColor != def_back_clr {
+                dc_handle := direct_cast(wp, HDC)
                 // SetBkMode(dc_handle, Transparent)
-                if cmb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.fore_color))
-                if cmb.back_color != def_back_clr do SetBackColor(dc_handle, get_color_ref(cmb.back_color))
-                return to_lresult(cmb._bk_brush)
+                if cmb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.foreColor))
+                if cmb.backColor != def_back_clr do SetBackColor(dc_handle, get_color_ref(cmb.backColor))
+                return to_lresult(cmb._bkBrush)
             }
 
         case WM_KEYDOWN : // only works in Tb_combo style
-            if cmb.key_down != nil {
+            if cmb.onKeyDown != nil {
                 kea := new_key_event_args(wp)
-                cmb.key_down(cmb, &kea)
+                cmb.onKeyDown(cmb, &kea)
             }
 
         case WM_KEYUP : // only works in Tb_combo style
-            if cmb.key_up != nil {
+            if cmb.onKeyUp != nil {
                 kea := new_key_event_args(wp)
-                cmb.key_up(cmb, &kea)
+                cmb.onKeyUp(cmb, &kea)
             }
 
         case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mdown_happened = true
-            if cmb.left_mouse_down != nil {
+            cmb._mDownHappened = true
+            if cmb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cmb.left_mouse_down(cmb, &mea)
+                cmb.onMouseDown(cmb, &mea)
                 return 0
             }
 
 
         case WM_LBUTTONUP :  // Only work in lb_comb and the triange btn of tb_combo
-            if cmb.left_mouse_up != nil {
+            if cmb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cmb.left_mouse_up(cmb, &mea)
+                cmb.onMouseUp(cmb, &mea)
             }
-            if cmb._mdown_happened {
-                cmb._mdown_happened = false
+            if cmb._mDownHappened {
+                cmb._mDownHappened = false
                 SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            if cmb.mouse_click != nil {
+            if cmb.onMouseClick != nil {
                 ea := new_event_args()
-                cmb.mouse_click(cmb, &ea)
+                cmb.onMouseClick(cmb, &ea)
                 return 0
             }
 
         case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mrdown_happened = true
-            if cmb.right_mouse_down != nil {
+            cmb._mRDownHappened = true
+            if cmb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cmb.right_mouse_down(cmb, &mea)
+                cmb.onRightMouseDown(cmb, &mea)
             }
 
 
         case WM_RBUTTONUP :
-            if cmb.right_mouse_up != nil {
+            if cmb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cmb.right_mouse_up(cmb, &mea)
+                cmb.onRightMouseUp(cmb, &mea)
             }
-            if cmb._mrdown_happened {
-                cmb._mrdown_happened = false
+            if cmb._mRDownHappened {
+                cmb._mRDownHappened = false
                 SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            cmb._mrdown_happened = false
-            if cmb.right_click != nil {
+            cmb._mRDownHappened = false
+            if cmb.onRightClick != nil {
                 ea := new_event_args()
-                cmb.right_click(cmb, &ea)
+                cmb.onRightClick(cmb, &ea)
                 return 0
             }
 
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-            if cmb._is_mouse_entered {
-                if cmb.mouse_move != nil {
+            if cmb._isMouseEntered {
+                if cmb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    cmb.mouse_move(cmb, &mea)
+                    cmb.onMouseMove(cmb, &mea)
                 }
             } else {
-                cmb._is_mouse_entered = true
-                if cmb.mouse_enter != nil  {
+                cmb._isMouseEntered = true
+                if cmb.onMouseEnter != nil  {
                     ea := new_event_args()
-                    cmb.mouse_enter(cmb, &ea)
+                    cmb.onMouseEnter(cmb, &ea)
                 }
             }
 
         case WM_MOUSELEAVE : // Edit Proc
-            if cmb.combo_style == .Tb_Combo && (cmb.mouse_leave != nil || cmb.mouse_enter != nil || cmb.mouse_move != nil) {
+            if cmb.comboStyle == .Tb_Combo && (cmb.onMouseLeave != nil || cmb.onMouseEnter != nil || cmb.onMouseMove != nil) {
                 if check_mouse_leave(cmb) {
-                    cmb._is_mouse_entered = false
-                    if cmb.mouse_leave != nil {
+                    cmb._isMouseEntered = false
+                    if cmb.onMouseLeave != nil {
                         ea := new_event_args()
-                        cmb.mouse_leave(cmb, &ea)
+                        cmb.onMouseLeave(cmb, &ea)
                     }
                 }
             }

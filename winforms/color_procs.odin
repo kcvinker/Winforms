@@ -7,7 +7,7 @@ Color :: struct {
    green: uint,
    blue : uint,
    value: uint,
-   ref: ColorRef,
+   ref: COLORREF,
 
 }
 
@@ -22,13 +22,13 @@ clip :: proc(value: uint) -> uint { return clamp(value, 0, 255) }
    rc.green = g
    rc.blue = b
    rc.value = (rc.red << 16) | (rc.green << 8) | rc.blue
-   rc.ref = ColorRef((rc.blue << 16) | (rc.green << 8) | rc.red)
+   rc.ref = COLORREF((rc.blue << 16) | (rc.green << 8) | rc.red)
    return rc
 }
 
 
 
-new_color :: proc{color_from_uint, color_from_rgb}
+new_color :: proc{color_from_uint,color_from_rgb}
 
 
 _get_color :: proc(clr : uint) -> Color {
@@ -37,28 +37,28 @@ _get_color :: proc(clr : uint) -> Color {
    rc.green = (clr & 0x00ff00) >> 8
    rc.blue = clr & 0x0000ff
    rc.value = clr
-   rc.ref = ColorRef((rc.blue << 16) | (rc.green << 8) | rc.red)
+   rc.ref = COLORREF((rc.blue << 16) | (rc.green << 8) | rc.red)
    return rc
 }
 
 
-@private get_color_ref1 :: proc(clr : uint) -> ColorRef {
+@private get_color_ref1 :: proc(clr : uint) -> COLORREF {
 	rc := _get_color(clr)
 	rst := (rc.blue << 16) | (rc.green << 8) | rc.red
-	return cast(ColorRef) rst
+	return cast(COLORREF) rst
 }
-@private get_color_ref2 :: proc(r, g, b : uint) -> ColorRef {
-	return ColorRef((b << 16) | (g << 8) | r)
-	//return cast(ColorRef) rst
+@private get_color_ref2 :: proc(r, g, b : uint) -> COLORREF {
+	return COLORREF((b << 16) | (g << 8) | r)
+	//return cast(COLORREF) rst
 }
 
-@private get_color_ref3 :: proc(rc : Color) -> ColorRef {
-	return ColorRef((rc.blue << 16) | (rc.green << 8) | rc.red)
-	//return cast(ColorRef) rst
+@private get_color_ref3 :: proc(rc : Color) -> COLORREF {
+	return COLORREF((rc.blue << 16) | (rc.green << 8) | rc.red)
+	//return cast(COLORREF) rst
 }
 
 get_color_ref :: proc{get_color_ref1, get_color_ref2, get_color_ref3}
-get_solid_brush :: proc(clr : uint) -> Hbrush { return CreateSolidBrush(get_color_ref(clr))}
+get_solid_brush :: proc(clr : uint) -> HBRUSH { return CreateSolidBrush(get_color_ref(clr))}
 //---------------------------------------------------------
 
 change_color_uint :: proc(clr : uint, adj : f64) -> Color {
@@ -69,7 +69,7 @@ change_color_uint :: proc(clr : uint, adj : f64) -> Color {
    return rc
 }
 
-change_color :: proc(clr : uint, adj : f64) -> ColorRef {
+change_color :: proc(clr : uint,adj : f64) -> COLORREF {
    rc := change_color_uint(clr, adj)
    crf := get_color_ref(rc)
    return crf
@@ -83,19 +83,19 @@ change_color_rgb :: proc(rc : Color, adj : f64) -> Color {
    return nrc
 }
 
-change_color_to_ref1 :: proc(c : uint, adj : f64) -> ColorRef {
+change_color_to_ref1 :: proc(c : uint, adj : f64) -> COLORREF {
    rc : Color = new_color(c)
    r : uint = clip(cast(uint) (f64(rc.red) * adj))
    g : uint = clip(cast(uint) (f64( rc.green) * adj))
    b : uint = clip(cast(uint) (f64( rc.blue) * adj))
-   return ColorRef((b << 16) | (g << 8) | r)
+   return COLORREF((b << 16) | (g << 8) | r)
 }
 
-change_color_to_ref2 :: proc(rc : Color, adj : f64) -> ColorRef {
+change_color_to_ref2 :: proc(rc : Color, adj : f64) -> COLORREF {
    r : uint = clip(cast(uint) (f64(rc.red) * adj))
    g : uint = clip(cast(uint) (f64( rc.green) * adj))
    b : uint = clip(cast(uint) (f64( rc.blue) * adj))
-   return ColorRef((b << 16) | (g << 8) | r)
+   return COLORREF((b << 16) | (g << 8) | r)
 }
 
 change_color_get_ref :: proc{change_color_to_ref1, change_color_to_ref2}
@@ -142,12 +142,12 @@ print_color_uint :: proc(rc :Color){
    fmt.printf("Rgb Value - %x\n",clr)
 }
 
-print_rgb_2 :: proc(r, g, b : uint) {
-   print("red = ", r)
-   print("green = ", g)
-   print("blue = ", b)
-   print("---------------------------")
-}
+// print_rgb_2 :: proc(r, g, b : uint) {
+//    print("red = ", r)
+//    print("green = ", g)
+//    print("blue = ", b)
+//    print("---------------------------")
+// }
 
 
 // Later install Ouput colorizer & Bookmarks extensions

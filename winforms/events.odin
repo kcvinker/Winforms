@@ -10,6 +10,7 @@ SizeEventHandler :: proc(sender : ^Control, e : ^SizeEventArgs)
 LBoxEventHandler :: proc(sender : ^Control, e : string)
 TreeEventHandler :: proc(sender : ^TreeView, e : ^TreeEventArgs)
 CreateDelegate :: proc(ctl : ^Control)
+ControlDelegate :: proc(ctl : ^Control)
 PropSetter :: proc(c: ^Control, p: any, v : any)
 
 
@@ -23,40 +24,40 @@ MouseEventArgs :: struct
 	using base : EventArgs,
 	button : MouseButtons,
 	clicks, delta : i32,
-	shift_key, ctrl_key : KeyState,
+	shiftKey, ctrlKey : KeyState,
 	x, y : int,
 }
 
 KeyEventArgs :: struct
 {
     using base : EventArgs,
-	alt_pressed : bool,
-    ctrl_pressed : bool,
-    shift_pressed : bool,
-    key_code : KeyEnum,
-    key_value : int,
-    suppress_key_press : bool,
+	altPressed : bool,
+    ctrlPressed : bool,
+    shiftPressed : bool,
+    keyCode : KeyEnum,
+    keyValue : int,
+    suppressKeyPress : bool,
 }
 
 DateTimeEvent :: struct
 {
     using base : EventArgs,
-    date_string : string,
-    dt_struct : SYSTEMTIME,
+    dateString : string,
+    dateStruct : SYSTEMTIME,
 }
 
 PaintEventArgs ::  struct
 {
     using base : EventArgs,
-    paint_info : ^PAINTSTRUCT,
+    paintInfo : ^PAINTSTRUCT,
 }
 
 SizeEventArgs :: struct
 {
     using base : EventArgs,
-    form_rect : ^Rect,
-    sized_on : SizedPosition,
-    client_area : Area,
+    formRect : ^RECT,
+    sizedOn : SizedPosition,
+    clientArea : Area,
    // sized_reason : SizedReason,
 }
 
@@ -65,7 +66,7 @@ TreeEventArgs :: struct
     using base : EventArgs,
     action : TreeViewAction,
     node : ^TreeNode,
-    old_node : ^TreeNode,
+    oldNode : ^TreeNode,
 }
 
 
@@ -78,44 +79,44 @@ new_event_args :: proc() -> EventArgs {
 	return ea
 }
 
-new_mouse_event_args :: proc(msg : u32, wp : Wparam, lp : Lparam) -> MouseEventArgs
+new_mouse_event_args :: proc(msg : u32, wp : WPARAM, lp : LPARAM) -> MouseEventArgs
 {
 	mea : MouseEventArgs
-	fw_keys := cast(Word) (wp & 0xffff) //(lo_word(cast(Dword) wp))
-	//fmt.println("fw_keys - ", fw_keys)
-	mea.delta = cast(i32) (hi_word(cast(Dword) wp))
-	switch fw_keys {
-	case 5 : mea.shift_key = KeyState.Pressed
-	case 9 : mea.ctrl_key = KeyState.Pressed
+	fwKeys := cast(WORD) (wp & 0xffff) //(lo_word(cast(DWORD) wp))
+	//fmt.println("fwKeys - ", fwKeys)
+	mea.delta = cast(i32) (hi_word(cast(DWORD) wp))
+	switch fwKeys {
+	case 5 : mea.shiftKey = KeyState.Pressed
+	case 9 : mea.ctrlKey = KeyState.Pressed
 	case 17 : mea.button = MouseButtons.Middle
 	case 33 : mea.button = MouseButtons.XButton1
 	}
 
 	switch msg {
 	case WM_MOUSEWHEEL, WM_MOUSEMOVE, WM_MOUSEHOVER, WM_NCHITTEST :
-		mea.x = cast(int) (lo_word(cast(Dword) lp))
-		mea.y = cast(int) (hi_word(cast(Dword) lp))
+		mea.x = cast(int) (lo_word(cast(DWORD) lp))
+		mea.y = cast(int) (hi_word(cast(DWORD) lp))
 	case WM_LBUTTONDOWN, WM_LBUTTONUP :
         mea.button = MouseButtons.Left
-        mea.x = cast(int) (lo_word(cast(Dword) lp))
-        mea.y = cast(int) (hi_word(cast(Dword) lp))
+        mea.x = cast(int) (lo_word(cast(DWORD) lp))
+        mea.y = cast(int) (hi_word(cast(DWORD) lp))
     case WM_RBUTTONDOWN, WM_RBUTTONUP :
         mea.button = MouseButtons.Right ;
-        mea.x = cast(int) (lo_word(cast(Dword) lp))
-        mea.y = cast(int) (hi_word(cast(Dword) lp))
+        mea.x = cast(int) (lo_word(cast(DWORD) lp))
+        mea.y = cast(int) (hi_word(cast(DWORD) lp))
 	}
 	return mea
 }
 
-new_key_event_args :: proc(wP : Wparam) -> KeyEventArgs
+new_key_event_args :: proc(wP : WPARAM) -> KeyEventArgs
 {
 	kea : KeyEventArgs
-    kea.key_code = KeyEnum(wP)
-    kea.key_value = cast(int) kea.key_code
-    #partial switch kea.key_code {
-	case KeyEnum.Shift : kea.shift_pressed = true
-	case KeyEnum.Ctrl : kea.ctrl_pressed = true
-	case KeyEnum.Alt : kea.alt_pressed = true
+    kea.keyCode = KeyEnum(wP)
+    kea.keyValue = cast(int) kea.keyCode
+    #partial switch kea.keyCode {
+	case KeyEnum.Shift : kea.shiftPressed = true
+	case KeyEnum.Ctrl : kea.ctrlPressed = true
+	case KeyEnum.Alt : kea.altPressed = true
     }
     return kea
 }
@@ -123,21 +124,21 @@ new_key_event_args :: proc(wP : Wparam) -> KeyEventArgs
 new_paint_event_args :: proc(ps : ^PAINTSTRUCT) -> PaintEventArgs
 {
     pea : PaintEventArgs
-    pea.paint_info = ps
+    pea.paintInfo = ps
     return pea
 }
 
-new_size_event_args :: proc(m : u32, wpm : Wparam, lpm : Lparam) -> SizeEventArgs
+new_size_event_args :: proc(m : u32, wpm : WPARAM, lpm : LPARAM) -> SizeEventArgs
 {
     sea : SizeEventArgs
     if m == WM_SIZING { // When resizing happening
-        sea.sized_on = SizedPosition(wpm)
-        sea.form_rect = direct_cast(lpm, ^Rect)
+        sea.sizedOn = SizedPosition(wpm)
+        sea.formRect = direct_cast(lpm, ^RECT)
     }
     else { //After resizing finished
         //sea.sized_reason = SizedReason(wpm)
-        sea.client_area.width = int(loword_lparam(lpm))
-        sea.client_area.height = int(hiword_lparam(lpm))
+        sea.clientArea.width = int(loword_lparam(lpm))
+        sea.clientArea.height = int(hiword_lparam(lpm))
     }
     return sea
 }
@@ -162,7 +163,7 @@ tree_event_args1 :: proc(ntv : ^NMTREEVIEW) -> TreeEventArgs
     }
 
     tea.node = direct_cast(ntv.itemNew.lParam, ^TreeNode)
-    tea.old_node = direct_cast(ntv.itemOld.lParam, ^TreeNode) if ntv.itemOld.lParam > 0 else nil
+    tea.oldNode = direct_cast(ntv.itemOld.lParam, ^TreeNode) if ntv.itemOld.lParam > 0 else nil
     return tea
 }
 

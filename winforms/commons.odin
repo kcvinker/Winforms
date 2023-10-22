@@ -1,9 +1,11 @@
 package winforms
 import "core:fmt"
 import "core:runtime"
+import "core:intrinsics"
 // My Own messages
 
 	ptf :: fmt.printf
+	print :: fmt.println
 	MSG_FIXED_VALUE :: 9000
 	CM_NOTIFY :: MSG_FIXED_VALUE + 1
 	CM_CTLLCOLOR :: MSG_FIXED_VALUE + 2
@@ -20,6 +22,7 @@ import "core:runtime"
 	CM_HSCROLL :: MSG_FIXED_VALUE + 13
 	CM_VSCROLL :: MSG_FIXED_VALUE + 14
 	CM_TVNODEEXPAND :: MSG_FIXED_VALUE + 15
+	CM_BUDDY_RESIZE :: MSG_FIXED_VALUE + 16
 
 
 
@@ -48,10 +51,7 @@ Area :: struct {width, height : int,}
 WordValue :: enum {Low, High}
 
 to_str :: proc(value : any) -> string {return fmt.tprint(value)}
-
-
-
-
+L :: intrinsics.constant_utf16_cstring
 
 current_time_internal :: proc() -> Time {
 	ftime : FILETIME
@@ -71,153 +71,165 @@ current_filetime :: proc(tm : TimeMode) -> i64 {
 	return result
 }
 
-create_hbrush :: proc(clr : uint) -> Hbrush {
+create_hbrush :: proc(clr : uint) -> HBRUSH {
 	cref := get_color_ref(clr)
 	return CreateSolidBrush(cref)
 }
 
-draw_ellipse :: proc(dch : Hdc, rc : Rect) {
+draw_ellipse :: proc(dch : HDC, rc : RECT) {
 	Ellipse(dch, rc.left, rc.top, rc.right, rc.bottom)
 }
 
-@private
-get_ctrl_text_internal :: proc(hw : Hwnd, alloc := context.allocator) -> string {
+@private get_ctrl_text_internal :: proc(hw : HWND, alloc := context.allocator) -> string 
+{
 	tlen := GetWindowTextLength(hw)
-	mem_chunks := make([]Wchar, tlen + 1, alloc)
+	mem_chunks := make([]WCHAR, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
-	//defer delete(mem_chunks)
+	defer delete(mem_chunks)
 	GetWindowText(hw, wsBuffer, i32(len(mem_chunks)))
 	return wstring_to_utf8(wsBuffer, -1)
 }
 
-
-
-@private
-calculate_ctl_size :: proc(ctl : ^Control) {
-	ss : Size
-    SendMessage(ctl.handle, BCM_GETIDEALSIZE, 0, direct_cast( &ss, Lparam))
+@private calculate_ctl_size :: proc(ctl : ^Control) 
+{
+	ss : SIZE
+    SendMessage(ctl.handle, BCM_GETIDEALSIZE, 0, direct_cast( &ss, LPARAM))
     ctl.width = int(ss.width)
     ctl.height = int(ss.height)
     MoveWindow(ctl.handle, i32(ctl.xpos), i32(ctl.ypos), ss.width, ss.height, true)
 }
 
-
-@private
-in_range :: proc(value, min_val, max_val : i32) -> bool {
+@private in_range :: proc(value, min_val, max_val : i32) -> bool 
+{
 	if value > min_val && value < max_val do return true
 	return false
 }
 
-@private
-alert :: proc(txt : string) {
+@private alert :: proc(txt : string) 
+{
 	@static cntr : int = 1
 	ptf("%s - [%d]\n", txt, cntr)
 	cntr += 1
 }
 
-@private
-alert2 :: proc(txt : string, data : any) {
+@private alert2 :: proc(txt : string, data : any) 
+{
 	@static cntr : int = 1
 	ptf("[%d] %s - %s\n", cntr, txt, fmt.tprint(data))
 	cntr += 1
 }
 
-@private
-
-
-
-
 concat_number :: proc{concat_number1, concat_number2}
 concat_number1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 concat_number2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 
-direct_cast :: proc(value : $T, $tp : typeid) -> tp {
-	up := cast(uintptr) value
+direct_cast :: proc(value : $T, $tp : typeid) -> tp 
+{
+	up := cast(UINT_PTR) value
 	return cast(tp) up
 }
 
-convert_to :: proc($tp : typeid, value : $T) -> tp {
-	up := cast(uintptr) cast(rawptr) value
+convert_to :: proc($tp : typeid, value : $T) -> tp 
+{
+	up := cast(UINT_PTR) cast(rawptr) value
 	return cast(tp) up
 }
 
-to_dwptr :: proc(ctl : ^Control) -> DwordPtr {
-	up := cast(uintptr) ctl
-	return cast(DwordPtr) up
+to_lparam :: proc(value: $T) -> LPARAM 
+{
+	up := cast(UINT_PTR) value
+	return cast(LPARAM) up
 }
 
-get_rect :: proc(hw : Hwnd) -> Rect {
-	rct : Rect
+to_wparam :: proc(value: $T) -> WPARAM 
+{
+	up := cast(UINT_PTR) value
+	return cast(WPARAM) up
+}
+
+to_dwptr :: proc(ctl : ^Control) -> DWORD_PTR 
+{
+	up := cast(UINT_PTR) ctl
+	return cast(DWORD_PTR) up
+}
+
+get_rect :: proc(hw : HWND) -> RECT 
+{
+	rct : RECT
 	GetClientRect(hw, &rct)
 	return rct
 }
 
-get_win_rect :: proc(hw : Hwnd) -> Rect {
-	rc : Rect
+get_win_rect :: proc(hw : HWND) -> RECT {
+	rc : RECT
 	GetWindowRect(hw, &rc)
 	return rc
 }
 
-make_dword :: proc(lo_val, hi_val, : $T) -> Dword {
-	hv := cast(Word) hi_val
-    lv := cast(Word) lo_val
-	dw_val := Dword(Dword(lv) | (Dword(hv)) << 16)
+make_dword :: proc(lo_val, hi_val, : $T) -> DWORD 
+{
+	hv := cast(WORD) hi_val
+    lv := cast(WORD) lo_val
+	dw_val := DWORD(DWORD(lv) | (DWORD(hv)) << 16)
 	return dw_val
 }
 // left = loword, right side - highword
 
 // There a lot of time we need to convert a handle like HBrush to HGDIOBJ.
 // This proc will help for it.
-to_hgdi_obj :: proc(value : $T ) -> Hgdiobj {return cast(Hgdiobj) value}
-to_lresult :: proc(value : $T) -> Lresult {
-	up := cast(uintptr) value
-	return cast(Lresult) up
+to_hgdi_obj :: proc(value : $T ) -> HGDIOBJ {return cast(HGDIOBJ) value}
+to_lresult :: proc(value : $T) -> LRESULT 
+{
+	up := cast(UINT_PTR) value
+	return cast(LRESULT) up
 }
 
 
 
 // If we want to get the virtual key code (VK_KEY_NUMPAD1 etc) from lparam...
 // in any keyboard related message, this proc helps to extract it
-get_virtual_key :: proc(value : Lparam) -> u32 {
+get_virtual_key :: proc(value : LPARAM) -> u32 
+{
 	scan_code : u32 = u32(value >> 16 )
     return MapVirtualKey(scan_code, MAPVK_VSC_TO_VK)
 }
 
 
-get_x_lparam :: proc(lpm : Lparam) -> int { return int(i16(loword_lparam(lpm)))}
-get_y_lparam :: proc(lpm : Lparam) -> int { return int(i16(hiword_lparam(lpm)))}
+get_x_lparam :: proc(lpm : LPARAM) -> int { return int(i16(loword_lparam(lpm)))}
+get_y_lparam :: proc(lpm : LPARAM) -> int { return int(i16(hiword_lparam(lpm)))}
 
-get_mouse_points :: proc(lpm : Lparam) -> Point { // Used in mouse messages
-	pt : Point
+get_mouse_points :: proc(lpm : LPARAM) -> POINT  // Used in mouse messages
+{ 
+	pt : POINT
 	pt.x = i32(loword_lparam(lpm))
 	pt.y = i32(hiword_lparam(lpm))
 	return pt
 }
 
 
-loword_wparam :: #force_inline proc "contextless" (x : Wparam) -> Word { return Word(x & 0xffff)}
-hiword_wparam :: #force_inline proc "contextless" (x : Wparam) -> Word { return Word(x >> 16)}
-loword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return Word(x & 0xffff)}
-hiword_lparam :: #force_inline proc "contextless" (x : Lparam) -> Word { return Word(x >> 16)}
+loword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x & 0xffff)}
+hiword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x >> 16)}
+loword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return WORD(x & 0xffff)}
+hiword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return WORD(x >> 16)}
 
 
-@private
-select_gdi_object :: proc(hd : Hdc, obj : $T) {
-	gdi_obj := cast(Hgdiobj) obj
+@private select_gdi_object :: proc(hd : HDC, obj : $T) 
+{
+	gdi_obj := cast(HGDIOBJ) obj
 	SelectObject(hd, gdi_obj)
 }
 
-@private
-delete_gdi_object :: proc(obj : $T) {
-	gdi_obj := cast(Hgdiobj) obj
+@private delete_gdi_object :: proc(obj : $T) 
+{
+	gdi_obj := cast(HGDIOBJ) obj
 	DeleteObject(gdi_obj)
 }
 
 
 
 
-@private
-dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) {
+@private dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) 
+{
 	for i := 0 ; i < len(arr) ; i += 1 {
 		if arr[i] == item {
 			index = i
@@ -228,8 +240,8 @@ dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_fo
 	return index, is_found
 }
 
-@private
-static_array_search :: proc(arr : []$T, item : T) -> (index : int, is_found : bool) {
+@private static_array_search :: proc(arr : []$T, item : T) -> (index : int, is_found : bool) 
+{
 	for i := 0 ; i < len(arr) ; i += 1 {
 		if arr[i] == item {
 			index = i
@@ -244,18 +256,18 @@ array_search :: proc{	dynamic_array_search,
 						static_array_search,
 }
 
-// This proc will return an Hbrush to paint the window or a button in gradient colors.
-@private
-create_gradient_brush :: proc(hdc : Hdc, rct : Rect, c1, c2 : Color, t2b : bool = true) -> Hbrush {
-	t_brush : Hbrush
-	mem_hdc : Hdc = CreateCompatibleDC(hdc)
-	hbmp : Hbitmap = CreateCompatibleBitmap(hdc, rct.right, rct.bottom)
+// This proc will return an HBRUSH to paint the window or a button in gradient colors.
+@private create_gradient_brush :: proc(hdc : HDC, rct : RECT, c1, c2 : Color, t2b : bool = true) -> HBRUSH 
+{
+	t_brush : HBRUSH
+	mem_hdc : HDC = CreateCompatibleDC(hdc)
+	hbmp : HBITMAP = CreateCompatibleBitmap(hdc, rct.right, rct.bottom)
 	loop_end : i32 = rct.bottom if t2b else rct.right
 
-	SelectObject(mem_hdc, Hgdiobj(hbmp))
+	SelectObject(mem_hdc, HGDIOBJ(hbmp))
 	i : i32
 	for i = 0; i < loop_end; i += 1 {
-		t_rct : Rect
+		t_rct : RECT
 		r, g, b : uint
 
 		r = c1.red + uint((i * i32(c2.red - c1.red) / loop_end))
@@ -268,34 +280,36 @@ create_gradient_brush :: proc(hdc : Hdc, rct : Rect, c1, c2 : Color, t2b : bool 
 		t_rct.right = rct.right if t2b else i + 1
 		t_rct.bottom = i + 1 if t2b else loop_end
 		FillRect(mem_hdc, &t_rct, t_brush)
-		DeleteObject(Hgdiobj(t_brush))
+		DeleteObject(HGDIOBJ(t_brush))
 	}
-	gradient_brush : Hbrush = CreatePatternBrush(hbmp)
+	gradient_brush : HBRUSH = CreatePatternBrush(hbmp)
 	DeleteDC(mem_hdc)
-	DeleteObject(Hgdiobj(t_brush))
-	DeleteObject(Hgdiobj(hbmp))
+	DeleteObject(HGDIOBJ(t_brush))
+	DeleteObject(HGDIOBJ(hbmp))
 	return gradient_brush
 }
 
 
-@private
-print_rect :: proc(rc : Rect) {
-	ptf("left : %d\n", rc.left)
-	ptf("top : %d\n", rc.top)
-	ptf("right : %d\n", rc.right)
-	ptf("bottom : %d\n", rc.bottom)
-	print("----------------------------------------------------")
-}
+// @private
+// print_rect :: proc(rc : RECT) {
+// 	ptf("left : %d\n", rc.left)
+// 	ptf("top : %d\n", rc.top)
+// 	ptf("right : %d\n", rc.right)
+// 	ptf("bottom : %d\n", rc.bottom)
+// 	print("----------------------------------------------------")
+// }
 
-@private set_rect :: proc(rc : ^Rect, left, top, right, bottom: i32) {
+@private set_rect :: proc(rc : ^RECT, left, top, right, bottom: i32) 
+{
 	rc.left = left
 	rc.top = top
 	rc.right = right
 	rc.bottom = bottom
 }
 
-Test :: proc() {
-	dw : Dword = 100 | 200 | 300
+Test :: proc() 
+{
+	dw : DWORD = 100 | 200 | 300
 	ptf("dw in decimal %d\n", dw)
 	ptf("dw in binary %b\n", dw)
 	ptf("dw in hex %X\n", dw)
@@ -304,14 +318,15 @@ Test :: proc() {
 }
 
 // Create a Control. Use this for all controls.
-create_control :: proc(c : ^Control) {
+create_control :: proc(c : ^Control) 
+{
 	// If it's a Combobox, it knows how to manage contril ID.
 	if c.kind != ControlKind.Combo_Box {
-		_global_ctl_id += 1
-    	c.control_id = _global_ctl_id
+		globalCtlID += 1
+    	c.controlID = globalCtlID
 	}
 
-	c._before_creation(c)
+	c._fp_beforeCreation(c)
 	width : i32 = 0
 	height : i32 = 0
 	if c.kind != ControlKind.Number_Picker {
@@ -319,29 +334,42 @@ create_control :: proc(c : ^Control) {
 		width = i32(c.width)
 		height = i32(c.height)
 	}
-    c.handle = CreateWindowEx(   c._ex_style,
-                                    c._cls_name,
-                                    to_wstring(c.text),
-                                    c._style,
-                                    i32(c.xpos),
-                                    i32(c.ypos),
-                                    width,
-                                    height,
-                                    c.parent.handle,
-                                    direct_cast(c.control_id, Hmenu),
-                                    app.h_instance,
-                                    nil )
+	ctrl_txt_ptr : LPCWSTR = c.text == "" ? nil: to_wstring(c.text)
+
+    c.handle = CreateWindowEx(  c._exStyle,
+								c._clsName,
+								ctrl_txt_ptr,
+								c._style,
+								i32(c.xpos),
+								i32(c.ypos),
+								width,
+								height,
+								c.parent.handle,
+								direct_cast(c.controlID, HMENU),
+								app.hInstance,
+								nil )
 
     if c.handle != nil {
-        c._is_created = true
+		// if c.kind == .Date_Time_Picker do print("dtp creation success")
+        c._isCreated = true
         setfont_internal(c)
-		c._after_creation(c)
+		c._fp_afterCreation(c)
 		// context = runtime.default_context()
 
     }
 }
 
-create_controls :: proc(ctls : ..^Control) {
+create_handle :: proc(ctl : ^Control) 
+{
+	if ctl.kind == .Form {
+		create_form(cast(^Form) ctl)
+	} else {
+		create_control(ctl)
+	}
+}
+
+create_controls :: proc(ctls : ..^Control) 
+{
 	for c in ctls {
 		create_control(c)
 	}

@@ -9,24 +9,23 @@ import "core:runtime"
 //import "core:fmt"
 
 rb_count : int
-WcRadioBtnClassW := to_wstring("Button")
-RadioButton :: struct {
+WcRadioBtnClassW := L("Button")
+
+RadioButton :: struct 
+{
     using control : Control,
-    text_alignment : enum {left, right},
+    textAlignment : enum {left, right},
     checked : bool,
-    check_on_click : bool,
-    auto_size : bool,
-
-    _hbrush : Hbrush,
-    _txt_style : Uint,
-
-    state_changed : EventHandler,
-
-
+    checkOnClick : bool,
+    autoSize : bool,
+    _hbrush : HBRUSH,
+    _txtStyle : UINT,
+    onStateChanged : EventHandler,
 }
 
-@private rb_ctor :: proc(f : ^Form, txt : string, x, y, w, h : int) -> RadioButton {
-    rb : RadioButton
+@private rb_ctor :: proc(f : ^Form, txt : string, x, y, w, h : int) -> ^RadioButton 
+{
+    rb := new(RadioButton)
     rb.kind = .Radio_Button
     rb.parent = f
     rb.font = f.font
@@ -35,101 +34,114 @@ RadioButton :: struct {
     rb.ypos = y
     rb.width = w
     rb.height = h
-    rb.check_on_click = true
-    rb.auto_size = true
-    rb.back_color = f.back_color
-    rb.fore_color = f.fore_color
+    rb.checkOnClick = true
+    rb.autoSize = true
+    rb.backColor = f.backColor
+    rb.foreColor = f.foreColor
     rb._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON
-    rb._txt_style = DT_SINGLELINE | DT_VCENTER
-    rb._ex_style = 0
-    rb._size_incr.width = 20
-    rb._size_incr.height = 3
-    rb._cls_name = WcRadioBtnClassW
-    rb._before_creation = cast(CreateDelegate) rb_before_creation
-	rb._after_creation = cast(CreateDelegate) rb_after_creation
+    rb._txtStyle = DT_SINGLELINE | DT_VCENTER
+    rb._exStyle = 0
+    rb._SizeIncr.width = 20
+    rb._SizeIncr.height = 3
+    rb._clsName = WcRadioBtnClassW
+    rb._fp_beforeCreation = cast(CreateDelegate) rb_before_creation
+	rb._fp_afterCreation = cast(CreateDelegate) rb_after_creation
     return rb
 }
-
-
 
 new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
 
-@private new_rb1 :: proc(parent : ^Form) -> RadioButton {
+@private new_rb1 :: proc(parent : ^Form, rapid: b8 = false) -> ^RadioButton 
+{
     rb_count += 1
     rtxt := concat_number("Radio_Button_", rb_count)
     rb := rb_ctor(parent, rtxt, 10, 10, 100, 25 )
+    if rapid do create_control(rb)
     return rb
 }
 
-@private new_rb2 :: proc(parent : ^Form, txt : string) -> RadioButton {
+@private new_rb2 :: proc(parent : ^Form, txt : string, rapid:b8 = false) -> ^RadioButton 
+{
     rb := rb_ctor(parent, txt, 10, 10, 100, 25 )
+    if rapid do create_control(rb)
     return rb
 }
 
-@private new_rb3 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> RadioButton {
-    rb := rb_ctor(parent, txt, x, y, w, h )
-    return rb
-}
-
-@private new_rb4 :: proc(parent : ^Form, txt : string, x, y : int) -> RadioButton {
+@private new_rb3 :: proc(parent : ^Form, txt : string, x, y : int, rapid: b8 = false) -> ^RadioButton 
+{
     rb := rb_ctor(parent, txt, x, y, 100, 25 )
+    if rapid do create_control(rb)
     return rb
 }
 
-@private rb_adjust_styles :: proc(rb : ^RadioButton) {
-    if !rb.check_on_click do rb._style ~= BS_AUTORADIOBUTTON
-    //if rb.text_alignment = .right do rb.
+@private new_rb4 :: proc(parent : ^Form, txt : string, x, y, w, h : int, rapid: b8 = false) -> ^RadioButton 
+{
+    rb := rb_ctor(parent, txt, x, y, w, h )
+    if rapid do create_control(rb)
+    return rb
 }
 
-radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool) {
+@private rb_adjust_styles :: proc(rb : ^RadioButton) 
+{
+    if !rb.checkOnClick do rb._style ~= BS_AUTORADIOBUTTON
+    //if rb.textAlignment = .right do rb.
+}
+
+radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool) 
+{
     state := 0x0001 if bstate else 0x0000
-    SendMessage(rb.handle, BM_SETCHECK, Wparam(state), 0)
+    SendMessage(rb.handle, BM_SETCHECK, WPARAM(state), 0)
 }
 
 // Change Radio Button's behaviour. Normally radio button will change it's checked state when it clicked.
 // But you can change that behaviour by passing a false to this function.
-radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) {
+radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) 
+{
     ready_to_change : bool
     if auto_check {
-         if !rb.check_on_click {
+         if !rb.checkOnClick {
             rb._style =  WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON
-            rb.check_on_click = true
+            rb.checkOnClick = true
             ready_to_change = true
         }
     } else {
-       if rb.check_on_click {
+       if rb.checkOnClick {
             rb._style = WS_VISIBLE | WS_CHILD  | BS_RADIOBUTTON
-            rb.check_on_click = false
+            rb.checkOnClick = false
             ready_to_change = true
         }
     }
     if ready_to_change {
-        SetWindowLongPtr(rb.handle, GWL_STYLE, LongPtr(rb._style))
+        SetWindowLongPtr(rb.handle, GWL_STYLE, LONG_PTR(rb._style))
         InvalidateRect(rb.handle, nil, true)
     }
 }
 
-@private rb_before_creation :: proc(rb : ^RadioButton) {
+@private rb_before_creation :: proc(rb : ^RadioButton) 
+{
     rb_adjust_styles(rb)
 }
 
-@private rb_after_creation :: proc(rb : ^RadioButton) {
+@private rb_after_creation :: proc(rb : ^RadioButton) 
+{
     set_subclass(rb, rb_wnd_proc)
-    if rb.auto_size do calculate_ctl_size(rb)
+    if rb.autoSize do calculate_ctl_size(rb)
     if rb.checked {
-        SendMessage(rb.handle, BM_SETCHECK, Wparam(0x0001), 0)
+        SendMessage(rb.handle, BM_SETCHECK, WPARAM(0x0001), 0)
     }
 }
 
-@private rb_finalize :: proc(rb: ^RadioButton, scid: UintPtr) {
+@private rb_finalize :: proc(rb: ^RadioButton, scid: UINT_PTR) 
+{
     delete_gdi_object(rb._hbrush)
     RemoveWindowSubclass(rb.handle, rb_wnd_proc, scid)
+    free(rb)
 }
 
-
-@private rb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {
-
-    context = runtime.default_context()
+@private rb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, 
+                                        sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
+{
+    context = global_context //runtime.default_context()
     rb := control_cast(RadioButton, ref_data)
     //display_msg(msg)
     switch msg {
@@ -138,102 +150,102 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) {
         case CM_CTLCOMMAND :
             if hiword_wparam(wp) == 0 {
                 rb.checked = bool(SendMessage(rb.handle, BM_GETCHECK, 0, 0))
-                if rb.state_changed != nil {
+                if rb.onStateChanged != nil {
                     ea := new_event_args()
-                    rb.state_changed(rb, &ea)
+                    rb.onStateChanged(rb, &ea)
                 }
             }
          case WM_LBUTTONDOWN:
-            rb._mdown_happened = true
-            if rb.left_mouse_down != nil {
+            rb._mDownHappened = true
+            if rb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                rb.left_mouse_down(rb, &mea)
+                rb.onMouseDown(rb, &mea)
                 return 0
             }
 
         case WM_RBUTTONDOWN:
-            rb._mrdown_happened = true
-            if rb.right_mouse_down != nil {
+            rb._mRDownHappened = true
+            if rb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                rb.right_mouse_down(rb, &mea)
+                rb.onRightMouseDown(rb, &mea)
             }
         case WM_LBUTTONUP :
-            if rb.left_mouse_up != nil {
+            if rb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                rb.left_mouse_up(rb, &mea)
+                rb.onMouseUp(rb, &mea)
             }
-            if rb._mdown_happened {
-                rb._mdown_happened = false
+            if rb._mDownHappened {
+                rb._mDownHappened = false
                 SendMessage(rb.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            if rb.mouse_click != nil {
+            if rb.onMouseClick != nil {
                 ea := new_event_args()
-                rb.mouse_click(rb, &ea)
+                rb.onMouseClick(rb, &ea)
                 return 0
             }
 
         case WM_LBUTTONDBLCLK :
-            rb._mdown_happened = false
-            if rb.double_click != nil {
+            rb._mDownHappened = false
+            if rb.onDoubleClick != nil {
                 ea := new_event_args()
-                rb.double_click(rb, &ea)
+                rb.onDoubleClick(rb, &ea)
                 return 0
             }
 
         case WM_RBUTTONUP :
-            if rb.right_mouse_up != nil {
+            if rb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                rb.right_mouse_up(rb, &mea)
+                rb.onRightMouseUp(rb, &mea)
             }
-            if rb._mrdown_happened {
-                rb._mrdown_happened = false
+            if rb._mRDownHappened {
+                rb._mRDownHappened = false
                 SendMessage(rb.handle, CM_RMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            rb._mrdown_happened = false
-            if rb.right_click != nil {
+            rb._mRDownHappened = false
+            if rb.onRightClick != nil {
                 ea := new_event_args()
-                rb.right_click(rb, &ea)
+                rb.onRightClick(rb, &ea)
                 return 0
             }
 
         case WM_MOUSEHWHEEL:
-            if rb.mouse_scroll != nil {
+            if rb.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                rb.mouse_scroll(rb, &mea)
+                rb.onMouseScroll(rb, &mea)
             }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-            if rb._is_mouse_entered {
-                if rb.mouse_move != nil {
+            if rb._isMouseEntered {
+                if rb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    rb.mouse_move(rb, &mea)
+                    rb.onMouseMove(rb, &mea)
                 }
             }
             else {
-                rb._is_mouse_entered = true
-                if rb.mouse_enter != nil  {
+                rb._isMouseEntered = true
+                if rb.onMouseEnter != nil  {
                     ea := new_event_args()
-                    rb.mouse_enter(rb, &ea)
+                    rb.onMouseEnter(rb, &ea)
                 }
             }
         //end case--------------------
 
         case WM_MOUSELEAVE :
-            rb._is_mouse_entered = false
-            if rb.mouse_leave != nil {
+            rb._isMouseEntered = false
+            if rb.onMouseLeave != nil {
                 ea := new_event_args()
-                rb.mouse_leave(rb, &ea)
+                rb.onMouseLeave(rb, &ea)
             }
 
 
         case CM_CTLLCOLOR :
-            hdc := direct_cast(wp, Hdc)
+            hdc := direct_cast(wp, HDC)
             SetBkMode(hdc, Transparent)
-            //SetBackColor(hdc, get_color_ref(rb.back_color))
-            rb._hbrush = CreateSolidBrush(get_color_ref(rb.back_color))
+            //SetBackColor(hdc, get_color_ref(rb.backColor))
+            rb._hbrush = CreateSolidBrush(get_color_ref(rb.backColor))
             return to_lresult(rb._hbrush)
 
         case CM_NOTIFY :
@@ -242,13 +254,13 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) {
                 case CDDS_PREERASE :
                     return CDRF_NOTIFYPOSTERASE
                 case CDDS_PREPAINT :
-                    cref := get_color_ref(rb.fore_color)
-                    rct : Rect = nmcd.rc
-                    if rb.text_alignment == .left{
+                    cref := get_color_ref(rb.foreColor)
+                    rct : RECT = nmcd.rc
+                    if rb.textAlignment == .left{
                         rct.left += 18
                     } else do rct.right -= 18
                     SetTextColor(nmcd.hdc, cref)
-                    DrawText(nmcd.hdc, to_wstring(rb.text), -1, &rct, rb._txt_style)
+                    DrawText(nmcd.hdc, to_wstring(rb.text), -1, &rct, rb._txtStyle)
 
                     return CDRF_SKIPDEFAULT
             }

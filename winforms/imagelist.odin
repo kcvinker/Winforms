@@ -36,23 +36,23 @@ ILS_ALPHA :: 0x00000008
 
 
 ImageList :: struct {
-	size_x, size_y : int,
-	color_depth : int,
-    color_option : ColorOptions,
-    initial_size : int,
-    grow_size : int,
-    use_mask, use_mirrored, use_strip : bool,
-    image_type : ImageTypes,
-    handle : HimageList,	
+	sizeX, sizeY : int,
+	colorDepth : int,
+    colorOption : ColorOptions,
+    initialSize : int,
+    growSize : int,
+    useMask, useMirrored, useStrip : bool,
+    imageType : ImageTypes,
+    handle : HIMAGELIST,
 }
 
 ColorOptions :: enum {
-    Default_Color, 
-    Color_4 = 4, 
-    Color_8 = 8, 
-    Color_16 = 16, 
-    Color_24 = 24 , 
-    Color32 = 32, 
+    Default_Color,
+    Color_4 = 4,
+    Color_8 = 8,
+    Color_16 = 16,
+    Color_24 = 24 ,
+    Color32 = 32,
     Color_DDB = 0x000000FE,
 }
 
@@ -62,49 +62,49 @@ ImageTypes :: enum {Normal_Image, Small_Image, State_Image}
 // Create an ImageList struct with default initialization.
 new_image_list :: proc() -> ImageList {
     img : ImageList
-    img.size_x = 16
-    img.size_y = 16    
-    img.initial_size = 4
-    img.grow_size = 4
-    img.color_option = .Default_Color  
-    img.image_type = .Normal_Image  
-    img.use_mask = true    
+    img.sizeX = 16
+    img.sizeY = 16
+    img.initialSize = 4
+    img.growSize = 4
+    img.colorOption = .Default_Color
+    img.imageType = .Normal_Image
+    img.useMask = true
     return img
 }
 
 
-// Create an ImageList handle. 
+// Create an ImageList handle.
 image_list_create_handle :: proc(img : ^ImageList) {
     uFlag : u32 = ILC_MASK
-    if !img.use_mask do uFlag ~= ILC_MASK
-    if img.use_mirrored do uFlag |= ILC_MIRROR
-    if img.use_strip do uFlag |= ILC_PERITEMMIRROR
-    uFlag |= cast(u32) img.color_option
-    img.handle = ImageList_Create(img.size_x,
-                                    img.size_y,
+    if !img.useMask do uFlag ~= ILC_MASK
+    if img.useMirrored do uFlag |= ILC_MIRROR
+    if img.useStrip do uFlag |= ILC_PERITEMMIRROR
+    uFlag |= cast(u32) img.colorOption
+    img.handle = ImageList_Create(img.sizeX,
+                                    img.sizeY,
                                     uFlag,
-                                    img.initial_size,
-                                    img.grow_size)                                    
-    
+                                    img.initialSize,
+                                    img.growSize)
+
 }
 
 image_list_add_icon :: proc(img : ImageList, fPath : string, indx : int, smIcon : bool = true) -> i32 {
-	hIco : Hicon
+	hIco : HICON
     defer DestroyIcon(hIco)
 	uRet : u32
 	if smIcon {
 		uRet = ExtractIconEx(to_wstring(fPath), i32(indx), nil, &hIco, 1)
 	} else do uRet = ExtractIconEx(to_wstring(fPath), i32(indx), &hIco, nil, 1)
 	if uRet == 0 do return -1
-	iRet := ImageList_ReplaceIcon(img.handle, -1, hIco)	
+	iRet := ImageList_ReplaceIcon(img.handle, -1, hIco)
 	return iRet
 }
 
-// image_list_destroy_handle :: proc(hImg : HimageList) {
+// image_list_destroy_handle :: proc(hImg : HIMAGELIST) {
 //     ImageList_Destroy(hImg)
 // }
 
-// image_list_add_image :: proc(handle : HimageList, hbImg : Hbitmap, hbMask : Hbitmap = nil) {
+// image_list_add_image :: proc(handle : HIMAGELIST, hbImg : HBITMAP, hbMask : HBITMAP = nil) {
 //     ImageList_Add(handle, hbImg, hbMask)
 // }
 

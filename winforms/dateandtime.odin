@@ -10,7 +10,7 @@ DateTime :: struct{
     minute,
     second,
     millisecond : int,
-    day_of_week : WeekDays,
+    dayOfWeek : WeekDays,
 }
 
 WeekDays :: enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }
@@ -28,7 +28,7 @@ new_date_time :: proc{dt_ctor, dt_ctor2}
     dt.minute = int(st.wMinute)
     dt.second = int(st.wSecond)
     dt.millisecond = int(st.wMilliseconds)
-    dt.day_of_week = WeekDays(st.wDayOfWeek)
+    dt.dayOfWeek = WeekDays(st.wDayOfWeek)
     //ptf("wHour - %d\n", st.wHour)
     return dt
 }
@@ -43,11 +43,11 @@ dt_ctor2 :: proc(iYear, iMonth, iDay, iHour, iMin, iSec : int) -> DateTime {
     dt.minute = iMin
     dt.second = iSec
     dt.millisecond = 0
-    dt.day_of_week = WeekDays(0)  
+    dt.dayOfWeek = WeekDays(0)
     return dt
-} 
+}
 
-@private 
+@private
 systime_to_datetime :: proc(st : SYSTEMTIME) -> DateTime {
     dt : DateTime
     dt.year = int(st.wYear)
@@ -57,21 +57,21 @@ systime_to_datetime :: proc(st : SYSTEMTIME) -> DateTime {
     dt.minute = int(st.wMinute)
     dt.second = int(st.wSecond)
     dt.millisecond = int(st.wMilliseconds)
-    dt.day_of_week = WeekDays(st.wDayOfWeek)   
+    dt.dayOfWeek = WeekDays(st.wDayOfWeek)
     return dt
 }
 
-@private 
+@private
 datetime_to_systime :: proc(dt : DateTime) -> SYSTEMTIME {
     st : SYSTEMTIME
-    st.wYear = Word(dt.year)
-    st.wMonth = Word(dt.month)
-    st.wDay = Word(dt.day)
-    st.wHour = Word(dt.hour)
-    st.wMinute = Word(dt.minute)
-    st.wSecond = Word(dt.second)
-    st.wMilliseconds = Word(dt.millisecond)
-    st.wDayOfWeek = Word(dt.day_of_week)   
+    st.wYear = WORD(dt.year)
+    st.wMonth = WORD(dt.month)
+    st.wDay = WORD(dt.day)
+    st.wHour = WORD(dt.hour)
+    st.wMinute = WORD(dt.minute)
+    st.wSecond = WORD(dt.second)
+    st.wMilliseconds = WORD(dt.millisecond)
+    st.wDayOfWeek = WORD(dt.dayOfWeek)
     return st
 }
 
@@ -87,7 +87,7 @@ date_string ::proc(dt : DateTime) -> string {
     return fmt.tprintf(  "%2d-%2d-%4d", dt.day, dt.month, dt.year)
 }
 
-sleep :: proc(msec : int) {Sleep(Dword(msec))}
+sleep :: proc(msec : int) {Sleep(DWORD(msec))}
 
 print_time :: proc(dt : DateTime) {
     ptf("Year - %d\n", dt.year)
@@ -97,7 +97,7 @@ print_time :: proc(dt : DateTime) {
     ptf("Minute - %d\n", dt.minute)
     ptf("Second - %d\n", dt.second)
     ptf("Milliseconds - %d\n", dt.millisecond)
-    ptf("Day of the week - %s\n", dt.day_of_week)
+    ptf("Day of the week - %s\n", dt.dayOfWeek)
 }
 
 print_systime :: proc(st : SYSTEMTIME) {

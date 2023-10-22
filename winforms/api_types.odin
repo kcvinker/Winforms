@@ -18,52 +18,53 @@ size_t     :: c.size_t
 wchar_t    :: c.wchar_t
 
 
-Uint :: c_uint
-UintPtr :: distinct uintptr
-IntPtr :: distinct int
-Long   :: distinct c_long
-LongPtr :: distinct int
-UlongPtr :: distinct c_ulong
-Ulong :: distinct c_ulong
+UINT:: c_uint
+UINT_PTR :: uintptr
+INT_PTR :: distinct int
+LONG   :: distinct c_long
+LONG_PTR :: distinct int
+ULONG_PTR :: distinct c_ulong
+ULONG:: distinct c_ulong
 
-Bool :: distinct b32
-Wchar :: wchar_t
-wstring :: [^]Wchar
-
-
-Handle    :: distinct rawptr
-Hwnd      :: distinct Handle
-Hfont 	  :: distinct Handle
-Hdc       :: distinct Handle
-Hpen	  :: distinct Handle
-Hinstance :: distinct Handle
-Hicon     :: distinct Handle
-Hcursor   :: distinct Handle
-Hmenu     :: distinct Handle
-Hbitmap   :: distinct Handle
-Hbrush    :: distinct Handle
-Hgdiobj   :: distinct Handle
-Hmodule   :: distinct Handle
-Hmonitor  :: distinct Handle
-Hrawinput :: distinct Handle
-Hresult   :: distinct i32
-Hkl       :: distinct Handle
-Hrgn	  :: distinct Handle
-Htheme	  :: distinct Handle
-Wparam    :: distinct UintPtr
-Lparam    :: distinct LongPtr
-Lresult   :: distinct LongPtr
-Dword     :: c_ulong
-DwordPtr  :: ^c_ulong
-Word      :: u16
-ColorRef  :: distinct Dword
-HtreeItem :: distinct Handle
-HimageList :: distinct Handle
+BOOL:: distinct b32
+WCHAR :: wchar_t
+wstring :: [^]WCHAR
+LPCWSTR :: ^WCHAR
 
 
+HANDLE    :: distinct rawptr
+HWND      :: distinct HANDLE
+HFONT 	  :: distinct HANDLE
+HDC       :: distinct HANDLE
+HPEN	  :: distinct HANDLE
+HINSTANCE :: distinct HANDLE
+HICON     :: distinct HANDLE
+HCURSOR   :: distinct HANDLE
+HMENU     :: distinct HANDLE
+HBITMAP   :: distinct HANDLE
+HBRUSH    :: distinct HANDLE
+HGDIOBJ   :: distinct HANDLE
+HMODULE   :: distinct HANDLE
+Hmonitor  :: distinct HANDLE
+Hrawinput :: distinct HANDLE
+HRESULT   :: distinct i32
+Hkl       :: distinct HANDLE
+HRGN	  :: distinct HANDLE
+HTHEME	  :: distinct HANDLE
+WPARAM    :: distinct UINT_PTR
+LPARAM    :: distinct LONG_PTR
+LRESULT   :: distinct LONG_PTR
+DWORD     :: c_ulong
+DWORD_PTR  :: ^c_ulong
+WORD      :: u16
+COLORREF  :: distinct DWORD
+HTREEITEM :: distinct HANDLE
+HIMAGELIST :: distinct HANDLE
 
-WNDPROC  :: distinct #type proc "std" (Hwnd, u32, Wparam, Lparam) -> Lresult
-SUBCLASSPROC :: distinct #type proc "std" (Hwnd, u32, Wparam, Lparam, UintPtr, DwordPtr) -> Lresult
+
+
+WNDPROC  :: distinct #type proc "std" (HWND, u32, WPARAM, LPARAM) -> LRESULT
+SUBCLASSPROC :: distinct #type proc "std" (HWND, u32, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) -> LRESULT
 
 WNDCLASSEXW :: struct {
 	cbSize,
@@ -71,28 +72,28 @@ WNDCLASSEXW :: struct {
 	lpfnWndProc: WNDPROC,
 	cbClsExtra,
 	cbWndExtra: i32,
-	hInstance: Hinstance,
-	hIcon: Hicon,
-	hCursor: Hcursor,
-	hbrBackground: Hbrush,
+	hInstance: HINSTANCE,
+	hIcon: HICON,
+	hCursor: HCURSOR,
+	hbrBackground: HBRUSH,
 	lpszMenuName,
 	lpszClassName: wstring,
-	hIconSm: Hicon,
+	hIconSm: HICON,
 }
 
-Point :: struct { x, y: i32,}
+POINT :: struct { x, y: i32,}
 
-Msg :: struct {hwnd: Hwnd, message: u32, wparam: Wparam, lparam: Lparam, time: u32, pt: Point,}
+MSG :: struct {hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM, time: u32, pt: POINT,}
 
 TRACKMOUSEEVENT :: struct {
-	cbSize : Dword,
-	dwFlags : Dword,
-	hwndTrack : Hwnd,
-	dwHoverTime : Dword,
+	cbSize : DWORD,
+	dwFlags : DWORD,
+	hwndTrack : HWND,
+	dwHoverTime : DWORD,
 }
 
 
-Rect :: struct {
+RECT :: struct {
 	left:   i32,
 	top:    i32,
 	right:  i32,
@@ -101,54 +102,54 @@ Rect :: struct {
 
 
 NMHDR :: struct {
-	hwndFrom : Hwnd,
+	hwndFrom : HWND,
 	idFrom : u64,
 	code : u64,
 }
 
 NMCUSTOMDRAW :: struct {
     hdr : NMHDR,
-    dwDrawStage : Dword,
-    hdc : Hdc,
-    rc : Rect,
-    dwItemSpec : DwordPtr,
+    dwDrawStage : DWORD,
+    hdc : HDC,
+    rc : RECT,
+    dwItemSpec : DWORD_PTR,
     uItemState : u64,
-    lItemParam : Lparam,
+    lItemParam : LPARAM,
 }
 LPNMCUSTOMDRAW :: ^NMCUSTOMDRAW
 
 INITCOMMONCONTROLSEX :: struct {
-	dwSize : Dword,
-	dwIcc : Dword,
+	dwSize : DWORD,
+	dwIcc : DWORD,
 }
 
-Size :: struct {width : i32, height : i32,}
+SIZE :: struct {width : i32, height : i32,}
 
 DRAWITEMSTRUCT :: struct {
-	ctlType : Uint,
-	ctlID: Uint,
-	itemID, itemAction, itemState : Uint,
-	hwndItem : Hwnd,
-	hDC : Hdc,
-	rcItem : Rect,
-	itemData : DwordPtr,
+	ctlType : UINT,
+	ctlID: UINT,
+	itemID, itemAction, itemState : UINT,
+	hwndItem : HWND,
+	hDC : HDC,
+	rcItem : RECT,
+	itemData : DWORD_PTR,
 }
 
 PAINTSTRUCT :: struct {
-	hdc : Hdc,
+	hdc : HDC,
 	fErase : b32,
-	rcPaint : Rect,
+	rcPaint : RECT,
 	fRestore : b32,
 	fIncUpdate : b32,
 	rgbReserved : [32]byte,
 }
 
 LOGFONT :: struct {
-	lfHeight : Long,
-	lfWidth : Long,
-	lfEscapement : Long,
-	lfOrientation : Long,
-	lfWeight : Long,
+	lfHeight : LONG,
+	lfWidth : LONG,
+	lfEscapement : LONG,
+	lfOrientation : LONG,
+	lfWeight : LONG,
 	lfItalic : byte,
 	lfUnderline : byte,
 	lfStrikeOut : byte,
@@ -157,23 +158,23 @@ LOGFONT :: struct {
 	lfClipPrecision : byte,
 	lfQuality : byte,
 	lfPitchAndFamily : byte,
-	lfFaceName : [^]Wchar,
+	lfFaceName : [^]WCHAR,
 }
 
 
 COMBOBOXINFO :: struct {
-	cbSize : Dword,
+	cbSize : DWORD,
 	rcItem,
-	rcButton : Rect,
-	stateButton : Dword,
+	rcButton : RECT,
+	stateButton : DWORD,
 	hwndCombo,
 	hwndItem,
-	hwndList : Hwnd,
+	hwndList : HWND,
 }
 
 FILETIME :: struct {
-	dwLowDateTime: Dword,
-	dwHighDateTime: Dword,
+	dwLowDateTime: DWORD,
+	dwHighDateTime: DWORD,
 }
 
 SYSTEMTIME :: struct{
@@ -184,18 +185,18 @@ SYSTEMTIME :: struct{
 	wHour,
 	wMinute,
 	wSecond,
-	wMilliseconds : Word,
+	wMilliseconds : WORD,
 }
 
 DTBGOPTS :: struct {
-	dwSize : Dword,
-	dwFlags : Dword,
-	rcClip : Rect,
+	dwSize : DWORD,
+	dwFlags : DWORD,
+	rcClip : RECT,
 }
 
 WINDOWPOS :: struct {
-	hwnd : Hwnd,
-	hwndInsertAfter : Hwnd,
+	hwnd : HWND,
+	hwndInsertAfter : HWND,
 	x, y : i32,
 	cx, cy : i32,
 	flags : u32,

@@ -1,10 +1,20 @@
-
+/*
+	Updated on 3rd week of 2023 October.
+	Reason : In first version, controls are merely structs. They are lived in stack. After doing some nice projects in
+	non-GCed languages like C3, I gained some knowledge and courage to work with heap objects.
+	So, I decided to re-write entire Winforms library & now controls are structs which living in heap.
+	So, we can handle them like classes. Besides that, I wrote some nice constructors for controls like
+	ListView. Now, you don't need to manually call the create_handle function for every control. Just pass a
+	boolean parameter to the constructor and it wil call the function for you. 
+	IMPORTANT: Improved the memory leak scanning via passing the context to wndproc functions of all controls.
+	Now, you can see the memory leaks & bad frees by calling 'show_memory_report' function.
+*/
 package winforms
 
 import "core:runtime"
 
-_global_subclass_id : int = 2001
-_global_ctl_id : Uint = 100
+globalSubClassID : int = 2001
+globalCtlID : UINT= 100
 
 
 ControlKind :: enum
@@ -34,109 +44,143 @@ Control :: struct
 {
 	kind : ControlKind,
 	name : string,
-	handle : Hwnd,
-	control_id : Uint,
+	handle : HWND,
+	controlID : UINT,
 	parent : ^Form,
 	text : string,
 	width, height : int,
     xpos, ypos : int,
     font : Font,
-	back_color : uint,
-	fore_color : uint,
+	backColor : uint,
+	foreColor : uint,
 	enabled : bool,
 	visible : bool,
 
-    _style, _ex_style : Dword,
-	_is_created : b64,
-	_is_mouse_tracking, _is_mouse_entered : bool,
-	_mdown_happened, _mrdown_happened : bool,
-	_size_incr : SizeIncrement,
-	_cls_name : wstring,
-	_before_creation, _after_creation : CreateDelegate,
-	_draw_flag: uint,
+    _style, _exStyle : DWORD,
+	_isCreated : b64,
+	_isMouseTracking, _isMouseEntered : bool,
+	_mDownHappened, _mRDownHappened : bool,
+	_SizeIncr : SizeIncrement,
+	_clsName : wstring,
+	_drawFlag: uint,
+	_fp_beforeCreation, _fp_afterCreation : CreateDelegate,
+	_fp_size_fix : ControlDelegate,
 
 
-	clr_changed : bool,
+	clrChanged : bool,
 
 	paint : PaintEventHandler,
-	got_focus,
-	lost_focus ,
-	mouse_enter,
-	mouse_click,
-	right_click,
-	double_click,
-	mouse_leave,
-	size_changing,
-	size_changed : EventHandler,
+	onGotFocus,
+	onLostFocus ,
+	onMouseEnter,
+	onMouseClick,
+	onRightClick,
+	onDoubleClick,
+	onMouseLeave,
+	onSizeChanging,
+	onSizeChanged : EventHandler,
 
-    left_mouse_down,
-    right_mouse_down,
-    left_mouse_up,
-    right_mouse_up,
-    mouse_scroll,
-    mouse_move,
-	mouse_hover : MouseEventHandler,
+    onMouseDown,
+    onRightMouseDown,
+    onMouseUp,
+    onRightMouseUp,
+    onMouseScroll,
+    onMouseMove,
+	onMouseHover : MouseEventHandler,
 
-    key_up,
-	key_down,
-	key_press : KeyEventHandler,
-	on_destroy : EventHandler,
+    onKeyUp,
+	onKeyDown,
+	onKeyPress : KeyEventHandler,
+	onDestroy : EventHandler,
 }
 
 @private
-control_cast :: proc($T : typeid, refd : DwordPtr) -> ^T { return cast(^T) (cast(uintptr) refd) }
+control_cast :: proc($T : typeid, refd : DWORD_PTR) -> ^T { return cast(^T) (cast(UINT_PTR) refd) }
 
 @private
 set_subclass :: proc(ctl : ^Control, fn_ptr : SUBCLASSPROC ) {
-	SetWindowSubclass(ctl.handle, fn_ptr, UintPtr(_global_subclass_id), to_dwptr(ctl) )
-	_global_subclass_id += 1
+	SetWindowSubclass(ctl.handle, fn_ptr, UINT_PTR(globalSubClassID), to_dwptr(ctl) )
+	globalSubClassID += 1
 }
 
-
-
-
 // This is used to set the defualt font right creating the control handle.
-@private
-setfont_internal :: proc(ctl : ^Control) {
+@private setfont_internal :: proc(ctl : ^Control) 
+{
 	isOkay : bool
 	if ctl.font.handle != ctl.parent.font.handle do isOkay = true
-	if ctl.font._def_font_changed do isOkay = true
+	if ctl.font._defFontChanged do isOkay = true
 	if isOkay {
 		CreateFont_handle(&ctl.font, ctl.handle)
-		SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
+		SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
 	}
 }
 
 redraw :: proc{redraw_ctl1, redraw_ctl2}
 @private
-redraw_ctl1 :: proc(ctl : ^Control) { if ctl._is_created do InvalidateRect(ctl.handle, nil, false) }
+redraw_ctl1 :: proc(ctl : ^Control) { if ctl._isCreated do InvalidateRect(ctl.handle, nil, false) }
 @private
-redraw_ctl2:: proc(ctl : Control) { if ctl._is_created do InvalidateRect(ctl.handle, nil, false) }
+redraw_ctl2:: proc(ctl : Control) { if ctl._isCreated do InvalidateRect(ctl.handle, nil, false) }
 
 // Enable or disable a control or form.
-control_enable :: proc(ctl : ^Control, bstate : bool) {
+control_enable :: proc(ctl : ^Control, bstate : bool) 
+{
 	ctl.enabled = bstate
 	#partial switch ctl.kind {
 		case .Number_Picker :
-			SendMessage(ctl.handle, WM_ENABLE, Wparam(bstate), 0)
+			SendMessage(ctl.handle, WM_ENABLE, WPARAM(bstate), 0)
 		case :
 			EnableWindow(ctl.handle, bstate)
 	}
 }
 
+cright :: proc(this: ^Control) -> int 
+{
+	rc : RECT
+	GetClientRect(this.handle, &rc)
+	MapWindowPoints(this.handle, this.parent.handle, cast(^POINT)&rc, 2);
+	return int(rc.right)
+}
+
+cbottom :: proc(this: ^Control) -> int 
+{
+	rc : RECT
+	GetClientRect(this.handle, &rc)
+	MapWindowPoints(this.handle, this.parent.handle, cast(^POINT)&rc, 2);
+	return int(rc.bottom)
+}
+
+
 // Hide or show a control.
-control_visibile :: proc(ctl : ^Control, bstate : bool) {
+control_visibile :: proc(ctl : ^Control, bstate : bool) 
+{
 	ctl.enabled = bstate
 	flag : i32 = SW_HIDE if !bstate else SW_SHOW
-	#partial switch ctl.kind {
-		case .Number_Picker :
-			np := direct_cast(ctl, ^NumberPicker)
-			ShowWindow(np.handle, flag)
-			ShowWindow(np._buddy_handle, flag)
-		case :
-			ShowWindow(ctl.handle, flag)
-	}
+	// #partial switch ctl.kind {
+	// 	case .Number_Picker :
+	// 		np := direct_cast(ctl, ^NumberPicker)
+	// 		ShowWindow(np.handle, flag)
+	// 		ShowWindow(np._buddyHandle, flag)
+	// 	case :
+	// 		ShowWindow(ctl.handle, flag)
+	// }
 }
+
+control_setdisable :: proc(this: ^Control, value: b8) 
+{
+	if this._isCreated do EnableWindow(this.handle, !value)
+}
+
+control_set_foreground :: proc(this: ^Control) 
+{
+	if this._isCreated do SetForegroundWindow(this.handle)
+}
+
+// control_isdisable :: proc(this: ^Control) -> b8
+// {
+// 	if this._isCreated do EnableWindow(this.handle, !value)
+// }
+
+
 
 
 // To set a user defined font before or after creating the control handle
@@ -147,27 +191,28 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int, fw : FontWeight
 	weight = fw
 	italics = fi
 	underline = fu
-	_def_font_changed = true
+	_defFontChanged = true
 	if ctl.handle != nil { // Only set the font if control handle is created.
 		CreateFont_handle(&ctl.font, ctl.handle)
-		SendMessage(ctl.handle, WM_SETFONT, Wparam(ctl.font.handle), Lparam(1))
-		if ctl.kind == .Label { // Label need special care only because of the autosize property
-			lb := cast(^Label) ctl
-			if lb.auto_size do calculate_ctl_size(lb)
-		}
+		SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
+		// if ctl.kind == .Label { // Label need special care only because of the autosize property
+		// 	lb := cast(^Label) ctl
+		// 	if lb.autoSize do calculate_ctl_size(lb)
+		// }
 	}
+	if ctl._fp_size_fix != nil do ctl._fp_size_fix(ctl)
 }
 
 control_set_font_name :: proc(ctl : ^Control, fn : string) {
-	ctl.font._def_font_changed = true
+	ctl.font._defFontChanged = true
 	ctl.font.name = fn
-	if ctl._is_created do control_set_font(ctl, fn, ctl.font.size)
+	if ctl._isCreated do control_set_font(ctl, fn, ctl.font.size)
 }
 
  control_set_font_size :: proc(ctl : ^Control, fsz : int, ) {
-	ctl.font._def_font_changed = true
+	ctl.font._defFontChanged = true
 	ctl.font.size = fsz
-	if ctl._is_created do control_set_font(ctl, ctl.font.name, fsz)
+	if ctl._isCreated do control_set_font(ctl, ctl.font.name, fsz)
 }
 
 
@@ -189,18 +234,18 @@ control_set_size :: proc(ctl : ^Control, width, height : int) {
 // Note :- This is not applicable for all controls.
 control_set_text :: proc(ctl : ^Control, txt : string) {
 	ctl.text = txt
-	if ctl._is_created {
-		#partial switch ctl.kind {
-			case .Label : // Label need special care only because of the autosize property
-				lb := cast(^Label) ctl
-				if lb.auto_size do calculate_ctl_size(lb)
-			case .Check_Box :
-				cb := cast(^CheckBox) ctl
-				if cb.auto_size do calculate_ctl_size(cb)
-			case .Radio_Button :
-				rb := cast(^RadioButton) ctl
-				if rb.auto_size do calculate_ctl_size(rb)
-		}
+	if ctl._isCreated {
+		// #partial switch ctl.kind {
+		// 	case .Label : // Label need special care only because of the autosize property
+		// 		lb := cast(^Label) ctl
+		// 		if lb.autoSize do calculate_ctl_size(lb)
+		// 	case .Check_Box :
+		// 		cb := cast(^CheckBox) ctl
+		// 		if cb.autoSize do calculate_ctl_size(cb)
+		// 	case .Radio_Button :
+		// 		rb := cast(^RadioButton) ctl
+		// 		if rb.autoSize do calculate_ctl_size(rb)
+		// }
 		SetWindowText(ctl.handle, to_wstring(txt))
 	}
 }
@@ -211,7 +256,7 @@ control_set_text :: proc(ctl : ^Control, txt : string) {
 // IMPORTANT := delete the string after use
 control_get_text :: proc(ctl : Control, alloc := context.allocator) -> string {
 	tlen := GetWindowTextLength(ctl.handle)
-	mem_chunks := make([]Wchar, tlen + 1, alloc)
+	mem_chunks := make([]WCHAR, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
 	//defer delete(mem_chunks)
 	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))
@@ -222,7 +267,7 @@ control_get_text :: proc(ctl : Control, alloc := context.allocator) -> string {
 // Note :- This is not applicable for all controls.
 control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u16 {
 	tlen := GetWindowTextLength(ctl.handle)
-	mem_chunks := make([]Wchar, tlen + 1, alloc)
+	mem_chunks := make([]WCHAR, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
 	//defer delete(mem_chunks)
 	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))
@@ -235,69 +280,69 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 @private
 set_back_color1 :: proc(ctl : ^Control, clr : uint) {
 	//print("not implemented")
-	#partial switch ctl.kind {
-		case .Button:
-			btn := cast(^Button) ctl
-			btn_backcolor_control(btn, clr)
-		case .Tree_View :
-			treeview_set_back_color(ctl, clr)
+	// #partial switch ctl.kind {
+	// 	case .Button:
+	// 		btn := cast(^Button) ctl
+	// 		btn_backcolor_control(btn, clr)
+	// 	case .Tree_View :
+	// 		treeview_set_back_color(ctl, clr)
 
-		case : // For all other controls
-			ctl.clr_changed = true
-			ctl.back_color = clr
-			redraw(ctl)
-			//if ctl._is_created do InvalidateRect(ctl.handle, nil, true)
-	}
+	// 	case : // For all other controls
+	// 		ctl.clrChanged = true
+	// 		ctl.backColor = clr
+	// 		redraw(ctl)
+	// 		//if ctl._isCreated do InvalidateRect(ctl.handle, nil, true)
+	// }
 }
 
-@private
-set_back_color2 :: proc(ctl : ^Control, clr : Color) {
-	uclr := rgb_to_uint(clr)
-	#partial switch ctl.kind {
-		case .Button:
-			btn := cast(^Button) ctl
-			// btn_backcolor_control(btn, uclr)
-	}
-}
+// @private
+// set_back_color2 :: proc(ctl : ^Control, clr : Color) {
+// 	uclr := rgb_to_uint(clr)
+// 	#partial switch ctl.kind {
+// 		case .Button:
+// 			btn := cast(^Button) ctl
+// 			// btn_backcolor_control(btn, uclr)
+// 	}
+// }
 
 // To set the back color of a control or form.
 // Note :- This is not applicable for all controls.
-control_set_back_color :: proc{set_back_color1, set_back_color2}
+// control_set_back_color :: proc{set_back_color1, set_back_color2}
 //-------------------------------------------------------------
 
-@private
-set_fore_color1 :: proc(ctl : ^Control, clr : uint) {
-	#partial switch ctl.kind {
-		case .Button :
-			btn := cast(^Button) ctl
-			btn_forecolor_control(btn, clr)
-		case .Tree_View :
-			//tv := cast(^Tree_View) ctl
-			ctl.back_color = clr
-			if ctl._is_created {
-				cref := get_color_ref(clr)
-				SendMessage(ctl.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, Lparam))
-			}
+// @private
+// set_fore_color1 :: proc(ctl : ^Control, clr : uint) {
+// 	#partial switch ctl.kind {
+// 		case .Button :
+// 			btn := cast(^Button) ctl
+// 			btn_forecolor_control(btn, clr)
+// 		case .Tree_View :
+// 			//tv := cast(^Tree_View) ctl
+// 			ctl.backColor = clr
+// 			if ctl._isCreated {
+// 				cref := get_color_ref(clr)
+// 				SendMessage(ctl.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, LPARAM))
+// 			}
 
-		case : // for all other controls
-			ctl.fore_color = clr
-			if ctl._is_created do InvalidateRect(ctl.handle, nil, false)
-	}
-}
+// 		case : // for all other controls
+// 			ctl.foreColor = clr
+// 			if ctl._isCreated do InvalidateRect(ctl.handle, nil, false)
+// 	}
+// }
 
-@private
-set_fore_color2 :: proc(ctl : ^Control, clr : Color) {
-	uclr := rgb_to_uint(clr)
-	#partial switch ctl.kind {
-		case .Button :
-			btn := cast(^Button) ctl
-			// set_button_forecolor(btn, uclr)
-	}
-}
+// @private
+// set_fore_color2 :: proc(ctl : ^Control, clr : Color) {
+// 	uclr := rgb_to_uint(clr)
+// 	#partial switch ctl.kind {
+// 		case .Button :
+// 			btn := cast(^Button) ctl
+// 			// set_button_forecolor(btn, uclr)
+// 	}
+// }
 
 // To set the fore color of a control or form.
 // Note :- This is not applicable for all controls.
-control_set_fore_color :: proc{set_fore_color1, set_fore_color2}
+// control_set_fore_color :: proc{set_fore_color1, set_fore_color2}
 //--------------------------------------------------------------
 
 // Writen to set a control's focus, but it seems not working.
@@ -306,123 +351,128 @@ control_SetFocus :: proc(ctl : Control) {
 	// I don't know how to fix this.
 	//curr_hw := GetFocus()
 	SetFocus(ctl.handle)
-	//SendMessage(hw, WM_UPDATEUISTATE, Wparam(0x10002), 0)
-	//SendMessage(ctl.handle, WM_SETFOCUS, direct_cast(0, Wparam), 0)
-	// mdw := Wparam(make_dword(2, 0x1))
+	//SendMessage(hw, WM_UPDATEUISTATE, WPARAM(0x10002), 0)
+	//SendMessage(ctl.handle, WM_SETFOCUS, direct_cast(0, WPARAM), 0)
+	// mdw := WPARAM(make_dword(2, 0x1))
     // SendMessage(ctl.handle, WM_UPDATEUISTATE, mdw, 0)
-	//  mdw := Wparam(make_dword(1, 0x4 | 0x1))
+	//  mdw := WPARAM(make_dword(1, 0x4 | 0x1))
     //          SendMessage(ctl.handle, WM_CHANGEUISTATE, mdw, 0)
     //         ptf("low word - %d, hi word - %d\n", loword_wparam(mdw), hiword_wparam(mdw))
 
 }
 
-set_focus :: proc(hwnd : Hwnd) {SetFocus(hwnd)}
+set_focus :: proc(hwnd : HWND) {SetFocus(hwnd)}
 
 
 // Common control message handlers
 
 // Left Mouse down, up, click
-	ctrl_left_mousedown_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
-		ctl._mdown_happened = true
-		if ctl.left_mouse_down != nil {
+	ctrl_left_mousedown_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM) {
+		ctl._mDownHappened = true
+		if ctl.onMouseDown != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
-			ctl.left_mouse_down(ctl, &mea)
+			ctl.onMouseDown(ctl, &mea)
 		}
 	}
 
-	ctrl_left_mouseup_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
-		if ctl._mdown_happened {
-			ctl._mdown_happened = false
+	ctrl_left_mouseup_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM) {
+		if ctl._mDownHappened {
+			ctl._mDownHappened = false
 			PostMessage(ctl.handle, CM_LMOUSECLICK, 0, 0)
 		}
-		if ctl.left_mouse_up != nil {
+		if ctl.onMouseUp != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
-			ctl.left_mouse_up(ctl, &mea)
+			ctl.onMouseUp(ctl, &mea)
 		}
 	}
 
 	ctrl_left_mouseclick_handler :: proc(ctl: ^Control) {
-		if ctl.mouse_click != nil {
+		if ctl.onMouseClick != nil {
 			ea := new_event_args()
-			ctl.mouse_click(ctl, &ea)
+			ctl.onMouseClick(ctl, &ea)
 		}
 	}
 // End section
 
 // Right mouse down, up, click
-	ctrl_right_mousedown_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
-		ctl._mdown_happened = true
-		if ctl.right_mouse_down != nil {
+	ctrl_right_mousedown_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM) {
+		ctl._mDownHappened = true
+		if ctl.onRightMouseDown != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
-			ctl.right_mouse_down(ctl, &mea)
+			ctl.onRightMouseDown(ctl, &mea)
 		}
 	}
 
-	ctrl_right_mouseup_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
-		if ctl._mdown_happened {
-			ctl._mdown_happened = false
+	ctrl_right_mouseup_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM) {
+		if ctl._mDownHappened {
+			ctl._mDownHappened = false
 			PostMessage(ctl.handle, CM_RMOUSECLICK, 0, 0)
 		}
-		if ctl.right_mouse_up != nil {
+		if ctl.onRightMouseUp != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
-			ctl.right_mouse_up(ctl, &mea)
+			ctl.onRightMouseUp(ctl, &mea)
 		}
 	}
 
 	ctrl_right_mouseclick_handler :: proc(ctl: ^Control) {
-		if ctl.right_click != nil {
+		if ctl.onRightClick != nil {
 			ea := new_event_args()
-			ctl.right_click(ctl, &ea)
+			ctl.onRightClick(ctl, &ea)
 		}
 	}
 // End section
 
 // Mouse wheel, enter, move, leave
-	ctrl_mousewheel_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
-		if ctl.mouse_scroll != nil {
+	ctrl_mousewheel_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM) {
+		if ctl.onMouseScroll != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
-			ctl.mouse_scroll(ctl, &mea)
+			ctl.onMouseScroll(ctl, &mea)
 		}
 	}
 
-	ctrl_mousemove_handler :: proc(ctl: ^Control, msg: Uint, wpm: Wparam, lpm: Lparam) {
-		if ctl._is_mouse_entered {
-			if ctl.mouse_move != nil {
+	ctrl_mousemove_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM) {
+		if ctl._isMouseEntered {
+			if ctl.onMouseMove != nil {
 				mea := new_mouse_event_args(msg, wpm, lpm)
-				ctl.mouse_move(ctl, &mea)
+				ctl.onMouseMove(ctl, &mea)
 			}
 		}
 		else {
-			ctl._is_mouse_entered = true
-			if ctl.mouse_enter != nil  {
+			ctl._isMouseEntered = true
+			if ctl.onMouseEnter != nil  {
 				ea := new_event_args()
-				ctl.mouse_enter(ctl, &ea)
+				ctl.onMouseEnter(ctl, &ea)
 			}
 		}
 	}
 
 	ctrl_mouseleave_handler :: proc(ctl: ^Control) {
-		ctl._is_mouse_entered = false
-		if ctl.mouse_leave != nil {
+		ctl._isMouseEntered = false
+		if ctl.onMouseLeave != nil {
 			ea := new_event_args()
-			ctl.mouse_leave(ctl, &ea)
+			ctl.onMouseLeave(ctl, &ea)
 		}
 	}
 
 ctrl_setfocus_handler :: proc(ctl: ^Control) {
-	if ctl.got_focus != nil {
+	if ctl.onGotFocus != nil {
 		ea := new_event_args()
-		ctl.got_focus(ctl, &ea)
+		ctl.onGotFocus(ctl, &ea)
 	}
 }
 
 ctrl_killfocus_handler :: proc(ctl: ^Control) {
-	if ctl.lost_focus != nil {
+	if ctl.onLostFocus != nil {
 		ea := new_event_args()
-		ctl.lost_focus(ctl, &ea)
+		ctl.onLostFocus(ctl, &ea)
 	}
 }
 
+// ctrl_destructor :: proc(ctl: ^Control, ctx: runtime.Context) {
+// 	context = ctx
+// 	// free(ctl.font)
+// 	print("font freed in control ", ctx.user_index)
+// }
 
 // End section
 

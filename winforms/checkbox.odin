@@ -7,20 +7,20 @@ WcCheckBoxW : wstring
 CheckBox :: struct {
     using control : Control,
     checked : bool,
-    text_alignment : enum {Left, Right},
-    check_changed : EventHandler,
-    auto_size : bool,
-    _bk_brush : Hbrush,
-    _txt_style : Uint,
-
+    textAlignment : enum {Left, Right},
+    autoSize : bool,
+    _bkBrush : HBRUSH,
+    _txtStyle : UINT,
+    // Events
+    onCheckChanged : EventHandler,
 }
 
 @private cb_count : int
 
-@private cb_ctor :: proc(p : ^Form, txt : string = "") -> CheckBox {
+@private cb_ctor :: proc(p : ^Form, txt : string = "", bc: b8) -> ^CheckBox {
     if WcCheckBoxW == nil do WcCheckBoxW = to_wstring("Button")
     cb_count += 1
-    cb : CheckBox
+    cb := new(CheckBox)
     cb.kind = .Check_Box
     cb.parent = p
     cb.font = p.font
@@ -29,18 +29,19 @@ CheckBox :: struct {
     cb.ypos = 50
     cb.width = 30
     cb.height = 20
-    cb.back_color = p.back_color
-    cb.fore_color = app.clr_black
-    cb._ex_style = 0
+    cb.backColor = p.backColor
+    cb.foreColor = app.clrBlack
+    cb._exStyle = 0
     cb._style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX
-    cb._ex_style =  WS_EX_LTRREADING | WS_EX_LEFT
-    cb._txt_style = DT_SINGLELINE | DT_VCENTER
-    cb.auto_size = true
-    cb._size_incr.width = 20
-    cb._size_incr.height = 3
-    cb._cls_name = WcCheckBoxW
-    cb._before_creation = cast(CreateDelegate) cb_before_creation
-	cb._after_creation = cast(CreateDelegate) cb_after_creation
+    cb._exStyle =  WS_EX_LTRREADING | WS_EX_LEFT
+    cb._txtStyle = DT_SINGLELINE | DT_VCENTER
+    cb.autoSize = true
+    cb._SizeIncr.width = 20
+    cb._SizeIncr.height = 3
+    cb._clsName = WcCheckBoxW
+    cb._fp_beforeCreation = cast(CreateDelegate) cb_before_creation
+	cb._fp_afterCreation = cast(CreateDelegate) cb_after_creation
+    if bc do create_control(cb)
     return cb
 }
 
@@ -48,24 +49,26 @@ CheckBox :: struct {
 // Constructor for Checkbox type.
 new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
-@private new_checkbox1 :: proc(parent : ^Form, txt : string = "") -> CheckBox {
-    cb := cb_ctor(parent, txt)
+@private new_checkbox1 :: proc(parent : ^Form, txt : string = "", rapid: b8 = false) -> ^CheckBox {
+    cb := cb_ctor(parent, txt, bc = rapid)
     return cb
 }
 
-@private new_checkbox2 :: proc(parent : ^Form, txt : string, x, y : int) -> CheckBox {
-    cb := cb_ctor(parent, txt)
+@private new_checkbox2 :: proc(parent : ^Form, txt : string, x, y : int, rapid: b8 = false) -> ^CheckBox {
+    cb := cb_ctor(parent, txt, bc = false)
     cb.xpos = x
     cb.ypos = y
+    if rapid do create_control(cb)
     return cb
 }
 
-@private new_checkbox3 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> CheckBox {
-    cb := cb_ctor(parent, txt)
+@private new_checkbox3 :: proc(parent : ^Form, txt : string, x, y, w, h : int, rapid: b8 = false) -> ^CheckBox {
+    cb := cb_ctor(parent, txt, bc = false)
     cb.width = w
     cb.height = h
     cb.xpos = x
     cb.ypos = y
+    if rapid do create_control(cb)
     return cb
 }
 
@@ -73,30 +76,32 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
 @private cb_after_creation :: proc(cb : ^CheckBox) {
 	set_subclass(cb, cb_wnd_proc)
-    append(&cb.parent._cdraw_childs, cb.handle)
-    if cb.auto_size do calculate_ctl_size(cb)
+    append(&cb.parent._cDrawChilds, cb.handle)
+    if cb.autoSize do calculate_ctl_size(cb)
 
 }
 
 
 
 @private adjust_style :: proc(cb : ^CheckBox) {
-    if cb.text_alignment == .Right {
+    if cb.textAlignment == .Right {
         cb._style |= BS_RIGHTBUTTON
-       cb._txt_style |= DT_RIGHT
+       cb._txtStyle |= DT_RIGHT
     }
 }
 
-@private cb_finalize :: proc(cb: ^CheckBox, scid: UintPtr) {
-    delete_gdi_object(cb._bk_brush)
+@private cb_finalize :: proc(cb: ^CheckBox, scid: UINT_PTR) {
+    delete_gdi_object(cb._bkBrush)
     RemoveWindowSubclass(cb.handle, cb_wnd_proc, scid)
+    free(cb)
 }
 
 
 
-@private cb_wnd_proc :: proc "std" (hw : Hwnd, msg : u32, wp : Wparam, lp : Lparam,
-                                                        sc_id : UintPtr, ref_data : DwordPtr) -> Lresult {
-    context = runtime.default_context()
+@private cb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+                                                        sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+    // context = runtime.default_context()
+    context = global_context
     cb := control_cast(CheckBox, ref_data)
 
     switch msg {
@@ -112,16 +117,16 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
         case CM_CTLCOMMAND :
             cb.checked = cast(bool) SendMessage(hw, BM_GETCHECK, 0, 0)
-            if cb.check_changed != nil {
+            if cb.onCheckChanged != nil {
                 ea := new_event_args()
-                cb.check_changed(cb, &ea)
+                cb.onCheckChanged(cb, &ea)
             }
         case CM_CTLLCOLOR :
-            hd := direct_cast(wp, Hdc)
-            bkref := get_color_ref(cb.back_color)
+            hd := direct_cast(wp, HDC)
+            bkref := get_color_ref(cb.backColor)
             SetBkMode(hd, transparent)
-            if cb._bk_brush == nil do cb._bk_brush = CreateSolidBrush(bkref)
-            return to_lresult(cb._bk_brush)
+            if cb._bkBrush == nil do cb._bkBrush = CreateSolidBrush(bkref)
+            return to_lresult(cb._bkBrush)
 
         case CM_NOTIFY :
             nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
@@ -129,100 +134,100 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 case CDDS_PREERASE :
                     return CDRF_NOTIFYPOSTERASE
                 case CDDS_PREPAINT :
-                    cref := get_color_ref(cb.fore_color)
-                    rct : Rect = nmcd.rc
-                    if cb.text_alignment == .Left{
+                    cref := get_color_ref(cb.foreColor)
+                    rct : RECT = nmcd.rc
+                    if cb.textAlignment == .Left{
                         rct.left += 18
                     } else do rct.right -= 18
                     SetTextColor(nmcd.hdc, cref)
-                    DrawText(nmcd.hdc, to_wstring(cb.text), -1, &rct, cb._txt_style)
+                    DrawText(nmcd.hdc, to_wstring(cb.text), -1, &rct, cb._txtStyle)
 
                     return CDRF_SKIPDEFAULT
             }
 
         case WM_LBUTTONDOWN:
-            cb._mdown_happened = true
-            if cb.left_mouse_down != nil {
+            cb._mDownHappened = true
+            if cb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cb.left_mouse_down(cb, &mea)
+                cb.onMouseDown(cb, &mea)
                 return 0
             }
 
         case WM_RBUTTONDOWN:
-            cb._mrdown_happened = true
-            if cb.right_mouse_down != nil {
+            cb._mRDownHappened = true
+            if cb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cb.right_mouse_down(cb, &mea)
+                cb.onRightMouseDown(cb, &mea)
             }
         case WM_LBUTTONUP :
-            if cb.left_mouse_up != nil {
+            if cb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cb.left_mouse_up(cb, &mea)
+                cb.onMouseUp(cb, &mea)
             }
-            if cb._mdown_happened {
-                cb._mdown_happened = false
+            if cb._mDownHappened {
+                cb._mDownHappened = false
                 SendMessage(cb.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            if cb.mouse_click != nil {
+            if cb.onMouseClick != nil {
                 ea := new_event_args()
-                cb.mouse_click(cb, &ea)
+                cb.onMouseClick(cb, &ea)
                 return 0
             }
 
         case WM_LBUTTONDBLCLK :
-            cb._mdown_happened = false
-            if cb.double_click != nil {
+            cb._mDownHappened = false
+            if cb.onDoubleClick != nil {
                 ea := new_event_args()
-                cb.double_click(cb, &ea)
+                cb.onDoubleClick(cb, &ea)
                 return 0
             }
 
         case WM_RBUTTONUP :
-            if cb.right_mouse_up != nil {
+            if cb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cb.right_mouse_up(cb, &mea)
+                cb.onRightMouseUp(cb, &mea)
             }
-            if cb._mrdown_happened {
-                cb._mrdown_happened = false
+            if cb._mRDownHappened {
+                cb._mRDownHappened = false
                 SendMessage(cb.handle, CM_RMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            cb._mrdown_happened = false
-            if cb.right_click != nil {
+            cb._mRDownHappened = false
+            if cb.onRightClick != nil {
                 ea := new_event_args()
-                cb.right_click(cb, &ea)
+                cb.onRightClick(cb, &ea)
                 return 0
             }
 
         case WM_MOUSEHWHEEL:
-            if cb.mouse_scroll != nil {
+            if cb.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                cb.mouse_scroll(cb, &mea)
+                cb.onMouseScroll(cb, &mea)
             }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-            if cb._is_mouse_entered {
-                if cb.mouse_move != nil {
+            if cb._isMouseEntered {
+                if cb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    cb.mouse_move(cb, &mea)
+                    cb.onMouseMove(cb, &mea)
                 }
             }
             else {
-                cb._is_mouse_entered = true
-                if cb.mouse_enter != nil  {
+                cb._isMouseEntered = true
+                if cb.onMouseEnter != nil  {
                     ea := new_event_args()
-                    cb.mouse_enter(cb, &ea)
+                    cb.onMouseEnter(cb, &ea)
                 }
             }
         //end case--------------------
 
         case WM_MOUSELEAVE :
-            cb._is_mouse_entered = false
-            if cb.mouse_leave != nil {
+            cb._isMouseEntered = false
+            if cb.onMouseLeave != nil {
                 ea := new_event_args()
-                cb.mouse_leave(cb, &ea)
+                cb.onMouseLeave(cb, &ea)
             }
 
 

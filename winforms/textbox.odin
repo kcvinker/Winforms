@@ -5,9 +5,9 @@ import "core:fmt"
 EN_SETFOCUS :: 256
 UIS_CLEAR :: 2
 UISF_HIDEFOCUS :: 0x1
-WcEditClassW : wstring
-TBSTYLE :: WS_CHILD | WS_VISIBLE | ES_LEFT | WS_TABSTOP | ES_AUTOHSCROLL | WS_MAXIMIZEBOX | WS_OVERLAPPED
-TBEXSTYLE :: WS_EX_LEFT | WS_EX_LTRREADING  | WS_EX_CLIENTEDGE | WS_EX_NOPARENTNOTIFY
+WcEditClassW : wstring = L("Edit")
+TBSTYLE :: WS_CHILD | WS_VISIBLE | ES_LEFT | WS_TABSTOP | ES_AUTOHSCROLL | WS_OVERLAPPED | WS_CLIPCHILDREN|WS_CLIPSIBLINGS
+TBEXSTYLE :: WS_EX_LEFT | WS_EX_LTRREADING  | WS_EX_CLIENTEDGE 
 
 // Text case for Textbox control.
 // Possible values : default, lower_case, upper_case
@@ -21,93 +21,114 @@ TextType :: enum {Default, Number_Only, Password_Char}
 // Possible values : left, center, right
 TbTextAlign :: enum {Left, Center, Right}
 
-TextBox :: struct {
+TextBox :: struct 
+{
     using control : Control,
-    text_alignment : TbTextAlign,
-    multi_line : bool,
-    text_type : TextType,
-    text_case : TextCase,
-    hide_selection : bool,
-    read_only : bool,
-    cue_banner : string,
-    focus_rect_color : uint,
-
-    text_changed : EventHandler,
-
-    _bk_brush : Hbrush,
-    _draw_focus_rct : bool,
-    _frc_ref : ColorRef,
-
-
-
+    textAlignment : TbTextAlign,
+    multiLine : bool,
+    textType : TextType,
+    textCase : TextCase,
+    hideSelection : bool,
+    readOnly : bool,
+    cueBanner : string,
+    focusRectColor : uint,
+    onTextChanged : EventHandler,
+    _bkBrush : HBRUSH,
+    _drawFocusRect : bool,
+    _frcRef : COLORREF,
 }
 
-@private tb_ctor :: proc(p : ^Form, w : int = 200, h : int = 0) -> TextBox {
-    if WcEditClassW == nil do WcEditClassW = to_wstring("Edit")
-    tb : TextBox
+@private tb_ctor :: proc(p : ^Form, x, y, w, h: int) -> ^TextBox 
+{
+    tb := new(TextBox)
     tb.kind = .Text_Box
     tb.width = w
-    tb.height = h + 25 if h == 0 else h
+    tb.height = h
     tb.parent = p
-    tb.xpos = 10
-    tb.ypos = 10
-    tb.font = p.font
-    tb.hide_selection = true
-    tb.back_color = app.clr_white
-    tb.fore_color = app.clr_black
-    tb.focus_rect_color = 0x007FFF
-    //tb._draw_focus_rct = true
-    tb._frc_ref = get_color_ref(tb.focus_rect_color)
-    tb._style = TBSTYLE  // | WS_CLIPCHILDREN
-    tb._ex_style = TBEXSTYLE  // WS_EX_STATICEDGE // WS_EX_WINDOWEDGE WS_EX_CLIENTEDGE WS_EX_STATICEDGE WS_EX_WINDOWEDGE //|
-    tb._cls_name = WcEditClassW
-    tb._before_creation = cast(CreateDelegate) tb_before_creation
-    tb._after_creation = cast(CreateDelegate) tb_after_creation
-    // fmt.println("class ", tb._cls_name)
-    return tb
-}
-
-
-
-// TextBox control constructor.
-new_textbox :: proc{new_tb1, new_tb2}
-
-@private new_tb1 :: proc(parent : ^Form) -> TextBox {
-    tb := tb_ctor(parent)
-    return tb
-}
-
-@private new_tb2 :: proc(parent : ^Form, w, h : int, x : int = 50, y : int = 50) -> TextBox {
-    tb := tb_ctor(parent, w, h)
     tb.xpos = x
     tb.ypos = y
+    tb.font = p.font
+    tb.hideSelection = true
+    tb.backColor = app.clrWhite
+    tb.foreColor = app.clrBlack
+    tb.focusRectColor = 0x007FFF
+    //tb._drawFocusRect = true
+    tb._frcRef = get_color_ref(tb.focusRectColor)
+    tb._style = TBSTYLE  // | WS_CLIPCHILDREN
+    tb._exStyle = TBEXSTYLE  // WS_EX_STATICEDGE // WS_EX_WINDOWEDGE WS_EX_CLIENTEDGE WS_EX_STATICEDGE WS_EX_WINDOWEDGE //|
+    tb._clsName = WcEditClassW
+    tb._fp_beforeCreation = cast(CreateDelegate) tb_before_creation
+    tb._fp_afterCreation = cast(CreateDelegate) tb_after_creation
+    // fmt.println("class ", tb._clsName)
     return tb
 }
 
+// TextBox control constructor.
+new_textbox :: proc{new_tb1, new_tb2, new_tb3, new_tb4, new_tb5}
 
-@private adjust_styles :: proc(tb : ^TextBox) {
-    if tb.multi_line do tb._style |= ES_MULTILINE | ES_WANTRETURN
-    if !tb.hide_selection do tb._style |= ES_NOHIDESEL
-    if tb.read_only do tb._style |= ES_READONLY
-
-    if tb.text_case == .Lower_Case { tb._style |= ES_LOWERCASE }
-    else if tb.text_case == .Upper_Case { tb._style |= ES_UPPERCASE }
-
-    if tb.text_type == .Number_Only { tb._style |= ES_NUMBER }
-    else if tb.text_type == .Password_Char { tb._style |= ES_PASSWORD }
-
-    if tb.text_alignment == .Center { tb._style |= ES_CENTER }
-    else if tb.text_alignment == .Right { tb._style |= ES_RIGHT }
-    tb._bk_brush = get_solid_brush(tb.back_color)
+@private new_tb1 :: proc(parent : ^Form, rapid: b8 = false) -> ^TextBox 
+{
+    tb := tb_ctor(parent, 10, 10, 180, 27)
+    if rapid do create_control(tb)
+    return tb
 }
 
-@private set_tb_bk_clr :: proc(tb : ^TextBox, clr : uint) {
-    tb.back_color = clr
-    if tb._is_created do InvalidateRect(tb.handle, nil, false)
+@private new_tb2 :: proc(parent : ^Form, x, y: int, rapid: b8 = false) -> ^TextBox 
+{
+    tb := tb_ctor(parent, x, y, 180, 27)
+    if rapid do create_control(tb)
+    return tb
+}
+
+@private new_tb3 :: proc(parent : ^Form, x, y, w, h: int, rapid: b8 = false) -> ^TextBox 
+{
+    tb := tb_ctor(parent, x, y, w, h)
+    if rapid do create_control(tb)
+    return tb
+}
+
+@private new_tb4 :: proc(parent : ^Form, txt: string, x, y: int, rapid: b8 = false) -> ^TextBox 
+{
+    tb := tb_ctor(parent, x, y, 180, 27)
+    tb.text = txt
+    if rapid do create_control(tb)
+    return tb
+}
+
+@private new_tb5 :: proc(parent : ^Form, txt: string, x, y, w, h: int, rapid: b8 = false) -> ^TextBox 
+{
+    tb := tb_ctor(parent, x, y, w, h)
+    tb.text = txt
+    if rapid do create_control(tb)
+    return tb
+}
+
+@private adjust_styles :: proc(tb : ^TextBox) 
+{
+    if tb.multiLine do tb._style |= ES_MULTILINE | ES_WANTRETURN
+    if !tb.hideSelection do tb._style |= ES_NOHIDESEL
+    if tb.readOnly do tb._style |= ES_READONLY
+
+    if tb.textCase == .Lower_Case { tb._style |= ES_LOWERCASE }
+    else if tb.textCase == .Upper_Case { tb._style |= ES_UPPERCASE }
+
+    if tb.textType == .Number_Only { tb._style |= ES_NUMBER }
+    else if tb.textType == .Password_Char { tb._style |= ES_PASSWORD }
+
+    if tb.textAlignment == .Center { tb._style |= ES_CENTER }
+    else if tb.textAlignment == .Right { tb._style |= ES_RIGHT }
+    tb._bkBrush = get_solid_brush(tb.backColor)
+}
+
+@private set_tb_bk_clr :: proc(tb : ^TextBox, clr : uint) 
+{
+    tb.backColor = clr
+    if tb._isCreated do InvalidateRect(tb.handle, nil, false)
 }
 
 // Select or de-select all the text in TextBox control.
-textbox_set_selection :: proc(tb : ^TextBox, value : bool) {
+textbox_set_selection :: proc(tb : ^TextBox, value : bool) 
+{
     wpm, lpm : i32
     if value {
         wpm = 0
@@ -116,39 +137,45 @@ textbox_set_selection :: proc(tb : ^TextBox, value : bool) {
         wpm = -1
         lpm = 0
     }
-    SendMessage(tb.handle, EM_SETSEL, Wparam(wpm), Lparam(lpm))
+    SendMessage(tb.handle, EM_SETSEL, WPARAM(wpm), LPARAM(lpm))
 }
 
 // Set a TextBox's read only state.
-textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool) {
-    SendMessage(tb.handle, EM_SETREADONLY, Wparam(bstate), 0)
-    tb.read_only = bstate
+textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool) 
+{
+    SendMessage(tb.handle, EM_SETREADONLY, WPARAM(bstate), 0)
+    tb.readOnly = bstate
 }
 
-textbox_clear_all :: proc(tb : ^TextBox) {
-    if tb._is_created do SetWindowText(tb.handle, to_wstring(""))
+textbox_clear_all :: proc(tb : ^TextBox) 
+{
+    if tb._isCreated do SetWindowText(tb.handle, to_wstring(""))
 }
 
 @private tb_before_creation :: proc(tb : ^TextBox) {adjust_styles(tb)}
 
-@private tb_after_creation :: proc(tb : ^TextBox) {
+@private tb_after_creation :: proc(tb : ^TextBox) 
+{
     set_subclass(tb, tb_wnd_proc)
-    if len(tb.cue_banner) > 0 {
-        up := cast(uintptr) to_wstring(tb.cue_banner)
-        SendMessage(tb.handle, EM_SETCUEBANNER, 1, Lparam(up) )
+    if len(tb.cueBanner) > 0 {
+        up := cast(UINT_PTR) to_wstring(tb.cueBanner)
+        SendMessage(tb.handle, EM_SETCUEBANNER, 1, LPARAM(up) )
     }
+    EnableWindow(tb.handle, true)
 }
 
-@private tb_finalize :: proc(tb: ^TextBox, scid: UintPtr) {
-    delete_gdi_object(tb._bk_brush)
+@private tb_finalize :: proc(tb: ^TextBox, scid: UINT_PTR) 
+{
+    delete_gdi_object(tb._bkBrush)
     RemoveWindowSubclass(tb.handle, tb_wnd_proc, scid)
+    free(tb)
 }
 
 
 
-@private tb_wnd_proc :: proc "std" (hw: Hwnd, msg: u32, wp: Wparam, lp: Lparam, sc_id: UintPtr, ref_data: DwordPtr) -> Lresult {
+@private tb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
 
-    context = runtime.default_context()
+    context = global_context //runtime.default_context()
     tb := control_cast(TextBox, ref_data)
 
     switch msg {
@@ -167,167 +194,165 @@ textbox_clear_all :: proc(tb : ^TextBox) {
 
         case CM_CTLLCOLOR :
             // print("ctl clr rcvd")
-            if tb.fore_color != def_fore_clr || tb.back_color != def_back_clr {
-                dc_handle := direct_cast(wp, Hdc)
+            if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
+                dc_handle := direct_cast(wp, HDC)
                 // SetBkMode(dc_handle, Transparent)
-                if tb.fore_color != def_fore_clr do SetTextColor(dc_handle, get_color_ref(tb.fore_color))
-                SetBackColor(dc_handle, get_color_ref(tb.back_color))
-                // tb._bk_brush = CreateSolidBrush(get_color_ref(tb.back_color))
+                if tb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
+                SetBackColor(dc_handle, get_color_ref(tb.backColor))
+                // tb._bkBrush = CreateSolidBrush(get_color_ref(tb.backColor))
 
             } //else do return 0
 
-            return to_lresult(tb._bk_brush)
+            return to_lresult(tb._bkBrush)
 
 
 
         // case CM_CTLCOMMAND :
         //     ncode := hiword_wparam(wp)
         //     if ncode == EN_SETFOCUS {
-        //     //    tb._draw_focus_rct = true
+        //     //    tb._drawFocusRect = true
         //        //SetWindowPos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
 
-        //        if tb.got_focus != nil {
+        //        if tb.onGotFocus != nil {
         //             ea := new_event_args()
-        //             tb.got_focus(tb, &ea)
+        //             tb.onGotFocus(tb, &ea)
         //             return 0
         //         }
         //     }
 
         case WM_LBUTTONDOWN:
-           // tb._draw_focus_rct = true
-            tb._mdown_happened = true
-            if tb.left_mouse_down != nil {
+           // tb._drawFocusRect = true
+            tb._mDownHappened = true
+            if tb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                tb.left_mouse_down(tb, &mea)
+                tb.onMouseDown(tb, &mea)
                 //return 0
             }
             //return 0
 
         case WM_RBUTTONDOWN :
-            tb._mrdown_happened = true
-            if tb.right_mouse_down != nil {
+            tb._mRDownHappened = true
+            if tb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                tb.right_mouse_down(tb, &mea)
+                tb.onRightMouseDown(tb, &mea)
             }
 
         case WM_LBUTTONUP :
-            if tb.left_mouse_up != nil {
+            if tb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                tb.left_mouse_up(tb, &mea)
+                tb.onMouseUp(tb, &mea)
             }
-            if tb._mdown_happened {
-                tb._mdown_happened = false
+            if tb._mDownHappened {
+                tb._mDownHappened = false
                 SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            tb._mdown_happened = false
-            if tb.mouse_click != nil {
+            tb._mDownHappened = false
+            if tb.onMouseClick != nil {
                 ea := new_event_args()
-                tb.mouse_click(tb, &ea)
+                tb.onMouseClick(tb, &ea)
                 //return 0
             }
 
         case WM_LBUTTONDBLCLK :
-            if tb.double_click != nil {
+            if tb.onDoubleClick != nil {
                 ea := new_event_args()
-                tb.double_click(tb, &ea)
+                tb.onDoubleClick(tb, &ea)
                 return 0
             }
 
         case WM_RBUTTONUP :
-            if tb.right_mouse_up != nil {
+            if tb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                tb.right_mouse_up(tb, &mea)
+                tb.onRightMouseUp(tb, &mea)
             }
-            if tb._mrdown_happened {
-                tb._mrdown_happened = false
+            if tb._mRDownHappened {
+                tb._mRDownHappened = false
                 SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            tb._mrdown_happened = false
-            if tb.right_click != nil {
+            tb._mRDownHappened = false
+            if tb.onRightClick != nil {
                 ea := new_event_args()
-                tb.right_click(tb, &ea)
+                tb.onRightClick(tb, &ea)
                 return 0
             }
 
         case WM_MOUSEHWHEEL:
-            if tb.mouse_scroll != nil {
+            if tb.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                tb.mouse_scroll(tb, &mea)
+                tb.onMouseScroll(tb, &mea)
             }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-            if tb._is_mouse_entered {
-                if tb.mouse_move != nil {
+            if tb._isMouseEntered {
+                if tb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    tb.mouse_move(tb, &mea)
+                    tb.onMouseMove(tb, &mea)
                 }
             }
             else {
-                tb._is_mouse_entered = true
-                if tb.mouse_enter != nil  {
+                tb._isMouseEntered = true
+                if tb.onMouseEnter != nil  {
                     ea := new_event_args()
-                    tb.mouse_enter(tb, &ea)
+                    tb.onMouseEnter(tb, &ea)
                 }
             }
 
         case WM_MOUSELEAVE :
-            tb._is_mouse_entered = false
-            if tb.mouse_leave != nil {
+            tb._isMouseEntered = false
+            if tb.onMouseLeave != nil {
                 ea := new_event_args()
-                tb.mouse_leave(tb, &ea)
+                tb.onMouseLeave(tb, &ea)
             }
 
         case WM_SETFOCUS :
-        if tb.got_focus != nil {
+        if tb.onGotFocus != nil {
             ea := new_event_args()
-            tb.got_focus(tb, &ea)
+            tb.onGotFocus(tb, &ea)
         }
 
 
         case WM_KILLFOCUS:
 
-        //    tb._draw_focus_rct = false
-            if tb.lost_focus != nil {
+        //    tb._drawFocusRect = false
+            if tb.onLostFocus != nil {
                 ea := new_event_args()
-                tb.lost_focus(tb, &ea)
+                tb.onLostFocus(tb, &ea)
             }
 
 
         case WM_KEYDOWN :
-           // tb._draw_focus_rct = true
-            if tb.key_down != nil {
+           // tb._drawFocusRect = true
+            if tb.onKeyDown != nil {
                 kea := new_key_event_args(wp)
-                tb.key_down(tb, &kea)
+                tb.onKeyDown(tb, &kea)
                 return 0
             }
 
         case WM_KEYUP :
-            if tb.key_up != nil {
+            if tb.onKeyUp != nil {
                 kea := new_key_event_args(wp)
-                tb.key_up(tb, &kea)
+                tb.onKeyUp(tb, &kea)
                 return 0
             }
 
         case WM_CHAR :
-            if tb.key_press != nil {
+            if tb.onKeyPress != nil {
                 kea := new_key_event_args(wp)
-                tb.key_press(tb, &kea)
+                tb.onKeyPress(tb, &kea)
             }
            SendMessage(tb.handle, CM_TBTXTCHANGED, 0, 0)
 
         case CM_TBTXTCHANGED :
-            if tb.text_changed != nil {
+            if tb.onTextChanged != nil {
                 ea:= new_event_args()
-                tb.text_changed(tb, &ea)
+                tb.onTextChanged(tb, &ea)
             }
 
 
         case WM_DESTROY: tb_finalize(tb, sc_id)
-
-
 
         // case : return DefSubclassProc(hw, msg, wp, lp)
     }

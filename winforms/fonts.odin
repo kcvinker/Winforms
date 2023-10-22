@@ -1,5 +1,6 @@
 package winforms
-// import "core:fmt"
+import "core:mem"
+import "core:runtime"
 
 _def_font_name :: "Tahoma"
 _def_font_size :: 12
@@ -11,21 +12,23 @@ Font :: struct
 	weight : FontWeight,
 	underline : bool,
 	italics : bool,
-	handle : Hfont,
-	_def_font_changed : bool,
+	handle : HFONT,
+	_defFontChanged : bool,
 
 
 }
 
 new_font_1 :: proc() -> Font
 {
+	// context = ctx
 	f : Font
+	// print("alloc error in font ", ae, " user index : ", ctx.user_index)
 	f.name = _def_font_name
 	f.size = _def_font_size
 	f.weight = FontWeight.Normal
 	f.underline = false
 	f.italics = false
-	f._def_font_changed = false
+	f._defFontChanged = false
 	return f
 }
 
@@ -37,7 +40,7 @@ new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, fi : bool 
 	f.weight = fw
 	f.underline = fu
 	f.italics = fi
-	f._def_font_changed = true
+	f._defFontChanged = true
 	return f
 }
 
@@ -45,16 +48,16 @@ new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
 
 
-CreateFont_handle :: proc(fnt : ^Font, hw : Hwnd = nil) {
-	dc_hwnd : Hdc = GetDC(hw)
-	font_height : Long = -MulDiv(i32(fnt.size), GetDeviceCaps(dc_hwnd, LOGPIXELSY), 72)
-	ReleaseDC(hw, dc_hwnd)
-	b_value := bool(false)
+CreateFont_handle :: proc(fnt : ^Font, hw : HWND = nil) {
+	dcHwnd : HDC = GetDC(hw)
+	fontHeight : LONG = -MulDiv(i32(fnt.size), GetDeviceCaps(dcHwnd, LOGPIXELSY), 72)
+	ReleaseDC(hw, dcHwnd)
+	bValue := bool(false)
 
-	// fnt.handle = CreateFont(font_height, 0, 0, 0, i32(fnt.weight), Dword(fnt.italics),
-	// 							Dword(fnt.underline),
-	// 							Dword(b_value),
-	// 							Dword(1),
+	// fnt.handle = CreateFont(fontHeight, 0, 0, 0, i32(fnt.weight), DWORD(fnt.italics),
+	// 							DWORD(fnt.underline),
+	// 							DWORD(bValue),
+	// 							DWORD(1),
 	// 							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 	// 							DEFAULT_QUALITY, DEFAULT_PITCH, to_wstring(fnt.name))
 	// Changed this and used this function from 19-jan-2023
@@ -62,8 +65,8 @@ CreateFont_handle :: proc(fnt : ^Font, hw : Hwnd = nil) {
 	lf.lfItalic = cast(byte)fnt.italics
 	lf.lfUnderline = cast(byte)fnt.underline
 	lf.lfFaceName = to_wstring(fnt.name)
-	lf.lfHeight = font_height
-	lf.lfWeight = cast(Long)fnt.weight
+	lf.lfHeight = fontHeight
+	lf.lfWeight = cast(LONG)fnt.weight
 	lf.lfCharSet = DEFAULT_CHARSET
 	lf.lfOutPrecision = OUT_DEFAULT_PRECIS
 	lf.lfClipPrecision = CLIP_DEFAULT_PRECIS
