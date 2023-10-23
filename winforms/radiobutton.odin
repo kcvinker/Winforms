@@ -38,7 +38,7 @@ RadioButton :: struct
     this.autoSize = true
     this.backColor = f.backColor
     this.foreColor = f.foreColor
-    this._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON
+    this._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_CLIPCHILDREN
     this._txtStyle = DT_SINGLELINE | DT_VCENTER
     this._exStyle = 0
     this._SizeIncr.width = 20
@@ -46,6 +46,7 @@ RadioButton :: struct
     this._clsName = WcRadioBtnClassW
     this._fp_beforeCreation = cast(CreateDelegate) rb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) rb_after_creation
+    this._inherit_color = true
     append(&f._controls, this)
     return this
 }
@@ -245,8 +246,10 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
         case CM_CTLLCOLOR :
             hdc := direct_cast(wp, HDC)
             SetBkMode(hdc, Transparent)
-            //SetBackColor(hdc, get_color_ref(rb.backColor))
+            SetBackColor(hdc, get_color_ref(rb.backColor))
             rb._hbrush = CreateSolidBrush(get_color_ref(rb.backColor))
+            // print("rb bkc ", rb.backColor)
+            // return to_lresult(rb._hbrush)
             return to_lresult(rb._hbrush)
 
         case CM_NOTIFY :
@@ -261,6 +264,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
                         rct.left += 18
                     } else do rct.right -= 18
                     SetTextColor(nmcd.hdc, cref)
+                    // SetBackColor(nmcd.hdc, get_color_ref(rb.backColor))
                     DrawText(nmcd.hdc, to_wstring(rb.text), -1, &rct, rb._txtStyle)
 
                     return CDRF_SKIPDEFAULT

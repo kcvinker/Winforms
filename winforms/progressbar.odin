@@ -248,6 +248,7 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
 {
     set_subclass(pb, pb_wnd_proc)
     pb_set_range_internal(pb)
+    if pb.value > 0 do SendMessage(pb.handle, PBM_SETPOS, WPARAM(i32(pb.value)), 0)
 }
 
 @private pb_finalize :: proc(pb: ^ProgressBar, scid: UINT_PTR)

@@ -5,7 +5,7 @@ import "core:fmt"
 import "core:runtime"
 //import "core:reflect"
 
-WcComboW : wstring
+WcComboW : wstring = L("ComboBox")
 
 DropDownStyle :: enum {Tb_Combo, Lb_Combo,}
 
@@ -66,7 +66,7 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
 
 @private cmb_ctor :: proc(p : ^Form, w : int = 130, h : int = 30, x: int = 10, y: int = 10) -> ^ComboBox
 {
-    if WcComboW == nil do WcComboW = to_wstring("ComboBox")
+    // if WcComboW == nil do WcComboW = to_wstring("ComboBox")
     cmb := new(ComboBox)
     cmb.kind = .Combo_Box
     cmb.parent = p
@@ -79,6 +79,7 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
     cmb.foreColor = app.clrBlack
     cmb._exStyle = 0
     cmb.selectedIndex = -1
+    cmb.comboStyle = DropDownStyle.Lb_Combo
     cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN
     cmb._exStyle = WS_EX_CLIENTEDGE    // WS_EX_WINDOWEDGE WS_EX_STATICEDGE
     //cmb._txt_style = DT_SINGLELINE | DT_VCENTER

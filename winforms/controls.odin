@@ -63,6 +63,7 @@ Control :: struct
 	_drawFlag: uint,
 	_fp_beforeCreation, _fp_afterCreation : CreateDelegate,
 	_fp_size_fix : ControlDelegate,
+	_inherit_color: bool,
 
 
 	clrChanged : bool,

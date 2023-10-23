@@ -241,11 +241,16 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 			return  CDRF_NOTIFYPOSTERASE
 		case CDDS_PREPAINT:
 			//draw_frame_gr(nmcd.hdc, nmcd.rc, btn._gradient_color.color1, -1, 1)
-			if (nmcd.uItemState & MOUSE_CLICKED) == MOUSE_CLICKED {
+			if (nmcd.uItemState & MOUSE_CLICKED) == MOUSE_CLICKED
+			{
 				paint_gradient_button(btn, nmcd.hdc, nmcd.rc, btn._gdraw.gcDef, btn._gdraw.defPen)
-			} else if (nmcd.uItemState & MOUSE_OVER) == MOUSE_OVER {	// color change when mouse is over the btn
+			}
+			else if (nmcd.uItemState & MOUSE_OVER) == MOUSE_OVER
+			{	// color change when mouse is over the btn
 				paint_gradient_button(btn, nmcd.hdc, nmcd.rc, btn._gdraw.gcHot, btn._gdraw.hotPen)
-			} else {
+			}
+			else
+			{
 				paint_gradient_button(btn, nmcd.hdc, nmcd.rc, btn._gdraw.gcDef, btn._gdraw.defPen)
 			}
 	}
@@ -266,10 +271,11 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 {
 	ret : LRESULT = CDRF_DODEFAULT
 	// print("draw flg ", btn._drawFlag)
-	if btn._drawFlag > 0 {
-
+	if btn._drawFlag > 0
+	{
 		nmcd := direct_cast(lpm, ^NMCUSTOMDRAW)
-		switch btn._drawFlag {
+		switch btn._drawFlag
+		{
 			case 1: ret = set_fore_color_internal(btn, nmcd)
 			case 2: ret = set_back_color_internal(btn, nmcd)
 			case 3:
@@ -286,11 +292,11 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 @private btn_finalize :: proc(btn: ^Button, scid: UINT_PTR)
 {
-	switch btn._drawFlag {
+	switch btn._drawFlag
+	{
 		case 2, 3: flatDrawDtor(btn._fdraw)
 		case 4, 5: gradDrawDtor(btn._gdraw)
 	}
-
 	RemoveWindowSubclass(btn.handle, btn_wnd_proc, scid)
 	free(btn)
 }
@@ -331,8 +337,6 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
                 return 0
             }
 			return 0  // Avoid this if you want to show the focus rectangle (....)
-
-
 
 		case WM_LBUTTONDOWN:
 			btn._mDownHappened = true
@@ -423,10 +427,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 		case CM_NOTIFY:	return btn_wmnotify_handler(btn, lp)
 		case WM_DESTROY: btn_finalize(btn, sc_id)
-
 		case : return DefSubclassProc(hw, msg, wp, lp)
-
-
 	}
 	return DefSubclassProc(hw, msg, wp, lp)
 }

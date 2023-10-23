@@ -10,38 +10,13 @@ NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView
 
 ## Screenshot
 
-![image](https://user-images.githubusercontent.com/8840907/152698667-dafafbe5-a241-42a3-8696-9e50e54a3a58.png)
-
-![image](https://user-images.githubusercontent.com/8840907/154816848-c0114182-1c33-4d72-b3b9-66cb037f99d3.png)
-
-
-## Improvements
-NumberPicker improved.
-
-![image](https://user-images.githubusercontent.com/8840907/211117713-ef6eef41-f100-4baf-971d-82cffeee2d19.png)
-
-See the difference in old & new NumberPickers. Old one had white gaps even after painted with back color. And it's borders are looking weird. But new NumberPicker had a perfect back color drawing with even more accurate borer.
-
-TrackBar improved
-
-![image](https://user-images.githubusercontent.com/8840907/211165815-8149286b-99c1-407d-8382-e6bfefed05fe.png)
-
-TextBox improved.
-
-![image](https://user-images.githubusercontent.com/8840907/211176545-f8cc8e0b-e420-4067-b9c2-452e851e4ea4.png)
-
-See the changes ?.
-When I wrote this library, I don't have access to Windows 11. Six months later, I got my new laptop with Win 11. After a few days, I just ran some sample code and noticed that text box is looking weird. And after spending a few hours, I found the reason. I handled the WM_CTLCOLREDIT message wrongly. But at that time, I don;t have enough time to alter the code. So I postponed the task.
-
-ComboBox improved:
-
-Old combo box module was a spaghetti code. Later I did the same ui library project in D & Python. Then I have realized that this could have been done without any complexity. So now, I completely re-Arranged the module and made it as simple as possible. I think I removed 100+ lines of code.
-
-
+![image](C:\Users\kcvin\OneDrive\Programming\Odin\Winforms\Screenshot_201.jpg)
 
 
 
 ## Example --
+
+This is the code used to create the window and controls in the above image.
 
 ```rust
 import  wf "winforms"

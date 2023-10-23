@@ -68,7 +68,7 @@ Form :: struct
     _cDrawChilds : [dynamic]HWND,
     _uDrawChilds : map[UINT]HWND,
     _controls : [dynamic]^Control,
-    // _combo_list : [dynamic]ComboInfo,
+    _gdBrush: HBRUSH,
     _comboData : [dynamic]ComboData,
 }
 
@@ -77,13 +77,26 @@ new_form :: proc{new_form1, new_form2}
 print_points :: proc(frm: ^Form) { frm.onMouseUp = print_point_func }
 
 // Set the colors to draw a gradient background in form.
-set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint,top_bottom := true)
+form_set_gradient :: proc(this: ^Form, clr1, clr2 : uint,top_bottom := true)
 {
-    f._gdraw.c1 = new_color(clr1)
-    f._gdraw.c2 = new_color(clr2)
-    f._gdraw.t2b = top_bottom
-    f._drawMode = .gradient
-    if f._isCreated do InvalidateRect(f.handle, nil, false)
+    this._gdraw.c1 = new_color(clr1)
+    this._gdraw.c2 = new_color(clr2)
+    this._gdraw.t2b = top_bottom
+    this._drawMode = .Gradient
+    this.backColor = clr1
+    // for ctl in this._controls
+    // {
+    //     if ctl._inherit_color
+    //     {
+    //         if ctl._isCreated
+    //         {
+    //             control_set_backcolor(ctl, clr1)
+    //         } else {
+    //             ctl.backColor = clr1
+    //         }
+    //     }
+    // }
+    if this._isCreated do InvalidateRect(this.handle, nil, false)
 }
 
 /* This will display the window.
@@ -106,7 +119,7 @@ form_show :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
 form_hide :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
 form_setstate :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
 
-FormDrawMode :: enum { Default, flat_color, gradient,}
+FormDrawMode :: enum { Default, Flat_Color, Gradient,}
 //GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
 StartPosition :: enum
 {
@@ -165,6 +178,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     delete(frm._cDrawChilds)
     delete(frm._comboData)
     delete(frm._controls)
+    delete_gdi_object(frm._gdBrush)
     free(frm)
 }
 
@@ -204,7 +218,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 create_form :: proc(frm : ^Form )
 {
     if app.mainHandle == nil {register_class()}
-    if frm.backColor != def_window_color do frm._drawMode = .flat_color
+    if frm.backColor != def_window_color && frm._drawMode != .Gradient do frm._drawMode = .Flat_Color
     set_start_position(frm)
     set_form_style(frm)
     frm.handle = CreateWindowEx(  frm._exStyle,
@@ -331,18 +345,51 @@ print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
     TrackMouseEvent(&tme)
 }
 
-@private set_back_clr_internal :: proc(f : ^Form, hdc : HDC)
+// @private form_gradient_bkg :: proc(this: ^Form, hdc: HDC, rct: RECT)
+// {
+//     tempRct : RECT
+//     brush : HBRUSH
+//     c1 := this._gdraw.c1
+//     c2 := this._gdraw.c2
+//     t2b := this._gdraw.t2b
+//     x := int(c2.red - c1.red)
+//     y := int(c2.green - c1.green)
+//     z := int(c2.blue - c1.blue)
+//     loopEnd := int(rct.bottom if t2b else rct.right)
+//     for i in 0..<loopEnd
+//     {
+//         r, g, b : uint = 0, 0, 0
+//         r = uint(int(c1.red) + int((int(i) * x) / loopEnd))
+//         g = uint(int(c1.green) + int((int(i) * y) / loopEnd))
+//         b = uint(int(c1.blue) + int((int(i) * z) / loopEnd))
+//         // tBrush = CreateSolidBrush((b << 16) | (g << 8) | r)
+//         // rc = RECT()
+//         tempRct.left = 0 if t2b else i32(i)
+//         tempRct.top = i32(i) if t2b else 0
+//         tempRct.right = rct.right if t2b else i32(i + 1)
+//         tempRct.bottom = i32(i) + i32(1) if t2b else i32(loopEnd)
+//         brush = CreateSolidBrush(get_color_ref(r, g, b))
+//         FillRect(hdc, &tempRct, brush)
+//     }
+// }
+
+@private set_back_clr_internal :: proc(this : ^Form, hdc : HDC)
 {
     rct : RECT
     hbr : HBRUSH
-    GetClientRect(f.handle, &rct)
-    if f._drawMode == .flat_color {
-        hbr = CreateSolidBrush(get_color_ref(f.backColor))
-    } else if f._drawMode == .gradient {
-        hbr = create_gradient_brush(hdc, rct, f._gdraw.c1, f._gdraw.c2, f._gdraw.t2b)
+    GetClientRect(this.handle, &rct)
+    if this._drawMode == .Flat_Color
+    {
+        this._gdBrush = CreateSolidBrush(get_color_ref(this.backColor))
     }
-    FillRect(hdc, &rct, hbr)
-    DeleteObject(HGDIOBJ(hbr))
+    else if this._drawMode == .Gradient
+    {
+        this._gdBrush = create_gradient_brush(hdc, rct, this._gdraw.c1, this._gdraw.c2, this._gdraw.t2b)
+
+        // form_gradient_bkg(f, hdc, rct)
+    }
+    FillRect(hdc, &rct, this._gdBrush)
+    // DeleteObject(HGDIOBJ(hbr))
 }
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
@@ -477,6 +524,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             ctl_hwnd := direct_cast(lp, HWND)
             // fmt.println("label color ", ctl_hwnd)
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+            // return to_lresult(frm._gdBrush)
 
         case WM_CTLCOLORLISTBOX :
             /* If user uses a ComboBox, it contains a ListBox in it.
@@ -719,9 +767,9 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
                     }
             }
         case WM_ERASEBKGND :
-            if frm._drawMode != .Default {
-                dc_handle := HDC(wp)
-                set_back_clr_internal(frm, dc_handle)
+            if frm._drawMode != .Default
+            {
+                set_back_clr_internal(frm, HDC(wp))
                 return 1
             }
 

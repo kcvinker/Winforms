@@ -47,6 +47,7 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     this.autoSize = (w != 0 || h != 0) ? false : true
     this._fp_beforeCreation = cast(CreateDelegate) lbl_before_creation
     this._fp_afterCreation = cast(CreateDelegate) lbl_after_creation
+    this._inherit_color = true
     append(&p._controls, this)
     return this
 }
@@ -150,18 +151,16 @@ calculate_label_size :: proc(lb : ^Label) {
     set_subclass(lb, label_wnd_proc)
 }
 
-@private lbl_finalize :: proc(lbl: ^Label, scid: UINT_PTR) {
+@private lbl_finalize :: proc(lbl: ^Label, scid: UINT_PTR)
+{
     delete_gdi_object(lbl._hbrush)
     RemoveWindowSubclass(lbl.handle, label_wnd_proc, scid)
     free(lbl)
 }
 
-
-
-
-
 @private label_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
-                                                    sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+                                                    sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
+{
     context = global_context
     lb := control_cast(Label, ref_data)
 
@@ -264,16 +263,16 @@ calculate_label_size :: proc(lb : ^Label) {
                 lb.onMouseHover(lb, &mea)
             }
         case WM_MOUSELEAVE :
-
-            if lb._isMouseTracking {
+            if lb._isMouseTracking
+            {
                 lb._isMouseTracking = false
                 lb._isMouseEntered = false
             }
-            if lb.onMouseLeave != nil {
+            if lb.onMouseLeave != nil
+            {
                 ea := new_event_args()
                 lb.onMouseLeave(lb, &ea)
             }
-
 
         case CM_CTLLCOLOR :
             hdc := direct_cast(wp, HDC)
