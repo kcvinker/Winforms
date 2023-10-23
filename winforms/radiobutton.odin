@@ -11,7 +11,7 @@ import "core:runtime"
 rb_count : int
 WcRadioBtnClassW := L("Button")
 
-RadioButton :: struct 
+RadioButton :: struct
 {
     using control : Control,
     textAlignment : enum {left, right},
@@ -23,71 +23,72 @@ RadioButton :: struct
     onStateChanged : EventHandler,
 }
 
-@private rb_ctor :: proc(f : ^Form, txt : string, x, y, w, h : int) -> ^RadioButton 
+@private rb_ctor :: proc(f : ^Form, txt : string, x, y, w, h : int) -> ^RadioButton
 {
-    rb := new(RadioButton)
-    rb.kind = .Radio_Button
-    rb.parent = f
-    rb.font = f.font
-    rb.text = txt
-    rb.xpos = x
-    rb.ypos = y
-    rb.width = w
-    rb.height = h
-    rb.checkOnClick = true
-    rb.autoSize = true
-    rb.backColor = f.backColor
-    rb.foreColor = f.foreColor
-    rb._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON
-    rb._txtStyle = DT_SINGLELINE | DT_VCENTER
-    rb._exStyle = 0
-    rb._SizeIncr.width = 20
-    rb._SizeIncr.height = 3
-    rb._clsName = WcRadioBtnClassW
-    rb._fp_beforeCreation = cast(CreateDelegate) rb_before_creation
-	rb._fp_afterCreation = cast(CreateDelegate) rb_after_creation
-    return rb
+    this := new(RadioButton)
+    this.kind = .Radio_Button
+    this.parent = f
+    this.font = f.font
+    this.text = txt
+    this.xpos = x
+    this.ypos = y
+    this.width = w
+    this.height = h
+    this.checkOnClick = true
+    this.autoSize = true
+    this.backColor = f.backColor
+    this.foreColor = f.foreColor
+    this._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON
+    this._txtStyle = DT_SINGLELINE | DT_VCENTER
+    this._exStyle = 0
+    this._SizeIncr.width = 20
+    this._SizeIncr.height = 3
+    this._clsName = WcRadioBtnClassW
+    this._fp_beforeCreation = cast(CreateDelegate) rb_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) rb_after_creation
+    append(&f._controls, this)
+    return this
 }
 
 new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
 
-@private new_rb1 :: proc(parent : ^Form, rapid: b8 = false) -> ^RadioButton 
+@private new_rb1 :: proc(parent : ^Form, autoc: b8 = false) -> ^RadioButton
 {
     rb_count += 1
     rtxt := concat_number("Radio_Button_", rb_count)
     rb := rb_ctor(parent, rtxt, 10, 10, 100, 25 )
-    if rapid do create_control(rb)
+    if autoc do create_control(rb)
     return rb
 }
 
-@private new_rb2 :: proc(parent : ^Form, txt : string, rapid:b8 = false) -> ^RadioButton 
+@private new_rb2 :: proc(parent : ^Form, txt : string, autoc:b8 = false) -> ^RadioButton
 {
     rb := rb_ctor(parent, txt, 10, 10, 100, 25 )
-    if rapid do create_control(rb)
+    if autoc do create_control(rb)
     return rb
 }
 
-@private new_rb3 :: proc(parent : ^Form, txt : string, x, y : int, rapid: b8 = false) -> ^RadioButton 
+@private new_rb3 :: proc(parent : ^Form, txt : string, x, y : int, autoc: b8 = false) -> ^RadioButton
 {
     rb := rb_ctor(parent, txt, x, y, 100, 25 )
-    if rapid do create_control(rb)
+    if autoc do create_control(rb)
     return rb
 }
 
-@private new_rb4 :: proc(parent : ^Form, txt : string, x, y, w, h : int, rapid: b8 = false) -> ^RadioButton 
+@private new_rb4 :: proc(parent : ^Form, txt : string, x, y, w, h : int, autoc: b8 = false) -> ^RadioButton
 {
     rb := rb_ctor(parent, txt, x, y, w, h )
-    if rapid do create_control(rb)
+    if autoc do create_control(rb)
     return rb
 }
 
-@private rb_adjust_styles :: proc(rb : ^RadioButton) 
+@private rb_adjust_styles :: proc(rb : ^RadioButton)
 {
     if !rb.checkOnClick do rb._style ~= BS_AUTORADIOBUTTON
     //if rb.textAlignment = .right do rb.
 }
 
-radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool) 
+radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool)
 {
     state := 0x0001 if bstate else 0x0000
     SendMessage(rb.handle, BM_SETCHECK, WPARAM(state), 0)
@@ -95,7 +96,7 @@ radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool)
 
 // Change Radio Button's behaviour. Normally radio button will change it's checked state when it clicked.
 // But you can change that behaviour by passing a false to this function.
-radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool ) 
+radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
 {
     ready_to_change : bool
     if auto_check {
@@ -117,12 +118,12 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
     }
 }
 
-@private rb_before_creation :: proc(rb : ^RadioButton) 
+@private rb_before_creation :: proc(rb : ^RadioButton)
 {
     rb_adjust_styles(rb)
 }
 
-@private rb_after_creation :: proc(rb : ^RadioButton) 
+@private rb_after_creation :: proc(rb : ^RadioButton)
 {
     set_subclass(rb, rb_wnd_proc)
     if rb.autoSize do calculate_ctl_size(rb)
@@ -131,15 +132,15 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
     }
 }
 
-@private rb_finalize :: proc(rb: ^RadioButton, scid: UINT_PTR) 
+@private rb_finalize :: proc(rb: ^RadioButton, scid: UINT_PTR)
 {
     delete_gdi_object(rb._hbrush)
     RemoveWindowSubclass(rb.handle, rb_wnd_proc, scid)
     free(rb)
 }
 
-@private rb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, 
-                                        sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
+@private rb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+                                        sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
     rb := control_cast(RadioButton, ref_data)

@@ -14,8 +14,6 @@ Font :: struct
 	italics : bool,
 	handle : HFONT,
 	_defFontChanged : bool,
-
-
 }
 
 new_font_1 :: proc() -> Font
@@ -32,7 +30,8 @@ new_font_1 :: proc() -> Font
 	return f
 }
 
-new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, fi : bool = false, fu : bool = false) -> Font
+new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, 
+							fi : bool = false, fu : bool = false) -> Font
 {
 	f : Font
 	f.name = fn
@@ -46,9 +45,8 @@ new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, fi : bool 
 
 new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
-
-
-CreateFont_handle :: proc(fnt : ^Font, hw : HWND = nil) {
+CreateFont_handle :: proc(fnt : ^Font, hw : HWND = nil) 
+{
 	dcHwnd : HDC = GetDC(hw)
 	fontHeight : LONG = -MulDiv(i32(fnt.size), GetDeviceCaps(dcHwnd, LOGPIXELSY), 72)
 	ReleaseDC(hw, dcHwnd)
@@ -121,7 +119,8 @@ FF_DECORATIVE  :: 80
 
 LOGPIXELSY :: 90
 
-FontWeight :: enum {
+FontWeight :: enum 
+{
 	Light = 300,
     Normal = 400,
     Medium = 500,

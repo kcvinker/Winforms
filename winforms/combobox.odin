@@ -9,7 +9,8 @@ WcComboW : wstring
 
 DropDownStyle :: enum {Tb_Combo, Lb_Combo,}
 
-ComboBox :: struct {
+ComboBox :: struct
+{
     using control : Control,
     comboStyle : DropDownStyle,
     items : [dynamic]string, // Don't forget to delete it when combo box deing destroyed.
@@ -35,14 +36,15 @@ ComboBox :: struct {
     onTBMouseEnter : EventHandler,
 }
 
-ComboData :: struct {
+ComboData :: struct
+{
     listBoxHwnd : HWND,
     comboHwnd : HWND,
     editHwnd : HWND,
     comboID : u32,
 }
 
-new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData 
+new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
 {
     cd : ComboData
     cd.comboHwnd = cbi.hwndCombo
@@ -52,7 +54,7 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
     return cd
 }
 
-@private get_combo_info :: proc(cmb : ^ComboBox) -> ComboData  
+@private get_combo_info :: proc(cmb : ^ComboBox) -> ComboData
 {
     // Collect the data from Combobox control.
     cmInfo : COMBOBOXINFO
@@ -62,7 +64,7 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
     return cd
 }
 
-@private cmb_ctor :: proc(p : ^Form, w : int = 130, h : int = 30, x: int = 10, y: int = 10) -> ^ComboBox 
+@private cmb_ctor :: proc(p : ^Form, w : int = 130, h : int = 30, x: int = 10, y: int = 10) -> ^ComboBox
 {
     if WcComboW == nil do WcComboW = to_wstring("ComboBox")
     cmb := new(ComboBox)
@@ -83,33 +85,34 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
     cmb._clsName = WcComboW
     cmb._fp_beforeCreation = cast(CreateDelegate) cmb_before_creation
 	cmb._fp_afterCreation = cast(CreateDelegate) cmb_after_creation
+    append(&p._controls, cmb)
     return cmb
 }
 
 new_combobox :: proc{new_combo1, new_combo2, new_combo3}
 
-@private new_combo1 :: proc(parent : ^Form, rapid: b8 = false) -> ^ComboBox 
+@private new_combo1 :: proc(parent : ^Form, autoc: b8 = false) -> ^ComboBox
 {
     cmb := cmb_ctor(parent)
-    if rapid do create_control(cmb)
+    if autoc do create_control(cmb)
     return cmb
 }
 
-@private new_combo2 :: proc(parent : ^Form, x, y : int, rapid: b8 = false ) -> ^ComboBox 
+@private new_combo2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false ) -> ^ComboBox
 {
     cmb := cmb_ctor(parent, x = x, y= y)
-    if rapid do create_control(cmb)
+    if autoc do create_control(cmb)
     return cmb
 }
 
-@private new_combo3 :: proc(parent : ^Form, x, y, w, h : int, rapid: b8 = false ) -> ^ComboBox 
+@private new_combo3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false ) -> ^ComboBox
 {
     cmb := cmb_ctor(parent, w, h, x, y)
-    if rapid do create_control(cmb)
+    if autoc do create_control(cmb)
     return cmb
 }
 
-combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle) 
+combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
 {
     /* There is no other way to change the dropdown style of an existing combo box.
      * We need to destroy the old combo and create a new one with same size and pos.
@@ -127,7 +130,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
 }
 
 
-combo_add_item :: proc(cmb : ^ComboBox, item : $T ) 
+combo_add_item :: proc(cmb : ^ComboBox, item : $T )
 {
     sitem : string
     when T == string {
@@ -145,7 +148,7 @@ combo_open_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDO
 combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, WPARAM(0), 0) }
 
 
-@private add_items2 :: proc(cmb : ^ComboBox, items : ..any ) 
+@private add_items2 :: proc(cmb : ^ComboBox, items : ..any )
 {
     for i in items {
         if value, is_str := i.(string) ; is_str { // Magic -- type assert
@@ -165,7 +168,7 @@ combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPD
 
 combo_add_items :: proc{add_items2}
 
-combo_add_array :: proc(cmb : ^ComboBox, items : []$T ) 
+combo_add_array :: proc(cmb : ^ComboBox, items : []$T )
 {
     //print("called once")
     when T == string {
@@ -181,24 +184,27 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T )
     // IMPORTANT - add code for update combo items
 }
 
-@private additem_internal :: proc(cmb : ^ComboBox) 
+@private additem_internal :: proc(cmb : ^ComboBox)
 {
     for i in cmb.items {
         SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(i), LPARAM))
     }
 }
 
-combo_get_selected_index :: proc(cmb : ^ComboBox) -> int {
+combo_get_selected_index :: proc(cmb : ^ComboBox) -> int
+{
     cmb.selectedIndex = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     return cmb.selectedIndex
 }
 
-combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)  {
+combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)
+{
     SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(i32(indx)), 0)
     cmb.selectedIndex = indx
 }
 
-combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)  {
+combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)
+{
     sitem := fmt.tprint(item)
     wp : i32 = -1
     indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, WPARAM(wp), direct_cast(to_wstring(sitem), LPARAM))
@@ -208,14 +214,16 @@ combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)  {
     cmb.selectedItem = sitem
 }
 
-combo_get_selected_item :: proc(cmb : ^ComboBox) -> any {
+combo_get_selected_item :: proc(cmb : ^ComboBox) -> any
+{
     indx := int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     if indx > -1 {
         return cmb.items[indx]
     } else do return ""
 }
 
-combo_delete_selected_item :: proc(cmb : ^ComboBox) {
+combo_delete_selected_item :: proc(cmb : ^ComboBox)
+{
     indx := i32(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
     if indx > -1 {
         SendMessage(cmb.handle, CB_DELETESTRING, WPARAM(indx), 0)
@@ -223,17 +231,20 @@ combo_delete_selected_item :: proc(cmb : ^ComboBox) {
     }
 }
 
-combo_delete_item :: proc(cmb : ^ComboBox, indx : int) {
+combo_delete_item :: proc(cmb : ^ComboBox, indx : int)
+{
     SendMessage(cmb.handle, CB_DELETESTRING, direct_cast(i32(indx), WPARAM), 0)
     ordered_remove(&cmb.items, indx)
 }
 
-combo_clear_items :: proc(cmb : ^ComboBox) {
+combo_clear_items :: proc(cmb : ^ComboBox)
+{
     SendMessage(cmb.handle, CB_DELETESTRING, 0, 0)
     // TODO - clear dynamic array of combo.
 }
 
-@private check_mouse_leave :: proc(cmb: ^ComboBox) -> bool {
+@private check_mouse_leave :: proc(cmb: ^ComboBox) -> bool
+{
     /* Since combo box is a combination of button, edit and list box...
      * we need to take extra care for handling mouse enter & leave messages.
      * So we are checking whether the current mouse pos is in our...
@@ -249,7 +260,8 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     return !res
 }
 
-@private cmb_before_creation :: proc(cmb : ^ComboBox) {
+@private cmb_before_creation :: proc(cmb : ^ComboBox)
+{
     if cmb.comboStyle == .Lb_Combo {
         cmb._style |= CBS_DROPDOWNLIST
     } else {
@@ -274,7 +286,8 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
     cmb._bkBrush = get_solid_brush(cmb.backColor)
 }
 
-@private cmb_after_creation :: proc(cmb : ^ComboBox) {
+@private cmb_after_creation :: proc(cmb : ^ComboBox)
+{
 	set_subclass(cmb, cmb_wnd_proc)
     // cmb._old_hwnd = cmb.handle
     cmb._oldCtlID = cmb.controlID
@@ -321,7 +334,9 @@ combo_clear_items :: proc(cmb : ^ComboBox) {
 
 
 @private
-cmb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM, sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+cmb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+                                sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
+{
     // context = runtime.default_context()
     context = global_context//app.curr_context^
     cmb := control_cast(ComboBox, ref_data)
@@ -515,7 +530,9 @@ cmb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM, sc_i
 
 
 @private
-edit_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM, sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+edit_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+                                sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
+{
     context = runtime.default_context()
     cmb := control_cast(ComboBox, ref_data)
     switch msg {

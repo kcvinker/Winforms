@@ -5,12 +5,10 @@ package winforms		// Notes : write func for setting value by user.
 import "core:fmt"
 import "core:runtime"
 
-
 ICC_DATE_CLASSES :: 0x100
 DTM_GETIDEALSIZE :: (DTM_FIRST+15)
 isDtpClassInit : bool = false
 WcDTPClassW : wstring = L("SysDateTimePick32")
-
 
 //#region dtp styles
     //DTN_FIRST :: i64(-740)   //~u64(0) - 740  // 0xFFFFFFFFFFFFFD1C
@@ -58,7 +56,6 @@ WcDTPClassW : wstring = L("SysDateTimePick32")
     myDtnDropdown : u64 : 4294966542
     myDtnCloseup := myDtnFirst2
 
-
     DTS_UPDOWN :: 0x1
     DTS_SHOWNONE :: 0x2
     DTS_SHORTDATEFORMAT :: 0x0
@@ -69,13 +66,12 @@ WcDTPClassW : wstring = L("SysDateTimePick32")
     DTS_RIGHTALIGN :: 0x20
 //#endregion
 
-
 // Date time time format for DTP control.
 // Possible values : long = 1, short = 2, time = 4, custom = 8
 DtpFormat :: enum {Long = 1, Short = 2, Time = 4, Custom = 8}
 
-
-DateTimePicker :: struct {
+DateTimePicker :: struct
+{
     using control : Control,
     format : DtpFormat,
     formatString : string,
@@ -100,21 +96,42 @@ DateTimePicker :: struct {
     onTextChanged : DateTimeEventHandler,
 }
 
+// DateTimePicker constructor.
+new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
+
+dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime)
+{
+    dtp.value = dt_value
+    if dtp._isCreated {
+        sysTm := datetime_to_systime(dt_value)
+        SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&sysTm, LPARAM))
+    }
+}
+
+dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
+{
+    dtp.formatString = fmt_string
+    dtp.format = .Custom
+    if dtp._isCreated {
+        SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(LPARAM, to_wstring(dtp.formatString)))
+    }
+}
+
 // Api Types
-    NMDATETIMECHANGE :: struct {
+    NMDATETIMECHANGE :: struct
+    {
         nmhdr : NMHDR,
         dwFlags : DWORD,
         st : SYSTEMTIME,
     }
 
-    NMDATETIMESTRINGW :: struct {
+    NMDATETIMESTRINGW :: struct
+    {
         nmhdr :  NMHDR,
         pszUserString : wstring,
         st : SYSTEMTIME,
         dwFlags : DWORD,
     }
-
-
 
     // DATETIMEPICKERINFO :: struct {
     //     cbSize : DWORD,
@@ -136,16 +153,14 @@ DateTimePicker :: struct {
 
 // End of API Types
 
-@private
-dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^DateTimePicker {
-
+@private dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^DateTimePicker
+{
     if !isDtpClassInit { // global var of this module. Then we need to initialize the date class control.
         isDtpClassInit = true
         app.iccx.dwIcc = ICC_DATE_CLASSES
         InitCommonControlsEx(&app.iccx)
         // print("inited comctrlex")
     }
-    // if WcDTPClassW == nil do WcDTPClassW = to_wstring("SysDateTimePick32" ) // // global var of this module
     dtp := new(DateTimePicker)
     dtp.kind = .Date_Time_Picker
     dtp.text = ""
@@ -164,37 +179,33 @@ dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^DateTimePicker {
 
     dtp._style = 0x52000004 //WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT
     dtp._exStyle = WS_EX_LEFT
+    append(&p._controls, dtp)
     return dtp
 }
 
-
-@private
-new_dtp1 :: proc(parent : ^Form, rapid: b8 = false) -> ^DateTimePicker {
+@private new_dtp1 :: proc(parent : ^Form, autoc: b8 = false) -> ^DateTimePicker
+{
     dtp := dtp_ctor(parent, 10, 10, 120, 30 )
-    if rapid do create_control(dtp)
+    if autoc do create_control(dtp)
     return dtp
 }
 
-@private
-new_dtp2 :: proc(parent : ^Form, x, y : int, rapid: b8 = false) -> ^DateTimePicker {
+@private new_dtp2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^DateTimePicker
+{
     dtp := dtp_ctor(parent, x, y, 120, 30)
-    if rapid do create_control(dtp)
+    if autoc do create_control(dtp)
     return dtp
 }
 
-@private
-new_dtp3 :: proc(parent : ^Form, x, y, w, h : int, rapid: b8 = false) -> ^DateTimePicker {
+@private new_dtp3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^DateTimePicker
+{
     dtp := dtp_ctor(parent,x, y, w, h)
-    if rapid do create_control(dtp)
+    if autoc do create_control(dtp)
     return dtp
 }
 
-// DateTimePicker constructor.
-new_datetimepicker :: proc{new_dtp1, new_dtp2, new_dtp3}
-
-@private
-set_dtp_style_internal :: proc(dtp : ^DateTimePicker) {
-
+@private set_dtp_style_internal :: proc(dtp : ^DateTimePicker)
+{
     switch dtp.format {
         case .Custom :
             dtp._style = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT | DTS_APPCANPARSE
@@ -220,15 +231,6 @@ set_dtp_style_internal :: proc(dtp : ^DateTimePicker) {
     if dtp.showUpdown do dtp._style ~= DTS_UPDOWN
 }
 
-dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) {
-    dtp.value = dt_value
-    if dtp._isCreated {
-        sysTm := datetime_to_systime(dt_value)
-        SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&sysTm, LPARAM))
-    }
-}
-
-
 // @private get_dtp_info :: proc(dp : ^DateTimePicker) {
 //     di : DATETIMEPICKERINFO
 //     di.cbSize = size_of(di)
@@ -251,19 +253,11 @@ dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime) {
 
 // Set custom date format for a DTP control.
 // To see how to create a custom format, see the docs.
-dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string) {
-    dtp.formatString = fmt_string
-    dtp.format = .Custom
-    if dtp._isCreated {
-        SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(LPARAM, to_wstring(dtp.formatString)))
-    }
-}
 
-@private
-dtp_before_creation :: proc(dtp : ^DateTimePicker) {set_dtp_style_internal(dtp)}
+@private dtp_before_creation :: proc(dtp : ^DateTimePicker) {set_dtp_style_internal(dtp)}
 
-@private
-dtp_after_creation :: proc(dtp : ^DateTimePicker) {
+@private dtp_after_creation :: proc(dtp : ^DateTimePicker)
+{
     // print("dtp creation ended")
     set_subclass(dtp, dtp_wnd_proc)
     if dtp.format == .Custom {
@@ -282,10 +276,10 @@ dtp_after_creation :: proc(dtp : ^DateTimePicker) {
 
     // Let's make proper size for this dtp
     set_dtp_size(dtp)
-
 }
 
-@private set_dtp_size :: proc(dtp: ^Control) {
+@private set_dtp_size :: proc(dtp: ^Control)
+{
     ss : SIZE
     SendMessage(dtp.handle, DTM_GETIDEALSIZE, 0, to_lparam(&ss))
     dtp.width = int(ss.width + 3)
@@ -293,15 +287,16 @@ dtp_after_creation :: proc(dtp : ^DateTimePicker) {
     SetWindowPos(dtp.handle, nil, dtp.xpos, dtp.ypos, dtp.width, dtp.height, SWP_NOZORDER)
 }
 
-@private dtp_finalize :: proc(dtp: ^DateTimePicker, scid: UINT_PTR) {
+@private dtp_finalize :: proc(dtp: ^DateTimePicker, scid: UINT_PTR)
+{
     RemoveWindowSubclass(dtp.handle, dtp_wnd_proc, scid)
     free(dtp)
 }
 
-
-
 @private
-dtp_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
+dtp_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+                                sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
+{
     // context = runtime.default_context()
     context = global_context
     dtp := control_cast(DateTimePicker, ref_data)
@@ -448,9 +443,6 @@ dtp_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: U
                 ea := new_event_args()
                 dtp.onMouseLeave(dtp, &ea)
             }
-
-
-
 
         case : return DefSubclassProc(hw, msg, wp, lp)
     }

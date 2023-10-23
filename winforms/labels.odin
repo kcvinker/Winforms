@@ -27,46 +27,47 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
 @private label_ctor :: proc(p : ^Form, txt : string, x, y: int, w: int = 0, h : int = 0) -> ^Label {
     // if WcLabelW == nil do WcLabelW = to_wstring("Static")
     _lb_count += 1
-    lb := new(Label)
-    lb.autoSize = true
-    lb.kind = .Label
-    lb.text = txt
-    lb.width = w // reset later
-    lb.height = h // reset later
-    lb.xpos = x
-    lb.ypos = y
-    lb.parent = p
-    lb.font = p.font
-    lb.backColor = p.backColor
-    lb.foreColor = app.clrBlack
-    lb._exStyle = 0 // WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-    lb._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED
-    lb._SizeIncr.width = 2
-    lb._SizeIncr.height = 3
-    lb._clsName = WcLabelW
-    lb.autoSize = (w != 0 || h != 0) ? false : true
-    lb._fp_beforeCreation = cast(CreateDelegate) lbl_before_creation
-    lb._fp_afterCreation = cast(CreateDelegate) lbl_after_creation
-    return lb
+    this := new(Label)
+    this.autoSize = true
+    this.kind = .Label
+    this.text = txt
+    this.width = w // reset later
+    this.height = h // reset later
+    this.xpos = x
+    this.ypos = y
+    this.parent = p
+    this.font = p.font
+    this.backColor = p.backColor
+    this.foreColor = app.clrBlack
+    this._exStyle = 0 // WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
+    this._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED
+    this._SizeIncr.width = 2
+    this._SizeIncr.height = 3
+    this._clsName = WcLabelW
+    this.autoSize = (w != 0 || h != 0) ? false : true
+    this._fp_beforeCreation = cast(CreateDelegate) lbl_before_creation
+    this._fp_afterCreation = cast(CreateDelegate) lbl_after_creation
+    append(&p._controls, this)
+    return this
 }
 
 
-@private new_label1 :: proc(parent : ^Form, rapid:b8=false) -> ^Label {
+@private new_label1 :: proc(parent : ^Form, autoc:b8=false) -> ^Label {
     txt := concat_number("Label_", _lb_count)
     lb := label_ctor(parent, txt, 10, 10)
-    if rapid do create_control(lb)
+    if autoc do create_control(lb)
     return lb
 }
 
-@private new_label2 :: proc(parent : ^Form, txt : string, x, y : int,  rapid:b8=false) -> ^Label {
+@private new_label2 :: proc(parent : ^Form, txt : string, x, y : int,  autoc:b8=false) -> ^Label {
     lb := label_ctor(parent, txt, x, y)
-    if rapid do create_control(lb)
+    if autoc do create_control(lb)
     return lb
 }
 
-@private new_label3 :: proc(parent : ^Form, txt : string, x, y, w, h : int, rapid:b8=false) -> ^Label {
+@private new_label3 :: proc(parent : ^Form, txt : string, x, y, w, h : int, autoc:b8=false) -> ^Label {
     lb := label_ctor(parent, txt, x, y, w, h)
-    if rapid do create_control(lb)
+    if autoc do create_control(lb)
     return lb
 }
 

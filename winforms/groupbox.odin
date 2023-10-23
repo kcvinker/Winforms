@@ -5,7 +5,8 @@ import "core:runtime"
 
 WcGroupBoxW : wstring = L("Button")
 
-GroupBox :: struct {
+GroupBox :: struct
+{
     using control : Control,
     _bkBrush : HBRUSH,
     _paintBkg : b64,
@@ -13,7 +14,7 @@ GroupBox :: struct {
 
 @private gb_count : int = 1
 
-@private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^GroupBox 
+@private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^GroupBox
 {
     // if WcGroupBoxW == nil do WcGroupBoxW = to_wstring()
     gb := new(GroupBox)
@@ -35,39 +36,40 @@ GroupBox :: struct {
         _style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TEXT | BS_TOP | WS_OVERLAPPED| WS_CLIPCHILDREN| WS_CLIPSIBLINGS
         _exStyle = WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT | WS_EX_RIGHTSCROLLBAR
 
+    append(&p._controls, gb)
     return gb
 }
 
-@private gb_ctor1 :: proc(parent : ^Form, rapid: b8 = false) -> ^GroupBox 
+@private gb_ctor1 :: proc(parent : ^Form, autoc: b8 = false) -> ^GroupBox
 {
     gb_txt : string = concat_number("GroupBox_", gb_count)
     gb := gb_ctor(parent, gb_txt, 10, 10, 250, 250)
     gb_count += 1
-    if rapid do create_control(gb)
+    if autoc do create_control(gb)
     return gb
 }
 
-@private gb_ctor2 :: proc(parent : ^Form, 
+@private gb_ctor2 :: proc(parent : ^Form,
                             txt : string,
-                            x, y : int, 
-                            w:int=200, h:int= 200, 
-                            rapid: b8 = false) -> ^GroupBox 
+                            x, y : int,
+                            w:int=200, h:int= 200,
+                            autoc: b8 = false) -> ^GroupBox
 {
     gb := gb_ctor(parent, txt, x, y, w, h)
     gb_count += 1
-    if rapid do create_control(gb)
+    if autoc do create_control(gb)
     return gb
 }
 
 // Groupbox control's constructor
 new_groupbox :: proc{gb_ctor1, gb_ctor2}
 
-@private gb_before_creation :: proc(gb : ^GroupBox) 
+@private gb_before_creation :: proc(gb : ^GroupBox)
 {
     if gb.backColor != gb.parent.backColor do gb._paintBkg = true
 }
 
-@private gb_after_creation :: proc(gb : ^GroupBox) 
+@private gb_after_creation :: proc(gb : ^GroupBox)
 {
 	set_subclass(gb, gb_wnd_proc)
     SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
@@ -83,15 +85,15 @@ gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
     return gb.ypos + offset
 }
 
-@private gb_finalize :: proc(gb: ^GroupBox, scid: UINT_PTR) 
+@private gb_finalize :: proc(gb: ^GroupBox, scid: UINT_PTR)
 {
     delete_gdi_object(gb._bkBrush)
     RemoveWindowSubclass(gb.handle, gb_wnd_proc, scid)
     free(gb)
 }
 
-@private gb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, 
-                                    sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
+@private gb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+                                    sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()
     context = global_context
@@ -160,7 +162,7 @@ gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
                 ea := new_event_args()
                 gb.onMouseLeave(gb, &ea)
             }
-            
+
         case :
             return DefSubclassProc(hw, msg, wp, lp)
     }

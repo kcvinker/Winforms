@@ -2,21 +2,24 @@
 package winforms
 import "core:fmt"
 
-Color :: struct {
+Color :: struct 
+{
    red: uint,
    green: uint,
    blue : uint,
    value: uint,
    ref: COLORREF,
-
 }
 
 clip :: proc(value: uint) -> uint { return clamp(value, 0, 255) }
 
-@private color_from_uint :: proc(clr : uint) -> Color {
+@private color_from_uint :: proc(clr : uint) -> Color 
+{
    return _get_color(clr)
 }
-@private color_from_rgb :: proc(r, g, b: uint) -> Color {
+
+@private color_from_rgb :: proc(r, g, b: uint) -> Color 
+{
    rc : Color
    rc.red = r
    rc.green = g
@@ -26,12 +29,10 @@ clip :: proc(value: uint) -> uint { return clamp(value, 0, 255) }
    return rc
 }
 
-
-
 new_color :: proc{color_from_uint,color_from_rgb}
 
-
-_get_color :: proc(clr : uint) -> Color {
+_get_color :: proc(clr : uint) -> Color 
+{
    rc : Color
    rc.red = clr >> 16
    rc.green = (clr & 0x00ff00) >> 8
@@ -41,18 +42,21 @@ _get_color :: proc(clr : uint) -> Color {
    return rc
 }
 
-
-@private get_color_ref1 :: proc(clr : uint) -> COLORREF {
+@private get_color_ref1 :: proc(clr : uint) -> COLORREF 
+{
 	rc := _get_color(clr)
 	rst := (rc.blue << 16) | (rc.green << 8) | rc.red
 	return cast(COLORREF) rst
 }
-@private get_color_ref2 :: proc(r, g, b : uint) -> COLORREF {
+
+@private get_color_ref2 :: proc(r, g, b : uint) -> COLORREF 
+{
 	return COLORREF((b << 16) | (g << 8) | r)
 	//return cast(COLORREF) rst
 }
 
-@private get_color_ref3 :: proc(rc : Color) -> COLORREF {
+@private get_color_ref3 :: proc(rc : Color) -> COLORREF 
+{
 	return COLORREF((rc.blue << 16) | (rc.green << 8) | rc.red)
 	//return cast(COLORREF) rst
 }
@@ -61,7 +65,8 @@ get_color_ref :: proc{get_color_ref1, get_color_ref2, get_color_ref3}
 get_solid_brush :: proc(clr : uint) -> HBRUSH { return CreateSolidBrush(get_color_ref(clr))}
 //---------------------------------------------------------
 
-change_color_uint :: proc(clr : uint, adj : f64) -> Color {
+change_color_uint :: proc(clr : uint, adj : f64) -> Color 
+{
    rc := new_color(clr)
    rc.red = clip(cast(uint) (f64(rc.red) * adj))
    rc.green = clip(cast(uint) (f64( rc.green) * adj))
@@ -69,13 +74,15 @@ change_color_uint :: proc(clr : uint, adj : f64) -> Color {
    return rc
 }
 
-change_color :: proc(clr : uint,adj : f64) -> COLORREF {
+change_color :: proc(clr : uint,adj : f64) -> COLORREF 
+{
    rc := change_color_uint(clr, adj)
    crf := get_color_ref(rc)
    return crf
 }
 
-change_color_rgb :: proc(rc : Color, adj : f64) -> Color {
+change_color_rgb :: proc(rc : Color, adj : f64) -> Color 
+{
    nrc : Color
    nrc.red = clip(cast(uint) (f64(rc.red) * adj))
    nrc.green = clip(cast(uint) (f64( rc.green) * adj))
@@ -83,7 +90,8 @@ change_color_rgb :: proc(rc : Color, adj : f64) -> Color {
    return nrc
 }
 
-change_color_to_ref1 :: proc(c : uint, adj : f64) -> COLORREF {
+change_color_to_ref1 :: proc(c : uint, adj : f64) -> COLORREF 
+{
    rc : Color = new_color(c)
    r : uint = clip(cast(uint) (f64(rc.red) * adj))
    g : uint = clip(cast(uint) (f64( rc.green) * adj))
@@ -91,7 +99,8 @@ change_color_to_ref1 :: proc(c : uint, adj : f64) -> COLORREF {
    return COLORREF((b << 16) | (g << 8) | r)
 }
 
-change_color_to_ref2 :: proc(rc : Color, adj : f64) -> COLORREF {
+change_color_to_ref2 :: proc(rc : Color, adj : f64) -> COLORREF 
+{
    r : uint = clip(cast(uint) (f64(rc.red) * adj))
    g : uint = clip(cast(uint) (f64( rc.green) * adj))
    b : uint = clip(cast(uint) (f64( rc.blue) * adj))
@@ -107,13 +116,11 @@ change_color_get_ref :: proc{change_color_to_ref1, change_color_to_ref2}
 //    return ngc
 // }
 
-is_dark_color :: proc(c: Color) -> b64 {
+is_dark_color :: proc(c: Color) -> b64 
+{
    x: f64 = (cast(f64)c.red * 0.2126) + (cast(f64)c.green * 0.7152) + (cast(f64)c.blue * 0.0722)
 	return x < 40
 }
-
-
-
 
 print_rgb:: proc(rc : Color)
 {
@@ -122,12 +129,14 @@ print_rgb:: proc(rc : Color)
    fmt.println("blue - ", rc.blue)
 }
 
-@private rgb_to_uint1 :: proc(rc : Color) -> uint {
+@private rgb_to_uint1 :: proc(rc : Color) -> uint 
+{
    clr : uint = ((rc.red & 0xff) << 16) + ((rc.green & 0xff) << 8) + (rc.blue & 0xff)
    return clr
 }
 
-@private rgb_to_uint2 :: proc(r, g, b : int) -> uint {
+@private rgb_to_uint2 :: proc(r, g, b : int) -> uint 
+{
    ur := cast(uint) r
    ug := cast(uint) g
    ub := cast(uint) b
@@ -137,7 +146,8 @@ print_rgb:: proc(rc : Color)
 
 rgb_to_uint :: proc{rgb_to_uint1, rgb_to_uint2}
 
-print_color_uint :: proc(rc :Color){
+print_color_uint :: proc(rc :Color)
+{
    clr : uint = ((rc.red & 0xff) << 16) + ((rc.green & 0xff) << 8) + (rc.blue & 0xff)
    fmt.printf("Rgb Value - %x\n",clr)
 }

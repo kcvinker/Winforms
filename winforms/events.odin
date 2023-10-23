@@ -13,11 +13,6 @@ CreateDelegate :: proc(ctl : ^Control)
 ControlDelegate :: proc(ctl : ^Control)
 PropSetter :: proc(c: ^Control, p: any, v : any)
 
-
-
-
-
-
 EventArgs :: struct {handled : b64, cancelled : b64,}
 MouseEventArgs :: struct
 {
@@ -69,10 +64,8 @@ TreeEventArgs :: struct
     oldNode : ^TreeNode,
 }
 
-
-
-
-new_event_args :: proc() -> EventArgs {
+new_event_args :: proc() -> EventArgs 
+{
 	ea : EventArgs
 	ea.handled = false
     ea.cancelled = false
@@ -144,6 +137,7 @@ new_size_event_args :: proc(m : u32, wpm : WPARAM, lpm : LPARAM) -> SizeEventArg
 }
 
 new_tree_event_args :: proc{tree_event_args1, tree_event_args2}
+
 tree_event_args1 :: proc(ntv : ^NMTREEVIEW) -> TreeEventArgs
 {
     tea : TreeEventArgs
@@ -179,7 +173,6 @@ tree_event_args2 :: proc(pic : ^TVITEMCHANGE) -> TreeEventArgs
     x += 1
     return tea
 }
-
 
 //new_datetime_event_args :: proc()
 
@@ -218,7 +211,8 @@ TreeViewAction :: enum {Unknown, By_Keyboard, By_Mouse, Collapse, Expand,}
 
 KeyState :: enum {Released, Pressed,}
 
-KeyEnum :: enum {
+KeyEnum :: enum 
+{
     Modifier = -65_536,
     None = 0,
     Left_Button, Right_Button, Cancel, Middle_Button, Xbutton1, Xbutton2,

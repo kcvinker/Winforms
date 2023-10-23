@@ -2,6 +2,7 @@ package winforms
 import "core:fmt"
 import "core:runtime"
 import "core:intrinsics"
+import "core:mem"
 // My Own messages
 
 	ptf :: fmt.printf
@@ -53,14 +54,16 @@ WordValue :: enum {Low, High}
 to_str :: proc(value : any) -> string {return fmt.tprint(value)}
 L :: intrinsics.constant_utf16_cstring
 
-current_time_internal :: proc() -> Time {
+current_time_internal :: proc() -> Time 
+{
 	ftime : FILETIME
 	GetSysTimeAsFileTime(&ftime)
 	ns := FILETIME_as_unix_nanoseconds(ftime)
 	return Time{_nano_sec = ns}
 }
 
-current_filetime :: proc(tm : TimeMode) -> i64 {
+current_filetime :: proc(tm : TimeMode) -> i64 
+{
 	result : i64
 	n := current_time_internal()
 	switch tm {
@@ -71,12 +74,14 @@ current_filetime :: proc(tm : TimeMode) -> i64 {
 	return result
 }
 
-create_hbrush :: proc(clr : uint) -> HBRUSH {
+create_hbrush :: proc(clr : uint) -> HBRUSH 
+{
 	cref := get_color_ref(clr)
 	return CreateSolidBrush(cref)
 }
 
-draw_ellipse :: proc(dch : HDC, rc : RECT) {
+draw_ellipse :: proc(dch : HDC, rc : RECT) 
+{
 	Ellipse(dch, rc.left, rc.top, rc.right, rc.bottom)
 }
 
@@ -160,7 +165,8 @@ get_rect :: proc(hw : HWND) -> RECT
 	return rct
 }
 
-get_win_rect :: proc(hw : HWND) -> RECT {
+get_win_rect :: proc(hw : HWND) -> RECT 
+{
 	rc : RECT
 	GetWindowRect(hw, &rc)
 	return rc
@@ -184,8 +190,6 @@ to_lresult :: proc(value : $T) -> LRESULT
 	return cast(LRESULT) up
 }
 
-
-
 // If we want to get the virtual key code (VK_KEY_NUMPAD1 etc) from lparam...
 // in any keyboard related message, this proc helps to extract it
 get_virtual_key :: proc(value : LPARAM) -> u32 
@@ -193,7 +197,6 @@ get_virtual_key :: proc(value : LPARAM) -> u32
 	scan_code : u32 = u32(value >> 16 )
     return MapVirtualKey(scan_code, MAPVK_VSC_TO_VK)
 }
-
 
 get_x_lparam :: proc(lpm : LPARAM) -> int { return int(i16(loword_lparam(lpm)))}
 get_y_lparam :: proc(lpm : LPARAM) -> int { return int(i16(hiword_lparam(lpm)))}
@@ -206,12 +209,10 @@ get_mouse_points :: proc(lpm : LPARAM) -> POINT  // Used in mouse messages
 	return pt
 }
 
-
 loword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x & 0xffff)}
 hiword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x >> 16)}
 loword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return WORD(x & 0xffff)}
 hiword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return WORD(x >> 16)}
-
 
 @private select_gdi_object :: proc(hd : HDC, obj : $T) 
 {
@@ -224,9 +225,6 @@ hiword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return 
 	gdi_obj := cast(HGDIOBJ) obj
 	DeleteObject(gdi_obj)
 }
-
-
-
 
 @private dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool) 
 {
@@ -252,9 +250,7 @@ hiword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return 
 	return index, is_found
 }
 
-array_search :: proc{	dynamic_array_search,
-						static_array_search,
-}
+array_search :: proc{	dynamic_array_search, static_array_search,}
 
 // This proc will return an HBRUSH to paint the window or a button in gradient colors.
 @private create_gradient_brush :: proc(hdc : HDC, rct : RECT, c1, c2 : Color, t2b : bool = true) -> HBRUSH 
@@ -313,8 +309,6 @@ Test :: proc()
 	ptf("dw in decimal %d\n", dw)
 	ptf("dw in binary %b\n", dw)
 	ptf("dw in hex %X\n", dw)
-
-
 }
 
 // Create a Control. Use this for all controls.
@@ -373,4 +367,10 @@ create_controls :: proc(ctls : ..^Control)
 	for c in ctls {
 		create_control(c)
 	}
+}
+
+show_memory_report :: proc(track: ^mem.Tracking_Allocator) 
+{
+    for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
+    for bf in track.bad_free_array { ptf("%v allocation %p was freed badly\n", bf.location, bf.memory) }
 }

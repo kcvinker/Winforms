@@ -99,7 +99,7 @@ TrackBar :: struct {
 }
 
 // This struct is to hold the tic's physical pos and logical pos.
-TicData :: struct 
+TicData :: struct
 {
     phyPoint : i32,
     logPoint : i32,
@@ -108,7 +108,7 @@ TicData :: struct
 // Define drawing style for channel.
 ChannelStyle ::enum {classic, outline,}
 
-@private new_ticdata :: proc(pp: i32, lp: i32) -> TicData 
+@private new_ticdata :: proc(pp: i32, lp: i32) -> TicData
 {
     tc : TicData
     tc.phyPoint = pp
@@ -118,72 +118,72 @@ ChannelStyle ::enum {classic, outline,}
 
 new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
 
-@private tbar_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^TrackBar 
+@private tbar_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^TrackBar
 {
-    if trkcount == 0 
+    if trkcount == 0
     {
-        // WcTrackbarClassW = to_wstring("msctls_trackbar32")
         app.iccx.dwIcc = 0x4
         InitCommonControlsEx(&app.iccx)
     }
-    tkb := new(TrackBar)
+    this := new(TrackBar)
     trkcount += 1
-    tkb.kind = .Track_Bar
-    tkb.parent = f
-    tkb.font = f.font
-    tkb.xpos = x
-    tkb.ypos = y
-    tkb.width = w
-    tkb.height = h
-    tkb.backColor = f.backColor
-    tkb.channelColor = light_steel_blue
-    tkb.ticColor = 0x000000
-    tkb.frequency = 10
-    tkb.ticWidth = 1
-    tkb.ticLength = 4
-    tkb.lineSize = 1
-    tkb.pageSIze = 10
-    tkb.ticPos = TicPosition.Down_Side
-    tkb.channelStyle = ChannelStyle.outline
-    tkb.minRange = 0
-    tkb.maxRange = 100
+    this.kind = .Track_Bar
+    this.parent = f
+    this.font = f.font
+    this.xpos = x
+    this.ypos = y
+    this.width = w
+    this.height = h
+    this.backColor = f.backColor
+    this.channelColor = light_steel_blue
+    this.ticColor = 0x000000
+    this.frequency = 10
+    this.ticWidth = 1
+    this.ticLength = 4
+    this.lineSize = 1
+    this.pageSIze = 10
+    this.ticPos = TicPosition.Down_Side
+    this.channelStyle = ChannelStyle.outline
+    this.minRange = 0
+    this.maxRange = 100
 
-    tkb.channelColor = 0xc2c2a3
-    tkb.selColor = 0x99ff33
-    tkb.ticColor = 0x3385ff
+    this.channelColor = 0xc2c2a3
+    this.selColor = 0x99ff33
+    this.ticColor = 0x3385ff
 
-    tkb._style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS
-    tkb._exStyle = 0
-    tkb.text = "my track"
-    tkb._clsName = WcTrackbarClassW
-    tkb._fp_beforeCreation = cast(CreateDelegate) tkb_before_creation
-	tkb._fp_afterCreation = cast(CreateDelegate) tkb_after_creation
-    tkb._chanFlag = BF_RECT | BF_ADJUST
-    return tkb
+    this._style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS
+    this._exStyle = 0
+    this.text = "my track"
+    this._clsName = WcTrackbarClassW
+    this._fp_beforeCreation = cast(CreateDelegate) tkb_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) tkb_after_creation
+    this._chanFlag = BF_RECT | BF_ADJUST
+    append(&f._controls, this)
+    return this
 }
 
-@private new_tbar1 :: proc(parent : ^Form, rapid: b8 = false) -> ^TrackBar 
+@private new_tbar1 :: proc(parent : ^Form, autoc: b8 = false) -> ^TrackBar
 {
     tkb := tbar_ctor(parent, 10, 10, _def_tkb_width, _def_tkb_height)
-    if rapid do create_control(tkb)
+    if autoc do create_control(tkb)
     return tkb
 }
 
-@private new_tbar2 :: proc(parent : ^Form, x, y : int, rapid: b8 = false) -> ^TrackBar 
+@private new_tbar2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^TrackBar
 {
     tkb := tbar_ctor(parent, x, y, _def_tkb_width, _def_tkb_height)
-    if rapid do create_control(tkb)
+    if autoc do create_control(tkb)
     return tkb
 }
 
-@private new_tbar3 :: proc(parent : ^Form, x, y, w, h : int, rapid: b8 = false) -> ^TrackBar 
+@private new_tbar3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^TrackBar
 {
     tkb := tbar_ctor(parent, x, y, w, h)
-    if rapid do create_control(tkb)
+    if autoc do create_control(tkb)
     return tkb
 }
 
-@private tkb_adjust_styles :: proc(tkb : ^TrackBar) 
+@private tkb_adjust_styles :: proc(tkb : ^TrackBar)
 {
     if tkb.vertical {
         tkb._style |= TBS_VERT
@@ -212,7 +212,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     tkb._bkBrush = get_solid_brush(tkb.backColor)
 }
 
-@private setup_value_internal :: proc(tk : ^TrackBar, value : i32) 
+@private setup_value_internal :: proc(tk : ^TrackBar, value : i32)
 {
     if tk.reversed {
         tk.value = int(U16MAX - value)
@@ -221,25 +221,25 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     }
 }
 
-@private draw_vertical_tics :: proc(hdc : HDC, px : i32, py : i32, ticlen : i32) 
+@private draw_vertical_tics :: proc(hdc : HDC, px : i32, py : i32, ticlen : i32)
 {
     MoveToEx(hdc, px, py, nil);
     LineTo(hdc, px + ticlen, py)
 }
 
-@private draw_horiz_tics_down :: proc(hdc : HDC, px : i32, py : i32, ticlen : i32) 
+@private draw_horiz_tics_down :: proc(hdc : HDC, px : i32, py : i32, ticlen : i32)
 {
     MoveToEx(hdc, px, py, nil);
     LineTo(hdc, px, py + ticlen)
 }
 
-@private draw_horiz_tics_upper :: proc(hdc : HDC, px : i32, py : i32, ticlen : i32) 
+@private draw_horiz_tics_upper :: proc(hdc : HDC, px : i32, py : i32, ticlen : i32)
 {
     MoveToEx(hdc, px, py, nil);
     LineTo(hdc, px, py - ticlen)
 }
 
-@private draw_tics :: proc(tk : ^TrackBar, hdc : HDC) 
+@private draw_tics :: proc(tk : ^TrackBar, hdc : HDC)
 {
     SelectObject(hdc, HGDIOBJ(tk._ticPen))
     if tk.vertical {
@@ -266,7 +266,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     }
 }
 
-@private calculate_tics :: proc(tk : ^TrackBar) 
+@private calculate_tics :: proc(tk : ^TrackBar)
 {
     twidth, stpos, enpos,tic, numtics : i32
     pfactor, range, chanlen : f32
@@ -330,14 +330,14 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     // }
 }
 
-@private get_thumb_rect :: proc(h : HWND) -> RECT 
+@private get_thumb_rect :: proc(h : HWND) -> RECT
 {
     rc : RECT
     SendMessage(h, TBM_GETTHUMBRECT, 0, direct_cast(&rc, LPARAM))
     return rc
 }
 
-@private fill_channel_rect :: proc(tk : ^TrackBar, nm : LPNMCUSTOMDRAW, trc : RECT) -> bool 
+@private fill_channel_rect :: proc(tk : ^TrackBar, nm : LPNMCUSTOMDRAW, trc : RECT) -> bool
 {
     /* If show_selection property is enabled in this trackbar,
      * we need to show the area between thumb and channel starting in diff color.
@@ -374,7 +374,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     return result
 }
 
-@private send_initial_messages :: proc(tk : ^TrackBar) 
+@private send_initial_messages :: proc(tk : ^TrackBar)
 {
     if tk.reversed {
         SendMessage(tk.handle, TBM_SETRANGEMIN, WPARAM(1), LPARAM(tk.maxRange * -1))
@@ -388,7 +388,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     SendMessage(tk.handle, TBM_SETLINESIZE, 0, LPARAM(tk.lineSize))
 }
 
-set_value :: proc(tk : ^TrackBar, value: int) 
+set_value :: proc(tk : ^TrackBar, value: int)
 {
     if value > tk.maxRange || value < tk.minRange do return
     SendMessage(tk.handle, TBM_SETPOS, WPARAM(1), LPARAM(i32(value)) )
@@ -396,7 +396,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
 
 @private tkb_before_creation :: proc(tkb : ^TrackBar) {tkb_adjust_styles(tkb)}
 
-@private tkb_after_creation :: proc(tkb : ^TrackBar) 
+@private tkb_after_creation :: proc(tkb : ^TrackBar)
 {
 	set_subclass(tkb, tkb_wnd_proc)
 
@@ -414,7 +414,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
     // if tkb.selRange do tkb._selBrush = get_solid_brush(tkb.selColor)
 }
 
-@private tkb_finalize :: proc(tkb: ^TrackBar, scid: UINT_PTR) 
+@private tkb_finalize :: proc(tkb: ^TrackBar, scid: UINT_PTR)
 {
     delete_gdi_object(tkb._bkBrush)
     delete_gdi_object(tkb._selBrush)
@@ -423,8 +423,8 @@ set_value :: proc(tk : ^TrackBar, value: int)
     free(tkb)
 }
 
-@private tkb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, 
-                                        sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
+@private tkb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+                                        sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
     tkb := control_cast(TrackBar, ref_data)

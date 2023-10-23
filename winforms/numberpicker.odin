@@ -76,66 +76,65 @@ NMUPDOWN :: struct {
 
 
 
-@private np_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^NumberPicker 
+@private np_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^NumberPicker
 {
     if !is_np_inited { // Then we need to initialize the date class control.
         is_np_inited = true
         app.iccx.dwIcc = ICC_UPDOWN_CLASS
-        // WcNumPickerW = to_wstring("msctls_updown32")
         InitCommonControlsEx(&app.iccx)
     }
-    np := new(NumberPicker)
-    np.kind = .Number_Picker
-    np.parent = p
-    np.font = p.font
-    np.width = w
-    np.height = h
-    np.xpos = x
-    np.ypos = y
-    np.step = 1
-    np.backColor = app.clrWhite
-    np.foreColor = app.clrBlack
-    np.minRange = 0
-    np.maxRange = 100
-    np.decimalPrecision = 0
-    np._clsName = WcNumPickerW
-	np._fp_beforeCreation = cast(CreateDelegate) np_before_creation
-	np._fp_afterCreation = cast(CreateDelegate) np_after_creation
+    this := new(NumberPicker)
+    this.kind = .Number_Picker
+    this.parent = p
+    this.font = p.font
+    this.width = w
+    this.height = h
+    this.xpos = x
+    this.ypos = y
+    this.step = 1
+    this.backColor = app.clrWhite
+    this.foreColor = app.clrBlack
+    this.minRange = 0
+    this.maxRange = 100
+    this.decimalPrecision = 0
+    this._clsName = WcNumPickerW
+	this._fp_beforeCreation = cast(CreateDelegate) np_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) np_after_creation
 
-    np._style =  WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK
-    np._buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP | WS_BORDER
-    np._buddyExStyle = WS_EX_LTRREADING | WS_EX_LEFT
-    np._exStyle = 0x00000000
-    np._topEdgeFlag = BF_TOPLEFT
-    np._botEdgeFlag = BF_BOTTOM
-
-    return np
+    this._style =  WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK
+    this._buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP | WS_BORDER
+    this._buddyExStyle = WS_EX_LTRREADING | WS_EX_LEFT
+    this._exStyle = 0x00000000
+    this._topEdgeFlag = BF_TOPLEFT
+    this._botEdgeFlag = BF_BOTTOM
+    append(&p._controls, this)
+    return this
 }
 
-@private np_ctor1 :: proc(parent : ^Form, rapid: b8 = false) -> ^NumberPicker 
+@private np_ctor1 :: proc(parent : ^Form, autoc: b8 = false) -> ^NumberPicker
 {
     np := np_ctor(parent,10, 10, 80, 25 )
-    if rapid do create_control(np)
+    if autoc do create_control(np)
     return np
 }
 
-@private np_ctor2 :: proc(parent : ^Form, x, y : int, rapid: b8 = false) -> ^NumberPicker 
+@private np_ctor2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, 80, 25)
-    if rapid do create_control(np)
+    if autoc do create_control(np)
     return np
 }
 
-@private np_ctor3 :: proc(parent : ^Form, x, y, w, h : int, rapid: b8 = false) -> ^NumberPicker 
+@private np_ctor3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, w, h)
-    if rapid do create_control(np)
+    if autoc do create_control(np)
     return np
 }
 
 new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
 
-@private set_np_styles :: proc(np : ^NumberPicker) 
+@private set_np_styles :: proc(np : ^NumberPicker)
 {
     if np.buttonOnLeft {
         np._style ~= UDS_ALIGNRIGHT
@@ -154,7 +153,7 @@ new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
     // if !np.hasSeparator do np._style |= UDS_NOTHOUSANDS
 }
 
-numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int) 
+numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
 {
     np.maxRange = f32(max_val)
     np.minRange = f32(min_val)
@@ -165,14 +164,14 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
     }
 }
 
-@private np_set_range_internal :: proc(np : ^NumberPicker) 
+@private np_set_range_internal :: proc(np : ^NumberPicker)
 {
     wpm := direct_cast(i32(np.minRange), WPARAM)
     lpm := direct_cast(i32(np.maxRange), LPARAM)
     SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
 }
 
-@private np_set_value_internal :: proc(np : ^NumberPicker, idelta : i32) 
+@private np_set_value_internal :: proc(np : ^NumberPicker, idelta : i32)
 {
     new_val : f32 = np.value + (f32(idelta) * np.step)
     if np.autoRotate {
@@ -191,13 +190,13 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
     np_display_value_internal(np)
 }
 
-@private np_display_value_internal :: proc(np : ^NumberPicker) 
+@private np_display_value_internal :: proc(np : ^NumberPicker)
 {
     val_str := fmt.tprintf(np.formatString, np.value)
     SetWindowText(np._buddyHandle, to_wstring(val_str))
 }
 
-@private set_rects_and_size :: proc(np : ^NumberPicker) 
+@private set_rects_and_size :: proc(np : ^NumberPicker)
 {
     /* Mouse leave from a number picker is big problem. Since it is a combo control,
      * So here, we are trying to solve it somehow.
@@ -209,7 +208,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
     np._udrc = get_rect(np.handle) // Updown btn rect
 }
 
-@private resize_buddy :: proc(np : ^NumberPicker) 
+@private resize_buddy :: proc(np : ^NumberPicker)
 {
     // Here we are adjusting the edit control near to updown control.
     if np.buttonOnLeft {
@@ -221,7 +220,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
     }
 }
 
-@private np_hide_selection :: proc(np : ^NumberPicker) 
+@private np_hide_selection :: proc(np : ^NumberPicker)
 {
     wpm : i32 = -1
     SendMessage(np._buddyHandle, EM_SETSEL, WPARAM(wpm), 0)
@@ -229,9 +228,9 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
 
 
 
-@private np_before_creation :: proc(np : ^NumberPicker) 
+@private np_before_creation :: proc(np : ^NumberPicker)
 {
-    if !is_np_inited 
+    if !is_np_inited
     {
         icex : INITCOMMONCONTROLSEX
         icex.dwSize = size_of(icex)
@@ -245,7 +244,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
 
 
 
-@private np_after_creation :: proc(np : ^NumberPicker) 
+@private np_after_creation :: proc(np : ^NumberPicker)
 {
     ctl_id : UINT= globalCtlID // Use global control ID & update it.
     globalCtlID += 1
@@ -283,7 +282,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
 }
 
 
-@private np_finalize :: proc(np: ^NumberPicker, scid: UINT_PTR) 
+@private np_finalize :: proc(np: ^NumberPicker, scid: UINT_PTR)
 {
     delete_gdi_object(np._bkBrush)
     RemoveWindowSubclass(np.handle, np_wnd_proc, scid)
@@ -291,8 +290,8 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
 }
 
 
-@private np_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, 
-                                        sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
+@private np_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+                                        sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
     np := control_cast(NumberPicker, ref_data)
@@ -361,8 +360,8 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
     return DefSubclassProc(hw, msg, wp, lp)
 }
 
-@private buddy_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, 
-                                            sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
+@private buddy_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+                                            sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
     tb := control_cast(NumberPicker, ref_data)
@@ -472,7 +471,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
 }
 
 // Special subclassing for NumberPicker control. Remove_subclass is written in dtor
-@private set_np_subclass :: proc(np : ^NumberPicker, np_func, buddy_func : SUBCLASSPROC ) 
+@private set_np_subclass :: proc(np : ^NumberPicker, np_func, buddy_func : SUBCLASSPROC )
 {
 	np_dwp := cast(DWORD_PTR)(cast(UINT_PTR) np)
 	SetWindowSubclass(np.handle, np_func, UINT_PTR(globalSubClassID), np_dwp )
@@ -482,7 +481,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
 	globalSubClassID += 1
 }
 
-@private is_mouse_on_me :: proc(np : ^NumberPicker) -> bool 
+@private is_mouse_on_me :: proc(np : ^NumberPicker) -> bool
 {
     // If this returns False, onMouseLeave event will triggered
     // Since, updown control is a combo of an edit and button controls...

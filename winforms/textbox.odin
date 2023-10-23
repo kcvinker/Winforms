@@ -7,7 +7,7 @@ UIS_CLEAR :: 2
 UISF_HIDEFOCUS :: 0x1
 WcEditClassW : wstring = L("Edit")
 TBSTYLE :: WS_CHILD | WS_VISIBLE | ES_LEFT | WS_TABSTOP | ES_AUTOHSCROLL | WS_OVERLAPPED | WS_CLIPCHILDREN|WS_CLIPSIBLINGS
-TBEXSTYLE :: WS_EX_LEFT | WS_EX_LTRREADING  | WS_EX_CLIENTEDGE 
+TBEXSTYLE :: WS_EX_LEFT | WS_EX_LTRREADING  | WS_EX_CLIENTEDGE
 
 // Text case for Textbox control.
 // Possible values : default, lower_case, upper_case
@@ -21,7 +21,7 @@ TextType :: enum {Default, Number_Only, Password_Char}
 // Possible values : left, center, right
 TbTextAlign :: enum {Left, Center, Right}
 
-TextBox :: struct 
+TextBox :: struct
 {
     using control : Control,
     textAlignment : TbTextAlign,
@@ -38,72 +38,72 @@ TextBox :: struct
     _frcRef : COLORREF,
 }
 
-@private tb_ctor :: proc(p : ^Form, x, y, w, h: int) -> ^TextBox 
+@private tb_ctor :: proc(p : ^Form, x, y, w, h: int) -> ^TextBox
 {
-    tb := new(TextBox)
-    tb.kind = .Text_Box
-    tb.width = w
-    tb.height = h
-    tb.parent = p
-    tb.xpos = x
-    tb.ypos = y
-    tb.font = p.font
-    tb.hideSelection = true
-    tb.backColor = app.clrWhite
-    tb.foreColor = app.clrBlack
-    tb.focusRectColor = 0x007FFF
-    //tb._drawFocusRect = true
-    tb._frcRef = get_color_ref(tb.focusRectColor)
-    tb._style = TBSTYLE  // | WS_CLIPCHILDREN
-    tb._exStyle = TBEXSTYLE  // WS_EX_STATICEDGE // WS_EX_WINDOWEDGE WS_EX_CLIENTEDGE WS_EX_STATICEDGE WS_EX_WINDOWEDGE //|
-    tb._clsName = WcEditClassW
-    tb._fp_beforeCreation = cast(CreateDelegate) tb_before_creation
-    tb._fp_afterCreation = cast(CreateDelegate) tb_after_creation
-    // fmt.println("class ", tb._clsName)
-    return tb
+    this := new(TextBox)
+    this.kind = .Text_Box
+    this.width = w
+    this.height = h
+    this.parent = p
+    this.xpos = x
+    this.ypos = y
+    this.font = p.font
+    this.hideSelection = true
+    this.backColor = app.clrWhite
+    this.foreColor = app.clrBlack
+    this.focusRectColor = 0x007FFF
+    //this._drawFocusRect = true
+    this._frcRef = get_color_ref(this.focusRectColor)
+    this._style = TBSTYLE  // | WS_CLIPCHILDREN
+    this._exStyle = TBEXSTYLE  // WS_EX_STATICEDGE // WS_EX_WINDOWEDGE WS_EX_CLIENTEDGE WS_EX_STATICEDGE WS_EX_WINDOWEDGE //|
+    this._clsName = WcEditClassW
+    this._fp_beforeCreation = cast(CreateDelegate) tb_before_creation
+    this._fp_afterCreation = cast(CreateDelegate) tb_after_creation
+    append(&p._controls, this)
+    return this
 }
 
 // TextBox control constructor.
 new_textbox :: proc{new_tb1, new_tb2, new_tb3, new_tb4, new_tb5}
 
-@private new_tb1 :: proc(parent : ^Form, rapid: b8 = false) -> ^TextBox 
+@private new_tb1 :: proc(parent : ^Form, autoc: b8 = false) -> ^TextBox
 {
     tb := tb_ctor(parent, 10, 10, 180, 27)
-    if rapid do create_control(tb)
+    if autoc do create_control(tb)
     return tb
 }
 
-@private new_tb2 :: proc(parent : ^Form, x, y: int, rapid: b8 = false) -> ^TextBox 
+@private new_tb2 :: proc(parent : ^Form, x, y: int, autoc: b8 = false) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, 180, 27)
-    if rapid do create_control(tb)
+    if autoc do create_control(tb)
     return tb
 }
 
-@private new_tb3 :: proc(parent : ^Form, x, y, w, h: int, rapid: b8 = false) -> ^TextBox 
+@private new_tb3 :: proc(parent : ^Form, x, y, w, h: int, autoc: b8 = false) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, w, h)
-    if rapid do create_control(tb)
+    if autoc do create_control(tb)
     return tb
 }
 
-@private new_tb4 :: proc(parent : ^Form, txt: string, x, y: int, rapid: b8 = false) -> ^TextBox 
+@private new_tb4 :: proc(parent : ^Form, txt: string, x, y: int, autoc: b8 = false) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, 180, 27)
     tb.text = txt
-    if rapid do create_control(tb)
+    if autoc do create_control(tb)
     return tb
 }
 
-@private new_tb5 :: proc(parent : ^Form, txt: string, x, y, w, h: int, rapid: b8 = false) -> ^TextBox 
+@private new_tb5 :: proc(parent : ^Form, txt: string, x, y, w, h: int, autoc: b8 = false) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, w, h)
     tb.text = txt
-    if rapid do create_control(tb)
+    if autoc do create_control(tb)
     return tb
 }
 
-@private adjust_styles :: proc(tb : ^TextBox) 
+@private adjust_styles :: proc(tb : ^TextBox)
 {
     if tb.multiLine do tb._style |= ES_MULTILINE | ES_WANTRETURN
     if !tb.hideSelection do tb._style |= ES_NOHIDESEL
@@ -120,14 +120,14 @@ new_textbox :: proc{new_tb1, new_tb2, new_tb3, new_tb4, new_tb5}
     tb._bkBrush = get_solid_brush(tb.backColor)
 }
 
-@private set_tb_bk_clr :: proc(tb : ^TextBox, clr : uint) 
+@private set_tb_bk_clr :: proc(tb : ^TextBox, clr : uint)
 {
     tb.backColor = clr
     if tb._isCreated do InvalidateRect(tb.handle, nil, false)
 }
 
 // Select or de-select all the text in TextBox control.
-textbox_set_selection :: proc(tb : ^TextBox, value : bool) 
+textbox_set_selection :: proc(tb : ^TextBox, value : bool)
 {
     wpm, lpm : i32
     if value {
@@ -141,20 +141,20 @@ textbox_set_selection :: proc(tb : ^TextBox, value : bool)
 }
 
 // Set a TextBox's read only state.
-textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool) 
+textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool)
 {
     SendMessage(tb.handle, EM_SETREADONLY, WPARAM(bstate), 0)
     tb.readOnly = bstate
 }
 
-textbox_clear_all :: proc(tb : ^TextBox) 
+textbox_clear_all :: proc(tb : ^TextBox)
 {
     if tb._isCreated do SetWindowText(tb.handle, to_wstring(""))
 }
 
 @private tb_before_creation :: proc(tb : ^TextBox) {adjust_styles(tb)}
 
-@private tb_after_creation :: proc(tb : ^TextBox) 
+@private tb_after_creation :: proc(tb : ^TextBox)
 {
     set_subclass(tb, tb_wnd_proc)
     if len(tb.cueBanner) > 0 {
@@ -164,7 +164,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
     EnableWindow(tb.handle, true)
 }
 
-@private tb_finalize :: proc(tb: ^TextBox, scid: UINT_PTR) 
+@private tb_finalize :: proc(tb: ^TextBox, scid: UINT_PTR)
 {
     delete_gdi_object(tb._bkBrush)
     RemoveWindowSubclass(tb.handle, tb_wnd_proc, scid)

@@ -2,9 +2,10 @@ package winforms
 
 import "core:runtime"
 
-WcCheckBoxW : wstring
+WcCheckBoxW : wstring = L("Button")
 
-CheckBox :: struct {
+CheckBox :: struct
+{
     using control : Control,
     checked : bool,
     textAlignment : enum {Left, Right},
@@ -15,96 +16,94 @@ CheckBox :: struct {
     onCheckChanged : EventHandler,
 }
 
-@private cb_count : int
+@private _cbcount : int
 
-@private cb_ctor :: proc(p : ^Form, txt : string = "", bc: b8) -> ^CheckBox {
-    if WcCheckBoxW == nil do WcCheckBoxW = to_wstring("Button")
-    cb_count += 1
-    cb := new(CheckBox)
-    cb.kind = .Check_Box
-    cb.parent = p
-    cb.font = p.font
-    cb.text = concat_number("CheckBox_", cb_count) if txt == "" else txt
-    cb.xpos = 50
-    cb.ypos = 50
-    cb.width = 30
-    cb.height = 20
-    cb.backColor = p.backColor
-    cb.foreColor = app.clrBlack
-    cb._exStyle = 0
-    cb._style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX
-    cb._exStyle =  WS_EX_LTRREADING | WS_EX_LEFT
-    cb._txtStyle = DT_SINGLELINE | DT_VCENTER
-    cb.autoSize = true
-    cb._SizeIncr.width = 20
-    cb._SizeIncr.height = 3
-    cb._clsName = WcCheckBoxW
-    cb._fp_beforeCreation = cast(CreateDelegate) cb_before_creation
-	cb._fp_afterCreation = cast(CreateDelegate) cb_after_creation
-    if bc do create_control(cb)
-    return cb
+@private cb_ctor :: proc(p : ^Form, txt : string, x, y, w, h: int) -> ^CheckBox
+{
+    this := new(CheckBox)
+    _cbcount += 1
+    this.kind = .Check_Box
+    this.parent = p
+    this.font = p.font
+    this.text = txt
+    this.xpos = x
+    this.ypos = y
+    this.width = w
+    this.height = h
+    this.backColor = p.backColor
+    this.foreColor = app.clrBlack
+    this._exStyle = 0
+    this._style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX
+    this._exStyle =  WS_EX_LTRREADING | WS_EX_LEFT
+    this._txtStyle = DT_SINGLELINE | DT_VCENTER
+    this.autoSize = true
+    this._SizeIncr.width = 20
+    this._SizeIncr.height = 3
+    this._clsName = WcCheckBoxW
+    this._fp_beforeCreation = cast(CreateDelegate) cb_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) cb_after_creation
+    append(&p._controls, this)
+    return this
 }
-
 
 // Constructor for Checkbox type.
 new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
-@private new_checkbox1 :: proc(parent : ^Form, txt : string = "", rapid: b8 = false) -> ^CheckBox {
-    cb := cb_ctor(parent, txt, bc = rapid)
+@private new_checkbox1 :: proc(parent : ^Form, txt : string = "", autoc: b8 = false) -> ^CheckBox
+{
+    cbtxt := len(txt) == 0 ? concat_number("CheckBox_", _cbcount ) : txt
+    cb := cb_ctor(parent, cbtxt, 10, 10, 0, 0 )
+    if autoc do create_control(cb)
     return cb
 }
 
-@private new_checkbox2 :: proc(parent : ^Form, txt : string, x, y : int, rapid: b8 = false) -> ^CheckBox {
-    cb := cb_ctor(parent, txt, bc = false)
-    cb.xpos = x
-    cb.ypos = y
-    if rapid do create_control(cb)
+@private new_checkbox2 :: proc(parent : ^Form, txt : string, x, y : int, autoc: b8 = false) -> ^CheckBox
+{
+    cb := cb_ctor(parent, txt, x, y, 0, 0)
+    if autoc do create_control(cb)
     return cb
 }
 
-@private new_checkbox3 :: proc(parent : ^Form, txt : string, x, y, w, h : int, rapid: b8 = false) -> ^CheckBox {
-    cb := cb_ctor(parent, txt, bc = false)
-    cb.width = w
-    cb.height = h
-    cb.xpos = x
-    cb.ypos = y
-    if rapid do create_control(cb)
+@private new_checkbox3 :: proc(parent : ^Form, txt : string, x, y, w, h : int, autoc: b8 = false) -> ^CheckBox
+{
+    cb := cb_ctor(parent, txt, x, y, w, h)
+    if autoc do create_control(cb)
     return cb
 }
 
 @private cb_before_creation :: proc(cb : ^CheckBox) {adjust_style(cb)}
 
-@private cb_after_creation :: proc(cb : ^CheckBox) {
+@private cb_after_creation :: proc(cb : ^CheckBox)
+{
 	set_subclass(cb, cb_wnd_proc)
     append(&cb.parent._cDrawChilds, cb.handle)
     if cb.autoSize do calculate_ctl_size(cb)
-
 }
 
-
-
-@private adjust_style :: proc(cb : ^CheckBox) {
+@private adjust_style :: proc(cb : ^CheckBox)
+{
     if cb.textAlignment == .Right {
         cb._style |= BS_RIGHTBUTTON
        cb._txtStyle |= DT_RIGHT
     }
 }
 
-@private cb_finalize :: proc(cb: ^CheckBox, scid: UINT_PTR) {
+@private cb_finalize :: proc(cb: ^CheckBox, scid: UINT_PTR)
+{
     delete_gdi_object(cb._bkBrush)
     RemoveWindowSubclass(cb.handle, cb_wnd_proc, scid)
     free(cb)
 }
 
-
-
 @private cb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
-                                                        sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+                                                        sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
+{
     // context = runtime.default_context()
     context = global_context
     cb := control_cast(CheckBox, ref_data)
 
-    switch msg {
+    switch msg
+    {
         case WM_PAINT :
             if cb.paint != nil {
                 ps : PAINTSTRUCT

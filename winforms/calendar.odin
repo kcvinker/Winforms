@@ -8,7 +8,8 @@ import "core:runtime"
 
 WcCalenderClassW : wstring
 
-Calendar :: struct {
+Calendar :: struct
+{
     using control : Control,
     value : DateTime,
     viewMode : ViewMode,
@@ -28,39 +29,44 @@ Calendar :: struct {
 // Posible values : month, year, decade, centuary
 ViewMode :: enum {Month, Year, Decade, Centuary}
 
-@private calendar_ctor :: proc(p : ^Form, x, y : int, bCreate: b8) -> ^Calendar {
+@private calendar_ctor :: proc(p : ^Form, x, y : int) -> ^Calendar
+{
     if !isDtpClassInit { // Then we need to initialize the date class control.
         isDtpClassInit = true
         WcCalenderClassW = to_wstring("SysMonthCal32")
         app.iccx.dwIcc = ICC_DATE_CLASSES
         InitCommonControlsEx(&app.iccx)
     }
-    c := new(Calendar)
-    c.parent = p
-    c.font = p.font
-    c.kind = .Calendar
-    c.width = 0
-    c.height = 0
-    c.xpos = x
-    c.ypos = y
-    c._style = WS_CHILD | WS_VISIBLE //| MCS_DAYSTATE
-    c._clsName = WcCalenderClassW
-    c._fp_beforeCreation = cast(CreateDelegate) cal_before_creation
-	c._fp_afterCreation = cast(CreateDelegate) cal_after_creation
-    if bCreate do create_control(c)
-    return c
+    this := new(Calendar)
+    this.parent = p
+    this.font = p.font
+    this.kind = .Calendar
+    this.width = 0
+    this.height = 0
+    this.xpos = x
+    this.ypos = y
+    this._style = WS_CHILD | WS_VISIBLE //| MCS_DAYSTATE
+    this._clsName = WcCalenderClassW
+    this._fp_beforeCreation = cast(CreateDelegate) cal_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) cal_after_creation
+    append(&p._controls, this)
+    return this
 }
 
 // Create a new Calendar control.
 new_calendar :: proc{new_cal1, new_cal2}
 
-@private new_cal1 :: proc(parent : ^Form, x, y : int, rapid: b8 = false) -> ^Calendar{
-    c := calendar_ctor(parent, x, y, bCreate = rapid)
+@private new_cal1 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^Calendar
+{
+    c := calendar_ctor(parent, x, y)
+    if autoc do create_control(c)
     return c
 }
 
-@private new_cal2 :: proc(parent : ^Form, rapid: b8 = false) -> ^Calendar{
-    c := calendar_ctor(parent, 10, 10, bCreate = rapid)
+@private new_cal2 :: proc(parent : ^Form, autoc: b8 = false) -> ^Calendar
+{
+    c := calendar_ctor(parent, 10, 10)
+    if autoc do create_control(c)
     return c
 }
 
@@ -91,19 +97,22 @@ new_calendar :: proc{new_cal1, new_cal2}
 // End of API constants.
 
 // Api Types
-    NMSELCHANGE :: struct {
+    NMSELCHANGE :: struct
+    {
         nmhdr : NMHDR,
         stSelStart,
         stSelEnd : SYSTEMTIME,
     }
 
-    NMVIEWCHANGE :: struct {
+    NMVIEWCHANGE :: struct
+    {
         nmhdr : NMHDR,
         dwOldView : DWORD,
         dwNewView : DWORD,
     }
 
-    MCGRIDINFO :: struct {
+    MCGRIDINFO :: struct
+    {
         cbSize : UINT,
         dwPart : DWORD,
         dwFlags : DWORD,
@@ -118,7 +127,8 @@ new_calendar :: proc{new_cal1, new_cal2}
         cchNam : size_t,
     }
 
-    NMMOUSE :: struct {
+    NMMOUSE :: struct
+    {
         nmhdr : NMHDR,
         dwItemSpec : DWORD_PTR,
         dwItemData : DWORD_PTR,
@@ -129,7 +139,8 @@ new_calendar :: proc{new_cal1, new_cal2}
 
 // End of API Types
 
-@private set_cal_style :: proc(c : ^Calendar) {
+@private set_cal_style :: proc(c : ^Calendar)
+{
     if c.showWeekNum do c._style |= MCS_WEEKNUMBERS
     if c.noTodayCircle do c._style |= MCS_NOTODAYCIRCLE
     if c.noToday do c._style |= MCS_NOTODAY
@@ -137,24 +148,28 @@ new_calendar :: proc{new_cal1, new_cal2}
     if c.shortDayNames do c._style |= MCS_SHORTDAYSOFWEEK
 }
 
-@private cal_before_creation :: proc(c : ^Calendar) {
+@private cal_before_creation :: proc(c : ^Calendar)
+{
     set_cal_style(c)
 }
-@private cal_after_creation :: proc(cal : ^Calendar) {
+
+@private cal_after_creation :: proc(cal : ^Calendar)
+{
     set_subclass(cal, cal_wnd_proc)
     rc : RECT
     SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(LPARAM, &rc))
     SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
-
 }
 
-@private cal_finalize :: proc(cal: ^Calendar, scid: UINT_PTR) {
+@private cal_finalize :: proc(cal: ^Calendar, scid: UINT_PTR)
+{
     RemoveWindowSubclass(cal.handle, cal_wnd_proc, scid)
     free(cal)
 }
 
 @private cal_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
-                                                    sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
+                                            sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
+{
     // context = runtime.default_context()
     context = global_context
     cal := control_cast(Calendar, ref_data)

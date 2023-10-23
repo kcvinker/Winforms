@@ -2,7 +2,8 @@ package winforms
 
 import "core:fmt"
 
-DateTime :: struct{
+DateTime :: struct
+{
     year,
     month,
     day,
@@ -17,7 +18,8 @@ WeekDays :: enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday
 
 new_date_time :: proc{dt_ctor, dt_ctor2}
 
-@private dt_ctor :: proc() -> DateTime {
+@private dt_ctor :: proc() -> DateTime 
+{
     dt : DateTime
     st : SYSTEMTIME
     GetLocalTime(&st)
@@ -34,7 +36,8 @@ new_date_time :: proc{dt_ctor, dt_ctor2}
 }
 
 @private
-dt_ctor2 :: proc(iYear, iMonth, iDay, iHour, iMin, iSec : int) -> DateTime {
+dt_ctor2 :: proc(iYear, iMonth, iDay, iHour, iMin, iSec : int) -> DateTime 
+{
     dt : DateTime
     dt.year = iYear
     dt.month = iMonth
@@ -48,7 +51,8 @@ dt_ctor2 :: proc(iYear, iMonth, iDay, iHour, iMin, iSec : int) -> DateTime {
 }
 
 @private
-systime_to_datetime :: proc(st : SYSTEMTIME) -> DateTime {
+systime_to_datetime :: proc(st : SYSTEMTIME) -> DateTime 
+{
     dt : DateTime
     dt.year = int(st.wYear)
     dt.month = int(st.wMonth)
@@ -62,7 +66,8 @@ systime_to_datetime :: proc(st : SYSTEMTIME) -> DateTime {
 }
 
 @private
-datetime_to_systime :: proc(dt : DateTime) -> SYSTEMTIME {
+datetime_to_systime :: proc(dt : DateTime) -> SYSTEMTIME 
+{
     st : SYSTEMTIME
     st.wYear = WORD(dt.year)
     st.wMonth = WORD(dt.month)
@@ -75,21 +80,22 @@ datetime_to_systime :: proc(dt : DateTime) -> SYSTEMTIME {
     return st
 }
 
-current_time :: proc() -> DateTime {
-    return dt_ctor()
-}
+current_time :: proc() -> DateTime { return dt_ctor() }
 
-datetime_string :: proc(dt : DateTime) -> string {
+datetime_string :: proc(dt : DateTime) -> string 
+{
     return fmt.tprintf(  "%2d-%2d-%4d %2d:%2d:%2d", dt.day, dt.month, dt.year, dt.hour, dt.minute, dt.second)
 }
 
-date_string ::proc(dt : DateTime) -> string {
+date_string ::proc(dt : DateTime) -> string 
+{
     return fmt.tprintf(  "%2d-%2d-%4d", dt.day, dt.month, dt.year)
 }
 
 sleep :: proc(msec : int) {Sleep(DWORD(msec))}
 
-print_time :: proc(dt : DateTime) {
+print_time :: proc(dt : DateTime) 
+{
     ptf("Year - %d\n", dt.year)
     ptf("Month - %d\n", dt.month)
     ptf("Day - %d\n", dt.day)
@@ -100,7 +106,8 @@ print_time :: proc(dt : DateTime) {
     ptf("Day of the week - %s\n", dt.dayOfWeek)
 }
 
-print_systime :: proc(st : SYSTEMTIME) {
+print_systime :: proc(st : SYSTEMTIME) 
+{
     ptf("Year - %d\n", st.wYear)
     ptf("Month - %d\n", st.wMonth)
     ptf("Day - %d\n", st.wDay)

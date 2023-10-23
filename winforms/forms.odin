@@ -6,9 +6,8 @@ import "core:runtime"
 import "core:mem"
 
 nph : HWND
-wftrack: mem.Tracking_Allocator
+// wftrack: mem.Tracking_Allocator
 global_context: runtime.Context
-
 
 // Some better window colors
 /*
@@ -33,67 +32,15 @@ def_fgc : Color
 //mcd : MouseClickData
 
 
-/*
-    This type is used for holding information about the program for whole run time.
-    We need to keep some info from the very beginning to the very end.
-*/
-@private
-Application :: struct
-{
-    mainHandle : HWND,
-    mainLoopStarted : bool,
-    className : string,
-    hInstance : HINSTANCE,
-    screenWidth, screenHeight : int,
-    formCount : int,
-    startState : FormState,
-    globalFont : Font,
-    iccx : INITCOMMONCONTROLSEX,
-    clrWhite : uint,
-    clrBlack : uint,
-    curr_context: ^runtime.Context,
-    wftrack: ^mem.Tracking_Allocator
-}
-
-@private
-start_app :: proc() -> Application
-{
-    // cont := runtime.default_context
-    appl : Application
-    // appl.globalFont = new_font(def_font_name, def_font_size)
-    appl.className = "WingLib Window in Odin"
-    appl.hInstance = GetModuleHandle(nil)
-    appl.screenWidth = int(GetSystemMetrics(0))
-    appl.screenHeight = int(GetSystemMetrics(1))
-
-    appl.iccx.dwSize = size_of(appl.iccx)
-    appl.iccx.dwIcc = ICC_STANDARD_CLASSES
-    InitCommonControlsEx(&appl.iccx)    // Iinitializing standard common controls.
-    // fmt.println("init commoms")
-    // def_bgc = new_color(def_window_color)
-    // def_fgc = new_color(def_fore_color)
-    appl.clrWhite = pure_white
-    appl.clrBlack = pure_black
-    // appl.curr_context = &cont
-
-    return appl
-}
-
-winforms_init :: proc(trk: ^mem.Tracking_Allocator) {
-    // global_context = runtime.default_context() if cont == nil else cont^
-    // print("u i ", context.user_index)
-    // // global_context = context
-    // mem.tracking_allocator_init(trk, context.allocator)
-    // context.allocator = mem.tracking_allocator(trk)
-    // global_context = context
-    app.wftrack = trk
-}
-
-show_memory_report :: proc(track: ^mem.Tracking_Allocator) 
-{
-    for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
-    for bf in track.bad_free_array { ptf("%v allocation %p was freed badly\n", bf.location, bf.memory) }
-}
+// winforms_init :: proc(trk: ^mem.Tracking_Allocator) {
+//     // global_context = runtime.default_context() if cont == nil else cont^
+//     // print("u i ", context.user_index)
+//     // // global_context = context
+//     // mem.tracking_allocator_init(trk, context.allocator)
+//     // context.allocator = mem.tracking_allocator(trk)
+//     // global_context = context
+//     app.wftrack = trk
+// }
 
 Form :: struct
 {
@@ -120,9 +67,44 @@ Form :: struct
     _drawMode : FormDrawMode,
     _cDrawChilds : [dynamic]HWND,
     _uDrawChilds : map[UINT]HWND,
+    _controls : [dynamic]^Control,
     // _combo_list : [dynamic]ComboInfo,
     _comboData : [dynamic]ComboData,
 }
+
+new_form :: proc{new_form1, new_form2}
+
+print_points :: proc(frm: ^Form) { frm.onMouseUp = print_point_func }
+
+// Set the colors to draw a gradient background in form.
+set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint,top_bottom := true)
+{
+    f._gdraw.c1 = new_color(clr1)
+    f._gdraw.c2 = new_color(clr2)
+    f._gdraw.t2b = top_bottom
+    f._drawMode = .gradient
+    if f._isCreated do InvalidateRect(f.handle, nil, false)
+}
+
+/* This will display the window.
+    And it will check if the main loop is started or not.
+    If not started, it will start the main loop */
+start_mainloop :: proc(this: ^Form)
+{
+    create_child_handles(this)
+    ShowWindow(app.mainHandle, cast(i32) app.startState )
+    //app.mainLoopStarted = true
+    ms : MSG
+    for GetMessage(&ms, nil, 0, 0) != 0
+    {
+        TranslateMessage(&ms)
+        DispatchMessage(&ms)
+    }
+}
+
+form_show :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
+form_hide :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
+form_setstate :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
 
 FormDrawMode :: enum { Default, flat_color, gradient,}
 //GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
@@ -144,10 +126,7 @@ FormStyle :: enum { Default, Fixed_Single, Fixed_3D, Fixed_Dialog, Fixed_Tool, S
 FormState :: enum {Normal = 1, Minimized, Maximized}
 FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 
-new_form :: proc{new_form1, new_form2}
-
-@private
-form_ctor :: proc( t : string = "", w : int = 500, h : int = 400) -> ^Form
+@private form_ctor :: proc( t : string = "", w : int = 500, h : int = 400) -> ^Form
 {
     if app.formCount == 0 do global_context = context
     app.formCount += 1
@@ -172,32 +151,24 @@ form_ctor :: proc( t : string = "", w : int = 500, h : int = 400) -> ^Form
     return  f
 }
 
-@private
-new_form1 :: proc() -> ^Form
-{
-    return form_ctor()
+@private new_form1 :: proc() -> ^Form { return form_ctor() }
 
-}
-
-@private
-new_form2 :: proc( txt : string, w : int = 500, h : int = 400) -> ^Form
+@private new_form2 :: proc( txt : string, w : int = 500, h : int = 400) -> ^Form
 {
     return form_ctor( txt, w, h)
 }
 
-@private
-form_dtor :: proc(frm : ^Form)
+@private form_dtor :: proc(frm : ^Form)
 {
     delete_gdi_object(frm.font.handle)
     delete(frm._uDrawChilds)
     delete(frm._cDrawChilds)
     delete(frm._comboData)
+    delete(frm._controls)
     free(frm)
-
 }
 
-@private
-set_form_font_internal :: proc(frm : ^Form)
+@private set_form_font_internal :: proc(frm : ^Form)
 {
     if app.globalFont.handle == nil do CreateFont_handle(&app.globalFont, frm.handle)
     if frm.font.name == def_font_name && frm.font.size == def_font_size
@@ -218,6 +189,16 @@ set_form_font_internal :: proc(frm : ^Form)
     }
 }
 
+@private create_child_handles :: proc(this: ^Form)
+{
+    if len(this._controls) > 0
+    {
+        for ctl in this._controls
+        {
+            if ctl.handle == nil do create_control(ctl)
+        }
+    }
+}
 
 // Users can call 'create_handle' instead of this.
 create_form :: proc(frm : ^Form )
@@ -253,47 +234,13 @@ create_form :: proc(frm : ^Form )
     }
 }
 
-/* This will display the window.
-    And it will check if the main loop is started or not.
-    If not started, it will start the main loop */
-form_start :: proc()
-{
-    ShowWindow(app.mainHandle, cast(i32) app.startState )
-    //app.mainLoopStarted = true
-    ms : MSG
-    for GetMessage(&ms, nil, 0, 0) != 0
-    {
-        TranslateMessage(&ms)
-        DispatchMessage(&ms)
-    }
-
-}
-
-form_show :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
-form_hide :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
-form_setstate :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
-
-
-print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs) 
+print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
 {
     @static x : int = 1
     fmt.printf("[%d] X: %d,  Y: %d\n", x, mea.x, mea.y)
     x+= 1
     // for _, v in wftrack.allocation_map { ptf("winforms: %v leaked %v bytes\n", v.location, v.size) }
 }
-
-print_points :: proc(frm: ^Form) { frm.onMouseUp = print_point_func }
-
-// Set the colors to draw a gradient background in form.
-set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint,top_bottom := true)
-{
-    f._gdraw.c1 = new_color(clr1)
-    f._gdraw.c2 = new_color(clr2)
-    f._gdraw.t2b = top_bottom
-    f._drawMode = .gradient
-    if f._isCreated do InvalidateRect(f.handle, nil, false)
-}
-
 
 @private register_class :: proc()
 {
@@ -342,7 +289,8 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint,top_bottom := true)
     }
 }
 
-@private set_form_style :: proc(frm : ^Form) {
+@private set_form_style :: proc(frm : ^Form)
+{
     #partial switch frm.style {
         case .Default :
             frm._exStyle = normal_form_ex_style
@@ -373,7 +321,8 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint,top_bottom := true)
     }
 }
 
-@private track_mouse_move :: proc(hw : HWND) {
+@private track_mouse_move :: proc(hw : HWND)
+{
     tme : TRACKMOUSEEVENT
     tme.cbSize = size_of(tme)
     tme.dwFlags = TME_HOVER | TME_LEAVE
@@ -398,7 +347,6 @@ set_gradient_form :: proc(f : ^Form, clr1, clr2 : uint,top_bottom := true)
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
 
-
  // Display windows message names in wndproc function.
 @private display_msg :: proc(umsg : u32, )
 {
@@ -412,7 +360,8 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 collect_combo_data :: proc(frm: ^Form, cd : ComboData) {append(&frm._comboData, cd)}
 
 //It's a private function. Combobox module is the caller.
-update_combo_data :: proc(frm: ^Form, cd : ComboData) {
+update_combo_data :: proc(frm: ^Form, cd : ComboData)
+{
     for c in &frm._comboData {
         if c.comboID == cd.comboID {
             c.comboHwnd = cd.comboHwnd
@@ -433,19 +382,59 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData) {
 //     return nil
 // }
 
+/*
+    This type is used for holding information about the program for whole run time.
+    We need to keep some info from the very beginning to the very end.
+*/
+@private
+Application :: struct
+{
+    mainHandle : HWND,
+    mainLoopStarted : bool,
+    className : string,
+    hInstance : HINSTANCE,
+    screenWidth, screenHeight : int,
+    formCount : int,
+    startState : FormState,
+    globalFont : Font,
+    iccx : INITCOMMONCONTROLSEX,
+    clrWhite : uint,
+    clrBlack : uint,
+    curr_context: ^runtime.Context,
+    wftrack: ^mem.Tracking_Allocator
+}
+
+@private start_app :: proc() -> Application
+{
+    // cont := runtime.default_context
+    appl : Application
+    // appl.globalFont = new_font(def_font_name, def_font_size)
+    appl.className = "WingLib Window in Odin"
+    appl.hInstance = GetModuleHandle(nil)
+    appl.screenWidth = int(GetSystemMetrics(0))
+    appl.screenHeight = int(GetSystemMetrics(1))
+
+    appl.iccx.dwSize = size_of(appl.iccx)
+    appl.iccx.dwIcc = ICC_STANDARD_CLASSES
+    InitCommonControlsEx(&appl.iccx)    // Iinitializing standard common controls.
+    // fmt.println("init commoms")
+    // def_bgc = new_color(def_window_color)
+    // def_fgc = new_color(def_fore_color)
+    appl.clrWhite = pure_white
+    appl.clrBlack = pure_black
+    // appl.curr_context = &cont
+
+    return appl
+}
+
 @private
 window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
 {
-
     context = global_context
-    // context = runtime.default_context()
-    // context.allocator = app.mem_tracker^
     frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
     //display_msg(msg)
     switch msg
     {
-
-
         // case WM_PARENTNOTIFY :
         //    // display_msg(msg)
         //     if lo_word(DWORD(wp)) == WM_CREATE {

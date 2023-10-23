@@ -21,42 +21,43 @@ ListBox :: struct {
 
 @private lbox_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^ListBox {
     // if WcListBoxW == nil do WcListBoxW = to_wstring("ListBox")
-    lbx := new(ListBox)
-    lbx.kind = .List_Box
-    lbx.parent = p
-    lbx.font = p.font
-    lbx.width = w
-    lbx.height = h
-    lbx.xpos = x
-    lbx.ypos = y
-    lbx.backColor = app.clrWhite
-    lbx.foreColor = app.clrBlack
-    lbx._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
-    lbx._exStyle = 0
-    lbx._clsName = WcListBoxW
-	lbx._fp_beforeCreation = cast(CreateDelegate) lbx_before_creation
-	lbx._fp_afterCreation = cast(CreateDelegate) lbx_after_creation
-    lbx._dummyIndex = -1
-    return lbx
+    this := new(ListBox)
+    this.kind = .List_Box
+    this.parent = p
+    this.font = p.font
+    this.width = w
+    this.height = h
+    this.xpos = x
+    this.ypos = y
+    this.backColor = app.clrWhite
+    this.foreColor = app.clrBlack
+    this._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
+    this._exStyle = 0
+    this._clsName = WcListBoxW
+	this._fp_beforeCreation = cast(CreateDelegate) lbx_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) lbx_after_creation
+    this._dummyIndex = -1
+    append(&p._controls, this)
+    return this
 }
 
 // Create new listbox type.
 new_listbox :: proc{lbox_ctor1, lbox_ctor2, lbox_ctor3}
 
-@private lbox_ctor1 :: proc(parent : ^Form, rapid: b8 = false) -> ^ListBox {
+@private lbox_ctor1 :: proc(parent : ^Form, autoc: b8 = false) -> ^ListBox {
     lb := lbox_ctor(parent, 10, 10, 180, 200)
-    if rapid do create_control(lb)
+    if autoc do create_control(lb)
     return lb
 }
-@private lbox_ctor2 :: proc(parent : ^Form, x, y : int, rapid: b8 = false) -> ^ListBox {
+@private lbox_ctor2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^ListBox {
     lb := lbox_ctor(parent, x, y, 180, 200)
-    if rapid do create_control(lb)
+    if autoc do create_control(lb)
     return lb
 }
 
-@private lbox_ctor3 :: proc(parent : ^Form, x, y, w, h : int, rapid: b8 = false) -> ^ListBox {
+@private lbox_ctor3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^ListBox {
     lb := lbox_ctor(parent, x, y, w, h)
-    if rapid do create_control(lb)
+    if autoc do create_control(lb)
     return lb
 }
 //----------------------------------------------------------------------

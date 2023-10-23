@@ -38,7 +38,7 @@ FlatDraw :: struct // To manage flat color button drawing
 	hotPen : HPEN,
 }
 
-GradColor :: struct 
+GradColor :: struct
 {
 	c1 : Color,
 	c2 : Color,
@@ -58,14 +58,14 @@ GradDraw :: struct  // To manage gradient drawing
 new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 
 // Set gradient colors for this button.
-button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint) 
+button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 {
 	if (btn._drawFlag & 4) != 1 do btn._drawFlag += 4
 	gradDrawSetData(&btn._gdraw, clr1, clr2)
     if btn._isCreated do InvalidateRect(btn.handle, nil, false)
 }
 
-@private flatDrawSetData :: proc(fd: ^FlatDraw, c: uint) 
+@private flatDrawSetData :: proc(fd: ^FlatDraw, c: uint)
 {
 	fd.defBrush = get_solid_brush(c)
 	fd.hotBrush = CreateSolidBrush(change_color_get_ref(c, 1.2))
@@ -73,7 +73,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	fd.hotPen = CreatePen(PS_SOLID, 1, change_color_get_ref(c, 0.3))
 }
 
-@private flatDrawDtor :: proc(fd: FlatDraw) 
+@private flatDrawDtor :: proc(fd: FlatDraw)
 {
 	if fd.defBrush != nil do delete_gdi_object(fd.defBrush)
 	if fd.hotBrush != nil do delete_gdi_object(fd.hotBrush)
@@ -82,7 +82,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	// print("flatdraw freed")
 }
 
-@private gradDrawSetData :: proc(gd: ^GradDraw, c1, c2: uint) 
+@private gradDrawSetData :: proc(gd: ^GradDraw, c1, c2: uint)
 {
 	gd.gcDef.c1 = new_color(c1)
 	gd.gcDef.c2 = new_color(c2)
@@ -94,7 +94,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	gd.hotPen = CreatePen(PS_SOLID, 1, change_color_get_ref(gd.gcHot.c1, 0.3))
 }
 
-@private gradDrawDtor :: proc(gd: GradDraw) 
+@private gradDrawDtor :: proc(gd: GradDraw)
 {
 	if gd.defBrush != nil do delete_gdi_object(gd.defBrush)
 	if gd.hotBrush != nil do delete_gdi_object(gd.hotBrush)
@@ -103,58 +103,62 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	print("gradDraw freed")
 }
 
-@private buttonCtor :: proc(p : ^Form, txt : string, x, y, w, h : int, bc: b8) -> ^Button
+@private buttonCtor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^Button
 {
 	if WcButtonW == nil do WcButtonW = to_wstring("Button")
 	_buttonCount += 1
-	b := new(Button)
-	b.kind = .Button
-	b.text = txt == "" ? concat_number("Button_", _buttonCount) : txt
-	b.width = w
-	b.height = h
-	b.xpos = x
-	b.ypos = y
-	b.parent = p
-	b.font = p.font
-	b._exStyle = 0
-	b._style = WS_CHILD | WS_TABSTOP | WS_VISIBLE | BS_NOTIFY
-	b._clsName = WcButtonW
-	b._drawFlag = 0
-	b.foreColor = p.foreColor
-	b.backColor = p.backColor
-	b._fp_beforeCreation = cast(CreateDelegate) btn_before_creation
-	b._fp_afterCreation = cast(CreateDelegate) btn_after_creation
-	if bc do create_control(b)
-	return b
+	this := new(Button)
+	this.kind = .Button
+	this.text = txt == "" ? concat_number("Button_", _buttonCount) : txt
+	this.width = w
+	this.height = h
+	this.xpos = x
+	this.ypos = y
+	this.parent = p
+	this.font = p.font
+	this._exStyle = 0
+	this._style = WS_CHILD | WS_TABSTOP | WS_VISIBLE | BS_NOTIFY
+	this._clsName = WcButtonW
+	this._drawFlag = 0
+	this.foreColor = p.foreColor
+	this.backColor = p.backColor
+	this._fp_beforeCreation = cast(CreateDelegate) btn_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) btn_after_creation
+	append(&p._controls, this)
+	return this
 }
 
-@private new_button1 :: proc(parent : ^Form, rapid : b8 = false) -> ^Button
+@private new_button1 :: proc(parent : ^Form, autoc : b8 = false) -> ^Button
 {
-	btn := buttonCtor(parent, "", 10, 10, 120, 35, bc = rapid)
+	btn := buttonCtor(parent, "", 10, 10, 120, 35)
+	if autoc do create_control(btn)
 	return btn
 }
 
-@private new_button2 :: proc(parent : ^Form, txt : string, rapid : b8 = false) -> ^Button
+@private new_button2 :: proc(parent : ^Form, txt : string, autoc : b8 = false) -> ^Button
 {
-	btn := buttonCtor(parent, txt, 10, 10, 120, 35, bc = rapid)
+	btn := buttonCtor(parent, txt, 10, 10, 120, 35)
+	if autoc do create_control(btn)
 	return btn
 }
 
-@private new_button3 :: proc(parent : ^Form, txt : string, x, y : int, rapid : b8 = false) -> ^Button
+@private new_button3 :: proc(parent : ^Form, txt : string, x, y : int, autoc : b8 = false) -> ^Button
 {
-	btn := buttonCtor(parent, txt, x, y, 120, 35, bc = rapid)
+	btn := buttonCtor(parent, txt, x, y, 120, 35)
+	if autoc do create_control(btn)
 	return btn
 }
 
-@private new_button4 :: proc(parent : ^Form, txt : string, x, y, w, h: int, rapid : b8 = false) -> ^Button
+@private new_button4 :: proc(parent : ^Form, txt : string, x, y, w, h: int, autoc : b8 = false) -> ^Button
 {
-	btn := buttonCtor(parent, txt, x, y, w, h, bc = rapid)
+	btn := buttonCtor(parent, txt, x, y, w, h)
+	if autoc do create_control(btn)
 	return btn
 }
 
 @private btn_before_creation :: proc(b : ^Button) {if b._drawFlag > 0 do check_initial_color_change(b)}
 
-@private btn_after_creation :: proc(b : ^Button) 
+@private btn_after_creation :: proc(b : ^Button)
 {
 	// if b._draw_mode != .Default && !b._addedInDrawList {
 	// 	append(&b.parent._cdraw_childs, b.handle)
@@ -203,7 +207,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	return LRESULT(0)
 }
 
-@private paint_flat_button :: proc(hdc : HDC, rc : RECT, hbr: HBRUSH, pen: HPEN) 
+@private paint_flat_button :: proc(hdc : HDC, rc : RECT, hbr: HBRUSH, pen: HPEN)
 {
 	SelectObject(hdc, to_hgdi_obj(hbr))
 	SelectObject(hdc, to_hgdi_obj(pen))
@@ -248,7 +252,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	return CDRF_DODEFAULT
 }
 
-@private paint_gradient_button :: proc(btn: ^Button, hdc: HDC, rc: RECT, gc : GradColor, pen: HPEN) 
+@private paint_gradient_button :: proc(btn: ^Button, hdc: HDC, rc: RECT, gc : GradColor, pen: HPEN)
 {
 	gr_brush : HBRUSH = create_gradient_brush(hdc, rc, gc.c1, gc.c2)
 	defer delete_gdi_object(gr_brush)
@@ -258,7 +262,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	FillPath(hdc)
 }
 
-@private btn_wmnotify_handler :: proc(btn: ^Button, lpm: LPARAM) -> LRESULT  
+@private btn_wmnotify_handler :: proc(btn: ^Button, lpm: LPARAM) -> LRESULT
 {
 	ret : LRESULT = CDRF_DODEFAULT
 	// print("draw flg ", btn._drawFlag)
@@ -280,7 +284,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	return ret
 }
 
-@private btn_finalize :: proc(btn: ^Button, scid: UINT_PTR) 
+@private btn_finalize :: proc(btn: ^Button, scid: UINT_PTR)
 {
 	switch btn._drawFlag {
 		case 2, 3: flatDrawDtor(btn._fdraw)
