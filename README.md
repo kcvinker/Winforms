@@ -10,7 +10,7 @@ NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView
 
 ## Screenshot
 
-![image](C:\Users\kcvin\OneDrive\Programming\Odin\Winforms\Screenshot_201.jpg)
+![image](Screenshot_201.jpg)
 
 
 
