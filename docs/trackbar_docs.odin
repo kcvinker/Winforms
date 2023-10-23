@@ -1,4 +1,0 @@
-/*
-Trackbar documentation 
-
-*/
