@@ -10,7 +10,7 @@ NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView, Men
 
 ## Screenshot
 
-![image](winforms2311.jpg)
+![image](/winforms2311.jpg)
 
 
 
