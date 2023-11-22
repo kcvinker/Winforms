@@ -100,16 +100,18 @@ new_progressbar :: proc{pb_new1, pb_new2, pb_new3}
     return pb
 }
 
-@private pb_new2 :: proc(parent : ^Form, x, y : int, autoc:b8 = false) -> ^ProgressBar
+@private pb_new2 :: proc(parent : ^Form, x, y : int, autoc:b8 = false, perc: bool = false) -> ^ProgressBar
 {
     pb := pb_ctor(parent, x, y, 200, 25)
+    pb.showPercentage = perc
     if autoc do create_control(pb)
     return pb
 }
 
-@private pb_new3 :: proc(parent : ^Form, x, y, w, h : int, autoc:b8 = false) -> ^ProgressBar
+@private pb_new3 :: proc(parent : ^Form, x, y, w, h : int, autoc:b8 = false, perc: bool = false) -> ^ProgressBar
 {
     pb := pb_ctor(parent, x, y, w, h)
+    pb.showPercentage = perc
     if autoc do create_control(pb)
     return pb
 }
@@ -200,7 +202,6 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
     if pb._isCreated && pb.style == .Block {
         pb.value = ival
         SendMessage(pb.handle, PBM_SETPOS, WPARAM(i32(ival)), 0)
-
     }
 }
 

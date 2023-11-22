@@ -1,6 +1,7 @@
 package winforms
 import "core:runtime"
 import "core:fmt"
+import api "core:sys/windows"
 
 EN_SETFOCUS :: 256
 UIS_CLEAR :: 2
@@ -161,7 +162,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
         up := cast(UINT_PTR) to_wstring(tb.cueBanner)
         SendMessage(tb.handle, EM_SETCUEBANNER, 1, LPARAM(up) )
     }
-    EnableWindow(tb.handle, true)
+    api.EnableWindow(tb.handle, true)
 }
 
 @private tb_finalize :: proc(tb: ^TextBox, scid: UINT_PTR)

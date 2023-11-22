@@ -100,7 +100,6 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	if gd.hotBrush != nil do delete_gdi_object(gd.hotBrush)
 	if gd.defPen != nil do delete_gdi_object(gd.defPen)
 	if gd.hotPen != nil do delete_gdi_object(gd.hotPen)
-	print("gradDraw freed")
 }
 
 @private buttonCtor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^Button

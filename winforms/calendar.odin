@@ -6,7 +6,7 @@
 package winforms
 import "core:runtime"
 
-WcCalenderClassW : wstring
+WcCalenderClassW : wstring = to_wstring("SysMonthCal32")
 
 Calendar :: struct
 {
@@ -33,7 +33,6 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
 {
     if !isDtpClassInit { // Then we need to initialize the date class control.
         isDtpClassInit = true
-        WcCalenderClassW = to_wstring("SysMonthCal32")
         app.iccx.dwIcc = ICC_DATE_CLASSES
         InitCommonControlsEx(&app.iccx)
     }
@@ -303,11 +302,8 @@ new_calendar :: proc{new_cal1, new_cal2}
             }
         case WM_DESTROY: cal_finalize(cal, sc_id)
 
-
-
-
-            case :
-            return DefSubclassProc(hw, msg, wp, lp)
+        case :
+        return DefSubclassProc(hw, msg, wp, lp)
 
     }
     return DefSubclassProc(hw, msg, wp, lp)

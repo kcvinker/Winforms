@@ -6,6 +6,7 @@
 package winforms
 import "core:runtime"
 import "core:fmt"
+import api "core:sys/windows"
 
 // Constants
     TBS_AUTOTICKS :: 0x1
@@ -370,7 +371,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
         }
     }
 
-    result = bool(FillRect(nm.hdc, &rct, tk._selBrush))
+    result = bool(api.FillRect(nm.hdc, &rct, tk._selBrush))
     return result
 }
 

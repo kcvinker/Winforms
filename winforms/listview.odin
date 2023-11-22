@@ -6,6 +6,7 @@
 
 package winforms
 import "core:runtime"
+import api "core:sys/windows"
 //import "core:fmt"
 
 // Constants
@@ -844,13 +845,13 @@ draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
 
 			if (nmcd.uItemState & CDIS_SELECTED) == CDIS_SELECTED {
 				// Header is clicked. So we will change the back color.
-				FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush)
+				api.FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush)
 			} else {
 				if hd_index == lv._hdrIndex {
 					// Mouse pointer is on header. So we will change the back color.
-					FillRect(nmcd.hdc, &nmcd.rc, lv._hdrHotBrush)
+					api.FillRect(nmcd.hdc, &nmcd.rc, lv._hdrHotBrush)
 				} else {
-					FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush)
+					api.FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush)
 				}
 			}
 
@@ -862,7 +863,7 @@ draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
 				nmcd.rc.top += 2;
 			}
 		} else {
-			FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush);
+			api.FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush);
 		}
 
 		// SelectObject(nmcd.hdc, this.mHdrFont.handle);
@@ -876,7 +877,7 @@ draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
 		return CDRF_SKIPDEFAULT
 	}
 	else {
-		FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush);
+		api.FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush);
 	}
 	return CDRF_DODEFAULT
 }
@@ -1039,7 +1040,7 @@ hdr_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                 SendMessage(hw, HDM_GETITEMRECT, WPARAM(len(lv.columns) - 1), direct_cast(&hrc, LPARAM))
                 rc : RECT = {hrc.right + 1, hrc.top, i32(lv.width), hrc.bottom}
                 hdc : HDC = GetDC(hw)
-                FillRect(hdc, &rc, lv._hdrBkBrush)
+                api.FillRect(hdc, &rc, lv._hdrBkBrush)
                 ReleaseDC(hw, hdc)
                 return 0
 

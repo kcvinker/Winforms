@@ -4,6 +4,7 @@ package winforms
 import "core:fmt"
 import "core:runtime"
 import "core:mem"
+import api "core:sys/windows"
 
 nph : HWND
 // wftrack: mem.Tracking_Allocator
@@ -28,6 +29,7 @@ empty_wstring := to_wstring(" ") // This is just for testing purpose. Remove it 
 app := start_app() // Global variable for storing data needed to create a window.
 def_bgc : Color
 def_fgc : Color
+menuTxtFlag :: DT_LEFT | DT_SINGLELINE | DT_VCENTER
 
 //mcd : MouseClickData
 
@@ -49,6 +51,7 @@ Form :: struct
     style : FormStyle,
     minimizeBox, maximizeBox : bool,
     windowState : FormState,
+    menubar : ^MenuBar,
 
     onLoad : EventHandler,
     onActivate,
@@ -70,6 +73,9 @@ Form :: struct
     _controls : [dynamic]^Control,
     _gdBrush: HBRUSH,
     _comboData : [dynamic]ComboData,
+    _menuItemMap : map[uint]^MenuItem,
+    _menubarUsed: bool,
+
 }
 
 new_form :: proc{new_form1, new_form2}
@@ -84,18 +90,6 @@ form_set_gradient :: proc(this: ^Form, clr1, clr2 : uint,top_bottom := true)
     this._gdraw.t2b = top_bottom
     this._drawMode = .Gradient
     this.backColor = clr1
-    // for ctl in this._controls
-    // {
-    //     if ctl._inherit_color
-    //     {
-    //         if ctl._isCreated
-    //         {
-    //             control_set_backcolor(ctl, clr1)
-    //         } else {
-    //             ctl.backColor = clr1
-    //         }
-    //     }
-    // }
     if this._isCreated do InvalidateRect(this.handle, nil, false)
 }
 
@@ -179,6 +173,12 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     delete(frm._comboData)
     delete(frm._controls)
     delete_gdi_object(frm._gdBrush)
+    if frm._menubarUsed
+    {
+        menubar_dtor(frm.menubar)
+        delete(frm._menuItemMap)
+
+    }
     free(frm)
 }
 
@@ -205,10 +205,9 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 
 @private create_child_handles :: proc(this: ^Form)
 {
-    if len(this._controls) > 0
-    {
-        for ctl in this._controls
-        {
+    if this._menubarUsed do menubar_create_handle(this.menubar)
+    if len(this._controls) > 0 {
+        for ctl in this._controls {
             if ctl.handle == nil do create_control(ctl)
         }
     }
@@ -233,13 +232,12 @@ create_form :: proc(frm : ^Form )
                                     nil,
                                     app.hInstance,
                                     nil )
-    if frm.handle == nil { fmt.println("Error in CreateWindoeEx,", GetLastError()) }
-    else
-    {
+    if frm.handle == nil {
+        fmt.println("Error in CreateWindoeEx,", GetLastError()) }
+    else {
         frm._isCreated = true
         app.formCount += 1
-        if app.mainHandle == nil
-        {
+        if app.mainHandle == nil {
             app.mainHandle = frm.handle
             app.startState = frm.windowState
         }
@@ -270,10 +268,7 @@ print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
     win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) //cast(HBRUSH) (cast(UINT_PTR) Color_Window + 1)
     win_class.lpszMenuName = nil
     win_class.lpszClassName = to_wstring(app.className)
-
     res := RegisterClassEx(&win_class)
-    // global_context = context
-    // print("u i ", context.user_index)
 }
 
 @private set_start_position :: proc(frm : ^Form)
@@ -378,17 +373,12 @@ print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
     rct : RECT
     hbr : HBRUSH
     GetClientRect(this.handle, &rct)
-    if this._drawMode == .Flat_Color
-    {
+    if this._drawMode == .Flat_Color {
         this._gdBrush = CreateSolidBrush(get_color_ref(this.backColor))
-    }
-    else if this._drawMode == .Gradient
-    {
+    } else if this._drawMode == .Gradient {
         this._gdBrush = create_gradient_brush(hdc, rct, this._gdraw.c1, this._gdraw.c2, this._gdraw.t2b)
-
-        // form_gradient_bkg(f, hdc, rct)
     }
-    FillRect(hdc, &rct, this._gdBrush)
+    api.FillRect(hdc, &rct, this._gdBrush)
     // DeleteObject(HGDIOBJ(hbr))
 }
 
@@ -401,6 +391,16 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
     win_msg := cast(Msg_map) umsg
     ptf("[%d] Message -  %s\n", counter, win_msg)
     counter += 1
+}
+
+@private getMenuFromHmenu :: proc(this: ^Form, hmenu: HMENU) -> (bool, ^MenuItem)
+{
+    if len(this._menuItemMap) > 0 {
+        for _, menu in this._menuItemMap {
+            if menu.handle == hmenu do return true, menu
+        }
+    }
+    return false, nil
 }
 
 // It's a private function. Combobox module is the caller.
@@ -448,15 +448,14 @@ Application :: struct
     clrWhite : uint,
     clrBlack : uint,
     curr_context: ^runtime.Context,
-    wftrack: ^mem.Tracking_Allocator
-}
+    wftrack: ^mem.Tracking_Allocator,}
 
 @private start_app :: proc() -> Application
 {
     // cont := runtime.default_context
     appl : Application
     // appl.globalFont = new_font(def_font_name, def_font_size)
-    appl.className = "WingLib Window in Odin"
+    appl.className = "WingLib Window in Odin test"
     appl.hInstance = GetModuleHandle(nil)
     appl.screenWidth = int(GetSystemMetrics(0))
     appl.screenHeight = int(GetSystemMetrics(1))
@@ -464,13 +463,8 @@ Application :: struct
     appl.iccx.dwSize = size_of(appl.iccx)
     appl.iccx.dwIcc = ICC_STANDARD_CLASSES
     InitCommonControlsEx(&appl.iccx)    // Iinitializing standard common controls.
-    // fmt.println("init commoms")
-    // def_bgc = new_color(def_window_color)
-    // def_fgc = new_color(def_fore_color)
     appl.clrWhite = pure_white
     appl.clrBlack = pure_black
-    // appl.curr_context = &cont
-
     return appl
 }
 
@@ -500,7 +494,8 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
 
 
         case WM_PAINT :
-            if frm.paint != nil {
+            if frm.paint != nil
+            {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
@@ -509,11 +504,13 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
                 return 0
             }
 
-        case WM_DRAWITEM :
-            ctl_hwnd, hwnd_found := frm._uDrawChilds[UINT(wp)]
-            if hwnd_found {
-                return SendMessage(ctl_hwnd, CM_LABELDRAW, 0, lp)
-            } else do return 0
+        // case WM_DRAWITEM :
+        //     ctl_hwnd, hwnd_found := frm._uDrawChilds[UINT(wp)]
+        //     if hwnd_found
+        //     {
+        //         return SendMessage(ctl_hwnd, CM_LABELDRAW, 0, lp)
+        //     }
+        //     else do return 0
 
 
         case WM_CTLCOLOREDIT :
@@ -548,13 +545,28 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
                 // return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
 
         case WM_COMMAND :
-            ctl_hwnd := direct_cast(lp, HWND)
-            SendMessage(ctl_hwnd, CM_CTLCOMMAND, wp, lp)
+            switch hi_word(auto_cast(wp)) {
+                case 0:
+                    if len(frm._menuItemMap) > 0 {
+                        menu := frm._menuItemMap[cast(uint)(lo_word(auto_cast(wp)))]
+                        if menu != nil && menu.onClick != nil {
+                            ea := new_event_args()
+                            menu.onClick(menu, &ea)
+                            return 0
+                        }
+                    }
+                case 1: break
+                case :
+                    ctl_hwnd := direct_cast(lp, HWND)
+                    return SendMessage(ctl_hwnd, CM_CTLCOMMAND, wp, lp)
+            }
 
         case WM_SHOWWINDOW:
-            if !frm._isLoaded {
+            if !frm._isLoaded
+            {
                 frm._isLoaded = true
-                if frm.onLoad != nil {
+                if frm.onLoad != nil
+                {
                     ea := new_event_args()
                     frm->onLoad(&ea)
                     return 0
@@ -562,31 +574,37 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             }
 
         case WM_ACTIVATEAPP :
-            if frm.onActivate != nil || frm.onDeActivate != nil {
+            if frm.onActivate != nil || frm.onDeActivate != nil
+            {
                 ea := new_event_args()
                 b_flag := BOOL(wp)
-                if !b_flag {
+                if !b_flag
+                {
                     if frm.onDeActivate != nil do frm->onDeActivate(&ea)
                 }
-                else {
+                else
+                {
                     if frm.onActivate != nil {frm->onActivate(&ea)}
                 }
             }
 
         case WM_KEYUP, WM_SYSKEYUP :
-            if frm.onKeyUp != nil {
+            if frm.onKeyUp != nil
+            {
                 kea := new_key_event_args(wp)
                 frm.onKeyUp(frm, &kea)
             }
 
         case WM_KEYDOWN, WM_SYSKEYDOWN :
-            if frm.onKeyDown != nil {
+            if frm.onKeyDown != nil
+            {
                 kea := new_key_event_args(wp)
                 frm.onKeyDown(frm, &kea)
             }
 
         case WM_CHAR :
-            if frm.onKeyPress != nil {
+            if frm.onKeyPress != nil
+            {
                 kea := new_key_event_args(wp)
                 frm.onKeyPress(frm, &kea)
                 return 0
@@ -594,95 +612,112 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
 
         case WM_LBUTTONDOWN:
             frm._mDownHappened = true
-            if frm.onMouseDown != nil {
+            if frm.onMouseDown != nil
+            {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseDown(frm, &mea)
             }
 
         case WM_RBUTTONDOWN:
             frm._mRDownHappened = true
-            if frm.onRightMouseDown != nil {
+            if frm.onRightMouseDown != nil
+            {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onRightMouseDown(frm, &mea)
             }
 
         case WM_LBUTTONUP :
-            if frm.onMouseUp != nil {
+            if frm.onMouseUp != nil
+            {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseUp(frm, &mea)
             }
-            if frm._mDownHappened {
+            if frm._mDownHappened
+            {
                 frm._mDownHappened = false
                 SendMessage(frm.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            if frm.onMouseClick != nil {
+            if frm.onMouseClick != nil
+            {
                 ea := new_event_args()
                 frm->onMouseClick(&ea)
             }
 
         case WM_RBUTTONUP :
-            if frm.onRightMouseUp != nil {
+            if frm.onRightMouseUp != nil
+            {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onRightMouseUp(frm, &mea)
             }
-            if frm._mRDownHappened {
+            if frm._mRDownHappened
+            {
                 frm._mRDownHappened = false
                 SendMessage(frm.handle, CM_RMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            if frm.onRightClick != nil {
+            if frm.onRightClick != nil
+            {
                 ea := new_event_args()
                 frm.onRightClick(frm, &ea)
             }
 
         case WM_LBUTTONDBLCLK :
-            if frm.onDoubleClick != nil {
+            if frm.onDoubleClick != nil
+            {
                 ea := new_event_args()
                 frm.onDoubleClick(frm, &ea)
                 return 0
             }
 
         case WM_MOUSEWHEEL :
-            if frm.onMouseScroll != nil {
+            if frm.onMouseScroll != nil
+            {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseScroll(frm, &mea)
             }
 
         case WM_MOUSEMOVE :
-            if !frm._isMouseTracking {
+            if !frm._isMouseTracking
+            {
                 frm._isMouseTracking = true
                 track_mouse_move(hw)
-                if !frm._isMouseEntered {
+                if !frm._isMouseEntered
+                {
                     frm._isMouseEntered = true
-                    if frm.onMouseEnter != nil {
+                    if frm.onMouseEnter != nil
+                    {
                         ea := new_event_args()
                         frm.onMouseEnter(frm, &ea)
                     }
                 }
             } //---------------------------------------
 
-            if frm.onMouseMove != nil {
+            if frm.onMouseMove != nil
+            {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseMove(frm, &mea)
             }
 
         case WM_MOUSEHOVER :
-            if frm._isMouseTracking {frm._isMouseTracking = false }
-            if frm.onMouseHover != nil {
+            if frm._isMouseTracking do frm._isMouseTracking = false
+            if frm.onMouseHover != nil
+            {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseHover(frm, &mea)
             }
 
         case WM_MOUSELEAVE :
-            if frm._isMouseTracking {
+            if frm._isMouseTracking
+            {
                 frm._isMouseTracking = false
                 frm._isMouseEntered = false
             }
 
-            if frm.onMouseLeave != nil {
+            if frm.onMouseLeave != nil
+            {
                 ea := new_event_args()
                 frm.onMouseLeave(frm, &ea)
             }
@@ -691,7 +726,8 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             sea := new_size_event_args(msg, wp, lp)
             frm.width = int(sea.formRect.right - sea.formRect.left)
             frm.height = int(sea.formRect.bottom - sea.formRect.top)
-            if frm.onResizing != nil {
+            if frm.onResizing != nil
+            {
                 frm.onResizing(frm, &sea)
                 return 1
             }
@@ -719,7 +755,8 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
 
         case WM_SIZE :
             sea := new_size_event_args(msg, wp, lp)
-            if frm.onSizeChanged != nil {
+            if frm.onSizeChanged != nil
+            {
                 ea := new_event_args()
                 frm.onSizeChanged(frm, &ea)
                 return 0
@@ -729,7 +766,8 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
         case WM_MOVE :
             frm.xpos = get_x_lparam(lp)
             frm.ypos = get_y_lparam(lp)
-            if frm.onMoved != nil {
+            if frm.onMoved != nil
+            {
                 ea := new_event_args()
                 frm.onMoved(frm, &ea)
                 return 0
@@ -740,7 +778,8 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             rct := direct_cast(lp, ^RECT)
             frm.xpos = int(rct.left)
             frm.ypos = int(rct.top)
-            if frm.onMoving != nil {
+            if frm.onMoving != nil
+            {
                 ea := new_event_args()
                 frm.onMoving(frm, &ea)
                 return LRESULT(1)
@@ -764,11 +803,10 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
                 if frm.onRestored != nil {
                     ea := new_event_args()
                     frm.onRestored(frm, &ea)
-                    }
+                }
             }
         case WM_ERASEBKGND :
-            if frm._drawMode != .Default
-            {
+            if frm._drawMode != .Default {
                 set_back_clr_internal(frm, HDC(wp))
                 return 1
             }
@@ -777,32 +815,114 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             if frm.onClosing != nil {
                 ea := new_event_args()
                 frm.onClosing(frm, &ea)
-                if ea.cancelled {
-                    return 0
-                }
+                if ea.cancelled do return 0
             }
-
 
         case WM_NOTIFY :
             nm := direct_cast(lp, ^NMHDR)
             return SendMessage(nm.hwndFrom, CM_NOTIFY, wp, lp )
 
         case WM_DESTROY:
-            if frm.onClosed != nil {
+            if frm.onClosed != nil
+            {
                 ea:= new_event_args()
                 frm.onClosed(frm, &ea)
             }
             form_dtor(frm) // Freeing all resources.
-            if hw == app.mainHandle {
-
+            if hw == app.mainHandle
+            {
                 PostQuitMessage(0)
                 // if app.wftrack != nil do show_memory_report()
             }
 
+        // Menu related
+        case WM_MEASUREITEM:
+            pmi := direct_cast(lp, LPMEASUREITEMSTRUCT)
+            mi := direct_cast(pmi.itemData, ^MenuItem)
+            // ptf("wm measure item - menu name : %s\n", mi.text)
+            if mi.kind == .Base_Menu || mi.kind == .Popup {
+                hdc := GetDC(hw)
+                size : SIZE
+                GetTextExtentPoint32(hdc, mi._wideText, len(mi.text), &size)
+                ReleaseDC(hw, hdc)
+                pmi.itemWidth = auto_cast(size.width)
+                pmi.itemHeight = auto_cast(size.height + 10)
+            } else {
+                pmi.itemWidth = 150
+                pmi.itemHeight = 25
+            }
+            return to_lresult(true)
+
+        case WM_DRAWITEM:
+            dis := direct_cast(lp, LPDRAWITEMSTRUCT)
+            mi := direct_cast(dis.itemData, ^MenuItem)
+            // ptf("wm draw item - menu name : %s\n", mi.text)
+            txtClrRef := mi.fgColor.ref
+
+            if dis.itemState == 320 || dis.itemState == 257 {
+                rc : RECT
+                if mi._isEnabled {
+
+                    rc = RECT{dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2}
+                    api.FillRect(dis.hDC, &rc, frm.menubar._menuHotBgBrush)
+                    FrameRect(dis.hDC, &rc, frm.menubar._menuFrameBrush)
+                    txtClrRef = 0x00000000
+                } else {
+
+                    api.FillRect(dis.hDC, &rc, frm.menubar._menuGrayBrush)
+                    txtClrRef = frm.menubar._menuGrayCref
+                }
+            } else {
+                // ptf("draw menu : %s\n", mi.text)
+                api.FillRect(dis.hDC, &dis.rcItem, frm.menubar._menuDefBgBrush)
+                if !mi._isEnabled do txtClrRef = frm.menubar._menuGrayCref
+            }
+
+            SetBkMode(dis.hDC, 1)
+            if mi.kind == .Base_Menu  {
+                dis.rcItem.left += 10
+            } else {
+                dis.rcItem.left += 25
+            }
+            SelectObject(dis.hDC, cast(HGDIOBJ)(frm.menubar.font.handle))
+            SetTextColor(dis.hDC, txtClrRef)
+            DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, menuTxtFlag)
+            return 0
+
+        case WM_MENUSELECT:
+            menu_okay, pmenu := getMenuFromHmenu(frm, direct_cast(lp, HMENU))
+            mid := cast(uint)(lo_word(auto_cast(wp))) // Could be an id of a child menu or index of a child menu
+            hwwpm := hi_word(auto_cast(wp))
+            if menu_okay {
+                menu : ^MenuItem
+                switch (hwwpm) {
+                    case 33152: // A normal child menu. We can use mid ad menu id.
+                        menu = frm._menuItemMap[mid]
+                    case 33168: // A popup child menu. We can use mid as index.
+                        menu_okay, menu = get_child_menu_from_id(pmenu, mid)
+                }
+                if menu_okay && menu.onFocus != nil {
+                    ea:= new_event_args()
+                    menu.onFocus(menu, &ea)
+                }
+            }
+
+        case WM_INITMENUPOPUP:
+            menu_okay, menu := getMenuFromHmenu(frm, direct_cast(wp, HMENU))
+            if menu_okay && menu.onPopup != nil {
+                ea:= new_event_args()
+                menu.onPopup(menu, &ea)
+            }
+
+        case WM_UNINITMENUPOPUP:
+            menu_okay, menu := getMenuFromHmenu(frm, direct_cast(wp, HMENU))
+            if menu_okay && menu.onCloseup != nil {
+                ea:= new_event_args()
+                menu.onCloseup(menu, &ea)
+            }
 
         case :
             return DefWindowProc(hw, msg, wp, lp)
-
     }
     return DefWindowProc(hw, msg, wp, lp)
 }

@@ -3,6 +3,7 @@ package winforms
 import "core:runtime"
 import "core:fmt"
 import "core:strconv"
+import api "core:sys/windows"
 
 // Constants ----------
     is_np_inited : bool = false
@@ -97,6 +98,7 @@ NMUPDOWN :: struct {
     this.minRange = 0
     this.maxRange = 100
     this.decimalPrecision = 0
+    this.formatString = "%d"
     this._clsName = WcNumPickerW
 	this._fp_beforeCreation = cast(CreateDelegate) np_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) np_after_creation
@@ -118,16 +120,20 @@ NMUPDOWN :: struct {
     return np
 }
 
-@private np_ctor2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^NumberPicker
+@private np_ctor2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, 80, 25)
+    numberpicker_set_decimal_precision(np, deciPrec)
+    np.step = step
     if autoc do create_control(np)
     return np
 }
 
-@private np_ctor3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^NumberPicker
+@private np_ctor3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, w, h)
+    numberpicker_set_decimal_precision(np, deciPrec)
+    np.step = step
     if autoc do create_control(np)
     return np
 }
@@ -164,6 +170,20 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
     }
 }
 
+numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
+{
+    this.decimalPrecision = value
+    if value == 0 {
+        this.formatString = "%d"
+    } else if value > 0 {
+        this.formatString = fmt.tprintf("%%.%df", value)
+    } else {
+        print("numberpicker_set_decimal_precision: Value must be greater than zero...!")
+    }
+
+    if this._isCreated do np_display_value_internal(this)
+}
+
 @private np_set_range_internal :: proc(np : ^NumberPicker)
 {
     wpm := direct_cast(i32(np.minRange), WPARAM)
@@ -186,13 +206,17 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
         np.value = clamp(new_val, np.minRange, np.maxRange)
         // fmt.println(np.value)
     }
-
     np_display_value_internal(np)
 }
 
 @private np_display_value_internal :: proc(np : ^NumberPicker)
 {
-    val_str := fmt.tprintf(np.formatString, np.value)
+    val_str : string
+    if np.decimalPrecision == 0 {
+        val_str = fmt.tprintf(np.formatString, cast(int)np.value)
+    } else {
+        val_str = fmt.tprintf(np.formatString, np.value)
+    }
     SetWindowText(np._buddyHandle, to_wstring(val_str))
 }
 
@@ -271,7 +295,7 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
         oldBuddy : HWND = direct_cast(usb, HWND)
         SendMessage(np.handle, UDM_SETRANGE32, WPARAM(np.minRange), LPARAM(np.maxRange))
 
-        if np.formatString == "" do np.formatString = fmt.tprintf("%%.%df", np.decimalPrecision)
+        // if np.formatString == "" do np.formatString = fmt.tprintf("%%.%df", np.decimalPrecision)
         set_rects_and_size(np)
         resize_buddy(np)
         if oldBuddy != nil do SendMessage(oldBuddy, CM_BUDDY_RESIZE, 0, 0)
@@ -348,8 +372,8 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
             }
 
         case WM_ENABLE :
-            EnableWindow(hw, bool(wp))
-            EnableWindow(np._buddyHandle, bool(wp))
+            api.EnableWindow(hw, auto_cast(wp))
+            api.EnableWindow(np._buddyHandle, auto_cast(wp))
             return 0
 
         //case WM_CANCELMODE : print("WM_CANCELMODE")

@@ -131,13 +131,13 @@ calculate_label_size :: proc(lb : ^Label) {
     // Labels are creating with zero width & height.
     // We need to find appropriate size if it is an auto sized label.
     hdc := GetDC(lb.handle)
-    defer DeleteDC(hdc)
     ctl_size : SIZE
     select_gdi_object(hdc, lb.font.handle)
     GetTextExtentPoint32(hdc, to_wstring(lb.text), i32(len(lb.text)), &ctl_size )
+    ReleaseDC(lb.handle, hdc)
     lb.width = int(ctl_size.width) //+ lb._SizeIncr.width
     lb.height = int(ctl_size.height) //+ lb._SizeIncr.height
-    MoveWindow(lb.handle, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), true )
+    SetWindowPos(lb.handle, nil, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), SWP_NOMOVE )
 }
 
 @private lbl_before_creation :: proc(lb : ^Label) {

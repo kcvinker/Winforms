@@ -151,7 +151,7 @@ foreign user32 {
    @(link_name="GetCursorPos") GetCursorPos :: proc(pt : ^POINT) -> BOOL---
    @(link_name="ScreenToClient") ScreenToClient :: proc(hw : HWND, pt : ^POINT) -> BOOL---
    @(link_name="WindowFromPoint") WindowFromPoint :: proc(pt : POINT) -> HWND ---
-   @(link_name="EnableWindow") EnableWindow :: proc(hw : HWND, bEnable : bool) -> BOOL---
+   // @(link_name="EnableWindow") EnableWindow :: proc(hw : HWND, bEnable : bool) -> BOOL---
    @(link_name="HideCaret") HideCaret :: proc(hw : HWND) -> BOOL---
    @(link_name="PtInRect") PtInRect :: proc(lprc : ^RECT, pt : POINT) -> BOOL---
    @(link_name="SetFocus") SetFocus :: proc(hw : HWND) -> HWND ---
@@ -172,6 +172,22 @@ foreign user32 {
                                                             hWndTo : HWND,
                                                             lpPoints : ^POINT,
                                                             cPoints : UINT ) -> HANDLE ---
+   @(link_name="CreateMenu") CreateMenu :: proc() -> HMENU ---
+   @(link_name="CreatePopupMenu") CreatePopupMenu :: proc() -> HMENU ---
+   // @(link_name="AppendMenuW") AppendMenu :: proc(hmenu: HMENU,
+   //                                                 uFlags: uint,
+   //                                                 uIDNewItem: UINT_PTR,
+   //                                                 lpNewItem: LPCWSTR) -> BOOL ---
+   @(link_name="SetMenu") SetMenu :: proc(hwnd: HWND, hmenu: HMENU) -> BOOL ---
+   @(link_name="InsertMenuItemW") InsertMenuItem :: proc(hmenu: HMENU,
+                                                         item: uint,
+                                                         fByPosition: BOOL,
+                                                         lpmi: LPCMENUITEMINFO) -> BOOL ---
+   // @(link_name="TrackPopupMenu") TrackPopupMenu :: proc(hmenu: HMENU,
+   //                                                       uFlags: uint,
+   //                                                       x, y, nReserved: int,
+   //                                                       hwnd: HWND) -> BOOL ---
+   @(link_name="DestroyMenu") DestroyMenu :: proc(hmenu: HMENU) -> BOOL ---
 
 
 
@@ -219,7 +235,7 @@ foreign gdi32 {
                                                    pszFaceName : wstring ) -> HFONT ---
    @(link_name="CreateFontIndirectW") CreateFontIndirect :: proc(^LOGFONT) -> HFONT ---
    @(link_name="GetDeviceCaps") GetDeviceCaps :: proc(hdc: HDC, index : i32) -> i32 ---
-   @(link_name="FillRect") FillRect :: proc(hdc: HDC, rct : ^RECT, hb : HBRUSH) -> i32 ---
+   // @(link_name="FillRect") FillRect :: proc(hdc: HDC, rct : ^RECT, hb : HBRUSH) -> i32 ---
    @(link_name="DeleteObject") DeleteObject :: proc(hgdi_obj: HGDIOBJ) -> BOOL---
    @(link_name="CreateCompatibleDC") CreateCompatibleDC :: proc(hdc: HDC) -> HDC ---
    @(link_name="CreateCompatibleBitmap") CreateCompatibleBitmap :: proc(hdc: HDC, cx, cy : i32) -> HBITMAP ---
@@ -232,7 +248,7 @@ foreign gdi32 {
    @(link_name="CreatePen") CreatePen :: proc(style, #any_int width : i32, cref : COLORREF) -> HPEN ---
    @(link_name="GetTextExtentPoint32W") GetTextExtentPoint32 :: proc(dch : HDC,
                                                                         lp_string : wstring,
-                                                                        str_len : i32,
+                                                                        #any_int str_len : i32,
                                                                         psize : ^SIZE) -> BOOL---
    @(link_name="SetBkColor") SetBackColor :: proc(dchandle : HDC, cref : COLORREF) -> COLORREF ---
    @(link_name="GetStockObject") GetStockObject :: proc(fn_object : i32) -> HGDIOBJ ---

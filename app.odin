@@ -4,180 +4,110 @@ package main
 
 import "core:fmt"
 import "core:mem"
-//import "core:runtime"
-
+import "core:runtime"
 import  ui "winforms"
 
 
 // Global declarations
-
-    Control :: ui.Control
-    Form :: ui.Form
-    MouseEventArgs :: ui.MouseEventArgs
-    EventArgs :: ui.EventArgs
-    KeyEventArgs :: ui.KeyEventArgs
-
     print :: fmt.println
     ptf :: fmt.printf
-    pt :: fmt.print
-
-
-    frm : ui.Form
-    lv : ui.ListView
-	dtp : ui.DateTimePicker
-    lb1 : ui.Label
-    lbx : ui.ListBox
-    tk : ui.TrackBar
-    tb : ui.TextBox
-    cmb : ui.ComboBox
-    btn : ui.Button
-
+    pgb : ^ui.ProgressBar
+    tk : ^ui.TrackBar
 //
 
-MakeWindow :: proc() {
-    // Old code
-
+MakeWindow :: proc()
+{
     using ui
-    { // FORM
-        frm = new_form(txt = "Odin is fun")
-        frm.font = new_font("Tahoma", 13)
-        // frm.width = 700
-        frm.left_mouse_down = frm_mouse_down
-        // frm.right_click = frm_right_click
-        create_form(&frm)
+    frm := new_form( txt = "Odin is fun")
+    frm.width = 1100
+    frm.height = 500
+    frm.font = new_font("Tahoma", 13)
+    print_points(frm)
+    create_handle(frm)
+
+    mbar := new_menubar(frm, "File", "Edit", "Format")
+    menubar_add_items(mbar, "File", false, "New Work", "New Client", "Exit")
+    menubar_add_items(mbar, "Edit", false, "Cut", "Copy", "Delete")
+    menubar_add_items(mbar, "Format", false, "Font", "Line Space", "Para Spce")
+    menubar_add_items(mbar, "New Work", false, "Contract Work", "Carriage Work", "Transmission Work")
+    menubar_set_event_handler(mbar, "New Client", .On_Click, newclient_menuclick)
+
+    b1 := new_button(frm, "Normal", 10, 10, 110, 35 )
+    b2 := new_button(frm, "Flat Color", cright(b1) + 20, 10, 120, 35 )
+    control_set_backcolor(b2, 0x94d2bd)
+
+    b3 := new_button(frm, "Gradient", cright(b2) + 20, 10, 110, 35 )
+    button_set_gradient_colors(b3, 0xfb8500, 0xffbe0b)
+
+    cmb := new_combobox(frm, cright(b3) + 20, 10, autoc = true)
+    combo_add_items(cmb, "Windows", "MacOS", "Linux", "ReactOS")
+    combo_set_selected_index(cmb, 0)
+
+    dtp := new_datetimepicker(frm, cright(cmb) + 20, 10, autoc = true)
+    gb := new_groupbox(frm, "Format Options", 10, cbottom(b1) + 20, w=230, h=110, autoc = true)
+    lb1 := new_label(frm, "Line_Space", gbx(gb, 10), gby(gb, 40), autoc = true)
+    np1 := new_numberpicker(frm, cright(lb1) + 15, gby(gb, 35), autoc = true, deciPrec = 2, step = 0.25)
+    np1.foreColor = 0x9d0208
+    lb2 := new_label(frm, "Col Width", gbx(gb, 10), cbottom(lb1) + 20, autoc = true)
+    np2 := new_numberpicker(frm, np1.xpos, cbottom(np1) + 15)
+    np2.buttonOnLeft = true
+    np2.backColor = 0xcaffbf
+
+    gb2 := new_groupbox(frm, "Compiler Options", 10, cbottom(gb) + 20, w = 210, h = 200, autoc = true)
+    cb := new_checkbox(frm, "Show Timings", gbx(gb2, 10), gby(gb2, 40), autoc = true)
+    cb2 := new_checkbox(frm, "No Entry Point", gbx(gb2, 10), cbottom(cb) + 20, autoc = true)
+
+    rb1 := new_radiobutton(frm, "SubSystem:Windows", gbx(gb2, 10), cbottom(cb2) + 20)
+    rb1.foreColor = 0xd90429
+    create_control(rb1)
+    rb2 := new_radiobutton(frm, "SubSystem:Console", gbx(gb2, 10), cbottom(rb1) + 10)
+
+    lbx := new_listbox(frm, cright(gb) + 10, cbottom(b1) + 10, autoc = true)
+    listbox_add_items(lbx, "Windows", "MacOS", "Linux", "ReactOS")
+
+
+    lv := new_listview(frm, cright(lbx) + 10, cbottom(b3) + 10, 340, 150, "Windows", "MacOS", "Linux", 100, 120, 100)
+    listview_add_row(lv, "XP", "Mountain Lion", "RedHat")
+    listview_add_row(lv, "Vista", "Mavericks", "Mint")
+    listview_add_row(lv, "Win7", "Mavericks", "Ubuntu")
+    listview_add_row(lv, "Win8", "Catalina", "Debian")
+    listview_add_row(lv, "Win10", " Big Sur", "Kali")
+
+    tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20, autoc = true)
+
+    pgb = new_progressbar(frm, lv.xpos, cbottom(lv) + 15, lv.width, 30, autoc = true, perc = true)
+    tk = new_trackbar(frm, lv.xpos, cbottom(pgb) + 20, 200, 50)
+    tk.customDraw = true
+    tk.onValueChanged = track_change_proc
+
+    tv := new_treeview(frm, cright(lv) + 20, dtp.ypos, 250, 220, autoc = true)
+    treeview_add_nodes(tv, "Windows", "MacOS", "Linux", "ReactOS")
+    treeview_add_childnodes(tv, 0, "XP", "Vista", "Win7", "Win8", "Win10", "Win11")
+    treeview_add_childnodes(tv, 1, "Mountain Lion", "Mavericks", "Catalina", " Big Sur", "Monterey")
+    treeview_add_childnodes(tv, 2, "RedHat", "Mint", "Ubuntu", "Debian", "Kali")
+
+    cal := new_calendar(frm, tv.xpos, cbottom(tv) + 20, true)
+
+    track_change_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
+    {
+        ui.progressbar_set_value(pgb, tk.value)
     }
 
-    // lv = new_listview(&frm)
-    // lv.width = 450
-    // lv.show_grid_lines = true
-    // lv.has_checkboxes = true
-    // lv.view_style = ListViewStyle.List
-    //lv.view_mode = ListViewViews.List
-    //lv.edit_label =
+    newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
+    {
+        print("New Client selected")
+    }
 
-
-	// dtp = new_datetimepicker(&frm, lv.width + 20, 50, 180, 30)
-	// dtp.format = DtpFormat.Custom
-	// dtp.format_string = "HH:mm:ss"
-
-
-    // lb1 = new_label(&frm, 541, 149, "Learning Odin")
-    // lbx = new_listbox(&frm, 15, 200)
-    // listbox_add_items(&lbx, "Edwidge Danticat", "Herodotus", "Franz Kafka", "Fannie Flagg")
-    //lbx.multi_selection = true
-
-    npk := new_numberpicker(&frm, 50, 50, 100, 27)
-    // npk.hide_selection = true
-    npk.back_color = 0xccff66
-    npk.track_mouse_leave = true
-    npk.mouse_enter = np_mouse_enter
-    npk.mouse_leave = np_mouse_leave
-
-
-    tk = new_trackbar(&frm, 25, 110, 206, 40)
-    // tk.cust_draw = true
-    // tk.channel_style = ChannelStyle.classic
-    tk.sel_range = true
-    // tk.channel_color = 0xff00fc
-    // tk.tic_color = 0x00bb44
-
-
-    tb = new_textbox(&frm, 120, 24, 200, 55)
-    tb.fore_color = 0x005534
-
-    cmb = new_combobox(&frm, 130, 25, 50, 185)
-    combo_add_items(&cmb, "Vinod", "Vinayak", "Vineetha")
-    //cmb.combo_style = DropDownStyle.Lb_Combo
-    // cmb.mouse_enter = combo_mouse_enter
-    // cmb.mouse_leave = combo_mouse_leave
-
-    cmb.back_color = 0xccff66
-    // cmb.fore_color = 0x00ff66
-
-    btn = new_button(&frm, "Click Me", 100, 28, 50, 230)
-    btn.mouse_click = btn_click
-
-
-
-
-    create_controls(&npk, &tk, &tb, &cmb, &btn)
-
-    //cS := new_listview_column("Salaries", 70, ColumnAlignment.right)
-
-    // listview_add_column(&lv, "✔", 50)
-    // listview_add_column(&lv, "Names", 130)
-
-    // listview_add_column(&lv, "Jobs", 80 )
-    // listview_add_column(&lv, "Age", 50)
-    // listview_add_column(&lv, "Salaries", 70)
-
-
-
-
-
-    // listview_add_row(&lv, "", "Vinod", "Translator", 39, 40000)
-    // listview_add_row(&lv, "", "Vinayak", "DTP staff", 32, 15000)
-    // listview_add_row(&lv, "", "Malu", "House wife", 26, 1000)
-    // listview_add_row(&lv, "Vinod")
-    // listview_add_row(&lv, "Vinayak")
-    // listview_add_row(&lv, "Malu")
-
-    // print("lv handle", lv.handle)
-    // lang := ini_readkey(`E:\OneDrive Folder\OneDrive\Programming\Odin\Winforms\af.ini`, "Controls", "ename")
-
-    // defer delete(lang)
-
-    //lv_get_coulmn_count(&lv)
-    // listview_set_column_order(lv, 1, 2, 3, 4, 0 )
-
-
-
-    start_form()
-
+    start_mainloop(frm)
 }
 
-main :: proc() {
+main :: proc()
+{
     track: mem.Tracking_Allocator
     mem.tracking_allocator_init(&track, context.allocator)
     context.allocator = mem.tracking_allocator(&track)
+    defer mem.tracking_allocator_destroy(&track)
     MakeWindow()
-    for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
-    for bf in track.bad_free_array { ptf("%v allocation %p was freed badly\n", bf.location, bf.memory) }
-
+    ui.show_memory_report(&track)
 }
 
-form_load :: proc(s : ^Control, e : ^EventArgs) {
-   // ui.control_set_focus(tb)
-    print("loaded")
-
-}
-
-clicked := 0
-
-frm_click :: proc(c : ^Control, e : ^EventArgs) {
-    //print("form clicked with new select call operator")  541, 149
-
-}
-
-frm_mouse_down :: proc(c : ^Control, e : ^MouseEventArgs) {
-    ui.print_point(e)
-    ind := ui.combo_get_selected_index(&cmb)
-    print(ind)
-}
-
-np_mouse_enter :: proc(c : ^Control, e : ^EventArgs) {
-    print("np mouse entered")
-}
-
-np_mouse_leave :: proc(c : ^Control, e : ^EventArgs) {
-    print("np mouse levae")
-}
-
-btn_click :: proc(c : ^Control, e : ^EventArgs) {
-    print("We can change combo style now")
-    ui.combo_set_selected_item(&cmb, "Vinod")
-    // ui.testproc(&cmb, cmb.back_color)
-}
-
-combo_mouse_enter :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse entered in main ") }
-combo_mouse_leave :: proc(c : ^Control, e : ^EventArgs) { print("combo mouse leaved in main ") }

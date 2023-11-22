@@ -12,6 +12,7 @@
 package winforms
 
 import "core:runtime"
+import "core:sys/windows"
 
 globalSubClassID : int = 2001
 globalCtlID : UINT= 100
@@ -130,7 +131,7 @@ control_enable :: proc(ctl : ^Control, bstate : bool)
 		case .Number_Picker :
 			SendMessage(ctl.handle, WM_ENABLE, WPARAM(bstate), 0)
 		case :
-			EnableWindow(ctl.handle, bstate)
+			windows.EnableWindow(ctl.handle, auto_cast(bstate))
 	}
 }
 
@@ -186,7 +187,7 @@ control_visibile :: proc(ctl : ^Control, bstate : bool)
 
 control_setdisable :: proc(this: ^Control, value: b8)
 {
-	if this._isCreated do EnableWindow(this.handle, !value)
+	if this._isCreated do windows.EnableWindow(this.handle, !value)
 }
 
 control_set_foreground :: proc(this: ^Control)

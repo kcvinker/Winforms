@@ -9,6 +9,7 @@ PaintEventHandler :: proc(sender : ^Control, e : ^PaintEventArgs)
 SizeEventHandler :: proc(sender : ^Control, e : ^SizeEventArgs)
 LBoxEventHandler :: proc(sender : ^Control, e : string)
 TreeEventHandler :: proc(sender : ^TreeView, e : ^TreeEventArgs)
+MenuEventHandler :: proc(sender: ^MenuItem, e: ^EventArgs)
 CreateDelegate :: proc(ctl : ^Control)
 ControlDelegate :: proc(ctl : ^Control)
 PropSetter :: proc(c: ^Control, p: any, v : any)
@@ -64,7 +65,7 @@ TreeEventArgs :: struct
     oldNode : ^TreeNode,
 }
 
-new_event_args :: proc() -> EventArgs 
+new_event_args :: proc() -> EventArgs
 {
 	ea : EventArgs
 	ea.handled = false
@@ -211,7 +212,7 @@ TreeViewAction :: enum {Unknown, By_Keyboard, By_Mouse, Collapse, Expand,}
 
 KeyState :: enum {Released, Pressed,}
 
-KeyEnum :: enum 
+KeyEnum :: enum
 {
     Modifier = -65_536,
     None = 0,

@@ -2,6 +2,7 @@ package winforms
 
 // import "core:fmt"
 import "core:runtime"
+import api "core:sys/windows"
 
 WcGroupBoxW : wstring = L("Button")
 
@@ -52,7 +53,7 @@ GroupBox :: struct
 @private gb_ctor2 :: proc(parent : ^Form,
                             txt : string,
                             x, y : int,
-                            w:int=200, h:int= 200,
+                            w: int = 200, h: int = 200,
                             autoc: b8 = false) -> ^GroupBox
 {
     gb := gb_ctor(parent, txt, x, y, w, h)
@@ -125,7 +126,7 @@ gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
                 GetClientRect(gb.handle, &rc)
                 rc.bottom -= 2
                 // rc.left += 1
-                FillRect(hdc, &rc, CreateSolidBrush(get_color_ref(gb.backColor)))
+                api.FillRect(hdc, &rc, CreateSolidBrush(get_color_ref(gb.backColor)))
                 return 1
             }
 
