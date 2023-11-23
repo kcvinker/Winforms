@@ -135,7 +135,7 @@ new_menubar :: proc{menubar_ctor1, menubar_ctor2}
 @private menubar_ctor2 :: proc(frm : ^Form, menuitems: ..string) -> ^MenuBar
 {
     this := menubar_ctor(frm)
-    menubar_add_items(this, ..menuitems)
+    menubar_additems1(this, ..menuitems)
     return this
 }
 
@@ -199,7 +199,7 @@ menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, parent_text: string, t
         3. If 'creteParent' argument is set to true, the function will create it and add those childs to parent.
             But if 'createParent' is false, function will serch and find the parent with that name.
 */
-menubar_add_items :: proc{menubar_additems1, menubar_additems2}
+menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems3, menubar_additems4}
 
 // Create more than one base menus in this MenuBar.
 @private menubar_additems1 :: proc(this: ^MenuBar, menuTxts: ..string)
@@ -234,17 +234,36 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2}
             if pmenu.kind != .Base_Menu do pmenu.kind = .Popup
         }
     }
-
     if okay {
-        for item in childMenuNames {
-            mi := new_menuitem(item, MenuType.Menu_Item, pmenu.handle, pmenu._menuCount )
-            mi._formHwnd = this._pForm.handle
-            mi._formMenu = true
-            pmenu._menuCount += 1
-            append(&pmenu.menus, mi)
-            this._pForm._menuItemMap[mi.idNum] = mi
-        }
-    } else do ptf("Pmenu not found, name %s\n", parentName)
+        add_multi_childs(pmenu, this, ..childMenuNames)
+    }
+    else do ptf("Pmenu not found, name %s\n", parentName)
+}
+
+@private menubar_additems3 :: proc(this: ^MenuBar, parentIndex: int, menu_txts: ..string)
+{
+    if len(this.menus) > 0 {
+        parent := this.menus[parentIndex]
+        add_multi_childs(parent, this, ..menu_txts)
+    }
+}
+
+@private menubar_additems4 :: proc(this: ^MenuBar, parentMenu: ^MenuItem, menu_txts: ..string)
+{
+    add_multi_childs(parentMenu, this, ..menu_txts)
+}
+
+
+@private add_multi_childs :: proc(this: ^MenuItem, mbar: ^MenuBar, childMenuNames: ..string)
+{
+    for item in childMenuNames {
+        mi := new_menuitem(item, MenuType.Menu_Item, this.handle, this._menuCount )
+        mi._formHwnd = this._formHwnd
+        mi._formMenu = true
+        this._menuCount += 1
+        append(&this.menus, mi)
+        mbar._pForm._menuItemMap[mi.idNum] = mi
+    }
 }
 
 // Find a child menu with given name and create child menus in it.
@@ -324,7 +343,9 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2}
 }
 
 // Get the menu item with given name.
-menubar_get_item :: proc(this: ^MenuBar, menu_text: string) -> (^MenuItem, bool)
+menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
+
+@private menubar_getitem1 :: proc(this: ^MenuBar, menu_text: string) -> (^MenuItem, bool)
 {
     if len(this._pForm._menuItemMap) > 0 {
         for _, menu in this._pForm._menuItemMap {
@@ -334,21 +355,38 @@ menubar_get_item :: proc(this: ^MenuBar, menu_text: string) -> (^MenuItem, bool)
     return nil, false
 }
 
-// Set an event handler function for given event. Function will find the menu item with given name.
-menubar_set_event_handler :: proc(this: ^MenuBar, menu_text: string, event: MenuEvents, pFunc: MenuEventHandler)
+// You can pass the menu structure like this - "File", "New File", "Start"
+// This will finf the Start menu under 'New File' which is a child of 'File'
+@private menubar_getitem2 :: proc(this: ^MenuBar, menu_name: string, parent_name: string) -> (^MenuItem, bool)
 {
-    if len(this._pForm._menuItemMap) > 0 {
-        pMenu, okay := menubar_get_item(this, menu_text)
-        if okay {
-            switch event {
-                case .On_Click: pMenu.onClick = pFunc
-                case .On_Popup: pMenu.onPopup = pFunc
-                case .On_Closeup: pMenu.onCloseup = pFunc
-                case .On_Focus: pMenu.onFocus = pFunc
-            }
-        }
+    if len(this.menus) == 0 do return nil, false
+    menuList : [dynamic]^MenuItem
+    for _, menu in this._pForm._menuItemMap {
+        if menu.text == menu_name do append(&menuList, menu)
     }
+    switch len(menuList) {
+        case 0: return nil, false
+        case 1: return menuList[0], true
+        case :
+            if len(parent_name) > 0 {
+                for menu in menuList {
+                    if menu._parent.text == parent_name do return menu, true
+                }
+            }
+    }
+    return nil, false
 }
+
+@private find_child_menu :: proc(this: ^MenuItem, child_name: string) -> (^MenuItem, bool)
+{
+    if this.text == child_name do return this, true
+    if len(this.menus) > 0 {
+        for menu in this.menus do if menu.text == child_name do return menu, true
+    }
+    return nil, false
+}
+
+
 
 
 

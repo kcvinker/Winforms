@@ -45,11 +45,11 @@ MakeWindow :: proc()
     create_handle(frm)
 
     mbar := new_menubar(frm, "File", "Edit", "Format")
-    menubar_add_items(mbar, "File", false, "New Work", "New Client", "Exit")
-    menubar_add_items(mbar, "Edit", false, "Cut", "Copy", "Delete")
-    menubar_add_items(mbar, "Format", false, "Font", "Line Space", "Para Spce")
-    menubar_add_items(mbar, "New Work", false, "Contract Work", "Carriage Work", "Transmission Work")
-    menubar_set_event_handler(mbar, "New Client", .On_Click, newclient_menuclick)
+    menubar_add_items(mbar, mbar.menus[0], "New Work", "New Client", "Exit")
+    menubar_add_items(mbar, mbar.menus[1], "New Client", "Copy", "Delete")
+    menubar_add_items(mbar, mbar.menus[2], "Font", "Line Space", "Para Spce")
+    menubar_add_items(mbar, mbar.menus[0].menus[0], "Contract Work", "Carriage Work", "Transmission Work")
+    mbar.menus[0].menus[1].onClick = newclient_menuclick
 
     b1 := new_button(frm, "Normal", 10, 10, 110, 35 )
     b2 := new_button(frm, "Flat Color", cright(b1) + 20, 10, 120, 35 )
