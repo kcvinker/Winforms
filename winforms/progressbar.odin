@@ -252,6 +252,25 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
     if pb.value > 0 do SendMessage(pb.handle, PBM_SETPOS, WPARAM(i32(pb.value)), 0)
 }
 
+
+@private progressbar_property_setter :: proc(this: ^ProgressBar, prop: ProgressBarProps, value: $T)
+{
+	switch prop {
+        case .Min_Value: break
+        case .Max_Value:
+            when T == int {
+                this.maxValue = value
+                if this._isCreated do SendMessage(this.handle, PBM_SETRANGE32, 0, LPARAM(value))
+            }
+        case .Step: break
+        case .Style: when T == BarStyle do progressbar_change_style(this, value)
+        case .Orientation: break
+        case .Value: when T == int do progressbar_set_value(this, value)
+        case .Show_Percentage: break
+	}
+}
+
+
 @private pb_finalize :: proc(pb: ^ProgressBar, scid: UINT_PTR)
 {
     RemoveWindowSubclass(pb.handle, pb_wnd_proc, scid)

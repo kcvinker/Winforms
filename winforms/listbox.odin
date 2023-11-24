@@ -13,6 +13,10 @@ ListBox :: struct {
     multiSelection : b64,
     multiColumn : b64,
     keyPreview : b64,
+    selectedItem : string,
+    selectedIndex: int,
+    hotIndex : int,
+    hotItem: string,
     _selIndices : [dynamic]i32,
     _dummyIndex : int,
     _bkBrush : HBRUSH,
@@ -388,6 +392,35 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
     }
 }
 
+@private listbox_property_setter :: proc(this: ^ListBox, prop: ListBoxProps, value: $T)
+{
+	switch prop {
+		case .Has_Sort: break
+		case .No_Selection: break
+		case .Multi_Selection: break
+		case .Multi_Column: break
+		case .Key_Preview: break
+        case .Selected_Item:
+            if this._isCreated {
+                sitem := tostring(value)
+                SendMessage(this.handle, LB_SETCURSEL, WPARAM(to_wstring(sitem)), 0)
+            }
+        case .Selected_Index:
+            when T == int {
+                if this._isCreated && !this.multiSelection {
+                    res := SendMessage(this.handle, LB_SETCURSEL, WPARAM(value), 0)
+                    if res != LB_ERR do this.selectedIndex = value // Fix this : We can avoid using _selIndex
+                } else {
+                    this.selectedIndex = value
+                }
+            }
+
+        case .Hot_Index: break
+        case .Hot_Item: break
+    }
+}
+
+
 @private lbx_finalize :: proc(lbx: ^ListBox, scid: UINT_PTR) {
     delete(lbx.items)
     delete(lbx._selIndices)
@@ -406,7 +439,8 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
 
 
         case CM_CTLLCOLOR :
-            if lbx.foreColor != def_fore_clr || lbx.backColor != def_back_clr {
+            // ptf("lbx draw flag %d\n", lbx._drawFlag)
+            if lbx._drawFlag > 0 {
                 dc_handle := direct_cast(wp, HDC)
                 SetBkMode(dc_handle, Transparent)
                 if lbx.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(lbx.foreColor))

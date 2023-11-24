@@ -21,6 +21,7 @@ GroupBox :: struct
     gb := new(GroupBox)
     using gb
         kind = .Group_Box
+        _textable = true
         parent = p
         font = p.font
         xpos = x

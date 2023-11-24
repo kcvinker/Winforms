@@ -175,31 +175,20 @@ menubar_additem1 :: proc(this: ^MenuBar, menuTxt: string, txtColor: uint = 0x000
     return mi
 }
 
-menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, parent_text: string, txtColor: uint = 0x000000) -> ^MenuItem
+menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, parent: ^MenuItem, txtColor: uint = 0x000000) -> ^MenuItem
 {
-    okay, pmenu := find_parentmenu(this._pForm, parent_text)
-    if okay {
-        mi := new_menuitem(menuTxt, MenuType.Menu_Item, pmenu.handle, pmenu._menuCount )
-        mi._formHwnd = pmenu._formHwnd
-        mi.fgColor = new_color(txtColor)
-        mi._formMenu = true
-        pmenu._menuCount += 1
-        append(&pmenu.menus, mi)
-        pmenu._menubar._pForm._menuItemMap[mi.idNum] = mi
-        return mi
-    }
-    return nil
+    mi := new_menuitem(menuTxt, MenuType.Menu_Item, parent.handle, parent._menuCount )
+    mi._formHwnd = parent._formHwnd
+    mi.fgColor = new_color(txtColor)
+    mi._formMenu = true
+    parent._menuCount += 1
+    append(&parent.menus, mi)
+    this._pForm._menuItemMap[mi.idNum] = mi
+    return mi
 }
 
-/*
-    Add menu items to menu bar.
-    Overloads:
-        1. Add main menu items to a menubar. menubar_add_items(mbar, "item1", "item2")
-        2. Add sub menus to main menu or normal menu item. menubar_add_items(mbar, "parent_text", false, "item1", "item2")
-        3. If 'creteParent' argument is set to true, the function will create it and add those childs to parent.
-            But if 'createParent' is false, function will serch and find the parent with that name.
-*/
-menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems3, menubar_additems4}
+// Add more than one menu items to parent menu.
+menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems3}
 
 // Create more than one base menus in this MenuBar.
 @private menubar_additems1 :: proc(this: ^MenuBar, menuTxts: ..string)
@@ -215,32 +204,8 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
     }
 }
 
-// Create new child menus for a base menu or a normal menu item.
-// If createParent is true, it will create a new base menu in menubar and create it's childs
-// If createParent is false, it will find the existing base menu and create childs.
-// If parent is a normal menu item, it will become a popup menu after this.
-@private menubar_additems2 :: proc(this: ^MenuBar, parentName: string, createParent: bool, childMenuNames: ..string)
-{
-    pmenu : ^MenuItem
-    okay : bool
-    if createParent {
-        pmenu = menubar_add_item(this, parentName)
-        okay = true
-    } else {
-        okay, pmenu = find_parentmenu(this._pForm, parentName)
-        if pmenu.kind == .Menu_Item {
-            pmenu._popup = true
-            pmenu.handle = CreatePopupMenu()
-            if pmenu.kind != .Base_Menu do pmenu.kind = .Popup
-        }
-    }
-    if okay {
-        add_multi_childs(pmenu, this, ..childMenuNames)
-    }
-    else do ptf("Pmenu not found, name %s\n", parentName)
-}
 
-@private menubar_additems3 :: proc(this: ^MenuBar, parentIndex: int, menu_txts: ..string)
+@private menubar_additems2 :: proc(this: ^MenuBar, parentIndex: int, menu_txts: ..string)
 {
     if len(this.menus) > 0 {
         parent := this.menus[parentIndex]
@@ -248,7 +213,7 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
     }
 }
 
-@private menubar_additems4 :: proc(this: ^MenuBar, parentMenu: ^MenuItem, menu_txts: ..string)
+@private menubar_additems3 :: proc(this: ^MenuBar, parentMenu: ^MenuItem, menu_txts: ..string)
 {
     add_multi_childs(parentMenu, this, ..menu_txts)
 }

@@ -321,6 +321,18 @@ combo_clear_items :: proc(cmb : ^ComboBox)
     set_rect(&cmb._myrc, i32(cmb.xpos), i32(cmb.ypos), i32(cmb.width + cmb.xpos), i32(cmb.height + cmb.ypos))
 }
 
+@private combo_property_setter :: proc(this: ^ComboBox, prop: ComboProps, value: $T)
+{
+    switch prop {
+        case .Combo_Style: when T == DropDownStyle do combo_set_style(this, value)
+        case .Visible_Item_Count: break
+        case .Selected_Index: when T == int do combo_set_selected_index(this, value)
+        case .Selected_Item: combo_set_selected_item(this, value)
+    }
+}
+
+
+
 @private cmb_finalize :: proc(cmb: ^ComboBox, scid: UINT_PTR)
 {
     RemoveWindowSubclass(cmb.handle, cmb_wnd_proc, scid)

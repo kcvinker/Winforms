@@ -160,6 +160,33 @@ new_calendar :: proc{new_cal1, new_cal2}
     SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
 }
 
+@private calendar_property_setter :: proc(this: ^Calendar, prop: CalendarProps, value: $T)
+{
+	#partial switch prop {
+		case .Value:
+            when T == DateTime {
+                this.value = value
+                if this._isCreated {
+                    st := datetime_to_systime(this.value)
+                    SendMessage(this.handle, MCM_SETCURSEL, 0, &st)
+                }
+            }
+		case .View_Mode:
+            when T == ViewMode {
+                this.viewMode = value
+                if this._isCreated do SendMessage(this.handle, MCM_SETCURRENTVIEW, 0, i32(this.viewMode))
+            }
+
+		// case .Old_View: break
+		// case .Show_Week_Num: control_enable(this, bool(value))
+		// case .No_Today_Circle: control_set_size(this, this.width, int(value))
+		// case .No_Today: control_set_text(this, tostring(value))
+		// case .No_Trailing_Dates: control_visibile(this, bool(value))
+		// case .Short_Day_Names: control_set_size(this, int(value), this.height)
+	}
+}
+
+
 @private cal_finalize :: proc(cal: ^Calendar, scid: UINT_PTR)
 {
     RemoveWindowSubclass(cal.handle, cal_wnd_proc, scid)

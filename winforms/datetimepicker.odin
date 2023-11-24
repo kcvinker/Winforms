@@ -287,6 +287,37 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
     SetWindowPos(dtp.handle, nil, dtp.xpos, dtp.ypos, dtp.width, dtp.height, SWP_NOZORDER)
 }
 
+
+@private dtp_property_setter :: proc(this: ^DateTimePicker, prop: DTPProps, value: $T)
+{
+    switch prop {
+        case .Format: break
+        case .Format_String:
+            when T == string {
+                this.formatString = value
+                this.format = DtpFormat.Custom
+                if this._isCreated {
+                    SendMessage(this.handle, DTM_SETFORMATA, 0, LPARAM(to_wstring(value)))
+                }
+            }
+        case .Right_Align: break
+        case .Four_Digit_Year: break
+        case .Value:
+            when T == DateTime {
+                this.value = value
+                st := datetime_to_systime(value)
+                SendMessage(this.handle, DTM_SETSYSTEMTIME, 0, LPARAM(&st))
+            }
+        case .Show_Updown: break
+    }
+}
+
+
+
+
+
+
+
 @private dtp_finalize :: proc(dtp: ^DateTimePicker, scid: UINT_PTR)
 {
     RemoveWindowSubclass(dtp.handle, dtp_wnd_proc, scid)

@@ -937,6 +937,26 @@ lv_after_creation :: proc(lv : ^ListView) {
 	// print("hdr drawing coooo ")
 }
 
+@private listview_property_setter :: proc(this: ^ListView, prop: ListViewProps, value: $T)
+{
+	switch prop {
+		case .Item_Alignment: break
+		case .Column_Alignment: break
+		case .View_Style: break
+		case .Hide_Selection: break
+		case .Multi_Selection: break
+		case .Has_Check_Boxes: break
+		case .Full_Row_Select: break
+		case .Show_Grid_Lines: break
+		case .One_Click_Activate: break
+		case .No_Track_Select: break
+		case .Edit_Label: break
+		case .No_Header: break
+		case .Header_Back_Color: break
+		case .Header_Height: break
+		case .Header_Clickable: break
+	}
+}
 
 @private lv_finalize :: proc(lv: ^ListView, scid: UINT_PTR) {
 

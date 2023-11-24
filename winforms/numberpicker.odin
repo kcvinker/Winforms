@@ -300,9 +300,49 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         resize_buddy(np)
         if oldBuddy != nil do SendMessage(oldBuddy, CM_BUDDY_RESIZE, 0, 0)
         np_display_value_internal(np)
-
     }
+}
 
+@private numberpicker_property_setter :: proc(this: ^NumberPicker, prop: NumberPickerProps, value: $T)
+{
+	switch prop {
+        case .Button_On_Left: break
+        case .Text_Alignment: break
+        case .Min_Range:
+            when T == int {
+                this.minRange = value
+                if this._isCreated {
+                    SendMessage(this.handle, UDM_SETRANGE32, WPARAM(int(this.minRange)), LPARAM(int(this.maxRange)))
+                }
+            }
+        case .Max_Range:
+            when T == int {
+                this.maxRange = value
+                if this._isCreated {
+                    SendMessage(this.handle, UDM_SETRANGE32, WPARAM(int(this.minRange)), LPARAM(int(this.maxRange)))
+                }
+            }
+
+        case .Has_Separator: break
+        case .Auto_Rotate: break
+        case .Hide_Caret: break
+        case .Value:
+            if this._isCreated {
+                when T == f32 {
+                    this.value = value
+                } else when T == int {
+                    this.value = f32(value)
+                }
+                np_display_value_internal(this)
+            }
+        case .Format_String: break
+        case .Decimal_Precision:
+            when T == int do numberpicker_set_decimal_precision(this, value)
+
+
+        case .Track_Mouse_Leave: break
+        case .Step: break
+    }
 }
 
 

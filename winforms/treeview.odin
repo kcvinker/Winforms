@@ -650,6 +650,23 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
     }
 }
 
+@private treeview_property_setter :: proc(this: ^TreeView, prop: TreeViewProps, value: $T)
+{
+	switch prop {
+        case .No_Lines: break
+        case .No_Buttons: break
+        case .Has_Check_Boxes: break
+        case .Full_Row_Select: break
+        case .Editable: break
+        case .Show_Selection: break
+        case .Hot_Tracking: break
+        case .Selected_Node: break
+        case .Image_List: break
+        case .Line_Color: break
+	}
+}
+
+
 @private tv_finalize :: proc(tv: ^TreeView, scid: UINT_PTR)
 {
     for n in tv.nodes { n._dispose(n)} // looping thru the child nodes and delete them.

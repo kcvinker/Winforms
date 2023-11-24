@@ -29,6 +29,7 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     _lb_count += 1
     this := new(Label)
     this.autoSize = true
+    this._textable = true
     this.kind = .Label
     this.text = txt
     this.width = w // reset later
@@ -150,6 +151,18 @@ calculate_label_size :: proc(lb : ^Label) {
     if lb.autoSize do calculate_label_size(lb)
     set_subclass(lb, label_wnd_proc)
 }
+
+
+@private label_property_setter :: proc(this: ^Label, prop: LabelProps, value: $T)
+{
+	switch prop {
+		case .Auto_Size: break
+		case .Border_Style: break
+		case .Text_Alignment: break
+		case .Multi_Line: break
+    }
+}
+
 
 @private lbl_finalize :: proc(lbl: ^Label, scid: UINT_PTR)
 {

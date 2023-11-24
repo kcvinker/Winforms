@@ -23,6 +23,7 @@ CheckBox :: struct
     this := new(CheckBox)
     _cbcount += 1
     this.kind = .Check_Box
+    this._textable = true
     this.parent = p
     this.font = p.font
     this.text = txt
@@ -87,6 +88,26 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
        cb._txtStyle |= DT_RIGHT
     }
 }
+
+@private checkbox_property_setter :: proc(this: ^CheckBox, prop: CheckBoxProps, value: $T)
+{
+	switch prop {
+		case .Checked:
+            when T == bool {
+                this.checked = value
+                if this._isCreated do SendMessage(this.handle, BM_SETCHECK, auto_cast(value), 0)
+            }
+		case .Text_Alignment: break
+
+		case .Auto_Size:
+            when T == bool {
+                this.autoSize = value
+                if this._isCreated do InvalidateRect(this.handle, nil, false)
+            }
+	}
+}
+
+
 
 @private cb_finalize :: proc(cb: ^CheckBox, scid: UINT_PTR)
 {

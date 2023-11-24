@@ -43,6 +43,7 @@ TextBox :: struct
 {
     this := new(TextBox)
     this.kind = .Text_Box
+    this._textable = true
     this.width = w
     this.height = h
     this.parent = p
@@ -164,6 +165,26 @@ textbox_clear_all :: proc(tb : ^TextBox)
     }
     api.EnableWindow(tb.handle, true)
 }
+
+@private textbox_property_setter :: proc(this: ^TextBox, prop: TextBoxProps, value: $T)
+{
+	switch prop {
+        case .Text_Alignment: break
+        case .Multi_Line: break
+        case .Text_Type: break
+        case .Text_Case: break
+        case .Hide_Selection: break
+        case .Read_Only: break
+        case .Cue_Banner:
+            when T == string {
+                this.cueBanner = value
+                if this._isCreated {
+                    SendMessage(this.handle, EM_SETCUEBANNER, 1, direct_cast(to_wstring(value), LPARAM))
+                }
+            }
+	}
+}
+
 
 @private tb_finalize :: proc(tb: ^TextBox, scid: UINT_PTR)
 {

@@ -27,6 +27,7 @@ RadioButton :: struct
 {
     this := new(RadioButton)
     this.kind = .Radio_Button
+    this._textable = true
     this.parent = f
     this.font = f.font
     this.text = txt
@@ -132,6 +133,17 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
         SendMessage(rb.handle, BM_SETCHECK, WPARAM(0x0001), 0)
     }
 }
+
+@private radiobutton_property_setter :: proc(this: ^RadioButton, prop: RadioButtonProps, value: $T)
+{
+	switch prop {
+        case. Text_Alignment: break
+        case .Checked: when T == bool do radiobutton_set_state(this, value)
+        case .Check_On_Click: break
+        case .Auto_Size: break
+	}
+}
+
 
 @private rb_finalize :: proc(rb: ^RadioButton, scid: UINT_PTR)
 {

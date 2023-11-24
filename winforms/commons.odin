@@ -182,6 +182,17 @@ make_dword :: proc(lo_val, hi_val, : $T) -> DWORD
 	dw_val := DWORD(DWORD(lv) | (DWORD(hv)) << 16)
 	return dw_val
 }
+
+tostring :: proc(value: $T) -> string
+{
+	sitem : string
+    when T == string {
+        sitem = item
+    } else {
+        sitem = fmt.tprint(value)
+    }
+	return sitem
+}
 // left = loword, right side - highword
 
 // There a lot of time we need to convert a handle like HBrush to HGDIOBJ.

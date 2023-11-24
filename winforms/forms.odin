@@ -403,6 +403,17 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
     return false, nil
 }
 
+@private form_property_setter :: proc(this: ^Form, prop: FormProps, value: $T)
+{
+    switch prop {
+		case .Start_Pos:break
+		case .Style: break
+		case .Minimize_Box: break
+		case .Window_State: when T == FormState do form_setstate(this, value)
+    }
+}
+
+
 // It's a private function. Combobox module is the caller.
 collect_combo_data :: proc(frm: ^Form, cd : ComboData) {append(&frm._comboData, cd)}
 
@@ -418,16 +429,15 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData)
     }
 }
 
-// @private
-// find_combo_data :: proc(frm : ^Form, list_hwnd : HWND) -> HWND {
-//     // We will search for the appropriate date in our combo data list.
-//     for cd in frm._comboData {
-//         if cd.listBoxHwnd == list_hwnd {
-//             return cd.comboHwnd
-//         }
-//     }
-//     return nil
-// }
+@private find_combo_data :: proc(frm : ^Form, list_hwnd : HWND) -> (HWND, bool) {
+    // We will search for the appropriate data in our combo data list.
+    if len(frm._comboData) > 0 {
+        for cd in frm._comboData {
+            if cd.listBoxHwnd == list_hwnd do return cd.comboHwnd, true
+        }
+    }
+    return nil, false
+}
 
 /*
     This type is used for holding information about the program for whole run time.
@@ -529,15 +539,14 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
              * So, we need to check it before disptch this message to that listbox.
              * Because, if it is from Combo's listbox, there is no Wndproc function for that ListBox. */
             ctl_hwnd := direct_cast(lp, HWND)
-            // cmb_hwnd := find_combo_data(frm, ctl_hwnd)
-            // if cmb_hwnd != nil {
-            //     // This message is from a combo's listbox. Divert it to that combo box.
-
-            //     return SendMessage(cmb_hwnd, CM_COMBOLBCOLOR, wp, lp)
-            // } else {
-            //     // This message is from a normal listbox. send it to it's wndproc.
-            //     return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
-            // }
+            cmb_hwnd, okay := find_combo_data(frm, ctl_hwnd)
+            if okay  {
+                // This message is from a combo's listbox. Divert it to that combo box.
+                return SendMessage(cmb_hwnd, CM_COMBOLBCOLOR, wp, lp)
+            } else {
+                // This message is from a normal listbox. send it to it's wndproc.
+                return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+            }
 
         // case LB_GETITEMHEIGHT :
         //     fmt.println("LB_GETITEMHEIGHT")

@@ -53,14 +53,14 @@ MakeWindow :: proc()
 
     b1 := new_button(frm, "Normal", 10, 10, 110, 35 )
     b2 := new_button(frm, "Flat Color", cright(b1) + 20, 10, 120, 35 )
-    control_set_backcolor(b2, 0x94d2bd)
+    set_property(b2, CommonProps.Back_Color, 0x94d2bd) // New function.
 
     b3 := new_button(frm, "Gradient", cright(b2) + 20, 10, 110, 35 )
     button_set_gradient_colors(b3, 0xfb8500, 0xffbe0b)
 
     cmb := new_combobox(frm, cright(b3) + 20, 10, autoc = true)
     combo_add_items(cmb, "Windows", "MacOS", "Linux", "ReactOS")
-    combo_set_selected_index(cmb, 0)
+    set_property(cmb, ComboProps.Selected_Index, 0)
 
     dtp := new_datetimepicker(frm, cright(cmb) + 20, 10, autoc = true)
     gb := new_groupbox(frm, "Format Options", 10, cbottom(b1) + 20, w=230, h=110, autoc = true)
@@ -83,7 +83,7 @@ MakeWindow :: proc()
 
     lbx := new_listbox(frm, cright(gb) + 10, cbottom(b1) + 10, autoc = true)
     listbox_add_items(lbx, "Windows", "MacOS", "Linux", "ReactOS")
-
+    set_property(cb2, CheckBoxProps.Checked, true)
 
     lv := new_listview(frm, cright(lbx) + 10, cbottom(b3) + 10, 340, 150, "Windows", "MacOS", "Linux", 100, 120, 100)
     listview_add_row(lv, "XP", "Mountain Lion", "RedHat")
@@ -107,13 +107,11 @@ MakeWindow :: proc()
 
     cal := new_calendar(frm, tv.xpos, cbottom(tv) + 20, true)
 
-    // When trackbar value changes, we need to show that progress in progress bar.
     track_change_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
     {
         ui.progressbar_set_value(pgb, tk.value)
     }
 
-    // Menu click handler
     newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
     {
         print("New Client selected")

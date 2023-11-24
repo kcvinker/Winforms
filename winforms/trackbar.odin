@@ -395,6 +395,16 @@ set_value :: proc(tk : ^TrackBar, value: int)
     SendMessage(tk.handle, TBM_SETPOS, WPARAM(1), LPARAM(i32(value)) )
 }
 
+@private trackbar_backcolor_setter :: proc(this: ^TrackBar, clr: uint)
+{
+    this.backColor = clr
+    if (this._drawFlag & 2) != 2 do this._drawFlag += 2
+    if this._isCreated {
+        SendMessage(this.handle, TBM_SETRANGEMAX, 1, this.maxRange)
+        InvalidateRect(this.handle, nil, false)
+    }
+}
+
 @private tkb_before_creation :: proc(tkb : ^TrackBar) {tkb_adjust_styles(tkb)}
 
 @private tkb_after_creation :: proc(tkb : ^TrackBar)
@@ -413,6 +423,33 @@ set_value :: proc(tk : ^TrackBar, value: int)
 
     // Prepare our selection range brush if needed.
     // if tkb.selRange do tkb._selBrush = get_solid_brush(tkb.selColor)
+}
+
+@private trackbar_property_setter :: proc(this: ^TrackBar, prop: TrackBarProps, value: $T)
+{
+	switch prop {
+        case .Tic_Pos: break
+        case .No_Tick: break
+        case .Channel_Color: break
+        case .Tic_Color: break
+        case .Tic_Width: break
+        case .Min_Range: break
+        case .Frequency: break
+        case .Page_S_Ize: break
+        case .Line_Size: break
+        case .Tic_Length: break
+        case .Default_Tics: break
+        case .Value: break
+        case .Vertical: break
+        case .Reversed: break
+        case .Sel_Range: break
+        case .No_Thumb: break
+        case .Tool_Tip: break
+        case .Custom_Draw: break
+        case .Free_Move: break
+        case .Sel_Color: break
+        case .Channel_Style: break
+	}
 }
 
 @private tkb_finalize :: proc(tkb: ^TrackBar, scid: UINT_PTR)
