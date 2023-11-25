@@ -690,6 +690,8 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
             }
             tv_finalize(tv, sc_id)
 
+        case WM_CONTEXTMENU:
+		    if tv.contextMenu != nil do contextmenu_show(tv.contextMenu, lp)
 
         case CM_TVNODEEXPAND :
             node := direct_cast(lp, ^TreeNode)

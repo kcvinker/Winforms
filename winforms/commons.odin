@@ -223,6 +223,15 @@ get_mouse_points :: proc(lpm : LPARAM) -> POINT  // Used in mouse messages
 	return pt
 }
 
+get_mouse_pos_on_msg :: proc() -> POINT
+{
+	result : POINT
+    dw_value := GetMessagePos()
+    result.x = LONG(lo_word(dw_value))
+    result.y = LONG(hi_word(dw_value))
+	return result
+}
+
 loword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x & 0xffff)}
 hiword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x >> 16)}
 loword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return WORD(x & 0xffff)}

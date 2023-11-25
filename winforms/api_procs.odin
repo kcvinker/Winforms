@@ -125,6 +125,7 @@ foreign user32 {
    @(link_name="ShowWindow") ShowWindow :: proc(hwnd: HWND, nCmdShow: i32) -> BOOL---
    @(link_name="PostQuitMessage") PostQuitMessage :: proc(nExitCode: i32) ---
    @(link_name="GetDC") GetDC :: proc(h: HWND) -> HDC ---
+   @(link_name="GetMessagePos") GetMessagePos :: proc() -> DWORD ---
    @(link_name="ReleaseDC") ReleaseDC :: proc(wnd: HWND, hdc: HDC) -> i32 ---
    @(link_name="SendMessageW") SendMessage :: proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT ---
    @(link_name="MessageBoxW") MessageBox :: proc(wnd: HWND, text, caption: wstring, type: u32) -> i32 ---

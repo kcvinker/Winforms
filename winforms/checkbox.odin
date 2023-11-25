@@ -135,6 +135,9 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 return 0
             }
 
+        case WM_CONTEXTMENU:
+		    if cb.contextMenu != nil do contextmenu_show(cb.contextMenu, lp)
+
         case CM_CTLCOMMAND :
             cb.checked = cast(bool) SendMessage(hw, BM_GETCHECK, 0, 0)
             if cb.onCheckChanged != nil {

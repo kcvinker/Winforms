@@ -212,6 +212,9 @@ new_calendar :: proc{new_cal1, new_cal2}
                 return 0
             }
 
+        case WM_CONTEXTMENU:
+		    if cal.contextMenu != nil do contextmenu_show(cal.contextMenu, lp)
+
         case CM_NOTIFY :
             nm := direct_cast(lp, ^NMHDR)
             //print("nm.code - ", nm.code)

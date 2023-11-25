@@ -366,6 +366,9 @@ cmb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
             }
         case WM_DESTROY: cmb_finalize(cmb, sc_id)
 
+        case WM_CONTEXTMENU:
+		    if cmb.contextMenu != nil do contextmenu_show(cmb.contextMenu, lp)
+
         case CM_CTLCOMMAND :
             ncode := hiword_wparam(wp)
            // ptf("WM_COMMAND notification code - %d\n", ncode)

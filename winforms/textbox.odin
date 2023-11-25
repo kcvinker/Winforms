@@ -212,7 +212,8 @@ textbox_clear_all :: proc(tb : ^TextBox)
                 return 0
             }
 
-
+        case WM_CONTEXTMENU:
+		    if tb.contextMenu != nil do contextmenu_show(tb.contextMenu, lp)
 
         case CM_CTLLCOLOR :
             // print("ctl clr rcvd")

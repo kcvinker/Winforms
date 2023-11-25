@@ -113,6 +113,9 @@ gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
             }
         case WM_DESTROY : gb_finalize(gb, sc_id)
 
+        case WM_CONTEXTMENU:
+		    if gb.contextMenu != nil do contextmenu_show(gb.contextMenu, lp)
+
         case CM_CTLLCOLOR :
             hdc := direct_cast(wp, HDC)
             SetBkMode(hdc, Transparent)

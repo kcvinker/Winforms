@@ -161,6 +161,9 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
     switch msg {
         case WM_DESTROY : rb_finalize(rb, sc_id)
 
+        case WM_CONTEXTMENU:
+		    if rb.contextMenu != nil do contextmenu_show(rb.contextMenu, lp)
+
         case CM_CTLCOMMAND :
             if hiword_wparam(wp) == 0 {
                 rb.checked = bool(SendMessage(rb.handle, BM_GETCHECK, 0, 0))

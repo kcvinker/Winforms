@@ -54,6 +54,7 @@ Control :: struct
 	foreColor : uint,
 	enabled : bool,
 	visible : bool,
+	contextMenu : ^ContextMenu,
 
     _style, _exStyle : DWORD,
 	_isCreated : b64,

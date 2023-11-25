@@ -92,6 +92,10 @@ MakeWindow :: proc()
     listview_add_row(lv, "Win8", "Catalina", "Debian")
     listview_add_row(lv, "Win10", " Big Sur", "Kali")
 
+    // Adding a context menu for list view
+    control_add_contextmenu(lv, "Compile", "Link Only", "Make DLL", "Make Console")
+    lv.contextMenu.menus[0].onClick = contextmenu_click // Handler for "Compile" menu
+
     tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20, autoc = true)
 
     pgb = new_progressbar(frm, lv.xpos, cbottom(lv) + 15, lv.width, 30, autoc = true, perc = true)
@@ -115,6 +119,11 @@ MakeWindow :: proc()
     newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
     {
         print("New Client selected")
+    }
+
+    contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
+    {
+        ptf("%s option is selected\n", sender.text)
     }
 
     start_mainloop(frm)

@@ -373,6 +373,9 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                 return 0
             }
 
+        case WM_CONTEXTMENU:
+		    if np.contextMenu != nil do contextmenu_show(np.contextMenu, lp)
+
         case CM_NOTIFY :
             nm := direct_cast(lp, ^NMUPDOWN)
             if nm.hdr.code == UDN_DELTAPOS {

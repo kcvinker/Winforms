@@ -437,6 +437,8 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
     switch msg {
         case WM_DESTROY : lbx_finalize(lbx, sc_id)
 
+        case WM_CONTEXTMENU:
+		    if lbx.contextMenu != nil do contextmenu_show(lbx.contextMenu, lp)
 
         case CM_CTLLCOLOR :
             // ptf("lbx draw flag %d\n", lbx._drawFlag)

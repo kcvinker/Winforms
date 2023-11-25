@@ -301,6 +301,9 @@ DTT_SHADOWCOLOR :: 4
             //     return 0
             // }
 
+        case WM_CONTEXTMENU:
+		    if pb.contextMenu != nil do contextmenu_show(pb.contextMenu, lp)
+
         case WM_LBUTTONDOWN:
            // pb._draw_focus_rct = true
             pb._mDownHappened = true

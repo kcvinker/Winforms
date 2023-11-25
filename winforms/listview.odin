@@ -985,6 +985,8 @@ lv_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 
 	case WM_SETFOCUS: ctrl_setfocus_handler(lv)
 	case WM_KILLFOCUS: ctrl_killfocus_handler(lv)
+	case WM_CONTEXTMENU:
+		if lv.contextMenu != nil do contextmenu_show(lv.contextMenu, lp)
 
 	case CM_NOTIFY :
 		nmh := direct_cast(lp, ^NMHDR)

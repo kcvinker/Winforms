@@ -470,6 +470,8 @@ set_value :: proc(tk : ^TrackBar, value: int)
     switch msg {
         case WM_DESTROY : tkb_finalize(tkb, sc_id)
 
+        case WM_CONTEXTMENU:
+		    if tkb.contextMenu != nil do contextmenu_show(tkb.contextMenu, lp)
 
         case CM_CTLLCOLOR :
             // hdc := direct_cast(wp, HDC)

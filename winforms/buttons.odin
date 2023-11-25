@@ -425,8 +425,12 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
                 btn.onMouseLeave(btn, &ea)
             }
 
+		case WM_CONTEXTMENU:
+			if btn.contextMenu != nil do contextmenu_show(btn.contextMenu, lp)
+
 		case CM_NOTIFY:	return btn_wmnotify_handler(btn, lp)
 		case WM_DESTROY: btn_finalize(btn, sc_id)
+
 		case : return DefSubclassProc(hw, msg, wp, lp)
 	}
 	return DefSubclassProc(hw, msg, wp, lp)

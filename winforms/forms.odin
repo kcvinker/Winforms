@@ -898,6 +898,9 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, menuTxtFlag)
             return 0
 
+        case WM_CONTEXTMENU:
+		    if frm.contextMenu != nil do contextmenu_show(frm.contextMenu, lp)
+
         case WM_MENUSELECT:
             menu_okay, pmenu := getMenuFromHmenu(frm, direct_cast(lp, HMENU))
             mid := cast(uint)(lo_word(auto_cast(wp))) // Could be an id of a child menu or index of a child menu

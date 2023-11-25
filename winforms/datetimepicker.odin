@@ -344,6 +344,9 @@ dtp_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                 return 0
             }
 
+        case WM_CONTEXTMENU:
+		    if dtp.contextMenu != nil do contextmenu_show(dtp.contextMenu, lp)
+
         case CM_NOTIFY :
             nm := direct_cast(lp, ^NMHDR)
             switch nm.code {

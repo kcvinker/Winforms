@@ -189,6 +189,9 @@ calculate_label_size :: proc(lb : ^Label) {
                 return 0
             }
 
+        case WM_CONTEXTMENU:
+		    if lb.contextMenu != nil do contextmenu_show(lb.contextMenu, lp)
+
         case WM_LBUTTONDOWN:
            // print("label lbutton down")
             lb._mDownHappened = true
