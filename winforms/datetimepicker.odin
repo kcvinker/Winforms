@@ -354,7 +354,7 @@ dtp_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                     if dtp.onTextChanged != nil {
                         dts := direct_cast(lp, ^NMDATETIMESTRINGW)
                         dtea : DateTimeEvent
-                        dtea.dateString = wstring_to_utf8(dts.pszUserString, -1)
+                        dtea.dateString = wstring_to_string(dts.pszUserString)
                         dtp.onTextChanged(dtp, &dtea )
                         // After invoking the event, send this message to set the time in dtp
                         if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&dtea.dateStruct, LPARAM))

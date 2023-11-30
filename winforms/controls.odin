@@ -285,11 +285,11 @@ control_set_text :: proc(ctl : ^Control, txt : string)
 control_get_text :: proc(ctl : Control, alloc := context.allocator) -> string
 {
 	tlen := GetWindowTextLength(ctl.handle)
-	mem_chunks := make([]WCHAR, tlen + 1, alloc)
-	wsBuffer : wstring = &mem_chunks[0]
-	//defer delete(mem_chunks)
-	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))
-	return wstring_to_utf8(wsBuffer, -1)
+	wsBuffer := make([]WCHAR, tlen + 1, alloc)
+	// wsBuffer : wstring = &wsBuffer[0]
+	//defer delete(wsBuffer)
+	GetWindowText(ctl.handle, &wsBuffer[0], i32(len(wsBuffer)))
+	return utf16_to_utf8(wsBuffer, alloc)
 }
 
 // To get the text from a control or form as a wstring.

@@ -224,7 +224,7 @@ lb_get_item :: proc(lbx : ^ListBox, #any_int index : int, alloc := context.alloc
             //defer delete(memory)
             str_buffer : wstring = &memory[0]
             SendMessage(lbx.handle, LB_GETTEXT, WPARAM(indx), convert_to(LPARAM, str_buffer))
-            return wstring_to_utf8(str_buffer, -1)
+            return wstring_to_string(str_buffer)
         }
     }
     return ""

@@ -467,8 +467,8 @@ Application :: struct
     // appl.globalFont = new_font(def_font_name, def_font_size)
     appl.className = "WingLib Window in Odin test"
     appl.hInstance = GetModuleHandle(nil)
-    appl.screenWidth = int(GetSystemMetrics(0))
-    appl.screenHeight = int(GetSystemMetrics(1))
+    appl.screenWidth = int(api.GetSystemMetrics(0))
+    appl.screenHeight = int(api.GetSystemMetrics(1))
 
     appl.iccx.dwSize = size_of(appl.iccx)
     appl.iccx.dwIcc = ICC_STANDARD_CLASSES

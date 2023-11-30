@@ -91,11 +91,11 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 @private get_ctrl_text_internal :: proc(hw : HWND, alloc := context.allocator) -> string
 {
 	tlen := GetWindowTextLength(hw)
-	mem_chunks := make([]WCHAR, tlen + 1, alloc)
-	wsBuffer : wstring = &mem_chunks[0]
-	defer delete(mem_chunks)
-	GetWindowText(hw, wsBuffer, i32(len(mem_chunks)))
-	return wstring_to_utf8(wsBuffer, -1)
+	wsBuffer := make([]WCHAR, tlen + 1, alloc)
+	// wsBuffer : wstring = &mem_chunks[0]
+	defer delete(wsBuffer)
+	GetWindowText(hw, &wsBuffer[0], i32(len(wsBuffer)))
+	return utf16_to_utf8(wsBuffer, alloc)
 }
 
 @private calculate_ctl_size :: proc(ctl : ^Control)

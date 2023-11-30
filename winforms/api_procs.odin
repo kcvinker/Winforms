@@ -3,13 +3,10 @@
 package winforms
 
 //import "core:strings"
-//import "core:fmt"
-// import "core"
+import "core:fmt"
+import "core:runtime"
 
 //=================================== Functions===================================
-
-to_wstring :: proc(value : string) -> wstring {return utf8_to_wstring(value)}
-to_string :: proc(value : wstring) -> string {return wstring_to_utf8(value, -1)}
 
 lo_word :: #force_inline proc "contextless" (x: DWORD) -> WORD {return WORD(x & 0xffff)}
 hi_word :: #force_inline proc "contextless" (x: DWORD) -> WORD {return WORD(x >> 16)}
@@ -18,56 +15,56 @@ lo_word_wpm :: #force_inline proc "contextless" (x: WPARAM) -> WORD {return WORD
 hi_word_wpm :: #force_inline proc "contextless" (x: WPARAM) -> WORD {return WORD(x >> 16)}
 
 
-
-
 utf8_to_utf16 :: proc(s: string, allocator := context.temp_allocator) -> []u16 {
-   if len(s) < 1 { return nil }
-   b := transmute([]byte)s
-   cstr := raw_data(b)
-   n := MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, cast(cstring) cstr, -1, nil, 0)
-   if n == 0 {return nil}
-   text := make([]u16, n+1, allocator)
-   n1 := MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, cast(cstring) cstr, i32(len(s)), raw_data(text), n)
-   if n1 == 0 {
-      delete(text, allocator)
-      return nil
-   }
-   text[n] = 0
-   for n >= 1 && text[n-1] == 0 {
-      n -= 1
-   }
-   return text[:n]
+    slen := i32(len(s))
+    if slen < 1 do return nil
+    b := transmute([]byte)s
+    cstr := raw_data(b)
+    n := MultiByteToWideChar(CP_UTF8, 0, cstr, slen, nil, 0)
+    if n == 0 do return nil
+    text := make([]u16, n + 1, allocator)
+    n1 := MultiByteToWideChar(CP_UTF8, 0, cstr, slen, raw_data(text), n)
+    if n1 == 0 {
+        delete(text, allocator)
+        return nil
+    }
+    text[n] = 0
+    for n >= 1 && text[n - 1] == 0 { n -= 1 }
+    return text[:n]
 }
 
-utf8_to_wstring :: proc(s: string, allocator := context.temp_allocator) -> wstring {
+to_wstring :: proc(s: string, allocator := context.temp_allocator) -> ^u16 {
    if res := utf8_to_utf16(s, allocator); res != nil {
-      //fmt.println("become utf16,", res);
       return &res[0]
    }
    return nil
 }
 
-wstring_to_utf8 :: proc(s: wstring, N: int, allocator := context.temp_allocator) -> string {
-   if N == 0 {
-      return ""
+to_wchar_ptr :: proc(s: string, allocator := context.temp_allocator) -> ^u16 {
+   if res := utf8_to_utf16(s, allocator); res != nil {
+      return &res[0]
    }
+   return nil
+}
 
-   n := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, i32(N), nil, 0, nil, nil)
-   if n == 0 {
-      return ""
-   }
 
-   // If N == -1 the call to WideCharToMultiByte assume the wide string is null terminated
-   // and will scan it to find the first null terminated character. The resulting string will
-   // also null terminated.
-   // If N != -1 it assumes the wide string is not null terminated and the resulting string
-   // will not be null terminated, we therefore have to force it to be null terminated manually.
-   text := make([]byte, n+1 if N != -1 else n, allocator)
+wstring_to_utf8 :: proc(s: wstring, N: int, allocator := context.temp_allocator) -> (res: string, err: runtime.Allocator_Error)  {
+   if N == 0  do return "", nil
 
-   n1 := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, i32(N), cast(cstring) raw_data(text), n, nil, nil)
+   n := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, i32(N) if N > 0 else -1, nil, 0, nil, nil)
+   if n == 0 do return "", nil
+
+   // If N < 0 the call to WideCharToMultiByte assume the wide string is null terminated
+	// and will scan it to find the first null terminated character. The resulting string will
+	// also be null terminated.
+	// If N > 0 it assumes the wide string is not null terminated and the resulting string
+	// will not be null terminated.
+   text := make([]byte, n, allocator) or_return
+
+   n1 := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, i32(N), raw_data(text), n, nil, nil)
    if n1 == 0 {
       delete(text, allocator)
-      return ""
+      return "", nil
    }
 
    for i in 0..<n {
@@ -77,14 +74,20 @@ wstring_to_utf8 :: proc(s: wstring, N: int, allocator := context.temp_allocator)
       }
    }
 
-   return string(text[:n])
+   return string(text[:n]), nil
 }
 
+// takes a wchar array
 utf16_to_utf8 :: proc(s: []u16, allocator := context.temp_allocator) -> string {
-   if len(s) == 0 {
-      return ""
-   }
-   return wstring_to_utf8(raw_data(s), len(s), allocator)
+   if len(s) == 0 do return ""
+   res, _ := wstring_to_utf8(raw_data(s), len(s), allocator)
+   return res
+}
+
+// Takes a multi pointer.
+wstring_to_string :: proc(s: wstring, allocator := context.temp_allocator) -> string {
+   res, _ := wstring_to_utf8(s, -1, allocator)
+   return res
 }
 
 make_int_resource::proc(value : UINT) -> wstring {return wstring(rawptr(UINT_PTR(value))) }
@@ -201,14 +204,17 @@ foreign import "system:kernel32.lib"
 foreign kernel32 {
    @(link_name="GetLastError") GetLastError :: proc() -> DWORD ---
    @(link_name="GetModuleHandleW") GetModuleHandle :: proc(module_name: wstring) -> HINSTANCE ---
-   @(link_name="GetSystemMetrics") GetSystemMetrics :: proc(index: i32) -> i32 ---
+   // @(link_name="GetSystemMetrics") GetSystemMetrics :: proc(index: i32) -> i32 ---
+
    @(link_name="MultiByteToWideChar") MultiByteToWideChar :: proc(code_page: u32, flags: u32,
-                                                                      mb_str: cstring, mb: i32,
-                                                                      wc_str: wstring, wc: i32) -> i32 ---
-   @(link_name="WideCharToMultiByte") WideCharToMultiByte :: proc(code_page: u32, flags: u32,
-                                                                      wchar_str: wstring, wchar: i32,
-                                                                      multi_str: cstring, multi: i32,
-                                                                      default_char: cstring, used_default_char: ^BOOL) -> i32 ---
+                                                                      mb_str: LPSTR, mb: i32,
+                                                                      wc_str: LPWSTR, wc: i32) -> i32 ---
+
+   @(link_name="WideCharToMultiByte") WideCharToMultiByte :: proc(code_page: u32, flags: DWORD,
+                                                                      wchar_str: LPCWSTR, wchar: i32,
+                                                                      multi_str: LPSTR, multi: i32,
+                                                                      default_char: LPSTR, used_default_char: ^BOOL) -> i32 ---
+
    @(link_name="MulDiv") MulDiv :: proc(nNumber, nNumerator, nDenominator : i32) -> LONG ---
    @(link_name="GetSystemTimeAsFileTime") GetSysTimeAsFileTime :: proc(pfile_time : ^FILETIME) ---
    @(link_name="GetSystemTime") GetSystemTime :: proc(sys_time : ^SYSTEMTIME) ---
@@ -221,6 +227,10 @@ foreign kernel32 {
                                                                            lpReturn : ^byte,
                                                                            nSize : DWORD,
                                                                            lpFileName : cstring) -> DWORD ---
+
+   // @(link_name="MultiByteToWideChar") MultiByteToWideChar2 :: proc(code_page: u32, flags: u32,
+   //                                                                    mb_str: string, mb: i32,
+   //                                                                    wc_str: wstring, wc: i32) -> i32 ---
 
 
 } // Kernel32 library
@@ -328,5 +338,22 @@ foreign shell32 {
                                                          pLgicon : ^HICON,
                                                          pSmIcon : ^HICON,
                                                          nIcons : u32 ) -> u32 ---
+   @(link_name = "SHBrowseForFolderW") SHBrowseForFolder :: proc(p1: LPBROWSEINFOW) -> PIDLIST_ABSOLUTE ---
+   @(link_name = "SHGetPathFromIDListW") SHGetPathFromIDList :: proc(pidl: PCIDLIST_ABSOLUTE,
+                                                                     pszPath: LPWSTR) -> BOOL ---
 
 }
+
+foreign import "system:comdlg32.lib"
+@(default_calling_convention = "std")
+foreign comdlg32 {
+   @(link_name = "GetOpenFileNameW") GetOpenFileName :: proc(p1: LPOPENFILENAMEW) -> BOOL ---
+   @(link_name = "GetSaveFileNameW") GetSaveFileName :: proc(p1: LPOPENFILENAMEW) -> BOOL ---
+}
+
+foreign import "system:ole32.lib"
+@(default_calling_convention = "std")
+foreign ole32 {
+   @(link_name="CoTaskMemFree") CoTaskMemFree :: proc(pv: LPVOID) ---
+}
+

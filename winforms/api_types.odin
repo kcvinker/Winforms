@@ -107,6 +107,9 @@ WCHAR :: api.WCHAR
 wstring :: [^]WCHAR
 LPCWSTR :: api.LPCWSTR
 LPWSTR :: api.LPWSTR
+LPSTR :: api.LPSTR
+MYCWSTR :: ^u16
+
 size_t     :: api.size_t
 
 
@@ -283,16 +286,59 @@ MEASUREITEMSTRUCT :: struct
 }
 LPMEASUREITEMSTRUCT :: ^MEASUREITEMSTRUCT
 
-// DRAWITEMSTRUCT :: struct
-// {
-//     CtlType: uint,
-//     CtlID: uint,
-//     itemID: uint,
-//     itemAction: uint,
-//     itemState: uint,
-//     hwndItem: HWND,
-//     hDC: HDC,
-//     rcItem: RECT,
-//     itemData: ULONG_PTR,
-// }
-// LPDRAWITEMSTRUCT :: ^DRAWITEMSTRUCT
+OPENFILENAMEW :: struct {
+	lStructSize: DWORD,
+	hwndOwner: HWND,
+	hInstance: HINSTANCE,
+	lpstrFilter: MYCWSTR,
+	lpstrCustomFilter: LPWSTR,
+	nMaxCustFilter: DWORD,
+	nFilterIndex: DWORD,
+	lpstrFile: LPWSTR,
+	nMaxFile: DWORD,
+	lpstrFileTitle: LPWSTR,
+	nMaxFileTitle: DWORD,
+	lpstrInitialDir: MYCWSTR,
+	lpstrTitle: MYCWSTR,
+	Flags: DWORD,
+	nFileOffset: WORD,
+	nFileExtension: WORD,
+	lpstrDefExt: MYCWSTR,
+	lCustData: LPARAM,
+	lpfnHook: OFNHOOKPROC,
+	lpTemplateName: MYCWSTR,
+	pvReserved: rawptr,
+	dwReserved: DWORD,
+	FlagsEx: DWORD,
+}
+LPOPENFILENAMEW :: ^OPENFILENAMEW
+
+SHITEMID :: struct {
+    cb: u16,
+    abID: [1]u8
+}
+LPSHITEMID :: ^SHITEMID
+
+ITEMIDLIST :: struct { mkid: SHITEMID }
+
+ITEMIDLIST_RELATIVE :: ITEMIDLIST
+ITEMID_CHILD :: ITEMIDLIST
+ITEMIDLIST_ABSOLUTE :: ITEMIDLIST
+LPITEMIDLIST :: ^ITEMIDLIST
+LPCITEMIDLIST :: ^ITEMIDLIST
+PIDLIST_ABSOLUTE :: ^ITEMIDLIST_ABSOLUTE
+PCIDLIST_ABSOLUTE :: ^ITEMIDLIST_ABSOLUTE
+
+BROWSEINFOW :: struct {
+	hwndOwner: HWND,
+	pidlRoot: PCIDLIST_ABSOLUTE,
+	pszDisplayName: LPWSTR,
+	lpszTitle: LPCWSTR,
+	ulFlags: UINT,
+	lpfn: BROWSECBPROC,
+	lParam: LPARAM,
+	iImage: i32
+}
+LPBROWSEINFOW :: ^BROWSEINFOW
+
+
