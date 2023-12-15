@@ -64,6 +64,7 @@ Form :: struct
     onRestored,
     onClosing,
     onClosed : EventHandler,
+    onThreadMsg: ThreadMsgHandler,
 
     _isLoaded : bool,
     _gdraw : FormGradient,
@@ -494,6 +495,9 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
         //         //ptf("handle from parent notify - %d\n", chw)
         //     }
 
+        case CM_THREAD_MSG:
+            if frm.onThreadMsg != nil do frm.onThreadMsg(wp, lp)
+
         case WM_HSCROLL :
             ctl_hw := direct_cast(lp, HWND)
             return SendMessage(ctl_hw, WM_HSCROLL, wp, lp)
@@ -906,6 +910,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             mid := cast(uint)(lo_word(auto_cast(wp))) // Could be an id of a child menu or index of a child menu
             hwwpm := hi_word(auto_cast(wp))
             if menu_okay {
+                menu_okay = false
                 menu : ^MenuItem
                 switch (hwwpm) {
                     case 33152: // A normal child menu. We can use mid ad menu id.

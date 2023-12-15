@@ -102,6 +102,18 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     }
 }
 
+@private isPathContainsWhiteSpace :: proc(initfolder: string) -> bool
+{
+    idirlen := len(initfolder)
+    if idirlen > 0 && initfolder[idirlen - 1] != '\\' {
+        for i := (idirlen - 1); i > 1; i -= 1 {
+            if initfolder[i] == '\\' do return false
+            if initfolder[i] == ' ' do return true
+        }
+    }
+    return false
+}
+
 @private open_dialog_helper :: proc(this: ^FileOpenDialog, hwnd: HWND = nil)-> bool
 {
 
@@ -110,11 +122,9 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     }
 
     // This is a hack. Windows will ignore the initial directory path if it...
-    // contains a space. But if path ends with a '\' it will work. So here...
+    // contains a space in it's last part. But if path ends with a '\' it will work. So here...
     // we are checking for white space and put the '\' at the end.
-    if strings.contains(this.initDir, " ") && this.initDir[len(this.initDir) - 1] != '\\' {
-        this.initDir = fmt.tprintf("%s\\", this.initDir)
-    }
+    if isPathContainsWhiteSpace(this.initDir) do this.initDir = fmt.tprintf("%s\\", this.initDir)
 
     buffer : [MAX_ARR_SIZE]WCHAR
 
@@ -147,6 +157,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
 
 @private save_dialog_helper :: proc(this: ^FileSaveDialog, hwnd: HWND) -> bool
 {
+    if isPathContainsWhiteSpace(this.initDir) do this.initDir = fmt.tprintf("%s\\", this.initDir)
     buffer : [MAX_PATH]WCHAR
     ofn : OPENFILENAMEW
     ofn.hwndOwner = hwnd

@@ -27,6 +27,7 @@ import api "core:sys/windows"
 	CM_TVNODEEXPAND :: MSG_FIXED_VALUE + 15
 	CM_BUDDY_RESIZE :: MSG_FIXED_VALUE + 16
 	CM_MENU_ADDED :: MSG_FIXED_VALUE + 17
+	CM_THREAD_MSG :: MSG_FIXED_VALUE + 18
 
 
 
@@ -53,6 +54,16 @@ Time :: struct {_nano_sec : i64,}
 SizeIncrement :: struct {width, height : int,}
 Area :: struct {width, height : int,}
 WordValue :: enum {Low, High}
+
+// Use this function to update ui components from another thread.
+// Usage : Call this function with required data packed in wpm and lpm.
+// Then set the `onThreadMsg` property of Form struct. It is a function pointer.
+// Signature is `ThreadMsgHandler :: proc(wpm: WPARAM, lpm: LPARAM)`.
+// Function pointer assigned to onThreadMsg property will be called when CM_THREAD_MSG receives.
+send_thread_msg :: proc(formHwnd: HWND, wpm: WPARAM, lpm: LPARAM) -> LRESULT
+{
+	return SendNotifyMessage(formHwnd, CM_THREAD_MSG, wpm, lpm)
+}
 
 to_str :: proc(value : any) -> string {return fmt.tprint(value)}
 L :: intrinsics.constant_utf16_cstring

@@ -215,6 +215,7 @@ ListViewColumn :: struct
 	alignment : ColumnAlignment,
 	headerAlign : HeaderAlignment,
 	_hdrTxtFlag : UINT,// For header text alignment
+	_wideText : ^u16,
 
 }
 
@@ -383,6 +384,7 @@ new_listview_column :: proc{lv_col_constructor1, lv_col_constructor2, lv_col_con
 	lvc.imageIndex = -1
 	lvc.alignment = .Center
 	lvc._hdrTxtFlag = DEF_HDR_TXT_FLAG
+	lvc._wideText = to_wchar_ptr(txt)
 	//lvc.position = pos
 	return lvc
 }
@@ -397,6 +399,7 @@ new_listview_column :: proc{lv_col_constructor1, lv_col_constructor2, lv_col_con
 	lvc.imageIndex = -1
 	lvc.alignment = .Center
 	lvc._hdrTxtFlag = DEF_HDR_TXT_FLAG
+	lvc._wideText = to_wchar_ptr(txt)
 	//lvc.position = pos
 	return lvc
 }
@@ -413,6 +416,7 @@ new_listview_column :: proc{lv_col_constructor1, lv_col_constructor2, lv_col_con
 	lvc.alignment = col_align
 	lvc.headerAlign = hdr_align
 	set_hdr_text_flag(lvc)
+	lvc._wideText = to_wchar_ptr(txt)
 	//lvc.position = pos
 	return lvc
 }
@@ -496,7 +500,7 @@ listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 	lvc.index = int(lv._colIndex)
 	lv._colIndex += 1
 	set_hdr_text_flag(lvc)
-
+	lvc._wideText = to_wchar_ptr(txt)
 	lv_add_column(lv, lvc)
 }
 
@@ -520,7 +524,7 @@ listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 	lvc.alignment = align
 	lv._colIndex += 1
 	lvc._hdrTxtFlag = DEF_HDR_TXT_FLAG
-
+	lvc._wideText = to_wchar_ptr(txt)
 	lv_add_column(lv, lvc)
 }
 
@@ -531,7 +535,7 @@ listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM
 	lvc.fmt = cast(i32) lvCol.alignment
 	lvc.cx = i32((lvCol^).width)
-	lvc.pszText = to_wstring(lvCol.text)
+	lvc.pszText = lvCol._wideText
 
 	if lvCol.hasImage {
 		lvc.mask |= LVCF_IMAGE
@@ -824,19 +828,17 @@ set_hdr_text_flag :: proc(lvc: ^ListViewColumn) {
 	}
 }
 
-@private
-draw_divider :: proc(pen: HPEN, hdc: HDC, xp, yp, y2: i32) {
+@private draw_divider :: proc(pen: HPEN, hdc: HDC, xp, yp, y2: i32) {
 	SelectObject(hdc, HGDIOBJ(pen))
 	MoveToEx(hdc, xp, yp, nil)
 	LineTo(hdc, xp, y2)
 }
 
-@private
-draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
+@private draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
 {
-	if len(lv.columns) > 0
-	{
-		hd_index := cast(i32) cast(UINT_PTR) nmcd.dwItemSpec
+	if len(lv.columns) > 0 	{
+		// ptf("nmcd size %d\n", size_of(NMCUSTOMDRAW))
+		hd_index := cast(i32)nmcd.dwItemSpec
 		col := lv.columns[hd_index]
 		// print("hdr drawing started ", col.width, hd_index)
 
@@ -872,7 +874,7 @@ draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
 		draw_divider(lv._divPen, nmcd.hdc, nmcd.rc.right, nmcd.rc.top, nmcd.rc.bottom)
 		SetBkMode(nmcd.hdc, 1) // TRANSPARENT
 		nmcd.rc.left += 3 // We need some room on the left side
-		DrawText(nmcd.hdc, to_wstring(col.text), -1, &nmcd.rc, col._hdrTxtFlag)
+		DrawText(nmcd.hdc, col._wideText, -1, &nmcd.rc, col._hdrTxtFlag)
 		// print("draw text res ", col._hdrTxtFlag, col.text)
 		return CDRF_SKIPDEFAULT
 	}
@@ -895,8 +897,8 @@ draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
 
 
 
-@private // This will executed right before a list view is created
-lv_before_creation :: proc(lv : ^ListView) {
+// This will executed right before a list view is created
+@private lv_before_creation :: proc(lv : ^ListView) {
 	lv_adjust_styles(lv)
 	lv._hdrBkBrush = create_hbrush(lv.headerBackColor)
 	lv._hdrHotBrush = CreateSolidBrush(change_color(lv.headerBackColor, 1.12))
@@ -905,8 +907,8 @@ lv_before_creation :: proc(lv : ^ListView) {
 	lv._divPen = CreatePen(PS_SOLID, 1, 0x00FFFFFF)
 }
 
-@private // This will executed right after a list view is created
-lv_after_creation :: proc(lv : ^ListView) {
+// This will executed right after a list view is created
+@private lv_after_creation :: proc(lv : ^ListView) {
 	// print("alloc data ", (transmute(^int) alloc.data)^)
 	set_subclass(lv, lv_wnd_proc)
     lv_set_extended_styles(lv)
@@ -1051,6 +1053,7 @@ hdr_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 				lv._hdrIndex = -1
 
 			case HDM_LAYOUT:
+				// ptf("hd layout %d\n", size_of(HD_LAYOUT))
 				phl := direct_cast(lp, ^HD_LAYOUT)
 				res := DefSubclassProc(hw, msg, wp, lp)
 				phl.pwpos.cy = i32(lv.headerHeight)

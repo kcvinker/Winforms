@@ -131,6 +131,7 @@ foreign user32 {
    @(link_name="GetMessagePos") GetMessagePos :: proc() -> DWORD ---
    @(link_name="ReleaseDC") ReleaseDC :: proc(wnd: HWND, hdc: HDC) -> i32 ---
    @(link_name="SendMessageW") SendMessage :: proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT ---
+   @(link_name="SendNotifyMessageW") SendNotifyMessage :: proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT ---
    @(link_name="MessageBoxW") MessageBox :: proc(wnd: HWND, text, caption: wstring, type: u32) -> i32 ---
    @(link_name="MapVirtualKeyW") MapVirtualKey :: proc(u_code: u32, u_map_type : u32) -> u32 ---
    @(link_name="TrackMouseEvent") TrackMouseEvent :: proc(lp_tme: ^TRACKMOUSEEVENT) -> BOOL---
