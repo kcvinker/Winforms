@@ -76,7 +76,18 @@ Form :: struct
     _comboData : [dynamic]ComboData,
     _menuItemMap : map[uint]^MenuItem,
     _menubarUsed: bool,
+    _staticTimerID: UINT_PTR,
+    _timerList: [dynamic]^Timer,
+    _formID: int,
 
+}
+
+Timer :: struct {
+	interval: u32,
+	onTick: TimerTickHandler,
+	_parent: ^Form,
+    _idNum: UINT_PTR,
+    _isEnabled: bool,
 }
 
 new_form :: proc{new_form1, new_form2}
@@ -113,6 +124,42 @@ start_mainloop :: proc(this: ^Form)
 form_show :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
 form_hide :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
 form_setstate :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
+
+/* Add a new timer control to form. Interval is in milliseconds */
+form_addTimer :: proc(this: ^Form, interval: u32 = 100, tickHandler: TimerTickHandler = nil) -> ^Timer
+{
+    tm := new(Timer)
+    tm.interval = interval
+    tm.onTick = tickHandler
+    tm._parent = this
+    if this._staticTimerID > 0 {
+        this._staticTimerID += 1
+    } else {
+        this._staticTimerID = cast(UINT_PTR)(this._formID * 1000)
+    }
+    tm._idNum = this._staticTimerID
+    append(&this._timerList, tm)
+    return tm
+}
+
+timer_start :: proc(this: ^Timer)
+{
+    this._isEnabled = true
+    SetTimer(this._parent.handle, this._idNum, this.interval, nil)
+}
+
+timer_stop :: proc(this: ^Timer)
+{
+    KillTimer(this._parent.handle, this._idNum)
+    this._isEnabled = false
+}
+
+@private timer_dtor :: proc(this: ^Timer)
+{
+    if this._isEnabled do KillTimer(this._parent.handle, this._idNum)
+    free(this)
+}
+
 
 FormDrawMode :: enum { Default, Flat_Color, Gradient,}
 //GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
@@ -152,7 +199,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     f._drawMode = .Default
     f.backColor = def_window_color
     f.foreColor = app.clrBlack
-
+    f._formID = app.formCount
     f.windowState = .Normal
     f._uDrawChilds = make(map[UINT]HWND)
 
@@ -166,21 +213,26 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     return form_ctor( txt, w, h)
 }
 
-@private form_dtor :: proc(frm : ^Form)
+@private form_dtor :: proc(this : ^Form)
 {
-    delete_gdi_object(frm.font.handle)
-    delete(frm._uDrawChilds)
-    delete(frm._cDrawChilds)
-    delete(frm._comboData)
-    delete(frm._controls)
-    delete_gdi_object(frm._gdBrush)
-    if frm._menubarUsed
+    delete_gdi_object(this.font.handle)
+    delete(this._uDrawChilds)
+    delete(this._cDrawChilds)
+    delete(this._comboData)
+    delete(this._controls)
+    delete_gdi_object(this._gdBrush)
+    if this._menubarUsed
     {
-        menubar_dtor(frm.menubar)
-        delete(frm._menuItemMap)
+        menubar_dtor(this.menubar)
+        delete(this._menuItemMap)
 
     }
-    free(frm)
+    if len(this._timerList) > 0 {
+        for tmr in this._timerList do timer_dtor(tmr)
+        delete(this._timerList)
+        print("Timers freed")
+    }
+    free(this)
 }
 
 @private set_form_font_internal :: proc(frm : ^Form)
@@ -440,6 +492,21 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData)
     return nil, false
 }
 
+@private form_timer_handler :: proc(this: ^Form, wpm: WPARAM)
+{
+    timer : ^Timer = nil
+    for tmr in this._timerList {
+        if tmr._idNum == cast(UINT_PTR)wpm {
+            timer = tmr
+            break
+        }
+    }
+    if timer != nil && timer.onTick != nil {
+        ea := new_event_args()
+        timer.onTick(this, &ea)
+    }
+}
+
 /*
     This type is used for holding information about the program for whole run time.
     We need to keep some info from the very beginning to the very end.
@@ -497,6 +564,9 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
 
         case CM_THREAD_MSG:
             if frm.onThreadMsg != nil do frm.onThreadMsg(wp, lp)
+
+        case WM_TIMER: form_timer_handler(frm, wp)
+
 
         case WM_HSCROLL :
             ctl_hw := direct_cast(lp, HWND)

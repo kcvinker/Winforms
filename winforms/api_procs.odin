@@ -193,6 +193,8 @@ foreign user32 {
    //                                                       x, y, nReserved: int,
    //                                                       hwnd: HWND) -> BOOL ---
    @(link_name="DestroyMenu") DestroyMenu :: proc(hmenu: HMENU) -> BOOL ---
+   @(link_name="SetTimer") SetTimer :: proc(hWnd: HWND, nID: UINT_PTR, uEl: UINT, lpfn: TIMERPROC) -> UINT_PTR ---
+   @(link_name="KillTimer") KillTimer :: proc(hWnd: HWND, nID: UINT_PTR) -> BOOL ---
 
 
 

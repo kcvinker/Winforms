@@ -32,6 +32,7 @@ import  ui "winforms"
     ptf :: fmt.printf
     pgb : ^ui.ProgressBar // We are using pgb & tk in inner procs. So these must be globals.
     tk : ^ui.TrackBar
+    tmr: ^ui.Timer
 //
 
 MakeWindow :: proc()
@@ -42,10 +43,14 @@ MakeWindow :: proc()
     frm.height = 500
     frm.font = new_font("Tahoma", 13)
 
-    // When we click on somewhere, it prints the mouse coordintes. 
+    // When we click on somewhere, it prints the mouse coordintes.
     // Handy at design time because, you can easily know the points for a new control.
-    print_points(frm) 
+    print_points(frm)
     create_handle(frm)
+
+    // Let's add a timer to this form which ticks in every 400 ms.
+    // And our timer_ontick proc will be called on each tick.
+    tmr = form_addTimer(frm, 400, timer_ontick)
 
     // Let's add a menubar and some menu items.
     mbar := new_menubar(frm, "File", "Edit", "Format")
@@ -59,6 +64,7 @@ MakeWindow :: proc()
     b1 := new_button(frm, "Normal", 10, 10, 110, 35 )
     b2 := new_button(frm, "Flat Color", cright(b1) + 20, 10, 120, 35 )
     set_property(b2, CommonProps.Back_Color, 0x94d2bd) // New function.
+    b2.onMouseClick = b2_click_proc // On b2 click, we can start the timer.
 
     b3 := new_button(frm, "Gradient", cright(b2) + 20, 10, 110, 35 )
     button_set_gradient_colors(b3, 0xfb8500, 0xffbe0b)
@@ -150,6 +156,16 @@ MakeWindow :: proc()
     contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
     {
         ptf("%s option is selected\n", sender.text)
+    }
+
+    b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
+    {
+        ui.timer_start(tmr)
+    }
+
+    timer_ontick :: proc(f: ^ui.Form, e: ^ui.EventArgs)
+    {
+        print("Timer ticked")
     }
 
     // All set, now we can display the form!

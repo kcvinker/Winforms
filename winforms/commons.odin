@@ -51,6 +51,8 @@ TicPosition :: enum {Down_Side, Up_Side, Left_Side, Right_Side, Both_Side} // Fo
 TimeMode :: enum {Nano_Sec, Micro_Sec, Milli_Sec}
 
 Time :: struct {_nano_sec : i64,}
+
+
 SizeIncrement :: struct {width, height : int,}
 Area :: struct {width, height : int,}
 WordValue :: enum {Low, High}
