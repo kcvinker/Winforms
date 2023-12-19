@@ -163,7 +163,7 @@ MakeWindow :: proc()
         ui.timer_start(tmr)
     }
 
-    timer_ontick :: proc(f: ^ui.Form, e: ^ui.EventArgs)
+    timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs)
     {
         print("Timer ticked")
     }
