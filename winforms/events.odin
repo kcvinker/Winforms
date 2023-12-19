@@ -15,7 +15,7 @@ ContextMenuEventHandler :: proc(sender: ^ContextMenu, e: ^EventArgs)
 CreateDelegate :: proc(ctl : ^Control)
 ControlDelegate :: proc(ctl : ^Control)
 PropSetter :: proc(c: ^Control, p: any, v : any)
-TimerTickHandler :: proc(sender: ^Form, e: ^EventArgs)
+
 
 EventArgs :: struct {handled : b64, cancelled : b64,}
 MouseEventArgs :: struct

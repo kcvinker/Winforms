@@ -76,16 +76,15 @@ Form :: struct
     _comboData : [dynamic]ComboData,
     _menuItemMap : map[uint]^MenuItem,
     _menubarUsed: bool,
-    _staticTimerID: UINT_PTR,
-    _timerList: [dynamic]^Timer,
+    _timerMap: map[UINT_PTR]^Timer,
     _formID: int,
 
 }
 
 Timer :: struct {
 	interval: u32,
-	onTick: TimerTickHandler,
-	_parent: ^Form,
+	onTick: EventHandler,
+	_parentHwnd: HWND,
     _idNum: UINT_PTR,
     _isEnabled: bool,
 }
@@ -126,37 +125,32 @@ form_hide :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
 form_setstate :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
 
 /* Add a new timer control to form. Interval is in milliseconds */
-form_addTimer :: proc(this: ^Form, interval: u32 = 100, tickHandler: TimerTickHandler = nil) -> ^Timer
+form_addTimer :: proc(this: ^Form, interval: u32 = 100, tickHandler: EventHandler = nil) -> ^Timer
 {
     tm := new(Timer)
     tm.interval = interval
     tm.onTick = tickHandler
-    tm._parent = this
-    if this._staticTimerID > 0 {
-        this._staticTimerID += 1
-    } else {
-        this._staticTimerID = cast(UINT_PTR)(this._formID * 1000)
-    }
-    tm._idNum = this._staticTimerID
-    append(&this._timerList, tm)
+    tm._parentHwnd = this.handle
+    tm._idNum = cast(UINT_PTR)tm
+    this._timerMap[tm._idNum] = tm
     return tm
 }
 
 timer_start :: proc(this: ^Timer)
 {
     this._isEnabled = true
-    SetTimer(this._parent.handle, this._idNum, this.interval, nil)
+    SetTimer(this._parentHwnd, this._idNum, this.interval, nil)
 }
 
 timer_stop :: proc(this: ^Timer)
 {
-    KillTimer(this._parent.handle, this._idNum)
+    KillTimer(this._parentHwnd, this._idNum)
     this._isEnabled = false
 }
 
 @private timer_dtor :: proc(this: ^Timer)
 {
-    if this._isEnabled do KillTimer(this._parent.handle, this._idNum)
+    if this._isEnabled do KillTimer(this._parentHwnd, this._idNum)
     free(this)
 }
 
@@ -227,9 +221,9 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
         delete(this._menuItemMap)
 
     }
-    if len(this._timerList) > 0 {
-        for tmr in this._timerList do timer_dtor(tmr)
-        delete(this._timerList)
+    if len(this._timerMap) > 0 {
+        for key, tmr in this._timerMap do timer_dtor(tmr)
+        delete(this._timerMap)
         print("Timers freed")
     }
     free(this)
@@ -494,14 +488,9 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData)
 
 @private form_timer_handler :: proc(this: ^Form, wpm: WPARAM)
 {
-    timer : ^Timer = nil
-    for tmr in this._timerList {
-        if tmr._idNum == cast(UINT_PTR)wpm {
-            timer = tmr
-            break
-        }
-    }
-    if timer != nil && timer.onTick != nil {
+    key := cast(UINT_PTR)wpm
+    timer, okay := this._timerMap[key]
+    if okay && timer.onTick != nil {
         ea := new_event_args()
         timer.onTick(this, &ea)
     }

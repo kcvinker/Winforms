@@ -13,35 +13,44 @@ import  ui "winforms"
     ptf :: fmt.printf
     pgb : ^ui.ProgressBar
     tk : ^ui.TrackBar
+    frm : ^ui.Form
+    tmr: ^ui.Timer
 //
 
 MakeWindow :: proc()
 {
     using ui
-    frm := new_form( txt = "Odin is fun")
+    frm = new_form( txt = "Odin is fun")
     frm.width = 1100
     frm.height = 500
     frm.font = new_font("Tahoma", 13)
     print_points(frm)
     create_handle(frm)
 
+    // Let's add a timer to this form which ticks in every 400 ms.
+    // And our timer_ontick proc will be called on each tick.
+    tmr = form_addTimer(frm, 400, timer_ontick)
+
     mbar := new_menubar(frm, "File", "Edit", "Format")
-    menubar_add_items(mbar, "File", false, "New Work", "New Client", "Exit")
-    menubar_add_items(mbar, "Edit", false, "Cut", "Copy", "Delete")
-    menubar_add_items(mbar, "Format", false, "Font", "Line Space", "Para Spce")
-    menubar_add_items(mbar, "New Work", false, "Contract Work", "Carriage Work", "Transmission Work")
-    menubar_set_event_handler(mbar, "New Client", .On_Click, newclient_menuclick)
+    menubar_add_items(mbar, mbar.menus[0], "New Work", "New Client", "Exit")
+    menubar_add_items(mbar, mbar.menus[1], "New Client", "Copy", "Delete")
+    menubar_add_items(mbar, mbar.menus[2], "Font", "Line Space", "Para Spce")
+    menubar_add_items(mbar, mbar.menus[0].menus[0], "Contract Work", "Carriage Work", "Transmission Work")
+    mbar.menus[0].menus[1].onClick = newclient_menuclick
 
     b1 := new_button(frm, "Normal", 10, 10, 110, 35 )
+    b1.onMouseClick = open_file_proc
+
     b2 := new_button(frm, "Flat Color", cright(b1) + 20, 10, 120, 35 )
-    control_set_backcolor(b2, 0x94d2bd)
+    set_property(b2, CommonProps.Back_Color, 0x94d2bd)
+    b2.onMouseClick = b2_click_proc
 
     b3 := new_button(frm, "Gradient", cright(b2) + 20, 10, 110, 35 )
     button_set_gradient_colors(b3, 0xfb8500, 0xffbe0b)
 
     cmb := new_combobox(frm, cright(b3) + 20, 10, autoc = true)
     combo_add_items(cmb, "Windows", "MacOS", "Linux", "ReactOS")
-    combo_set_selected_index(cmb, 0)
+    set_property(cmb, ComboProps.Selected_Index, 0)
 
     dtp := new_datetimepicker(frm, cright(cmb) + 20, 10, autoc = true)
     gb := new_groupbox(frm, "Format Options", 10, cbottom(b1) + 20, w=230, h=110, autoc = true)
@@ -64,7 +73,7 @@ MakeWindow :: proc()
 
     lbx := new_listbox(frm, cright(gb) + 10, cbottom(b1) + 10, autoc = true)
     listbox_add_items(lbx, "Windows", "MacOS", "Linux", "ReactOS")
-
+    set_property(cb2, CheckBoxProps.Checked, true)
 
     lv := new_listview(frm, cright(lbx) + 10, cbottom(b3) + 10, 340, 150, "Windows", "MacOS", "Linux", 100, 120, 100)
     listview_add_row(lv, "XP", "Mountain Lion", "RedHat")
@@ -72,6 +81,9 @@ MakeWindow :: proc()
     listview_add_row(lv, "Win7", "Mavericks", "Ubuntu")
     listview_add_row(lv, "Win8", "Catalina", "Debian")
     listview_add_row(lv, "Win10", " Big Sur", "Kali")
+
+    control_add_contextmenu(lv, "Compile", "Link Only", "Make DLL", "Make Console")
+    lv.contextMenu.menus[0].onClick = contextmenu_click // Handler for "Compile" menu
 
     tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20, autoc = true)
 
@@ -83,7 +95,7 @@ MakeWindow :: proc()
     tv := new_treeview(frm, cright(lv) + 20, dtp.ypos, 250, 220, autoc = true)
     treeview_add_nodes(tv, "Windows", "MacOS", "Linux", "ReactOS")
     treeview_add_childnodes(tv, 0, "XP", "Vista", "Win7", "Win8", "Win10", "Win11")
-    treeview_add_childnodes(tv, 1, "Mountain Lion", "Mavericks", "Catalina", " Big Sur", "Monterey")
+    treeview_add_childnodes(tv, 1, "Mountain Lion", "Mavericks", "Catalina", "Big Sur", "Monterey")
     treeview_add_childnodes(tv, 2, "RedHat", "Mint", "Ubuntu", "Debian", "Kali")
 
     cal := new_calendar(frm, tv.xpos, cbottom(tv) + 20, true)
@@ -97,6 +109,39 @@ MakeWindow :: proc()
     {
         print("New Client selected")
     }
+
+    contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
+    {
+        ptf("%s option is selected\n", sender.text)
+    }
+
+    open_file_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
+    {
+        idir : string = "D:\\Work\\Shashikumar\\2023\\Jack Ryan"
+
+        ofd := ui.file_open_dialog(initFolder = idir, description = "PDF Files", ext = ".pdf")
+        ofd.multiSel = true
+        x := ui.dialog_show(&ofd, frm.handle)
+        // if x {
+        //     for file in ofd.selectedFiles {
+        //         print(file)
+        //     }
+        // }
+        dialog_destroy(&ofd)
+
+    }
+
+    b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
+    {
+        ui.timer_start(tmr)
+    }
+
+    timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs)
+    {
+        print("Timer ticked")
+    }
+
+
 
     start_mainloop(frm)
 }
