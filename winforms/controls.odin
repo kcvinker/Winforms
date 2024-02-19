@@ -110,13 +110,9 @@ Control :: struct
 // This is used to set the defualt font right creating the control handle.
 @private setfont_internal :: proc(ctl : ^Control)
 {
-	isOkay : bool
-	if ctl.font.handle != ctl.parent.font.handle do isOkay = true
-	if ctl.font._defFontChanged do isOkay = true
-	if isOkay {
-		CreateFont_handle(&ctl.font, ctl.handle)
-		SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
-	}
+	if ctl.font.handle == nil do CreateFont_handle(&ctl.font, ctl.handle)
+	SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
+
 }
 
 redraw :: proc{redraw_ctl1, redraw_ctl2}

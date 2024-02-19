@@ -36,6 +36,8 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
         app.iccx.dwIcc = ICC_DATE_CLASSES
         InitCommonControlsEx(&app.iccx)
     }
+    // yp : ^int = cast(^int)context.user_ptr
+    // ptf("calendar context up %d\n", yp^)
     this := new(Calendar)
     this.parent = p
     this.font = p.font

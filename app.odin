@@ -151,8 +151,13 @@ main :: proc()
     track: mem.Tracking_Allocator
     mem.tracking_allocator_init(&track, context.allocator)
     context.allocator = mem.tracking_allocator(&track)
+    context.user_index = 225
+    x := 23
+    context.user_ptr = &x
     defer mem.tracking_allocator_destroy(&track)
     MakeWindow()
     ui.show_memory_report(&track)
+    ptf("size of int %d\n", size_of(int))
+    // ptf("size of long %d\n", size_of(long))
 }
 
