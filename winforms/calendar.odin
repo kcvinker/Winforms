@@ -4,7 +4,7 @@
 */
 
 package winforms
-import "core:runtime"
+import "base:runtime"
 
 WcCalenderClassW : wstring = to_wstring("SysMonthCal32")
 

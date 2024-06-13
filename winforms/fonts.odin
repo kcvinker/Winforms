@@ -1,6 +1,6 @@
 package winforms
 import "core:mem"
-import "core:runtime"
+import "base:runtime"
 
 _def_font_name :: "Tahoma"
 _def_font_size :: 12

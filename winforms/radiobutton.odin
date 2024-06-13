@@ -5,7 +5,7 @@
 */
 
 package winforms
-import "core:runtime"
+import "base:runtime"
 //import "core:fmt"
 
 rb_count : int

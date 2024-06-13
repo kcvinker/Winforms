@@ -2,7 +2,7 @@
 package winforms
 
 import "core:fmt"
-import "core:runtime"
+import "base:runtime"
 
 
 // print :: fmt.println // Its easy to use. Delete after finishing this module.

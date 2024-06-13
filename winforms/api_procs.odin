@@ -4,7 +4,7 @@ package winforms
 
 //import "core:strings"
 import "core:fmt"
-import "core:runtime"
+import "base:runtime"
 
 //=================================== Functions===================================
 

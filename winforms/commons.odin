@@ -1,7 +1,7 @@
 package winforms
 import "core:fmt"
-import "core:runtime"
-import "core:intrinsics"
+import "base:runtime"
+import "base:intrinsics"
 import "core:mem"
 import api "core:sys/windows"
 
@@ -106,7 +106,6 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 {
 	tlen := GetWindowTextLength(hw)
 	wsBuffer := make([]WCHAR, tlen + 1, alloc)
-	// wsBuffer : wstring = &mem_chunks[0]
 	defer delete(wsBuffer)
 	GetWindowText(hw, &wsBuffer[0], i32(len(wsBuffer)))
 	return utf16_to_utf8(wsBuffer, alloc)

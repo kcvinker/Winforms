@@ -11,7 +11,7 @@
 */
 package winforms
 
-import "core:runtime"
+import "base:runtime"
 import "core:sys/windows"
 
 globalSubClassID : int = 2001

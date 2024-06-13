@@ -5,7 +5,7 @@
 		*/
 
 package winforms
-import "core:runtime"
+import "base:runtime"
 import api "core:sys/windows"
 //import "core:fmt"
 
@@ -922,7 +922,7 @@ set_hdr_text_flag :: proc(lvc: ^ListViewColumn) {
 
 	if len(lv._lvcList) > 0 {
 		res : i32
-		for col in &lv._lvcList {
+		for &col in lv._lvcList {
 			res = i32(SendMessage(lv.handle, LVM_INSERTCOLUMNW, WPARAM(res), direct_cast(&col, LPARAM)))
 			res += 1
 		}

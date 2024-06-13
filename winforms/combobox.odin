@@ -2,7 +2,7 @@
 package winforms
 
 import "core:fmt"
-import "core:runtime"
+import "base:runtime"
 //import "core:reflect"
 
 WcComboW : wstring = L("ComboBox")

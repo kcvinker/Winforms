@@ -4,7 +4,7 @@
 */
 
 package winforms
-import "core:runtime"
+import "base:runtime"
 import "core:fmt"
 import api "core:sys/windows"
 

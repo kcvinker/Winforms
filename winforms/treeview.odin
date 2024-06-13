@@ -7,7 +7,7 @@
 
 package winforms
 
-import "core:runtime"
+import "base:runtime"
 //import "core:slice"
 //import "core:fmt"
 

@@ -1,5 +1,5 @@
 package winforms
-import "core:runtime"
+import "base:runtime"
 //import "core:time"
 
 WcLabelW : wstring = L("Static")

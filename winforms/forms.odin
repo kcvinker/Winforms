@@ -2,7 +2,7 @@
 package winforms
 
 import "core:fmt"
-import "core:runtime"
+import "base:runtime"
 import "core:mem"
 import api "core:sys/windows"
 
@@ -484,7 +484,7 @@ collect_combo_data :: proc(frm: ^Form, cd : ComboData) {append(&frm._comboData, 
 //It's a private function. Combobox module is the caller.
 update_combo_data :: proc(frm: ^Form, cd : ComboData)
 {
-    for c in &frm._comboData {
+    for &c in frm._comboData {
         if c.comboID == cd.comboID {
             c.comboHwnd = cd.comboHwnd
             c.listBoxHwnd = cd.listBoxHwnd

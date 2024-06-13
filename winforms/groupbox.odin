@@ -1,7 +1,7 @@
 package winforms
 
 // import "core:fmt"
-import "core:runtime"
+import "base:runtime"
 import api "core:sys/windows"
 
 WcGroupBoxW : wstring = L("Button")

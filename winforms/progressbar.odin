@@ -1,7 +1,7 @@
 // Created on 30-Jan-2022 12:37 AM
 
 package winforms
-import "core:runtime"
+import "base:runtime"
 import "core:fmt"
 
 ICC_PROGRESS_CLASS :: 0x20

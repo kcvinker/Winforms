@@ -1,6 +1,6 @@
 package winforms
 
-import "core:runtime"
+import "base:runtime"
 import "core:fmt"
 import "core:strconv"
 import api "core:sys/windows"

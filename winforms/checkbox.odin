@@ -1,6 +1,6 @@
 package winforms
 
-import "core:runtime"
+import "base:runtime"
 
 WcCheckBoxW : wstring = L("Button")
 

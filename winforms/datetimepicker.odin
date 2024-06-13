@@ -3,7 +3,7 @@ package winforms		// Notes : write func for setting value by user.
 
 // import "core:strings"
 import "core:fmt"
-import "core:runtime"
+import "base:runtime"
 
 ICC_DATE_CLASSES :: 0x100
 DTM_GETIDEALSIZE :: (DTM_FIRST+15)
