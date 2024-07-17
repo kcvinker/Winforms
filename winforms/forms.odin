@@ -111,7 +111,7 @@ form_set_gradient :: proc(this: ^Form, clr1, clr2 : uint,top_bottom := true)
 start_mainloop :: proc(this: ^Form)
 {
     create_child_handles(this)
-    ShowWindow(app.mainHandle, cast(i32) app.startState )
+    
     //app.mainLoopStarted = true
     ms : MSG
     for GetMessage(&ms, nil, 0, 0) != 0
@@ -296,7 +296,7 @@ create_form :: proc(frm : ^Form )
                                     app.hInstance,
                                     nil )
     if frm.handle == nil {
-        fmt.println("Error in CreateWindoeEx,", GetLastError()) }
+        fmt.println("Error in CreateWindowEx,", GetLastError()) }
     else {
         frm._isCreated = true
         app.formCount += 1
@@ -307,6 +307,7 @@ create_form :: proc(frm : ^Form )
         // set_form_font_internal(frm)
         if frm.font.handle == nil do CreateFont_handle(&frm.font, frm.handle)
         SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) frm)
+        ShowWindow(app.mainHandle, cast(i32) app.startState )
     }
 }
 
@@ -657,6 +658,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             }
 
         case WM_SHOWWINDOW:
+            // print("WM_SHOWWINDOW")
             frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
             if !frm._isLoaded
             {

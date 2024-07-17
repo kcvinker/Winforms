@@ -611,9 +611,9 @@ normal_form_ex_style ::    WS_EX_LEFT |
                             WS_EX_APPWINDOW
 
 normal_form_style ::      WS_OVERLAPPEDWINDOW |
-                            WS_TABSTOP | WS_BORDER |
-                            WS_CLIPCHILDREN |
-                            WS_CLIPSIBLINGS
+                            WS_TABSTOP | WS_BORDER //|
+                            // WS_CLIPCHILDREN |
+                            // WS_CLIPSIBLINGS
 
 fixed_tool_ex_style ::    WS_EX_LEFT |
                             WS_EX_LTRREADING |
