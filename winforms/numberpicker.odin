@@ -50,6 +50,8 @@ NumberPicker :: struct {
     _buddySubclsID : int,
     _buddyWinProc : SUBCLASSPROC,
     _bkBrush : HBRUSH,
+    _borderBrush : HBRUSH,
+    _borderPen : HPEN,
     _tbrc : RECT,
     _udrc : RECT,
     _myrc : RECT,
@@ -155,6 +157,9 @@ new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
         case .Center : np._buddyStyle |= ES_CENTER
         case .Right : np._buddyStyle |= ES_RIGHT
     }
+
+    clr : Color = new_color(0xABABAB) // Gray color for edit control border
+    np._borderBrush = CreateSolidBrush(clr.ref)
 
     // if !np.hasSeparator do np._style |= UDS_NOTHOUSANDS
 }
@@ -345,11 +350,30 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     }
 }
 
+@private np_paint_buddy_border :: proc(this: ^NumberPicker, hdc: HDC)
+{
+    /* Edit control needs WS_BORDER style to place the text properly aligned.
+		 * But if we use that style, it will draw a border on 4 sides of the edit.
+		 * That will separate our updown control and edit control into two parts.
+		 * And that's ugly. So we need to erase all the borders. But it is tricky.	
+		 * First, we will draw a frame over the current border with updown's border color.
+		 * Then, we will erase the right/left side border by drawing a line.
+		 * This line has the same back color of edit control. So the border is hidden. 
+		 * And the control will look like the one in .NET.  */
+		FrameRect(hdc, &this._tbrc, this._borderBrush)
+		fpen: HPEN = CreatePen(PS_SOLID, 2, get_color_ref(this.backColor))
+		defer delete_gdi_object(fpen)
+		SelectObject(hdc, HGDIOBJ(fpen) )
+		MoveToEx(hdc, this._lineX, 1, nil)
+		LineTo(hdc, this._lineX, this._tbrc.bottom - 2)
+}
+
 
 @private np_finalize :: proc(np: ^NumberPicker, scid: UINT_PTR)
 {
     delete_gdi_object(np._bkBrush)
     RemoveWindowSubclass(np.handle, np_wnd_proc, scid)
+    delete_gdi_object(np._borderBrush)
     free(np)
 }
 
@@ -446,17 +470,20 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             // }
             /* We are drawing the edge line over the edit border.
              * Because, we need our edit & updown look like a single control. */
-            DefSubclassProc(hw, msg, wp, lp)
-            hdc : HDC = GetDC(hw)
-            DrawEdge(hdc, &tb._tbrc, BDR_SUNKENOUTER, tb._topEdgeFlag) // Right code
-            DrawEdge(hdc, &tb._tbrc, BDR_RAISEDINNER, tb._botEdgeFlag )
-            fpen : HPEN = CreatePen(PS_SOLID, 1, tb._bgcRef) // We use Edit's back color.
-            SelectObject(hdc, HGDIOBJ(fpen))
-            MoveToEx(hdc, tb._lineX, 1, nil)
-            LineTo(hdc, tb._lineX, tb.height - 1)
-            ReleaseDC(hw, hdc)
-            DeleteObject(HGDIOBJ(fpen))
-            return 0
+            res := DefSubclassProc(hw, msg, wp, lp)
+            hdc : HDC = GetWindowDC(hw)
+            defer ReleaseDC(hw, hdc)
+            np_paint_buddy_border(tb, hdc)
+            // DrawEdge(hdc, &tb._tbrc, BDR_SUNKENOUTER, tb._topEdgeFlag) // Right code
+            // DrawEdge(hdc, &tb._tbrc, BDR_RAISEDINNER, tb._botEdgeFlag )
+            // fpen : HPEN = CreatePen(PS_SOLID, 1, tb._bgcRef) // We use Edit's back color.
+            // SelectObject(hdc, HGDIOBJ(fpen))
+            // MoveToEx(hdc, tb._lineX, 1, nil)
+            // LineTo(hdc, tb._lineX, tb.height - 1)
+            // ReleaseDC(hw, hdc)
+            // DeleteObject(HGDIOBJ(fpen))
+
+            return res
 
         case CM_CTLLCOLOR :
             if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {

@@ -130,6 +130,7 @@ foreign user32 {
    @(link_name="GetDC") GetDC :: proc(h: HWND) -> HDC ---
    @(link_name="GetMessagePos") GetMessagePos :: proc() -> DWORD ---
    @(link_name="ReleaseDC") ReleaseDC :: proc(wnd: HWND, hdc: HDC) -> i32 ---
+   @(link_name="GetWindowDC") GetWindowDC :: proc(wnd: HWND) -> HDC ---
    @(link_name="SendMessageW") SendMessage :: proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT ---
    @(link_name="SendNotifyMessageW") SendNotifyMessage :: proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT ---
    @(link_name="MessageBoxW") MessageBox :: proc(wnd: HWND, text, caption: wstring, type: u32) -> i32 ---
