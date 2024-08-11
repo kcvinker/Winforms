@@ -4,7 +4,8 @@ package winforms
 import "base:runtime"
 import api "core:sys/windows"
 
-WcGroupBoxW : wstring = L("Button")
+gbstyle : DWORD : WS_CHILD | WS_VISIBLE | BS_GROUPBOX
+gbexstyle : DWORD : WS_EX_CONTROLPARENT | WS_EX_LEFT | WS_EX_TRANSPARENT
 
 GroupBox :: struct
 {
@@ -31,12 +32,11 @@ GroupBox :: struct
         height = h
         backColor = p.backColor
         foreColor = p.foreColor
-        _clsName = WcGroupBoxW
+        _clsName = &btnclass[0]
 	    _fp_beforeCreation = cast(CreateDelegate) gb_before_creation
 	    _fp_afterCreation = cast(CreateDelegate) gb_after_creation
-
-        _style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TEXT | BS_TOP | WS_OVERLAPPED| WS_CLIPCHILDREN| WS_CLIPSIBLINGS
-        _exStyle = WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT | WS_EX_RIGHTSCROLLBAR
+        _style = gbstyle 
+        _exStyle = gbexstyle // WS_EX_TRANSPARENT | WS_EX_RIGHTSCROLLBAR
 
     append(&p._controls, gb)
     return gb
@@ -71,28 +71,28 @@ new_groupbox :: proc{gb_ctor1, gb_ctor2}
     if gb.backColor != gb.parent.backColor do gb._paintBkg = true
 }
 
-@private gb_after_creation :: proc(gb : ^GroupBox)
+@private gb_after_creation :: proc(this : ^GroupBox)
 {
-	set_subclass(gb, gb_wnd_proc)
+	set_subclass(this, gb_wnd_proc)
     // SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
     
 }
 
-gbx :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
+gbx :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 {
-    return gb.xpos + offset
+    return this.xpos + offset
 }
 
-gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
+gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 {
-    return gb.ypos + offset
+    return this.ypos + offset
 }
 
-@private gb_finalize :: proc(gb: ^GroupBox, scid: UINT_PTR)
+@private gb_finalize :: proc(this: ^GroupBox, scid: UINT_PTR)
 {
-    delete_gdi_object(gb._bkBrush)
-    RemoveWindowSubclass(gb.handle, gb_wnd_proc, scid)
-    free(gb)
+    delete_gdi_object(this._bkBrush)
+    RemoveWindowSubclass(this.handle, gb_wnd_proc, scid)
+    free(this)
 }
 
 @private gb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
@@ -100,61 +100,61 @@ gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
 {
     // context = runtime.default_context()
     context = global_context
-    gb := control_cast(GroupBox, ref_data)
+    this := control_cast(GroupBox, ref_data)
     //display_msg(msg)
     switch msg {
         case WM_PAINT :
-            if gb.paint != nil {
+            if this.paint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                gb.paint(gb, &pea)
+                this.paint(this, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }
-        case WM_DESTROY : gb_finalize(gb, sc_id)
+        case WM_DESTROY : gb_finalize(this, sc_id)
 
         case WM_CONTEXTMENU:
-		    if gb.contextMenu != nil do contextmenu_show(gb.contextMenu, lp)
+		    if this.contextMenu != nil do contextmenu_show(this.contextMenu, lp)
 
         case CM_CTLLCOLOR :
             hdc := direct_cast(wp, HDC)
             SetBkMode(hdc, Transparent)
-            gb._bkBrush = CreateSolidBrush(get_color_ref(gb.backColor))
-            // if gb.foreColor != 0x000000 do SetTextColor(hdc, get_color_ref(gb.foreColor))
-            return direct_cast(gb._bkBrush, LRESULT)
+            this._bkBrush = CreateSolidBrush(get_color_ref(this.backColor))
+            // if this.foreColor != 0x000000 do SetTextColor(hdc, get_color_ref(this.foreColor))
+            return direct_cast(this._bkBrush, LRESULT)
 
         case WM_ERASEBKGND :
-            if gb._paintBkg {
+            if this._paintBkg {
                 hdc := direct_cast(wp, HDC)
                 rc : RECT
-                GetClientRect(gb.handle, &rc)
+                GetClientRect(this.handle, &rc)
                 rc.bottom -= 2
                 // rc.left += 1
-                api.FillRect(hdc, &rc, CreateSolidBrush(get_color_ref(gb.backColor)))
+                api.FillRect(hdc, &rc, CreateSolidBrush(get_color_ref(this.backColor)))
                 return 1
             }
 
 
          case WM_MOUSEHWHEEL:
-            if gb.onMouseScroll != nil {
+            if this.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
-                gb.onMouseScroll(gb, &mea)
+                this.onMouseScroll(this, &mea)
             }
 
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
             //print("grop mouse move")
-            if gb._isMouseEntered {
-                if gb.onMouseMove != nil {
+            if this._isMouseEntered {
+                if this.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
-                    gb.onMouseMove(gb, &mea)
+                    this.onMouseMove(this, &mea)
                 }
             }
             else {
-                gb._isMouseEntered = true
-                if gb.onMouseEnter != nil  {
+                this._isMouseEntered = true
+                if this.onMouseEnter != nil  {
                     ea := new_event_args()
-                    gb.onMouseEnter(gb, &ea)
+                    this.onMouseEnter(this, &ea)
                 }
             }
         // case WM_NCHITTEST : // This will cause a mouse move message
@@ -163,10 +163,10 @@ gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
 
         case WM_MOUSELEAVE :
            // print("m leaved")
-            gb._isMouseEntered = false
-            if gb.onMouseLeave != nil {
+            this._isMouseEntered = false
+            if this.onMouseLeave != nil {
                 ea := new_event_args()
-                gb.onMouseLeave(gb, &ea)
+                this.onMouseLeave(this, &ea)
             }
 
         case :
