@@ -3,6 +3,7 @@ package winforms
 
 import "core:fmt"
 import "base:runtime"
+import "core:time"
 
 
 // print :: fmt.println // Its easy to use. Delete after finishing this module.
@@ -10,6 +11,7 @@ txtFlag : UINT= DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_HIDEPREFIX
 transparent : i32 : 1
 WcButtonW : wstring
 _buttonCount : int
+
 
 MOUSE_CLICKED :: 0b1
 MOUSE_OVER :: 0b1000000
@@ -30,6 +32,7 @@ Button :: struct
 	_gdraw : GradDraw,
 	_addedInDrawList : b64,
 }
+
 
 FlatDraw :: struct // To manage flat color button drawing
 {
@@ -107,7 +110,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 {
 	// if WcButtonW == nil do WcButtonW = to_wstring("Button")
 	context = global_context
-	ptf("btn context ui %d\n", context.user_index)
+	// ptf("btn context ui %d", context.user_index)
 	_buttonCount += 1
 	this := new(Button, context.allocator)
 	this.kind = .Button
@@ -183,10 +186,12 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 @private set_fore_color_internal :: proc(btn : ^Button, ncd : ^NMCUSTOMDRAW) -> LRESULT
 {
 	btxt := to_wstring(btn.text)
+	// defer // free_all(context.temp_allocator)
 	SetTextColor(ncd.hdc, get_color_ref(btn.foreColor))
 	SetBkMode(ncd.hdc, 1)
 	DrawText(ncd.hdc, btxt, -1, &ncd.rc, txtFlag)
 	return CDRF_NOTIFYPOSTPAINT
+	
 }
 
 @private set_back_color_internal :: proc(btn : ^Button, nmcd : ^NMCUSTOMDRAW) -> LRESULT
@@ -296,31 +301,21 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 @private btn_finalize :: proc(btn: ^Button, hw: HWND, scid: UINT_PTR)
 {
-	switch btn._drawFlag
-	{
+	switch btn._drawFlag {
 		case 2, 3: flatDrawDtor(btn._fdraw)
 		case 4, 5: gradDrawDtor(btn._gdraw)
 	}
-
-	// RemoveWindowSubclass(hw, btn_wnd_proc, scid)
-
-	// print("Btn freed in winforms")
 }
 
 //mc : int = 1
-@private btn_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private btn_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 									sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
-	// context = runtime.default_context()
-
 	context = global_context
-	// ptf("btn message %d\n", msg)
-
 	switch msg {
 		case WM_PAINT :
 			btn := control_cast(Button, ref_data)
-            if btn.paint != nil
-            {
+            if btn.paint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
@@ -330,8 +325,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
             }
 		case WM_SETFOCUS:
 			btn := control_cast(Button, ref_data)
-            if btn.onGotFocus != nil
-            {
+            if btn.onGotFocus != nil {
                 ea := new_event_args()
                 btn.onGotFocus(btn, &ea)
                 return 0
@@ -340,8 +334,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
         case WM_KILLFOCUS:
             //btn._draw_focus_rct = false
 			btn := control_cast(Button, ref_data)
-            if btn.onLostFocus != nil
-            {
+            if btn.onLostFocus != nil {
                 ea := new_event_args()
                 btn.onLostFocus(btn, &ea)
                 return 0
@@ -349,25 +342,33 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 			return 0  // Avoid this if you want to show the focus rectangle (....)
 
 		case WM_LBUTTONDOWN:
+			// time.stopwatch_start(&sw) 
 			btn := control_cast(Button, ref_data)
+			// time.stopwatch_stop(&sw)
+            // ptf("button getting time in lb DOWN %s", time.stopwatch_duration(sw))
+            // time.stopwatch_reset(&sw)
 			btn._mDownHappened = true
-			if btn.onMouseDown != nil
-			{
+			if btn.onMouseDown != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onMouseDown(btn, &mea)
 			}
 		case WM_RBUTTONDOWN:
 			btn := control_cast(Button, ref_data)
 			btn._mRDownHappened = true
-			if btn.onRightMouseDown != nil
-			{
+			if btn.onRightMouseDown != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onRightMouseDown(btn, &mea)
 			}
 		case WM_LBUTTONUP :
+			// btn := control_cast(Button, ref_data)
+			// time.stopwatch_start(&sw) 
+			// btn := control_cast(Button, ref_data)
+			// btn := btnMap[hw]
 			btn := control_cast(Button, ref_data)
-			if btn.onMouseUp != nil
-			{
+			// time.stopwatch_stop(&sw)
+            // ptf("button getting time in lb UP %s", time.stopwatch_duration(sw))
+            // time.stopwatch_reset(&sw)
+			if btn.onMouseUp != nil	{
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onMouseUp(btn, &mea)
 			}
@@ -379,8 +380,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 		case CM_LMOUSECLICK :
 			btn := control_cast(Button, ref_data)
 			btn._mDownHappened = false
-			if btn.onMouseClick != nil
-			{
+			if btn.onMouseClick != nil {
 				ea := new_event_args()
 				btn.onMouseClick(btn, &ea)
 				return 0
@@ -388,8 +388,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 		case WM_RBUTTONUP :
 			btn := control_cast(Button, ref_data)
-			if btn.onRightMouseUp != nil
-			{
+			if btn.onRightMouseUp != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onRightMouseUp(btn, &mea)
 			}
@@ -401,8 +400,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 		case CM_RMOUSECLICK :
 			btn := control_cast(Button, ref_data)
 			btn._mRDownHappened = false
-			if btn.onRightClick != nil
-			{
+			if btn.onRightClick != nil {
 				ea := new_event_args()
 				btn.onRightClick(btn, &ea)
 				return 0
@@ -410,25 +408,21 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 		case WM_MOUSEHWHEEL:
 			btn := control_cast(Button, ref_data)
-			if btn.onMouseScroll != nil
-			{
+			if btn.onMouseScroll != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onMouseScroll(btn, &mea)
 			}
 		case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
 			btn := control_cast(Button, ref_data)
-			if btn._isMouseEntered
-			{
-                if btn.onMouseMove != nil
-                {
+			if btn._isMouseEntered {
+                if btn.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
                     btn.onMouseMove(btn, &mea)
                 }
             }
             else {
                 btn._isMouseEntered = true
-                if btn.onMouseEnter != nil
-                {
+                if btn.onMouseEnter != nil {
                     ea := new_event_args()
                     btn.onMouseEnter(btn, &ea)
                 }
@@ -437,8 +431,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 		case WM_MOUSELEAVE :
 			btn := control_cast(Button, ref_data)
 			btn._isMouseEntered = false
-            if btn.onMouseLeave != nil
-            {
+            if btn.onMouseLeave != nil {
                 ea := new_event_args()
                 btn.onMouseLeave(btn, &ea)
             }
@@ -456,7 +449,6 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 			btn_finalize(btn, hw, sc_id)
 			free(btn,  context.allocator)
-
 			RemoveWindowSubclass(hw, btn_wnd_proc, sc_id)
 		// case WM_NCDESTROY:
 		// 	// if btn == nil {

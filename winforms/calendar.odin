@@ -6,7 +6,8 @@
 package winforms
 import "base:runtime"
 
-WcCalenderClassW : wstring = to_wstring("SysMonthCal32")
+// WcCalenderClassW : wstring = to_wstring("SysMonthCal32")
+WcCalenderClassW : []WCHAR = {'S','y','s','M','o','n','t','h','C','a','l','3','2',0}
 
 Calendar :: struct
 {
@@ -47,7 +48,7 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     this.xpos = x
     this.ypos = y
     this._style = WS_CHILD | WS_VISIBLE //| MCS_DAYSTATE
-    this._clsName = WcCalenderClassW
+    this._clsName = &WcCalenderClassW[0]
     this._fp_beforeCreation = cast(CreateDelegate) cal_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) cal_after_creation
     append(&p._controls, this)
@@ -195,7 +196,7 @@ new_calendar :: proc{new_cal1, new_cal2}
     free(cal)
 }
 
-@private cal_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private cal_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                             sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()

@@ -12,6 +12,8 @@ ThreadMsgHandler :: proc(wpm: WPARAM, lpm: LPARAM)
 TreeEventHandler :: proc(sender : ^TreeView, e : ^TreeEventArgs)
 MenuEventHandler :: proc(sender: ^MenuItem, e: ^EventArgs)
 ContextMenuEventHandler :: proc(sender: ^ContextMenu, e: ^EventArgs)
+TrayIconEventHandler :: proc(sender: ^TrayIcon, e: ^EventArgs)
+
 CreateDelegate :: proc(ctl : ^Control)
 ControlDelegate :: proc(ctl : ^Control)
 PropSetter :: proc(c: ^Control, p: any, v : any)

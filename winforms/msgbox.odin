@@ -6,7 +6,7 @@
 package winforms
 import "core:fmt"
 
-def_msg_title := to_wstring("Winforms")
+// def_msg_title := to_wstring("Winforms")
 dummy_hwnd := HWND(cast(UINT_PTR) 0)
 
 MsgResult :: enum { None, Okay, Canel, Abort, Retry, Ignore, Yes, No }
@@ -40,27 +40,32 @@ msgbox :: proc{    msgbox1,
                 }
 
 @private msgbox1 :: proc(msg : string) {
-    MessageBox(dummy_hwnd, to_wstring(msg), def_msg_title, 0)
+    MessageBox(dummy_hwnd, to_wstring(msg), to_wstring("Winforms"), 0)
+    // free_all(context.temp_allocator)
 }
 
 @private msgbox2 :: proc(msg : string, title : string) {
     MessageBox(dummy_hwnd, to_wstring(msg), to_wstring(title), 0)
+    // free_all(context.temp_allocator)
 }
 
 @private msgbox3 :: proc(msg : any) {
 	ms_str := fmt.tprint(msg)
-	MessageBox(dummy_hwnd, to_wstring(ms_str), def_msg_title, 0)
+	MessageBox(dummy_hwnd, to_wstring(ms_str), to_wstring("Winforms"), 0)
+    // free_all(context.temp_allocator)
 }
 @private msgbox4 :: proc(msg : any, title : string) {
 	ms_str := fmt.tprint(msg)
 	MessageBox(dummy_hwnd, to_wstring(ms_str), to_wstring(title), 0)
+    // free_all(context.temp_allocator)
 }
 
 @private msgbox5 :: proc(msg : any, title : string, msg_btn : MsgBoxButtons) -> MsgResult {
     ms_str := to_wstring(fmt.tprint(msg))
+    //defer // free_all(context.temp_allocator)
     cap_str : wstring
     if len(title) == 0 {
-        cap_str = def_msg_title
+        cap_str = to_wstring("Winforms")
     } else do cap_str = to_wstring(title)
     return MsgResult(MessageBox(dummy_hwnd, ms_str, cap_str, u32(msg_btn) ))
 }
@@ -71,9 +76,10 @@ msgbox :: proc{    msgbox1,
                             ms_icon : MsgBoxIcons ) -> MsgResult
 {
     ms_str := to_wstring(fmt.tprint(msg))
+    //defer // free_all(context.temp_allocator)
     cap_str : wstring
     if len(title) == 0 {
-        cap_str = def_msg_title
+        cap_str = to_wstring("Winforms")
     } else do cap_str = to_wstring(title)
     utype : u32 = u32(msg_btn) | u32(ms_icon)
     return MsgResult(MessageBox(dummy_hwnd, ms_str, cap_str, utype ))
@@ -87,9 +93,10 @@ msgbox :: proc{    msgbox1,
                             def_btn : MsgBoxDefButton = .Button1) -> MsgResult
 {
     ms_str := to_wstring(fmt.tprint(msg))
+    //defer // free_all(context.temp_allocator)
     cap_str : wstring
     if len(title) == 0 {
-        cap_str = def_msg_title
+        cap_str = to_wstring("Winforms")
     } else do cap_str = to_wstring(title)
     utype : u32 = u32(msg_btn) | u32(ms_icon) | u32(def_btn)
     return MsgResult(MessageBox(dummy_hwnd, ms_str, cap_str, utype ))

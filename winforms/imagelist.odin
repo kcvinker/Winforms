@@ -91,6 +91,7 @@ image_list_create_handle :: proc(img : ^ImageList) {
 image_list_add_icon :: proc(img : ImageList, fPath : string, indx : int, smIcon : bool = true) -> i32 {
 	hIco : HICON
     defer DestroyIcon(hIco)
+    //defer // free_all(context.temp_allocator)
 	uRet : u32
 	if smIcon {
 		uRet = ExtractIconEx(to_wstring(fPath), i32(indx), nil, &hIco, 1)

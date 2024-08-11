@@ -114,7 +114,7 @@ DCX_INTERSECTRGN :: LONG(0x00000080)
 
 
 
-// Icon & Cursor Constants
+// Cursor Constants
 IDC_APPSTARTING := make_int_resource(32650)
 IDC_ARROW       := make_int_resource(32512)
 IDC_CROSS       := make_int_resource(32515)
@@ -133,7 +133,7 @@ IDC_UPARROW     := make_int_resource(32516)
 IDC_WAIT        := make_int_resource(32514)
 
 
-// Cursor Constants
+// Icon Constants
 IDI_APPLICATION    := make_int_resource(32512)
 IDI_ASTERISK       := make_int_resource(32516)
 IDI_ERROR          := make_int_resource(32513)
@@ -536,6 +536,54 @@ CB_OKAY :: 0
 CB_ERR :: -1
 CB_ERRSPACE :: -2
 
+IMAGE_BITMAP :: 0
+IMAGE_ICON :: 1
+IMAGE_CURSOR :: 2
+LR_LOADFROMFILE :: 0x00000010
+LR_DEFAULTCOLOR :: 0x00000000
+
+// Notify Icon messages
+	NIM_ADD :: 0x00000000
+	NIM_MODIFY :: 0x00000001
+	NIM_DELETE :: 0x00000002
+	NIM_SETFOCUS :: 0x00000003
+	NIM_SETVERSION :: 0x00000004
+
+// Notify Icon Flags
+	NIF_MESSAGE : u32 : 0x00000001
+	NIF_ICON : u32 : 0x00000002
+	NIF_TIP : u32 : 0x00000004
+	NIF_STATE : u32 : 0x00000008
+	NIF_INFO : u32 : 0x00000010
+	NIF_GUID : u32 : 0x00000020
+	NIF_REALTIME : u32 : 0x00000040
+	NIF_SHOWTIP : u32 : 0x00000080
+
+
+// Notify Icon Constants
+	NIS_HIDDEN : DWORD : 0x00000001
+	NIS_SHAREDICON : DWORD : 0x00000002
+
+	NIIF_NONE : DWORD : 0x00000000
+	NIIF_INFO : DWORD : 0x00000001
+	NIIF_WARNING : DWORD : 0x00000002
+	NIIF_ERROR : DWORD : 0x00000003
+	NIIF_USER : DWORD : 0x00000004
+	NIIF_NOSOUND : DWORD : 0x00000010
+	NIIF_LARGE_ICON : DWORD : 0x00000020
+	NIIF_RESPECT_QUIET_TIME : DWORD : 0x00000080
+	NIIF_ICON_MASK : DWORD : 0x0000000F
+
+// Notify Icon Notifications
+	NIN_SELECT           ::   (WM_USER + 0)
+	NINF_KEY             ::   0x1
+	NIN_KEYSELECT        ::   (NIN_SELECT | NINF_KEY)
+	NIN_BALLOONSHOW      ::   (WM_USER + 2)
+	NIN_BALLOONHIDE      ::   (WM_USER + 3)
+	NIN_BALLOONTIMEOUT   ::   (WM_USER + 4)
+	NIN_BALLOONUSERCLICK ::   (WM_USER + 5)
+	NIN_POPUPOPEN        ::   (WM_USER + 6)
+	NIN_POPUPCLOSE       ::   (WM_USER + 7)
 
 
 
@@ -543,116 +591,117 @@ CB_ERRSPACE :: -2
 
 
 
-fixed_single_ex_style ::  WS_EX_LEFT |
-                            WS_EX_LTRREADING |
-                            WS_EX_RIGHTSCROLLBAR |
-                            WS_EX_WINDOWEDGE |
-                            WS_EX_CONTROLPARENT |
-                            WS_EX_APPWINDOW ;
+// Window special constants
+    fixed_single_ex_style ::  WS_EX_LEFT |
+                                WS_EX_LTRREADING |
+                                WS_EX_RIGHTSCROLLBAR |
+                                WS_EX_WINDOWEDGE |
+                                WS_EX_CONTROLPARENT |
+                                WS_EX_APPWINDOW ;
 
-fixed_single_style ::    WS_OVERLAPPED |
-                            WS_TABSTOP |
-                            WS_MAXIMIZEBOX |
-                            WS_MINIMIZEBOX |
-                            WS_GROUP |
-                            WS_SYSMENU |
-                            WS_DLGFRAME |
-                            WS_BORDER |
-                            WS_CAPTION |
-                            WS_CLIPCHILDREN |
-                            WS_CLIPSIBLINGS ;
+    fixed_single_style ::    WS_OVERLAPPED |
+                                WS_TABSTOP |
+                                WS_MAXIMIZEBOX |
+                                WS_MINIMIZEBOX |
+                                WS_GROUP |
+                                WS_SYSMENU |
+                                WS_DLGFRAME |
+                                WS_BORDER |
+                                WS_CAPTION |
+                                WS_CLIPCHILDREN |
+                                WS_CLIPSIBLINGS ;
 
-fixed_3d_ex_style ::      WS_EX_LEFT |
-                            WS_EX_LTRREADING |
-                            WS_EX_RIGHTSCROLLBAR |
-                            WS_EX_WINDOWEDGE |
-                            WS_EX_CLIENTEDGE |
-                            WS_EX_CONTROLPARENT |
-                            WS_EX_APPWINDOW |
-                            WS_EX_OVERLAPPEDWINDOW ;
+    fixed_3d_ex_style ::      WS_EX_LEFT |
+                                WS_EX_LTRREADING |
+                                WS_EX_RIGHTSCROLLBAR |
+                                WS_EX_WINDOWEDGE |
+                                WS_EX_CLIENTEDGE |
+                                WS_EX_CONTROLPARENT |
+                                WS_EX_APPWINDOW |
+                                WS_EX_OVERLAPPEDWINDOW ;
 
-fixed_3d_style ::        WS_OVERLAPPED |
-                            WS_TABSTOP |
-                            WS_MAXIMIZEBOX |
-                            WS_MINIMIZEBOX |
-                            WS_GROUP |
-                            WS_SYSMENU |
-                            WS_DLGFRAME |
-                            WS_BORDER |
-                            WS_CAPTION |
-                            WS_CLIPCHILDREN |
-                            WS_CLIPSIBLINGS ;
+    fixed_3d_style ::        WS_OVERLAPPED |
+                                WS_TABSTOP |
+                                WS_MAXIMIZEBOX |
+                                WS_MINIMIZEBOX |
+                                WS_GROUP |
+                                WS_SYSMENU |
+                                WS_DLGFRAME |
+                                WS_BORDER |
+                                WS_CAPTION |
+                                WS_CLIPCHILDREN |
+                                WS_CLIPSIBLINGS ;
 
-fixed_dialog_ex_style ::  WS_EX_LEFT |
-                            WS_EX_LTRREADING |
-                            WS_EX_RIGHTSCROLLBAR |
-                            WS_EX_DLGMODALFRAME |
-                            WS_EX_WINDOWEDGE |
-                            WS_EX_CONTROLPARENT |
-                            WS_EX_APPWINDOW ;
+    fixed_dialog_ex_style ::  WS_EX_LEFT |
+                                WS_EX_LTRREADING |
+                                WS_EX_RIGHTSCROLLBAR |
+                                WS_EX_DLGMODALFRAME |
+                                WS_EX_WINDOWEDGE |
+                                WS_EX_CONTROLPARENT |
+                                WS_EX_APPWINDOW ;
 
-fixed_dialog_style ::    WS_OVERLAPPED |
-                            WS_TABSTOP |
-                            WS_MAXIMIZEBOX |
-                            WS_MINIMIZEBOX |
-                            WS_GROUP |
-                            WS_SYSMENU |
-                            WS_DLGFRAME |
-                            WS_BORDER |
-                            WS_CAPTION |
-                            WS_CLIPCHILDREN |
-                            WS_CLIPSIBLINGS ;
+    fixed_dialog_style ::    WS_OVERLAPPED |
+                                WS_TABSTOP |
+                                WS_MAXIMIZEBOX |
+                                WS_MINIMIZEBOX |
+                                WS_GROUP |
+                                WS_SYSMENU |
+                                WS_DLGFRAME |
+                                WS_BORDER |
+                                WS_CAPTION |
+                                WS_CLIPCHILDREN |
+                                WS_CLIPSIBLINGS ;
 
-normal_form_ex_style ::    WS_EX_LEFT |
-                            WS_EX_LTRREADING |
-                            WS_EX_RIGHTSCROLLBAR |
-                            WS_EX_WINDOWEDGE |
-                            WS_EX_CONTROLPARENT |
-                            WS_EX_APPWINDOW
+    normal_form_ex_style ::    WS_EX_LEFT |
+                                WS_EX_LTRREADING |
+                                WS_EX_RIGHTSCROLLBAR |
+                                WS_EX_WINDOWEDGE |
+                                WS_EX_CONTROLPARENT |
+                                WS_EX_APPWINDOW
 
-normal_form_style ::      WS_OVERLAPPEDWINDOW |
-                            WS_TABSTOP | WS_BORDER //|
-                            // WS_CLIPCHILDREN |
-                            // WS_CLIPSIBLINGS
+    normal_form_style ::      WS_OVERLAPPEDWINDOW |
+                                WS_TABSTOP | WS_BORDER //|
+                                // WS_CLIPCHILDREN |
+                                // WS_CLIPSIBLINGS
 
-fixed_tool_ex_style ::    WS_EX_LEFT |
-                            WS_EX_LTRREADING |
-                            WS_EX_RIGHTSCROLLBAR |
-                            WS_EX_TOOLWINDOW |
-                            WS_EX_WINDOWEDGE |
-                            WS_EX_CONTROLPARENT |
-                            WS_EX_APPWINDOW ;
+    fixed_tool_ex_style ::    WS_EX_LEFT |
+                                WS_EX_LTRREADING |
+                                WS_EX_RIGHTSCROLLBAR |
+                                WS_EX_TOOLWINDOW |
+                                WS_EX_WINDOWEDGE |
+                                WS_EX_CONTROLPARENT |
+                                WS_EX_APPWINDOW ;
 
-fixed_tool_style ::      WS_OVERLAPPED |
-                            WS_TABSTOP |
-                            WS_MAXIMIZEBOX |
-                            WS_MINIMIZEBOX |
-                            WS_GROUP |
-                            WS_SYSMENU |
-                            WS_DLGFRAME |
-                            WS_BORDER |
-                            WS_CAPTION |
-                            WS_CLIPCHILDREN |
-                            WS_CLIPSIBLINGS ;
+    fixed_tool_style ::      WS_OVERLAPPED |
+                                WS_TABSTOP |
+                                WS_MAXIMIZEBOX |
+                                WS_MINIMIZEBOX |
+                                WS_GROUP |
+                                WS_SYSMENU |
+                                WS_DLGFRAME |
+                                WS_BORDER |
+                                WS_CAPTION |
+                                WS_CLIPCHILDREN |
+                                WS_CLIPSIBLINGS ;
 
-sizable_tool_ex_style ::  WS_EX_LEFT |
-                            WS_EX_LTRREADING |
-                            WS_EX_RIGHTSCROLLBAR |
-                            WS_EX_TOOLWINDOW |
-                            WS_EX_WINDOWEDGE |
-                            WS_EX_CONTROLPARENT |
-                            WS_EX_APPWINDOW ;
+    sizable_tool_ex_style ::  WS_EX_LEFT |
+                                WS_EX_LTRREADING |
+                                WS_EX_RIGHTSCROLLBAR |
+                                WS_EX_TOOLWINDOW |
+                                WS_EX_WINDOWEDGE |
+                                WS_EX_CONTROLPARENT |
+                                WS_EX_APPWINDOW ;
 
-sizable_tool_style ::    WS_OVERLAPPED |
-                            WS_TABSTOP |
-                            WS_MAXIMIZEBOX |
-                            WS_MINIMIZEBOX |
-                            WS_GROUP |
-                            WS_THICKFRAME |
-                            WS_SYSMENU |
-                            WS_DLGFRAME |
-                            WS_BORDER |
-                            WS_CAPTION |
-                            WS_OVERLAPPEDWINDOW |
-                            WS_CLIPCHILDREN |
-                            WS_CLIPSIBLINGS ;
+    sizable_tool_style ::    WS_OVERLAPPED |
+                                WS_TABSTOP |
+                                WS_MAXIMIZEBOX |
+                                WS_MINIMIZEBOX |
+                                WS_GROUP |
+                                WS_THICKFRAME |
+                                WS_SYSMENU |
+                                WS_DLGFRAME |
+                                WS_BORDER |
+                                WS_CAPTION |
+                                WS_OVERLAPPEDWINDOW |
+                                WS_CLIPCHILDREN |
+                                WS_CLIPSIBLINGS ;

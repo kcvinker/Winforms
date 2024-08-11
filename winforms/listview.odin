@@ -384,7 +384,7 @@ new_listview_column :: proc{lv_col_constructor1, lv_col_constructor2, lv_col_con
 	lvc.imageIndex = -1
 	lvc.alignment = .Center
 	lvc._hdrTxtFlag = DEF_HDR_TXT_FLAG
-	lvc._wideText = to_wchar_ptr(txt)
+	lvc._wideText = to_wchar_ptr(txt, context.allocator)
 	//lvc.position = pos
 	return lvc
 }
@@ -399,7 +399,7 @@ new_listview_column :: proc{lv_col_constructor1, lv_col_constructor2, lv_col_con
 	lvc.imageIndex = -1
 	lvc.alignment = .Center
 	lvc._hdrTxtFlag = DEF_HDR_TXT_FLAG
-	lvc._wideText = to_wchar_ptr(txt)
+	lvc._wideText = to_wchar_ptr(txt, context.allocator)
 	//lvc.position = pos
 	return lvc
 }
@@ -416,9 +416,16 @@ new_listview_column :: proc{lv_col_constructor1, lv_col_constructor2, lv_col_con
 	lvc.alignment = col_align
 	lvc.headerAlign = hdr_align
 	set_hdr_text_flag(lvc)
-	lvc._wideText = to_wchar_ptr(txt)
+	lvc._wideText = to_wchar_ptr(txt, context.allocator)
 	//lvc.position = pos
 	return lvc
+}
+
+@private
+lv_col_finalize :: proc(this: ^ListViewColumn) 
+{
+	free(this._wideText)
+	free(this)
 }
 
 new_listviewcolumn_array :: proc(name_and_width: ..any) -> [dynamic]^ListViewColumn
@@ -500,7 +507,7 @@ listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 	lvc.index = int(lv._colIndex)
 	lv._colIndex += 1
 	set_hdr_text_flag(lvc)
-	lvc._wideText = to_wchar_ptr(txt)
+	lvc._wideText = to_wchar_ptr(txt, context.allocator)
 	lv_add_column(lv, lvc)
 }
 
@@ -524,7 +531,7 @@ listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 	lvc.alignment = align
 	lv._colIndex += 1
 	lvc._hdrTxtFlag = DEF_HDR_TXT_FLAG
-	lvc._wideText = to_wchar_ptr(txt)
+	lvc._wideText = to_wchar_ptr(txt, context.allocator)
 	lv_add_column(lv, lvc)
 }
 
@@ -589,6 +596,7 @@ listview_add_row :: proc{lv_addrow1, lv_addrow2}
 			lvi.pszText = to_wstring(to_str(sItems[i]))
 			iIndx := i32(lvItem.index)
 			SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), direct_cast(&lvi, LPARAM) )
+			// free_all(context.temp_allocator)
 		}
 	}
 }
@@ -628,6 +636,7 @@ listview_add_item :: proc(lv : ^ListView, lvi : ^ListViewItem)
 	SendMessage(lv.handle, LVM_INSERTITEMW, 0, direct_cast(&item, LPARAM))
 	append(&lv.items, lvi)
 	lv._index += 1
+	// free_all(context.temp_allocator)
 }
 
 /*-------------------------------------------------------------------------------------------------------
@@ -641,6 +650,7 @@ listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_i
 	lvi.pszText = to_wstring(to_str(sitem))
 	iIndx := i32(item_indx)
 	SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), direct_cast(&lvi, LPARAM) )
+	// free_all(context.temp_allocator)
 }
 
 // Add a list of sub items to an item in list view
@@ -665,6 +675,7 @@ listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any)
 		iIndx := i32(item_indx)
 		SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), direct_cast(&lvi, LPARAM) )
 		sub_indx += 1
+		// free_all(context.temp_allocator)
 	}
 }
 
@@ -892,6 +903,7 @@ set_hdr_text_flag :: proc(lvc: ^ListViewColumn) {
     defer ReleaseDC(lv.handle, hdc)
     SelectObject(hdc, HGDIOBJ(lv.font.handle))
     GetTextExtentPoint32(hdc, to_wstring(colname), txtlen, &ss)
+	//defer // free_all(context.temp_allocator)
     return int(ss.width + 10)
 }
 
@@ -966,17 +978,19 @@ set_hdr_text_flag :: proc(lvc: ^ListViewColumn) {
 	if lv._imgList.handle != nil do ImageList_Destroy(lv._imgList.handle)
 	if lv._hdrBkBrush != nil do delete_gdi_object(lv._hdrBkBrush)
 	if lv._hdrHotBrush != nil do delete_gdi_object(lv._hdrHotBrush)
+	if lv._cmenuUsed do contextmenu_dtor(lv.contextMenu)
     RemoveWindowSubclass(lv.handle, lv_wnd_proc, scid)
-    for pcol in lv.columns {free(pcol)}
+    for pcol in lv.columns {lv_col_finalize(pcol)}
     for pitem in lv.items	 {free(pitem)}
     delete(lv.items)
 	delete(lv.columns)
+
     free(lv)
 }
 
 
 @private
-lv_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+lv_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 												sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
 	context = global_context //runtime.default_context()
 	// print("user_index ", (cast(^int) context.user_ptr)^)
@@ -1034,7 +1048,7 @@ lv_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 }
 
 @private
-hdr_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+hdr_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 												sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
 	context = global_context //runtime.default_context()
 	lv := control_cast(ListView, ref_data)

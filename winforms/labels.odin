@@ -139,6 +139,7 @@ calculate_label_size :: proc(lb : ^Label) {
     lb.width = int(ctl_size.width) //+ lb._SizeIncr.width
     lb.height = int(ctl_size.height) //+ lb._SizeIncr.height
     SetWindowPos(lb.handle, nil, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), SWP_NOMOVE )
+    // free_all(context.temp_allocator)
 }
 
 @private lbl_before_creation :: proc(lb : ^Label) {
@@ -171,7 +172,7 @@ calculate_label_size :: proc(lb : ^Label) {
     free(lbl)
 }
 
-@private label_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private label_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                                     sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     context = global_context

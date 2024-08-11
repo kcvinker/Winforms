@@ -67,6 +67,7 @@ Control :: struct
 	_fp_size_fix : ControlDelegate,
 	_inherit_color: bool,
 	_textable: bool,
+	_cmenuUsed: bool,
 
 
 	clrChanged : bool,
@@ -270,6 +271,7 @@ control_set_text :: proc(ctl : ^Control, txt : string)
 			// 		if rb.autoSize do calculate_ctl_size(rb)
 			// }
 			SetWindowText(ctl.handle, to_wstring(txt))
+			// free_all(context.temp_allocator)
 		}
 	}
 
@@ -289,13 +291,12 @@ control_get_text :: proc(ctl : Control, alloc := context.allocator) -> string
 }
 
 // To get the text from a control or form as a wstring.
-// Note :- This is not applicable for all controls.
+// Note :- This is not applicable for all controls. [[[Caller must free the buffer]]]
 control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u16
 {
 	tlen := GetWindowTextLength(ctl.handle)
 	mem_chunks := make([]WCHAR, tlen + 1, alloc)
 	wsBuffer : wstring = &mem_chunks[0]
-	//defer delete(mem_chunks)
 	GetWindowText(ctl.handle, wsBuffer, i32(len(mem_chunks)))
 	return wsBuffer[:tlen]
 }

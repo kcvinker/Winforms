@@ -24,7 +24,7 @@ package main
 
 import "core:fmt"
 import "core:mem"
-import "core:runtime"
+import "base:runtime"
 import  ui "winforms"
 
 // Global declarations
@@ -33,6 +33,7 @@ import  ui "winforms"
     pgb : ^ui.ProgressBar // We are using pgb & tk in inner procs. So these must be globals.
     tk : ^ui.TrackBar
     tmr: ^ui.Timer
+    ti : ^ui.TrayIcon
 //
 
 MakeWindow :: proc()
@@ -47,6 +48,14 @@ MakeWindow :: proc()
     // Handy at design time because, you can easily know the points for a new control.
     print_points(frm)
     create_handle(frm)
+
+    // Let's create a tray icon.
+    ti = new_tray_icon("Winforms tray icon!", "winforms-icon.ico") // Icon is located in repo.
+    frm.onMouseClick = frmClickProc // Show a balloon text when clicking on form.
+
+    // Let's add a context menu for our tray icon.
+    tray_add_context_menu(ti, .Right_Click, "Windows", "Linux", "ReactOS")
+    ti.contextMenu.menus[0].onClick = proc(c: ^MenuItem, ea: ^EventArgs) {print("Windows menu selected")}
 
     // Let's add a timer to this form which ticks in every 400 ms.
     // And our timer_ontick proc will be called on each tick.
@@ -143,29 +152,28 @@ MakeWindow :: proc()
     cal := new_calendar(frm, tv.xpos, cbottom(tv) + 20, true)
 
     // Event handling procs
-    track_change_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
-    {
+    track_change_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
         ui.progressbar_set_value(pgb, tk.value)
     }
 
-    newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
-    {
+    newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs) {
         print("New Client selected")
     }
 
-    contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
-    {
+    contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs) {
         ptf("%s option is selected\n", sender.text)
     }
 
-    b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
-    {
+    b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
         ui.timer_start(tmr)
     }
 
-    timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs)
-    {
+    timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs) {
         print("Timer ticked")
+    }
+
+    frmClickProc :: proc(c: ^ui.Control, ea: ^ui.EventArgs) {
+        tray_show_balloon(ti, "Winforms", "Info from Winforms", 3000)
     }
 
     // All set, now we can display the form!

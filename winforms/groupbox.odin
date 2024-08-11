@@ -74,7 +74,8 @@ new_groupbox :: proc{gb_ctor1, gb_ctor2}
 @private gb_after_creation :: proc(gb : ^GroupBox)
 {
 	set_subclass(gb, gb_wnd_proc)
-    SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
+    // SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
+    
 }
 
 gbx :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
@@ -94,7 +95,7 @@ gby :: #force_inline proc(gb: ^GroupBox, offset: int) -> int
     free(gb)
 }
 
-@private gb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private gb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                     sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()

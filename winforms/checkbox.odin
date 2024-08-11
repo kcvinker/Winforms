@@ -2,7 +2,7 @@ package winforms
 
 import "base:runtime"
 
-WcCheckBoxW : wstring = L("Button")
+// WcCheckBoxW : wstring = L("Button")
 
 CheckBox :: struct
 {
@@ -40,7 +40,7 @@ CheckBox :: struct
     this.autoSize = true
     this._SizeIncr.width = 20
     this._SizeIncr.height = 3
-    this._clsName = WcCheckBoxW
+    this._clsName = &btnclass[0]
     this._fp_beforeCreation = cast(CreateDelegate) cb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) cb_after_creation
     append(&p._controls, this)
@@ -116,7 +116,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
     free(cb)
 }
 
-@private cb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private cb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                                         sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()
@@ -164,7 +164,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                     } else do rct.right -= 18
                     SetTextColor(nmcd.hdc, cref)
                     DrawText(nmcd.hdc, to_wstring(cb.text), -1, &rct, cb._txtStyle)
-
+                    // // free_all(context.temp_allocator)
                     return CDRF_SKIPDEFAULT
             }
 

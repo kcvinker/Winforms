@@ -114,6 +114,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
     dtp.format = .Custom
     if dtp._isCreated {
         SendMessage(dtp.handle, DTM_SETFORMATW, 0, convert_to(LPARAM, to_wstring(dtp.formatString)))
+        // free_all(context.temp_allocator)
     }
 }
 
@@ -298,6 +299,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
                 this.format = DtpFormat.Custom
                 if this._isCreated {
                     SendMessage(this.handle, DTM_SETFORMATA, 0, LPARAM(to_wstring(value)))
+                    // free_all(context.temp_allocator)
                 }
             }
         case .Right_Align: break
@@ -325,7 +327,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
 }
 
 @private
-dtp_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                 sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()
@@ -358,6 +360,7 @@ dtp_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                         dtp.onTextChanged(dtp, &dtea )
                         // After invoking the event, send this message to set the time in dtp
                         if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&dtea.dateStruct, LPARAM))
+                        // free_all(context.temp_allocator)
 
                     }
                 case DTN_DROPDOWN :

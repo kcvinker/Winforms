@@ -151,7 +151,10 @@ textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool)
 
 textbox_clear_all :: proc(tb : ^TextBox)
 {
-    if tb._isCreated do SetWindowText(tb.handle, to_wstring(""))
+    if tb._isCreated {
+        SetWindowText(tb.handle, to_wstring(""))
+        // free_all(context.temp_allocator)
+    }
 }
 
 @private tb_before_creation :: proc(tb : ^TextBox) {adjust_styles(tb)}
@@ -162,6 +165,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
     if len(tb.cueBanner) > 0 {
         up := cast(UINT_PTR) to_wstring(tb.cueBanner)
         SendMessage(tb.handle, EM_SETCUEBANNER, 1, LPARAM(up) )
+        // free_all(context.temp_allocator)
     }
     api.EnableWindow(tb.handle, true)
 }
@@ -180,6 +184,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
                 this.cueBanner = value
                 if this._isCreated {
                     SendMessage(this.handle, EM_SETCUEBANNER, 1, direct_cast(to_wstring(value), LPARAM))
+                    // free_all(context.temp_allocator)
                 }
             }
 	}
@@ -195,7 +200,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
 
 
 
-@private tb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
+@private tb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
 
     context = global_context //runtime.default_context()
     tb := control_cast(TextBox, ref_data)

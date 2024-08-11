@@ -235,6 +235,7 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
         SetBkMode(hdc, 1);
         SetTextColor(hdc, get_color_ref(this.foreColor));
         TextOut(hdc, x, y, wtext, tlen)
+        // free_all(context.temp_allocator)
         return ret
     } else {
 
@@ -282,7 +283,7 @@ TMT_FILLCOLOR :: 3802
 DTT_COLORPROP :: 128
 DTT_SHADOWCOLOR :: 4
 
-@private pb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private pb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
 

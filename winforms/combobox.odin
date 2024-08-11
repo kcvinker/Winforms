@@ -142,6 +142,7 @@ combo_add_item :: proc(cmb : ^ComboBox, item : $T )
     append(&cmb.items, sitem)
     if cmb._isCreated {
         SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(sitem), LPARAM))
+        // free_all(context.temp_allocator)
     }
 }
 
@@ -156,12 +157,14 @@ combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPD
             append(&cmb.items, value)
             if cmb._isCreated {
                 SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(value), LPARAM))
+                // // free_all(context.temp_allocator)
             }
         } else {
             a_string := fmt.tprint(i)
             append(&cmb.items, a_string)
             if cmb._isCreated {
                 SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(a_string), LPARAM))
+                // // free_all(context.temp_allocator)
             }
         }
     }
@@ -189,6 +192,7 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T )
 {
     for i in cmb.items {
         SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(i), LPARAM))
+        // free_all(context.temp_allocator)
     }
 }
 
@@ -213,6 +217,7 @@ combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)
     SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(indx), 0)
     cmb.selectedIndex = int(indx)
     cmb.selectedItem = sitem
+    // free_all(context.temp_allocator)
 }
 
 combo_get_selected_item :: proc(cmb : ^ComboBox) -> any
@@ -347,7 +352,7 @@ combo_clear_items :: proc(cmb : ^ComboBox)
 
 
 @private
-cmb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()
@@ -546,7 +551,7 @@ cmb_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 
 
 @private
-edit_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     context = runtime.default_context()

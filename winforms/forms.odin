@@ -4,11 +4,9 @@ package winforms
 import "core:fmt"
 import "base:runtime"
 import "core:mem"
+import "core:time"
 import api "core:sys/windows"
 
-nph : HWND
-// wftrack: mem.Tracking_Allocator
-global_context: runtime.Context
 
 // Some better window colors
 /*
@@ -19,35 +17,14 @@ global_context: runtime.Context
     0xF0FFF0
     0xEEEEE4
 */
-def_window_color :uint: 0xF5F5F5
-def_fore_color :uint: 0x000000
-pure_white :uint: 0xFFFFFF
-pure_black :uint: 0x000000
-def_font_name :: "Tahoma"
-def_font_size :: 11
-// empty_wstring := to_wstring(" ") // This is just for testing purpose. Remove it when you finished this lib.
-app := start_app() // Global variable for storing data needed to create a window.
-def_bgc : Color
-def_fgc : Color
+
+
 menuTxtFlag :: DT_LEFT | DT_SINGLELINE | DT_VCENTER
-frmclass := []WCHAR {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'W', 'i', 'n', 'd', 'o', 'w', 0}
 
-//mcd : MouseClickData
-
-
-// winforms_init :: proc(trk: ^mem.Tracking_Allocator) {
-//     // global_context = runtime.default_context() if cont == nil else cont^
-//     // print("u i ", context.user_index)
-//     // // global_context = context
-//     // mem.tracking_allocator_init(trk, context.allocator)
-//     // context.allocator = mem.tracking_allocator(trk)
-//     // global_context = context
-//     app.wftrack = trk
-// }
 
 Form :: struct
 {
-    using control : Control,  // By this, form is a child of control.
+    using control : Control, 
     start_pos : StartPosition,
     style : FormStyle,
     minimizeBox, maximizeBox : bool,
@@ -92,6 +69,7 @@ Timer :: struct {
 
 
 
+
 print_points :: proc(frm: ^Form) { frm.onMouseUp = print_point_func }
 
 // Set the colors to draw a gradient background in form.
@@ -105,13 +83,15 @@ form_set_gradient :: proc(this: ^Form, clr1, clr2 : uint,top_bottom := true)
     if this._isCreated do InvalidateRect(this.handle, nil, false)
 }
 
-/* This will display the window.
-    And it will check if the main loop is started or not.
-    If not started, it will start the main loop */
+/*=====================================================
+This will display the window.
+And it will check if the main loop is started or not.
+If not started, it will start the main loop 
+========================================================*/
 start_mainloop :: proc(this: ^Form)
 {
     create_child_handles(this)
-    
+
     //app.mainLoopStarted = true
     ms : MSG
     for GetMessage(&ms, nil, 0, 0) != 0
@@ -119,6 +99,7 @@ start_mainloop :: proc(this: ^Form)
         TranslateMessage(&ms)
         DispatchMessage(&ms)
     }
+    app_finalize(app)
 }
 
 form_show :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
@@ -178,11 +159,10 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 
 @private form_ctor :: proc( t : string = "", w : int = 500, h : int = 400 ) -> ^Form
 {
-
     if app.formCount == 0 do global_context = context
     app.formCount += 1
     // app.curr_context = ctx
-    ptf("form context ui %d\n", context.user_index)
+    // ptf("form context ui %d\n", context.user_index)
     f := new(Form, global_context.allocator)
 
     f.kind = .Form
@@ -241,6 +221,7 @@ new_form :: proc{new_form1, new_form2}
         // print("Timers freed")
     }
     delete_childs(this)
+    free_all(context.temp_allocator)
     free(this)
     // ptf("Form freed res %s\n", x)
 }
@@ -284,7 +265,7 @@ create_form :: proc(frm : ^Form )
     set_start_position(frm)
     set_form_style(frm)
     frm.handle = CreateWindowEx(  frm._exStyle,
-                                    app.className,
+                                    &winFormsClass[0],
                                     to_wstring(frm.text),
                                     frm._style,
                                     i32(frm.xpos),
@@ -298,6 +279,7 @@ create_form :: proc(frm : ^Form )
     if frm.handle == nil {
         fmt.println("Error in CreateWindowEx,", GetLastError()) }
     else {
+        app.winMap[frm.handle] = frm
         frm._isCreated = true
         app.formCount += 1
         if app.mainHandle == nil {
@@ -309,6 +291,7 @@ create_form :: proc(frm : ^Form )
         SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) frm)
         ShowWindow(app.mainHandle, cast(i32) app.startState )
     }
+    // free_all(context.temp_allocator)
 }
 
 print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
@@ -332,7 +315,7 @@ print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
     win_class.hCursor = LoadCursor(nil, IDC_ARROW)
     win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) //cast(HBRUSH) (cast(UINT_PTR) Color_Window + 1)
     win_class.lpszMenuName = nil
-    win_class.lpszClassName = app.className
+    win_class.lpszClassName = &winFormsClass[0]
     res := RegisterClassEx(&win_class)
 }
 
@@ -454,7 +437,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 {
     @static counter : int = 1
     win_msg := cast(Msg_map) umsg
-    ptf("[%d] Message -  %s\n", counter, win_msg)
+    ptf("[%d] Message -  %s", counter, win_msg)
     counter += 1
 }
 
@@ -518,49 +501,16 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData)
     This type is used for holding information about the program for whole run time.
     We need to keep some info from the very beginning to the very end.
 */
-@private
-Application :: struct
-{
-    mainHandle : HWND,
-    mainLoopStarted : bool,
-    className : LPWSTR,
-    hInstance : HINSTANCE,
-    screenWidth, screenHeight : int,
-    formCount : int,
-    startState : FormState,
-    globalFont : Font,
-    iccx : INITCOMMONCONTROLSEX,
-    clrWhite : uint,
-    clrBlack : uint,
-    curr_context: ^runtime.Context,
-    wftrack: ^mem.Tracking_Allocator,}
 
-@private start_app :: proc() -> Application
-{
-    // cont := runtime.default_context
-    appl : Application
-    // appl.globalFont = new_font(def_font_name, def_font_size)
-    appl.className = &frmclass[0]  //"WingLib Window in Odin test"
-    appl.hInstance = GetModuleHandle(nil)
-    appl.screenWidth = int(api.GetSystemMetrics(0))
-    appl.screenHeight = int(api.GetSystemMetrics(1))
+sw : time.Stopwatch
 
-    appl.iccx.dwSize = size_of(appl.iccx)
-    appl.iccx.dwIcc = ICC_STANDARD_CLASSES
-    InitCommonControlsEx(&appl.iccx)    // Iinitializing standard common controls.
-    appl.clrWhite = pure_white
-    appl.clrBlack = pure_black
-    return appl
-}
 
 @private
-window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
+window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
 {
     context = global_context
-
     //display_msg(msg)
-    switch msg
-    {
+    switch msg {
         // case WM_PARENTNOTIFY :
         //    // display_msg(msg)
         //     if lo_word(DWORD(wp)) == WM_CREATE {
@@ -568,15 +518,15 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
         //         return SendMessage(chw, CM_PARENTNOTIFY, 0, 0)
         //         //ptf("handle from parent notify - %d\n", chw)
         //     }
-
+        // case WM_CREATE:
+        //     return 0
         case CM_THREAD_MSG:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             if frm.onThreadMsg != nil do frm.onThreadMsg(wp, lp)
 
         case WM_TIMER:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             form_timer_handler(frm, wp)
-
 
         case WM_HSCROLL :
             ctl_hw := direct_cast(lp, HWND)
@@ -586,11 +536,9 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             ctl_hw := direct_cast(lp, HWND)
             return SendMessage(ctl_hw, WM_VSCROLL, wp, lp)
 
-
         case WM_PAINT :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.paint != nil
-            {
+            frm := app.winMap[hw]
+            if frm.paint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
@@ -598,6 +546,8 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
                 EndPaint(hw, &ps)
                 return 0
             }
+            // return 1
+
 
         // case WM_DRAWITEM :
         //     ctl_hwnd, hwnd_found := frm._uDrawChilds[UINT(wp)]
@@ -614,16 +564,16 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
 
         case WM_CTLCOLORSTATIC :
             ctl_hwnd := direct_cast(lp, HWND)
-            // fmt.println("label color ", ctl_hwnd)
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
-            // return to_lresult(frm._gdBrush)
 
         case WM_CTLCOLORLISTBOX :
-            /* If user uses a ComboBox, it contains a ListBox in it.
-             * So, 'ctlHwnd' might be a handle of that ListBox. Or it might be a normal ListBox too.
-             * So, we need to check it before disptch this message to that listbox.
-             * Because, if it is from Combo's listbox, there is no Wndproc function for that ListBox. */
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            /* ================================================================================
+            If user uses a ComboBox, it contains a ListBox in it.
+            So, 'ctlHwnd' might be a handle of that ListBox. Or it might be a normal ListBox too.
+            So, we need to check it before disptch this message to that listbox.
+            Because, if it is from Combo's listbox, there is no Wndproc function for that ListBox. 
+            =======================================================================================*/
+            frm := app.winMap[hw]
             ctl_hwnd := direct_cast(lp, HWND)
             cmb_hwnd, okay := find_combo_data(frm, ctl_hwnd)
             if okay  {
@@ -640,7 +590,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
                 // return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
 
         case WM_COMMAND :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             switch hi_word(auto_cast(wp)) {
                 case 0:
                     if len(frm._menuItemMap) > 0 {
@@ -659,189 +609,168 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
 
         case WM_SHOWWINDOW:
             // print("WM_SHOWWINDOW")
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if !frm._isLoaded
-            {
+            frm := app.winMap[hw]
+            if !frm._isLoaded {
                 frm._isLoaded = true
-                if frm.onLoad != nil
-                {
+                if frm.onLoad != nil {
                     ea := new_event_args()
                     frm->onLoad(&ea)
                     return 0
                 }
             }
+            return 0
 
         case WM_ACTIVATEAPP :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onActivate != nil || frm.onDeActivate != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onActivate != nil || frm.onDeActivate != nil {
                 ea := new_event_args()
                 b_flag := BOOL(wp)
-                if !b_flag
-                {
+                if !b_flag {
                     if frm.onDeActivate != nil do frm->onDeActivate(&ea)
-                }
-                else
-                {
-                    if frm.onActivate != nil {frm->onActivate(&ea)}
+                } else {
+                    if frm.onActivate != nil do frm->onActivate(&ea)
                 }
             }
+            return 0
 
         case WM_KEYUP, WM_SYSKEYUP :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onKeyUp != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onKeyUp != nil {
                 kea := new_key_event_args(wp)
                 frm.onKeyUp(frm, &kea)
             }
 
         case WM_KEYDOWN, WM_SYSKEYDOWN :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onKeyDown != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onKeyDown != nil {
                 kea := new_key_event_args(wp)
                 frm.onKeyDown(frm, &kea)
             }
 
         case WM_CHAR :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onKeyPress != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onKeyPress != nil {
                 kea := new_key_event_args(wp)
                 frm.onKeyPress(frm, &kea)
                 return 0
             }
 
         case WM_LBUTTONDOWN:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            // time.stopwatch_start(&sw)            
+            frm := app.winMap[hw]
+            // time.stopwatch_stop(&sw)
+            // ptf("frm getting time %s", time.stopwatch_duration(sw))
+            // time.stopwatch_reset(&sw)
             frm._mDownHappened = true
-            if frm.onMouseDown != nil
-            {
+            if frm.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseDown(frm, &mea)
             }
 
         case WM_RBUTTONDOWN:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             frm._mRDownHappened = true
-            if frm.onRightMouseDown != nil
-            {
+            if frm.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onRightMouseDown(frm, &mea)
             }
 
         case WM_LBUTTONUP :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onMouseUp != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseUp(frm, &mea)
             }
-            if frm._mDownHappened
-            {
+            if frm._mDownHappened {
                 frm._mDownHappened = false
                 SendMessage(frm.handle, CM_LMOUSECLICK, 0, 0)
             }
 
         case CM_LMOUSECLICK :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onMouseClick != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onMouseClick != nil {
                 ea := new_event_args()
                 frm->onMouseClick(&ea)
             }
 
         case WM_RBUTTONUP :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onRightMouseUp != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onRightMouseUp(frm, &mea)
             }
-            if frm._mRDownHappened
-            {
+            if frm._mRDownHappened {
                 frm._mRDownHappened = false
                 SendMessage(frm.handle, CM_RMOUSECLICK, 0, 0)
             }
 
         case CM_RMOUSECLICK :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onRightClick != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onRightClick != nil {
                 ea := new_event_args()
                 frm.onRightClick(frm, &ea)
             }
 
         case WM_LBUTTONDBLCLK :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onDoubleClick != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onDoubleClick != nil {
                 ea := new_event_args()
                 frm.onDoubleClick(frm, &ea)
                 return 0
             }
 
         case WM_MOUSEWHEEL :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onMouseScroll != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseScroll(frm, &mea)
             }
 
         case WM_MOUSEMOVE :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if !frm._isMouseTracking
-            {
+            frm := app.winMap[hw]
+            if !frm._isMouseTracking {
                 frm._isMouseTracking = true
                 track_mouse_move(hw)
-                if !frm._isMouseEntered
-                {
+                if !frm._isMouseEntered {
                     frm._isMouseEntered = true
-                    if frm.onMouseEnter != nil
-                    {
+                    if frm.onMouseEnter != nil {
                         ea := new_event_args()
                         frm.onMouseEnter(frm, &ea)
                     }
                 }
             } //---------------------------------------
 
-            if frm.onMouseMove != nil
-            {
+            if frm.onMouseMove != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseMove(frm, &mea)
             }
 
         case WM_MOUSEHOVER :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             if frm._isMouseTracking do frm._isMouseTracking = false
-            if frm.onMouseHover != nil
-            {
+            if frm.onMouseHover != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseHover(frm, &mea)
             }
 
         case WM_MOUSELEAVE :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm._isMouseTracking
-            {
+            frm := app.winMap[hw]
+            if frm._isMouseTracking {
                 frm._isMouseTracking = false
                 frm._isMouseEntered = false
             }
 
-            if frm.onMouseLeave != nil
-            {
+            if frm.onMouseLeave != nil {
                 ea := new_event_args()
                 frm.onMouseLeave(frm, &ea)
             }
 
         case WM_SIZING :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             sea := new_size_event_args(msg, wp, lp)
             frm.width = int(sea.formRect.right - sea.formRect.left)
             frm.height = int(sea.formRect.bottom - sea.formRect.top)
-            if frm.onResizing != nil
-            {
+            if frm.onResizing != nil {
                 frm.onResizing(frm, &sea)
                 return 1
             }
@@ -868,10 +797,9 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             //wps := direct_cast(lp, ^WINDOWPOS) */
 
         case WM_SIZE :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             sea := new_size_event_args(msg, wp, lp)
-            if frm.onSizeChanged != nil
-            {
+            if frm.onSizeChanged != nil {
                 ea := new_event_args()
                 frm.onSizeChanged(frm, &ea)
                 return 0
@@ -879,11 +807,10 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             return 0
 
         case WM_MOVE :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             frm.xpos = get_x_lparam(lp)
             frm.ypos = get_y_lparam(lp)
-            if frm.onMoved != nil
-            {
+            if frm.onMoved != nil {
                 ea := new_event_args()
                 frm.onMoved(frm, &ea)
                 return 0
@@ -891,12 +818,11 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             return 0
 
         case WM_MOVING :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             rct := direct_cast(lp, ^RECT)
             frm.xpos = int(rct.left)
             frm.ypos = int(rct.top)
-            if frm.onMoving != nil
-            {
+            if frm.onMoving != nil {
                 ea := new_event_args()
                 frm.onMoving(frm, &ea)
                 return LRESULT(1)
@@ -904,7 +830,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             return 0
 
         case WM_SYSCOMMAND :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             sys_msg := UINT(wp & 0xFFF0)
             switch sys_msg {
             case SC_MINIMIZE :
@@ -924,44 +850,39 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
                 }
             }
         case WM_ERASEBKGND :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             if frm._drawMode != .Default {
                 set_back_clr_internal(frm, HDC(wp))
                 return 1
             }
+            // return 0
 
         case WM_CLOSE :
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             if frm.onClosing != nil {
                 ea := new_event_args()
                 frm.onClosing(frm, &ea)
                 if ea.cancelled do return 0
             }
+            // return 0
 
         case WM_NOTIFY :
             nm := direct_cast(lp, ^NMHDR)
             return SendMessage(nm.hwndFrom, CM_NOTIFY, wp, lp )
 
         case WM_DESTROY:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
-            if frm.onClosed != nil
-            {
+            frm := app.winMap[hw]
+            if frm.onClosed != nil {
                 ea:= new_event_args()
                 frm.onClosed(frm, &ea)
             }
-            // ptf("forms width in des %d\n", frm.width)
             form_dtor(frm) // Freeing all resources.
-            // print("frm dtor in winforms finished")
             frm = nil
+            // return 0
 
         case WM_NCDESTROY:
-
-
-            if hw == app.mainHandle
-            {
-                PostQuitMessage(0)
-                // if app.wftrack != nil do show_memory_report()
-            }
+            if hw == app.mainHandle do PostQuitMessage(0)
+            // return 0
 
         // Menu related
         case WM_MEASUREITEM:
@@ -982,7 +903,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             return to_lresult(true)
 
         case WM_DRAWITEM:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             dis := direct_cast(lp, LPDRAWITEMSTRUCT)
             mi := direct_cast(dis.itemData, ^MenuItem)
             // ptf("wm draw item - menu name : %s\n", mi.text)
@@ -1019,11 +940,12 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             return 0
 
         case WM_CONTEXTMENU:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
 		    if frm.contextMenu != nil do contextmenu_show(frm.contextMenu, lp)
+            return 0
 
         case WM_MENUSELECT:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             menu_okay, pmenu := getMenuFromHmenu(frm, direct_cast(lp, HMENU))
             mid := cast(uint)(lo_word(auto_cast(wp))) // Could be an id of a child menu or index of a child menu
             hwwpm := hi_word(auto_cast(wp))
@@ -1043,7 +965,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             }
 
         case WM_INITMENUPOPUP:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             menu_okay, menu := getMenuFromHmenu(frm, direct_cast(wp, HMENU))
             if menu_okay && menu.onPopup != nil {
                 ea:= new_event_args()
@@ -1051,7 +973,7 @@ window_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> L
             }
 
         case WM_UNINITMENUPOPUP:
-            frm := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^Form)
+            frm := app.winMap[hw]
             menu_okay, menu := getMenuFromHmenu(frm, direct_cast(wp, HMENU))
             if menu_okay && menu.onCloseup != nil {
                 ea:= new_event_args()

@@ -5,34 +5,9 @@ import "base:intrinsics"
 import "core:mem"
 import api "core:sys/windows"
 
-// My Own messages
 
-	ptf :: fmt.printf
-	print :: fmt.println
-	MSG_FIXED_VALUE :: 9000
-	CM_NOTIFY :: MSG_FIXED_VALUE + 1
-	CM_CTLLCOLOR :: MSG_FIXED_VALUE + 2
-	CM_LABELDRAW :: MSG_FIXED_VALUE + 3
-	CM_LMOUSECLICK :: MSG_FIXED_VALUE + 4
-	CM_RMOUSECLICK :: MSG_FIXED_VALUE + 5
-	CM_TBTXTCHANGED :: MSG_FIXED_VALUE + 6
-	CM_CBCOLOR :: MSG_FIXED_VALUE  + 7
-	CM_CTLCOMMAND :: MSG_FIXED_VALUE + 8
-	CM_PARENTNOTIFY :: MSG_FIXED_VALUE + 9
-	CM_COMBOLBCOLOR :: MSG_FIXED_VALUE + 10
-	CM_COMBOTBCOLOR :: MSG_FIXED_VALUE + 11
-	CM_GBFORECOLOR :: MSG_FIXED_VALUE + 12
-	CM_HSCROLL :: MSG_FIXED_VALUE + 13
-	CM_VSCROLL :: MSG_FIXED_VALUE + 14
-	CM_TVNODEEXPAND :: MSG_FIXED_VALUE + 15
-	CM_BUDDY_RESIZE :: MSG_FIXED_VALUE + 16
-	CM_MENU_ADDED :: MSG_FIXED_VALUE + 17
-	CM_THREAD_MSG :: MSG_FIXED_VALUE + 18
-	CM_RUN_DTOR :: MSG_FIXED_VALUE + 19
-
-
-
-// My Own messages
+ptf :: fmt.printfln
+print :: fmt.println
 
 // All controls has a default back & fore color.
 def_back_clr :: 0xFFFFFF
@@ -102,6 +77,7 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 	Ellipse(dch, rc.left, rc.top, rc.right, rc.bottom)
 }
 
+// Caller must free the string buffer.
 @private get_ctrl_text_internal :: proc(hw : HWND, alloc := context.allocator) -> string
 {
 	tlen := GetWindowTextLength(hw)

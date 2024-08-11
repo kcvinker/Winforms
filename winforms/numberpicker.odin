@@ -3,6 +3,7 @@ package winforms
 import "base:runtime"
 import "core:fmt"
 import "core:strconv"
+import "core:strings"
 import api "core:sys/windows"
 
 // Constants ----------
@@ -78,7 +79,6 @@ NMUPDOWN :: struct {
 }
 
 
-
 @private np_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^NumberPicker
 {
     if !is_np_inited { // Then we need to initialize the date class control.
@@ -151,17 +151,13 @@ new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
         np._botEdgeFlag = BF_BOTTOMRIGHT
         if np._txtPos == SimpleTextAlignment.Left {np._txtPos = SimpleTextAlignment.Right}
     }
-
     switch np.textAlignment {
         case .Left : np._buddyStyle |= ES_LEFT
         case .Center : np._buddyStyle |= ES_CENTER
         case .Right : np._buddyStyle |= ES_RIGHT
     }
-
     clr : Color = new_color(0xABABAB) // Gray color for edit control border
     np._borderBrush = CreateSolidBrush(clr.ref)
-
-    // if !np.hasSeparator do np._style |= UDS_NOTHOUSANDS
 }
 
 numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
@@ -180,7 +176,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     this.decimalPrecision = value
     if value == 0 {
         this.formatString = "%d"
-    } else if value > 0 {
+    } else if value > 0 {        
         this.formatString = fmt.tprintf("%%.%df", value)
     } else {
         print("numberpicker_set_decimal_precision: Value must be greater than zero...!")
@@ -209,7 +205,6 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         }
     } else {
         np.value = clamp(new_val, np.minRange, np.maxRange)
-        // fmt.println(np.value)
     }
     np_display_value_internal(np)
 }
@@ -219,10 +214,10 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     val_str : string
     if np.decimalPrecision == 0 {
         val_str = fmt.tprintf(np.formatString, cast(int)np.value)
-    } else {
+    } else {        
         val_str = fmt.tprintf(np.formatString, np.value)
-    }
-    SetWindowText(np._buddyHandle, to_wstring(val_str))
+    }    
+    SetWindowText(np._buddyHandle, to_wchar_ptr(val_str))               
 }
 
 @private set_rects_and_size :: proc(np : ^NumberPicker)
@@ -259,8 +254,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 
 @private np_before_creation :: proc(np : ^NumberPicker)
 {
-    if !is_np_inited
-    {
+    if !is_np_inited {
         icex : INITCOMMONCONTROLSEX
         icex.dwSize = size_of(icex)
         icex.dwIcc = ICC_UPDOWN_CLASS
@@ -290,6 +284,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                                         app.hInstance,
                                         nil )
 
+    
     if np.handle != nil && np._buddyHandle != nil {
         // HWND oldBuddy = HWND(SendMessage(np.handle, UDM_SETBUDDY, convert_to(WPARAM, np._buddyHandle), 0))
         set_np_subclass(np, np_wnd_proc, buddy_wnd_proc)
@@ -300,7 +295,6 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         oldBuddy : HWND = direct_cast(usb, HWND)
         SendMessage(np.handle, UDM_SETRANGE32, WPARAM(np.minRange), LPARAM(np.maxRange))
 
-        // if np.formatString == "" do np.formatString = fmt.tprintf("%%.%df", np.decimalPrecision)
         set_rects_and_size(np)
         resize_buddy(np)
         if oldBuddy != nil do SendMessage(oldBuddy, CM_BUDDY_RESIZE, 0, 0)
@@ -344,7 +338,6 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         case .Decimal_Precision:
             when T == int do numberpicker_set_decimal_precision(this, value)
 
-
         case .Track_Mouse_Leave: break
         case .Step: break
     }
@@ -352,20 +345,22 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 
 @private np_paint_buddy_border :: proc(this: ^NumberPicker, hdc: HDC)
 {
-    /* Edit control needs WS_BORDER style to place the text properly aligned.
-		 * But if we use that style, it will draw a border on 4 sides of the edit.
-		 * That will separate our updown control and edit control into two parts.
-		 * And that's ugly. So we need to erase all the borders. But it is tricky.	
-		 * First, we will draw a frame over the current border with updown's border color.
-		 * Then, we will erase the right/left side border by drawing a line.
-		 * This line has the same back color of edit control. So the border is hidden. 
-		 * And the control will look like the one in .NET.  */
-		FrameRect(hdc, &this._tbrc, this._borderBrush)
-		fpen: HPEN = CreatePen(PS_SOLID, 2, get_color_ref(this.backColor))
-		defer delete_gdi_object(fpen)
-		SelectObject(hdc, HGDIOBJ(fpen) )
-		MoveToEx(hdc, this._lineX, 1, nil)
-		LineTo(hdc, this._lineX, this._tbrc.bottom - 2)
+    /*======================================================================
+    Edit control needs WS_BORDER style to place the text properly aligned.
+	But if we use that style, it will draw a border on 4 sides of the edit.
+	That will separate our updown control and edit control into two parts.
+	And that's ugly. So we need to erase all the borders. But it is tricky.	
+	First, we will draw a frame over the current border with updown's border color.
+	Then, we will erase the right/left side border by drawing a line.
+	This line has the same back color of edit control. So the border is hidden. 
+	And the control will look like the one in .NET.  
+    ===========================================================================*/
+    FrameRect(hdc, &this._tbrc, this._borderBrush)
+    fpen: HPEN = CreatePen(PS_SOLID, 2, get_color_ref(this.backColor))
+    defer delete_gdi_object(fpen)
+    SelectObject(hdc, HGDIOBJ(fpen) )
+    MoveToEx(hdc, this._lineX, 1, nil)
+    LineTo(hdc, this._lineX, this._tbrc.bottom - 2)
 }
 
 
@@ -378,16 +373,20 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 }
 
 
-@private np_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private np_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
-    np := control_cast(NumberPicker, ref_data)
+    
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY : np_finalize(np, sc_id)
+        case WM_DESTROY : 
+            np := control_cast(NumberPicker, ref_data)
+            np_finalize(np, sc_id)
+            return 0
 
         case WM_PAINT :
+            np := control_cast(NumberPicker, ref_data)
             if np.paint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
@@ -396,25 +395,32 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                 EndPaint(hw, &ps)
                 return 0
             }
+            // return 0
 
         case WM_CONTEXTMENU:
+            np := control_cast(NumberPicker, ref_data)
 		    if np.contextMenu != nil do contextmenu_show(np.contextMenu, lp)
+            return 0
 
         case CM_NOTIFY :
+            np := control_cast(NumberPicker, ref_data)
             nm := direct_cast(lp, ^NMUPDOWN)
             if nm.hdr.code == UDN_DELTAPOS {
                 tbstr : string = get_ctrl_text_internal(np._buddyHandle)
                 new_val, _ := strconv.parse_f32(tbstr)
                 np.value = new_val
-                np_set_value_internal(np, nm.iDelta)
+                defer delete(tbstr)                
+                np_set_value_internal(np, nm.iDelta)                
             }
 
             if np.onValueChanged != nil {
                 ea := new_event_args()
                 np.onValueChanged(np, &ea)
             }
+            return 0
 
         case WM_MOUSEMOVE :
+            np := control_cast(NumberPicker, ref_data)
             if np._isMouseEntered {
                 if np.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
@@ -428,8 +434,10 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                     np.onMouseEnter(np, &ea)
                 }
             }
+            return 0
 
         case WM_MOUSELEAVE :
+            np := control_cast(NumberPicker, ref_data)
             if np.trackMouseLeave {
                 if !is_mouse_on_me(np) {
                     np._isMouseEntered = false
@@ -437,8 +445,10 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                     np.onMouseLeave(np, &ea)
                 }
             }
+            return 0
 
         case WM_ENABLE :
+            np := control_cast(NumberPicker, ref_data)
             api.EnableWindow(hw, auto_cast(wp))
             api.EnableWindow(np._buddyHandle, auto_cast(wp))
             return 0
@@ -451,12 +461,12 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     return DefSubclassProc(hw, msg, wp, lp)
 }
 
-@private buddy_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private buddy_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                             sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
-    tb := control_cast(NumberPicker, ref_data)
-    //display_msg(msg)
+    
+    // display_msg(msg)
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, buddy_wnd_proc, sc_id)
         case WM_PAINT :
@@ -470,6 +480,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             // }
             /* We are drawing the edge line over the edit border.
              * Because, we need our edit & updown look like a single control. */
+            tb := control_cast(NumberPicker, ref_data)
             res := DefSubclassProc(hw, msg, wp, lp)
             hdc : HDC = GetWindowDC(hw)
             defer ReleaseDC(hw, hdc)
@@ -486,6 +497,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             return res
 
         case CM_CTLLCOLOR :
+            tb := control_cast(NumberPicker, ref_data)
             if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
                 dc_handle := direct_cast(wp, HDC)
                 SetBkMode(dc_handle, Transparent)
@@ -498,18 +510,21 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         case EM_SETSEL: return 1
 
         case WM_KEYDOWN :
+            tb := control_cast(NumberPicker, ref_data)
             kea := new_key_event_args(wp)
             if tb.onKeyDown != nil {
                 tb.onKeyDown(tb, &kea)
             }
 
         case CM_CTLCOMMAND :
+            tb := control_cast(NumberPicker, ref_data)
             ncode := hiword_wparam(wp)
             if ncode == EN_UPDATE {
                 if tb.hideCaret do HideCaret(hw)
             }
 
         case WM_KEYUP :
+            tb := control_cast(NumberPicker, ref_data)
             kea := new_key_event_args(wp)
             if tb.onKeyUp != nil {
                 tb.onKeyUp(tb, &kea)
@@ -518,7 +533,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             return 0
 
         case WM_CHAR :
-
+            tb := control_cast(NumberPicker, ref_data)
             if tb.onKeyPress != nil {
                 kea := new_key_event_args(wp)
                 tb.onKeyPress(tb, &kea)
@@ -526,12 +541,14 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             }
 
         case CM_TBTXTCHANGED :
+            tb := control_cast(NumberPicker, ref_data)
              if tb.onValueChanged != nil {
                 ea:= new_event_args()
                 tb.onValueChanged(tb, &ea)
             }
 
         case WM_MOUSEMOVE :
+            tb := control_cast(NumberPicker, ref_data)
             //print("mouse moved on buddy ")
              if tb._isMouseEntered {
                 if tb.onMouseMove != nil {
@@ -548,6 +565,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             }
 
         case WM_MOUSELEAVE :
+            tb := control_cast(NumberPicker, ref_data)
             if tb.trackMouseLeave {
                 if !is_mouse_on_me(tb) {
                     tb._isMouseEntered = false
@@ -556,12 +574,14 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                 }
             }
 
-        case CM_BUDDY_RESIZE: resize_buddy(tb)
+        case CM_BUDDY_RESIZE: 
+            tb := control_cast(NumberPicker, ref_data)
+            resize_buddy(tb)
 
 
         case : return DefSubclassProc(hw, msg, wp, lp)
     }
-    return DefSubclassProc(hw, msg, wp, lp)
+    return 0 // DefSubclassProc(hw, msg, wp, lp)
 }
 
 // Special subclassing for NumberPicker control. Remove_subclass is written in dtor

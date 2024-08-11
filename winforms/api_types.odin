@@ -114,9 +114,9 @@ size_t     :: api.size_t
 
 
 RECT :: api.RECT
-WNDPROC  :: distinct #type proc "std" (HWND, u32, WPARAM, LPARAM) -> LRESULT
-SUBCLASSPROC :: distinct #type proc "std" (HWND, u32, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) -> LRESULT
-TIMERPROC :: distinct #type proc "std" (HWND, UINT, UINT_PTR, DWORD)
+WNDPROC  :: distinct #type proc "fast" (HWND, u32, WPARAM, LPARAM) -> LRESULT
+SUBCLASSPROC :: distinct #type proc "fast" (HWND, u32, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) -> LRESULT
+TIMERPROC :: distinct #type proc "fast" (HWND, UINT, UINT_PTR, DWORD)
 
 WNDCLASSEXW :: struct {
 	cbSize,
@@ -342,4 +342,18 @@ BROWSEINFOW :: struct {
 }
 LPBROWSEINFOW :: ^BROWSEINFOW
 
+NOTIFYICONDATA :: struct 
+{
+	cbSize: DWORD,
+	hWnd: HWND,
+	uID, uFlags, uCallbackMessage: u32,
+	hIcon: HICON,
+	toolTipText: [128]WCHAR,
+	dwState: DWORD,
+	dwStateMask: DWORD,
+	balloonText: [256]WCHAR,
+	uVersionOrTimeout: u32,
+	balloonTitle: [64]WCHAR,
+	dwInfoFlags: DWORD	
+}
 

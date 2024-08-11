@@ -47,9 +47,12 @@ new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
 CreateFont_handle :: proc(fnt : ^Font, hw : HWND = nil) 
 {
-	dcHwnd : HDC = GetDC(hw)
-	fontHeight : LONG = -MulDiv(i32(fnt.size), GetDeviceCaps(dcHwnd, LOGPIXELSY), 72)
-	ReleaseDC(hw, dcHwnd)
+	if app.fontHeight == 0 && hw != nil {
+		dcHwnd : HDC = GetDC(hw)
+		app.fontHeight = -MulDiv(i32(fnt.size), GetDeviceCaps(dcHwnd, LOGPIXELSY), 72)
+		ReleaseDC(hw, dcHwnd)
+	}
+	
 	bValue := bool(false)
 
 	// fnt.handle = CreateFont(fontHeight, 0, 0, 0, i32(fnt.weight), DWORD(fnt.italics),
@@ -63,7 +66,7 @@ CreateFont_handle :: proc(fnt : ^Font, hw : HWND = nil)
 	lf.lfItalic = cast(byte)fnt.italics
 	lf.lfUnderline = cast(byte)fnt.underline
 	lf.lfFaceName = to_wstring(fnt.name)
-	lf.lfHeight = fontHeight
+	lf.lfHeight = app.fontHeight
 	lf.lfWeight = cast(LONG)fnt.weight
 	lf.lfCharSet = DEFAULT_CHARSET
 	lf.lfOutPrecision = OUT_DEFAULT_PRECIS

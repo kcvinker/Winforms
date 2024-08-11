@@ -52,8 +52,8 @@ import "core:strings"
         newFolBtn, showFiles : bool
     }
 
-    OFNHOOKPROC :: distinct #type proc "std"(hwnd: HWND, msg: uint, wpm: WPARAM, lpm: LPARAM) -> UINT_PTR
-    BROWSECBPROC :: distinct #type proc "std"(hwnd: HWND, msg: uint, lpm1: LPARAM, lpm2: LPARAM) -> i32
+    OFNHOOKPROC :: distinct #type proc "fast"(hwnd: HWND, msg: uint, wpm: WPARAM, lpm: LPARAM) -> UINT_PTR
+    BROWSECBPROC :: distinct #type proc "fast"(hwnd: HWND, msg: uint, lpm1: LPARAM, lpm2: LPARAM) -> i32
 
 // End Type
 
@@ -152,6 +152,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
             return true
         }
     }
+    // free_all(context.temp_allocator)
     return false
 }
 
@@ -177,6 +178,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
         this.selectedPath = wstring_to_string(&buffer[0])
         return true
     }
+    // free_all(context.temp_allocator)
     return false
 }
 
@@ -200,6 +202,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
             CoTaskMemFree(pidl)
         }
     }
+    // free_all(context.temp_allocator)
     return false
 }
 

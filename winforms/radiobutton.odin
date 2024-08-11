@@ -152,7 +152,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
     free(rb)
 }
 
-@private rb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private rb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
@@ -281,7 +281,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
                     SetTextColor(nmcd.hdc, cref)
                     // SetBackColor(nmcd.hdc, get_color_ref(rb.backColor))
                     DrawText(nmcd.hdc, to_wstring(rb.text), -1, &rct, rb._txtStyle)
-
+                    // free_all(context.temp_allocator)
                     return CDRF_SKIPDEFAULT
             }
 

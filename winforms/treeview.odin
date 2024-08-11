@@ -125,7 +125,8 @@ NodeNotifyHandler :: proc(node : ^TreeNode)
     TVIS_STATEIMAGEMASK :: 0xF000
     TVIS_USERMASK :: 0xF000
 
-    TVI_ROOT :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0x10000) + 1) // The +1 is needed. So add always +1 to this type of expressions.
+    // The +1 is needed. Add always +1 to this type of expressions.
+    TVI_ROOT :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0x10000) + 1) 
     TVI_FIRST :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0xffff) + 1)
     TVI_LAST :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0xfffe) + 1)
     TVI_SORT :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0xfffd) + 1)
@@ -451,7 +452,7 @@ treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^Tr
 {
     tvi : TVITEMEXW
     tvi.mask = TVIF_TEXT | TVIF_PARAM
-    tvi.pszText = to_wstring(node.text)
+    tvi.pszText = to_wstring(node.text, context.allocator)
     tvi.cchTextMax = i32(len(node.text))
     tvi.iImage = i32(node.imageIndex)
     tvi.iSelectedImage = i32(node.selImageIndex)
@@ -507,6 +508,7 @@ treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^Tr
     }
 
     lres := SendMessage(tv.handle, TVM_INSERTITEMW, 0,  direct_cast(&tis, LPARAM) )
+    free(tvi.pszText)
     if lres != 0 {
         hItem := direct_cast(lres, HTREEITEM)
         node.handle = hItem
@@ -676,7 +678,7 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
     free(tv)
 }
 
-@private tv_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private tv_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                     sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()

@@ -158,6 +158,7 @@ listbox_add_item :: proc(lbx : ^ListBox, item : $T) {
     append(&lbx.items, sitem)
     if lbx._isCreated {
         SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(sitem), LPARAM))
+        // free_all(context.temp_allocator)
     }
 }
 
@@ -179,6 +180,7 @@ listbox_add_items :: proc(lbx : ^ListBox, items : ..any) {
     if lbx._isCreated {
         for item in tempItems {
             SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), LPARAM))
+            // free_all(context.temp_allocator)
         }
     }
 }
@@ -188,6 +190,7 @@ lbx_additem_internal :: proc(lbx : ^ListBox) {
     if len(lbx.items) > 0 {
         for item in lbx.items {
             SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), LPARAM))
+            // free_all(context.temp_allocator)
         }
     }
 }
@@ -224,7 +227,7 @@ lb_get_item :: proc(lbx : ^ListBox, #any_int index : int, alloc := context.alloc
             //defer delete(memory)
             str_buffer : wstring = &memory[0]
             SendMessage(lbx.handle, LB_GETTEXT, WPARAM(indx), convert_to(LPARAM, str_buffer))
-            return wstring_to_string(str_buffer)
+            return wstring_to_string(str_buffer, context.allocator)
         }
     }
     return ""
@@ -236,6 +239,7 @@ lb_get_item :: proc(lbx : ^ListBox, #any_int index : int, alloc := context.alloc
 
 // Get the item from listbox with given index.
 // In case of invalid index, or there is no items in listbox, return an empty string.
+// NOTE: Caller must free the string
 listbox_get_item :: proc{lb_get_item} //,
                          //lb_get_item2}
 
@@ -314,6 +318,7 @@ lbx_clear_items_internal :: proc(lb : ^ListBox) {
 lbx_fill_items_internal :: proc(lb : ^ListBox) {
     for item in lb.items {
         SendMessage(lb.handle, LB_ADDSTRING, 0, convert_to(LPARAM, to_wstring(item)))
+        // free_all(context.temp_allocator)
     }
 }
 
@@ -350,6 +355,7 @@ listbox_find_index :: proc(lbx : ^ListBox, item : any) -> int {
         lb_item = fmt.tprint(item)
     }
     wp : i32 = -1
+    //defer // free_all(context.temp_allocator)
     return int(SendMessage(lbx.handle, LB_FINDSTRINGEXACT, WPARAM(wp), convert_to(LPARAM, to_wstring(lb_item)) ))
 }
 
@@ -404,6 +410,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
             if this._isCreated {
                 sitem := tostring(value)
                 SendMessage(this.handle, LB_SETCURSEL, WPARAM(to_wstring(sitem)), 0)
+                // free_all(context.temp_allocator)
             }
         case .Selected_Index:
             when T == int {
@@ -429,7 +436,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
     free(lbx)
 }
 
-@private lbx_wnd_proc :: proc "std" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private lbx_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                                     sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT {
     context = global_context //runtime.default_context()
     lbx := control_cast(ListBox, ref_data)

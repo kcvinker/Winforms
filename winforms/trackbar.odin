@@ -147,7 +147,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     this.channelStyle = ChannelStyle.outline
     this.minRange = 0
     this.maxRange = 100
-
+    this.customDraw = true
     this.channelColor = 0xc2c2a3
     this.selColor = 0x99ff33
     this.ticColor = 0x3385ff
@@ -340,12 +340,14 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
 
 @private fill_channel_rect :: proc(tk : ^TrackBar, nm : LPNMCUSTOMDRAW, trc : RECT) -> bool
 {
-    /* If show_selection property is enabled in this trackbar,
-     * we need to show the area between thumb and channel starting in diff color.
-     * But we need to check if the trackbar is reversed or not.
-     * NOTE: If we change the drawing flags for DrawEdge function in channel drawing area,
-     * We need to reduce the rect size 1 point. Because, current flags working perfectly...
-     * Without adsting rect. So change it carefully. */
+    /*===========================================================================
+    If 'show_selection' property is enabled in this trackbar,...
+    we need to show the area between thumb and channel starting in diff color.
+    But we need to check if the trackbar is reversed or not.
+    NOTE: If we change the drawing flags for DrawEdge function in channel drawing area,
+    We need to reduce the rect size 1 point. Because, current flags working perfectly...
+    Without adsting rect. So change it carefully. 
+    =================================================================================*/
     result : bool = false
     rct : RECT
 
@@ -409,18 +411,17 @@ set_value :: proc(tk : ^TrackBar, value: int)
 
 @private tkb_after_creation :: proc(tkb : ^TrackBar)
 {
-	set_subclass(tkb, tkb_wnd_proc)
-
     // Prepare for custom draw
     tkb._chanPen = CreatePen(PS_SOLID, 1, get_color_ref(tkb.channelColor))
     tkb._ticPen = CreatePen(PS_SOLID, i32(tkb.ticWidth), get_color_ref(tkb.ticColor))
 
-    // Send some important messages to Wndproc function.
-    send_initial_messages(tkb)
-
     // Calculate tic positions.
     if tkb.customDraw do calculate_tics(tkb)
+    set_subclass(tkb, tkb_wnd_proc)
 
+    // Send some important messages to Wndproc function.
+    send_initial_messages(tkb)    
+    
     // Prepare our selection range brush if needed.
     // if tkb.selRange do tkb._selBrush = get_solid_brush(tkb.selColor)
 }
@@ -461,48 +462,55 @@ set_value :: proc(tk : ^TrackBar, value: int)
     free(tkb)
 }
 
-@private tkb_wnd_proc :: proc "std" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private tkb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context //runtime.default_context()
-    tkb := control_cast(TrackBar, ref_data)
-   // display_msg(msg)
+    context = global_context 
+    
+    // display_msg(msg)
     switch msg {
-        case WM_DESTROY : tkb_finalize(tkb, sc_id)
+        case WM_DESTROY : 
+            tkb := control_cast(TrackBar, ref_data)
+            tkb_finalize(tkb, sc_id)
 
         case WM_CONTEXTMENU:
+            tkb := control_cast(TrackBar, ref_data)
 		    if tkb.contextMenu != nil do contextmenu_show(tkb.contextMenu, lp)
 
         case CM_CTLLCOLOR :
             // hdc := direct_cast(wp, HDC)
             // SetTextColor(hdc, get_color_ref(tkb.foreColor))
             // tkb._bkBrush = CreateSolidBrush(get_color_ref(tkb.backColor))
+            tkb := control_cast(TrackBar, ref_data)
+            // ptf("tkb brush %d", tkb._bkBrush)
             return direct_cast(tkb._bkBrush, LRESULT)
 
         case CM_NOTIFY :
             nmh := direct_cast(lp, ^NMHDR)
             if nmh.code == NM_CUSTOMDRAW {
+                tkb := control_cast(TrackBar, ref_data)
                 if tkb.customDraw {
                     nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
                     switch nmcd.dwDrawStage {
-                        case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW
+                        case CDDS_PREPAINT: 
+                            return CDRF_NOTIFYITEMDRAW
 
                         case CDDS_ITEMPREPAINT:
                             switch nmcd.dwItemSpec {
 
                                 // TkbTicsCdraw is not a magical value. Explanation is given at line 39
                                 case TkbTicsCdraw:
-                                    if (!tkb.noTick) {
-                                        draw_tics(tkb, nmcd.hdc)
-                                        return CDRF_SKIPDEFAULT
-                                    }
+                                    if (!tkb.noTick) do draw_tics(tkb, nmcd.hdc)                                       
+                                    return CDRF_SKIPDEFAULT
 
                                 // TkbChannelCdraw is not a magical value. Explanation is given at line 39
                                 case TkbChannelCdraw:
-                                    /* In Python proect i am using EDGE_SUNKEN style without BF_FLAT.
-                                        * But in D, it gives a strange outline in those flags. So I decided to use...
-                                        * these flags. But in this case, we don't need to reduce 1 point from...
-                                        * the coloring rect. It looks perfect without changing rect. */
+                                    /*======================================================================== 
+                                    In Python project i am using EDGE_SUNKEN style without BF_FLAT.
+                                    in D, it gives a strange outline in those flags. So I decided to use...
+                                    these flags. But in this case, we don't need to reduce 1 point from...
+                                    the coloring rect. It looks perfect without changing rect. 
+                                    ==========================================================================*/
                                     if !tkb.selRange {
                                         if tkb.channelStyle == ChannelStyle.classic {
                                             DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, tkb._chanFlag)
@@ -511,13 +519,14 @@ set_value :: proc(tk : ^TrackBar, value: int)
                                             Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom );
                                         }
                                     } else {
-                                        /* This gives a pleasant look when selRange is enabled.
-                                            * Without a border(or edge), channel looks ugly. */
+                                        /*===================================================
+                                        This gives a pleasant look when selRange is enabled.
+                                        Without a border(or edge), channel looks ugly. 
+                                        =====================================================*/
                                         DrawEdge(nmcd.hdc, &nmcd.rc, BDR_OUTER, BIG_CHANNEL_EDGE)
                                         rc : RECT = get_thumb_rect(hw)
                                         if fill_channel_rect(tkb, nmcd, rc) do InvalidateRect(hw, &nmcd.rc, false)
                                     }
-
                                     return CDRF_SKIPDEFAULT
                             }
                     }
@@ -527,8 +536,9 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
 
-         case WM_LBUTTONDOWN:
+        case WM_LBUTTONDOWN:
            // tkb._draw_focus_rct = true
+           tkb := control_cast(TrackBar, ref_data)
             tkb._mDownHappened = true
             if tkb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -538,6 +548,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
 
 
         case WM_RBUTTONDOWN :
+            tkb := control_cast(TrackBar, ref_data)
             tkb._mRDownHappened = true
             if tkb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -545,6 +556,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case WM_LBUTTONUP :
+            tkb := control_cast(TrackBar, ref_data)
             if tkb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.onMouseUp(tkb, &mea)
@@ -555,6 +567,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case CM_LMOUSECLICK :
+            tkb := control_cast(TrackBar, ref_data)
             tkb._mDownHappened = false
             if tkb.onMouseClick != nil {
                 ea := new_event_args()
@@ -563,6 +576,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case WM_LBUTTONDBLCLK :
+            tkb := control_cast(TrackBar, ref_data)
             if tkb.onDoubleClick != nil {
                 ea := new_event_args()
                 tkb.onDoubleClick(tkb, &ea)
@@ -570,6 +584,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case WM_RBUTTONUP :
+            tkb := control_cast(TrackBar, ref_data)
             if tkb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.onRightMouseUp(tkb, &mea)
@@ -580,6 +595,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case CM_RMOUSECLICK :
+            tkb := control_cast(TrackBar, ref_data)
             tkb._mRDownHappened = false
             if tkb.onRightClick != nil {
                 ea := new_event_args()
@@ -588,11 +604,13 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case WM_MOUSEHWHEEL:
+            tkb := control_cast(TrackBar, ref_data)
             if tkb.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.onMouseScroll(tkb, &mea)
             }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
+            tkb := control_cast(TrackBar, ref_data)
             if tkb._isMouseEntered {
                 if tkb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
@@ -608,6 +626,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case WM_MOUSELEAVE :
+            tkb := control_cast(TrackBar, ref_data)
             tkb._isMouseEntered = false
             if tkb.onMouseLeave != nil {
                 ea := new_event_args()
@@ -615,6 +634,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             }
 
         case WM_HSCROLL, WM_VSCROLL:
+            tkb := control_cast(TrackBar, ref_data)
             lwp := loword_wparam(wp)
             switch lwp {
                 case TB_THUMBPOSITION:
@@ -666,6 +686,8 @@ set_value :: proc(tk : ^TrackBar, value: int)
                         tkb.onDragging(tkb, &ea)
                     }
             }
+
+        // case : return DefSubclassProc(hw, msg, wp, lp)
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

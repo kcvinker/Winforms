@@ -15,6 +15,7 @@ import  ui "winforms"
     tk : ^ui.TrackBar
     frm : ^ui.Form
     tmr: ^ui.Timer
+    ti : ^ui.TrayIcon
 //
 
 MakeWindow :: proc()
@@ -25,7 +26,17 @@ MakeWindow :: proc()
     frm.height = 500
     frm.font = new_font("Tahoma", 13)
     print_points(frm)
+    
     create_handle(frm)
+
+    // Let's create a tray icon.
+    ti := new_tray_icon("Winforms tray icon!", "winforms-icon.ico")
+    frm.onMouseClick = frmClickProc // Show a balloon text when clicking on form.
+
+    // Let's add a context menu for our tray icon.
+    tray_add_context_menu(ti, .Right_Click, "Windows", "Linux", "ReactOS")
+    ti.contextMenu.menus[0].onClick = proc(c: ^MenuItem, ea: ^EventArgs) {print("Windows menu selected")}
+
 
     // Let's add a timer to this form which ticks in every 400 ms.
     // And our timer_ontick proc will be called on each tick.
@@ -88,8 +99,8 @@ MakeWindow :: proc()
     tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20, autoc = true)
 
     pgb = new_progressbar(frm, lv.xpos, cbottom(lv) + 15, lv.width, 30, autoc = true, perc = true)
-    tk = new_trackbar(frm, lv.xpos, cbottom(pgb) + 20, 200, 50)
-    tk.customDraw = true
+    tk = new_trackbar(frm, lv.xpos, cbottom(pgb) + 20, 200, 50, autoc = true)
+    // tk.customDraw = true
     tk.onValueChanged = track_change_proc
 
     tv := new_treeview(frm, cright(lv) + 20, dtp.ypos, 250, 220, autoc = true)
@@ -100,23 +111,19 @@ MakeWindow :: proc()
 
     cal := new_calendar(frm, tv.xpos, cbottom(tv) + 20, true)
 
-    track_change_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
-    {
+    track_change_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
         ui.progressbar_set_value(pgb, tk.value)
     }
 
-    newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
-    {
+    newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs) {
         print("New Client selected")
     }
 
-    contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs)
-    {
+    contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs) {
         ptf("%s option is selected\n", sender.text)
     }
 
-    open_file_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
-    {
+    open_file_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
         idir : string = "D:\\Work\\Shashikumar\\2023\\Jack Ryan"
 
         ofd := ui.file_open_dialog(initFolder = idir, description = "PDF Files", ext = ".pdf")
@@ -128,19 +135,19 @@ MakeWindow :: proc()
         //     }
         // }
         dialog_destroy(&ofd)
-
     }
 
-    b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs)
-    {
+    b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
         ui.timer_start(tmr)
     }
 
-    timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs)
-    {
+    timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs) {
         print("Timer ticked")
     }
 
+    frmClickProc :: proc(c: ^ui.Control, ea: ^ui.EventArgs) {
+        tray_show_balloon(ti, "Winforms", "Info from Winforms", 3000)
+    }
 
 
     start_mainloop(frm)
@@ -149,15 +156,23 @@ MakeWindow :: proc()
 main :: proc()
 {
     track: mem.Tracking_Allocator
+    // temp_track: mem.Tracking_Allocator
+
     mem.tracking_allocator_init(&track, context.allocator)
+    // mem.tracking_allocator_init(&temp_track, context.temp_allocator)
+
     context.allocator = mem.tracking_allocator(&track)
+    // context.temp_allocator = mem.tracking_allocator(&temp_track)
     context.user_index = 225
     x := 23
     context.user_ptr = &x
     defer mem.tracking_allocator_destroy(&track)
     MakeWindow()
     ui.show_memory_report(&track)
-    ptf("size of int %d\n", size_of(int))
+    // print("===================================================================")
+    // ui.show_memory_report(&temp_track)
     // ptf("size of long %d\n", size_of(long))
 }
+
+
 
