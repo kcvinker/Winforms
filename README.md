@@ -6,7 +6,7 @@ Currently, it's a work in progress project.
 
 ## Control List
 Button, Calendar, CheckBox, ComboBox, DateTimePicker, GroupBox, Label, ListBox, TextBox
-NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView, MenuBar
+NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView, MenuBar, TrayIcon
 
 ## Screenshot
 
