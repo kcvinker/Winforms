@@ -4,6 +4,7 @@ package winforms
 
 import api "core:sys/windows"
 
+// import "core:time"
 // Constants
     MF_POPUP :: 0x00000010
     MF_STRING :: 0x00000000
@@ -56,6 +57,9 @@ import api "core:sys/windows"
 
 MenuType :: enum {Base_Menu, Menu_Item, Popup, Context_Menu, Seprator}
 
+TPM_RETURNCMD :: 0x0100
+TPM_FLAG :: TPM_LEFTBUTTON | TPM_RETURNCMD
+
 menuNumber : uint = 101
 bf : i32 = 0
 bt : i32 = 1
@@ -69,7 +73,6 @@ MenuBase :: struct
     handle: HMENU,
     font: Font,
     menus : [dynamic]^MenuItem,
-
     _menuCount: uint,
 }
 
@@ -280,7 +283,7 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
     mii.fType = MF_OWNERDRAW
     mii.dwTypeData = mi._wideText
     mii.cch = auto_cast(len(mi.text))
-    mii.dwItemData = direct_cast(rawptr(mi), ULONG_PTR)
+    mii.dwItemData = dir_cast(rawptr(mi), ULONG_PTR)
     mii.wID = auto_cast(mi.idNum)
     mii.hSubMenu = mi._popup ? mi.handle : nil
     x:= InsertMenuItem(parent, mi.idNum, btrue, &mii)
@@ -375,13 +378,11 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
 
 
 
-@private cmenu_ctor :: proc(parent: ^Control) -> ^ContextMenu
+@private cmenu_ctor :: proc() -> ^ContextMenu
 {
     this := new(ContextMenu)
-    this.parent = parent
     this.handle = CreatePopupMenu()
     this._rightClick = true
-    this.font = parent.font
     this.width = 120
     this.height = 25
     this._defBgBrush = get_solid_brush(0xe9ecef)
@@ -390,47 +391,41 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     this._grayBrush = get_solid_brush(0xced4da)
     this._grayCref = get_color_ref(0x979dac)
     if !cmenuMsgWinCreated do register_msgwindow()
-    create_message_only_window(this)
-    // this._dummyHwnd = create_dummy(parent.handle, app.hInstance)
-    // SetWindowSubclass(this._dummyHwnd, cmenuWndProc, UINT_PTR(globalSubClassID), cast(DWORD_PTR)(cast(UINT_PTR)this) )
-	// globalSubClassID += 1
+    // create_message_only_window(this)
     return this
 }
 
-@private
-cmenu_ctor_for_tray :: proc() -> ^ContextMenu
+new_contextmenu :: proc{new_contextmenu1, new_contextmenu2}
+
+@private new_contextmenu1 :: proc(parent: ^Control) -> ^ContextMenu
 {
-    this := new(ContextMenu) // allocate memory
-    this.handle = CreatePopupMenu()
-    this._rightClick = true
-    this.font = new_font("Tahoma", 11)
-    this.width = 120
-    this.height = 25
-    this._defBgBrush = get_solid_brush(0xe9ecef)
-    this._hotBgBrush = get_solid_brush(0x90e0ef)
-    this._borderBrush = get_solid_brush(0x0077b6)
-    this._grayBrush = get_solid_brush(0xced4da)
-    this._grayCref = get_color_ref(0x979dac)
-    if !cmenuMsgWinCreated do register_msgwindow()
-    create_message_only_window(this)
-    // this._dummyHwnd = create_dummy(parent.handle, app.hInstance)
-    // SetWindowSubclass(this._dummyHwnd, cmenuWndProc, UINT_PTR(globalSubClassID), cast(DWORD_PTR)(cast(UINT_PTR)this) )
-	// globalSubClassID += 1
+    this := cmenu_ctor()
+    this.parent = parent
+    this.font = parent.font
     return this
 }
+
+@private new_contextmenu2 :: proc() -> ^ContextMenu
+{
+    this := cmenu_ctor()
+    this.font = new_font("Tahoma", 11)
+    return this
+}
+
+
 
 control_add_contextmenu :: proc{add_contextmenu1, add_contextmenu2}
 
 add_contextmenu1 :: proc(ctl: ^Control)
 {
-    cmenu := cmenu_ctor(ctl)
+    cmenu := new_contextmenu(ctl)
     ctl.contextMenu = cmenu
     ctl._cmenuUsed = true
 }
 
 add_contextmenu2 :: proc(ctl: ^Control, cmenus: ..string)
 {
-    this := cmenu_ctor(ctl)
+    this := new_contextmenu(ctl)
     ctl.contextMenu = this
     ctl._cmenuUsed = true
     if len(cmenus) > 0 {
@@ -464,24 +459,64 @@ contextmenu_add_items :: proc(this: ^ContextMenu, items: ..string)
     }
 }
 
+// Removes a menu item from context menu. Pass either index or name
+contextmenu_remove_item :: proc(this: ^ContextMenu, indexOrName: $T) -> bool
+{
+    res := false
+    index := -1
+    if len(this.menus) > 0 {
+        for menu in this.menus {
+            when T == int {
+                if indexOrName >= 0 && indexOrName < len(this.menus) {
+                    menu := this.menus[indexOrName]
+                    res:= DeleteMenu(menu.handle, u32(menu.idNum), 0)
+                    res = bool(res)
+                    index = menu._index
+                }
+            } else when T == string {
+                if menu.text == indexOrName {
+                    res:= DeleteMenu(menu.handle, u32(menu.idNum), 0)
+                    res = bool(res)
+                    index = menu._index
+                }
+            }
+            
+        }
+        if res && index > -1{
+            ordered_remove(&this.menus, index)
+        }
+    }
+    return res
+}
+
+
+// sw : time.Stopwatch
 @private 
 cmenu_insert_internal :: proc(this: ^MenuItem)
 {
     if len(this.menus) > 0 {
         for menu in this.menus {cmenu_insert_internal(menu)}
     }
-    if this.kind == .Context_Menu {
+    if this.kind == .Context_Menu {         
         insert_menu_internal(this, this.parentHandle)
     } else if this.kind == .Seprator {
         api.AppendMenuW(this.handle, MF_SEPARATOR, 0, nil)
     }
 }
 
-@private 
+// Creates all the menu items. This will get called automatically at the first usage.
+// But you can call this explicitly after you added the last menu item.
+// That will imrove the context menu opening speed.
 cmenu_create_handle :: proc(this: ^ContextMenu)
 {
     if len(this.menus) > 0 {
-        for menu in this.menus {cmenu_insert_internal(menu)}
+        for menu in this.menus {
+            // time.stopwatch_start(&sw) 
+            cmenu_insert_internal(menu)
+            // time.stopwatch_stop(&sw)
+            // ptf("menu insertion time %s", time.stopwatch_duration(sw))
+            // time.stopwatch_reset(&sw)
+        }
     }
     this._menuInserted = true
 }
@@ -505,23 +540,60 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
     if this.font.handle == nil do CreateFont_handle(&this.font)
 }
 
-// @private create_dummy :: proc(hwParent: HWND, hinst: HINSTANCE) -> HWND
-// {
-//     dummyHwnd := CreateWindowEx(0, to_wstring("Button"), nil, WS_CHILD, 0, 0, 0, 0, hwParent, nil, hinst, nil)
-// 	return dummyHwnd
-// }
 
-@private contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
-{
-    if !this._menuInserted do cmenu_create_handle(this)
-    pt := get_mouse_points(lpm)
-    if pt.x == -1 || pt.y == -1 {
-        // ContextMenu message generated by keybord shortcut.
-        // So we need to find the mouse position.
-        pt = get_mouse_pos_on_msg()
+// Display context menu on right click or short key press.
+// Both TrayIcon and Control class use this function.
+// When using from tray icon, lpm would be zero.
+contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
+{   
+    /*--------------------------------------------------------------------
+    We are creating the message-only window right before the context menu
+    appears on the screen and we will destroy it right after the context
+    menu dissappears. 
+    ---------------------------------------------------------------------*/
+    if len(this.menus) > 0 {
+        create_message_only_window(this)
+        defer {
+            DestroyWindow(this._dummyHwnd)
+            this._dummyHwnd = nil
+        }
+        if !this._menuInserted do cmenu_create_handle(this)
+        pt : POINT
+        get_mouse_points(&pt, lpm)
+            /*---------------------------------------------------- 
+        Context menus are triggered by either mouse right click
+        or keyboard shortcuts like VK_APPS. When triggered from
+        a mouse click, lparam contains the mouse points. But when
+        triggered by keyboard shortcut, mouse coordinates are -1.
+        ----------------------------------------------------------*/
+        if pt.x == -1 || pt.y == -1 do pt = get_mouse_pos_on_msg()
+
+        /*--------------------------------------------------------
+        This is a hack. If context menu is displayed from a tray icon
+        A window from this thread must be in forground, otherwise we 
+        won't get any keyboard messages. If user wants to select any 
+        menu item, we must activate any window. So we are bringing our
+        tray's message-only window to foreground. 
+        --------------------------------------------------------------*/        
+        if (lpm == 0) do SetForegroundWindow(this.tray._msgWinHwnd)
+        
+        /*------------------------------------------------------------------------
+        We are using TPM_RETURNCMD in the tpm_flag, so we don't get the 
+        WM_COMMAND in our wndproc, we will get the selected menu id in return value.
+        ----------------------------------------------------------------------------*/
+        mid := api.TrackPopupMenu(this.handle, TPM_FLAG, int(pt.x), int(pt.y), 0, this._dummyHwnd, nil)
+        if mid > 0 {
+            menu, okay := get_menuitem_from_idnumber(this, uint(mid))
+            if okay && menu._isEnabled {
+                if menu.onClick != nil{
+                    ea := new_event_args()
+                    menu.onClick(menu, &ea)
+                }
+            }
+        }
+
     }
-    mBtn : UINT = this._rightClick ? TPM_RIGHTBUTTON : TPM_LEFTBUTTON
-    api.TrackPopupMenu(this.handle, mBtn, int(pt.x), int(pt.y), 0, this._dummyHwnd, nil)
+    
 }
 
 @private get_menuitem_from_idnumber :: proc(this: ^ContextMenu, idnum: uint) -> (^MenuItem, bool)
@@ -547,6 +619,8 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
     free(this)
     print("context menu dtor finished")
 }
+
+
 
 
 
@@ -576,26 +650,26 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
 @private cmenu_wndproc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM) -> LRESULT
 {
     context = global_context
-    // cmenu := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
+    // cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
     // display_msg(msg)
     switch msg {
         case WM_DESTROY:
             print("context menu's message-only window destroyed")
 
         case WM_MEASUREITEM:
-            cmenu := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
-            pmi := direct_cast(lp, LPMEASUREITEMSTRUCT)
+            cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
+            pmi := dir_cast(lp, LPMEASUREITEMSTRUCT)
             pmi.itemWidth = UINT(cmenu.width)
             pmi.itemHeight = UINT(cmenu.height)
             return 1
 
         case WM_DRAWITEM:
-            cmenu := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
-            dis := direct_cast(lp, LPDRAWITEMSTRUCT)
-            mi := direct_cast(dis.itemData, ^MenuItem)
+            cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
+            dis := dir_cast(lp, LPDRAWITEMSTRUCT)
+            mi := dir_cast(dis.itemData, ^MenuItem)
             txtClrRef : COLORREF = mi.fgColor.ref
 
-            if dis.itemState == 257 {
+            if dis.itemState & 1 == 1 {
                 if mi._isEnabled {
                     rc := RECT{dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2}
                     api.FillRect(dis.hDC, &rc, cmenu._hotBgBrush)
@@ -618,21 +692,21 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
             return 0
 
         case WM_ENTERMENULOOP:
-            cmenu := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
+            cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
             if cmenu.onMenuShown != nil {
                 ea := new_event_args()
                 cmenu.onMenuShown(cmenu, &ea)
             }
         case WM_EXITMENULOOP:
-            cmenu := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
+            cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
             if cmenu.onMenuClose != nil {
                 ea := new_event_args()
                 cmenu.onMenuClose(cmenu, &ea)
             }
         case WM_MENUSELECT:
-            cmenu := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
-            idNumber := uint(lo_word(auto_cast(wp)))
-            hMenu := direct_cast(lp, HMENU)
+            cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
+            idNumber := uint(LOWORD(wp))
+            hMenu := dir_cast(lp, HMENU)
             if hMenu != nil && idNumber > 0 {
                 menu, okay := get_menuitem_from_idnumber(cmenu, idNumber)
                 if okay && menu._isEnabled {
@@ -643,8 +717,8 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
                 }
             }
         case WM_COMMAND:
-            cmenu := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
-            idNumber := uint(lo_word(auto_cast(wp)))
+            cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
+            idNumber := uint(LOWORD(wp))
             if idNumber > 0 {
                 menu, okay := get_menuitem_from_idnumber(cmenu, idNumber)
                 if okay && menu._isEnabled {

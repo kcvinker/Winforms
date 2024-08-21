@@ -104,7 +104,7 @@ dtp_set_value :: proc(dtp : ^DateTimePicker, dt_value : DateTime)
     dtp.value = dt_value
     if dtp._isCreated {
         sysTm := datetime_to_systime(dt_value)
-        SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&sysTm, LPARAM))
+        SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, dir_cast(&sysTm, LPARAM))
     }
 }
 
@@ -235,7 +235,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
 // @private get_dtp_info :: proc(dp : ^DateTimePicker) {
 //     di : DATETIMEPICKERINFO
 //     di.cbSize = size_of(di)
-//     SendMessage(dp.handle, DTM_GETDATETIMEPICKERINFO, WPARAM(0), direct_cast(&di, LPARAM ))
+//     SendMessage(dp.handle, DTM_GETDATETIMEPICKERINFO, WPARAM(0), dir_cast(&di, LPARAM ))
 //     using dp._dtp_info
 //     tb_handle = di.hwndEdit
 //     ud_handle = di.hwndUD
@@ -272,7 +272,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
 		*/
     }
     if dtp._calStyle > 0 {
-        SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, direct_cast(dtp._calStyle, LPARAM))
+        SendMessage(dtp.handle, DTM_SETMCSTYLE, 0, dir_cast(dtp._calStyle, LPARAM))
     }
 
     // Let's make proper size for this dtp
@@ -350,16 +350,16 @@ dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
 		    if dtp.contextMenu != nil do contextmenu_show(dtp.contextMenu, lp)
 
         case CM_NOTIFY :
-            nm := direct_cast(lp, ^NMHDR)
+            nm := dir_cast(lp, ^NMHDR)
             switch nm.code {
                 case DtnUserStr :
                     if dtp.onTextChanged != nil {
-                        dts := direct_cast(lp, ^NMDATETIMESTRINGW)
+                        dts := dir_cast(lp, ^NMDATETIMESTRINGW)
                         dtea : DateTimeEvent
                         dtea.dateString = wstring_to_string(dts.pszUserString)
                         dtp.onTextChanged(dtp, &dtea )
                         // After invoking the event, send this message to set the time in dtp
-                        if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, direct_cast(&dtea.dateStruct, LPARAM))
+                        if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, dir_cast(&dtea.dateStruct, LPARAM))
                         // free_all(context.temp_allocator)
 
                     }
@@ -375,7 +375,7 @@ dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                     // So we need to use an integer value to limit it once and only.
                     if dtp._valueChangeCount == 0 {
                         dtp._valueChangeCount = 1
-                        dtc := direct_cast(lp, ^NMDATETIMECHANGE)
+                        dtc := dir_cast(lp, ^NMDATETIMECHANGE)
                         dtp.value = systime_to_datetime(dtc.st)
                         if dtp.onValueChanged != nil {
                             ea := new_event_args()

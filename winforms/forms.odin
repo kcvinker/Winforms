@@ -166,7 +166,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     f := new(Form, global_context.allocator)
 
     f.kind = .Form
-    f.text = t == "" ? concat_number("Form_", app.formCount) : t
+    f.text = t == "" ? conc_num("Form_", app.formCount) : t
     f.width = w
     f.height = h
     f.start_pos = .Center
@@ -502,7 +502,7 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData)
     We need to keep some info from the very beginning to the very end.
 */
 
-sw : time.Stopwatch
+// sw : time.Stopwatch
 
 
 @private
@@ -529,11 +529,11 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
             form_timer_handler(frm, wp)
 
         case WM_HSCROLL :
-            ctl_hw := direct_cast(lp, HWND)
+            ctl_hw := dir_cast(lp, HWND)
             return SendMessage(ctl_hw, WM_HSCROLL, wp, lp)
 
         case WM_VSCROLL:
-            ctl_hw := direct_cast(lp, HWND)
+            ctl_hw := dir_cast(lp, HWND)
             return SendMessage(ctl_hw, WM_VSCROLL, wp, lp)
 
         case WM_PAINT :
@@ -559,11 +559,11 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
 
         case WM_CTLCOLOREDIT :
-            ctl_hwnd := direct_cast(lp, HWND)
+            ctl_hwnd := dir_cast(lp, HWND)
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
 
         case WM_CTLCOLORSTATIC :
-            ctl_hwnd := direct_cast(lp, HWND)
+            ctl_hwnd := dir_cast(lp, HWND)
             return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
 
         case WM_CTLCOLORLISTBOX :
@@ -574,7 +574,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
             Because, if it is from Combo's listbox, there is no Wndproc function for that ListBox. 
             =======================================================================================*/
             frm := app.winMap[hw]
-            ctl_hwnd := direct_cast(lp, HWND)
+            ctl_hwnd := dir_cast(lp, HWND)
             cmb_hwnd, okay := find_combo_data(frm, ctl_hwnd)
             if okay  {
                 // This message is from a combo's listbox. Divert it to that combo box.
@@ -586,15 +586,15 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         // case LB_GETITEMHEIGHT :
         //     fmt.println("LB_GETITEMHEIGHT")
-                // ctl_hwnd := direct_cast(lp, HWND)
+                // ctl_hwnd := dir_cast(lp, HWND)
                 // return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
 
         case WM_COMMAND :
             frm := app.winMap[hw]
-            switch hi_word(auto_cast(wp)) {
+            switch HIWORD(wp) {
                 case 0:
                     if len(frm._menuItemMap) > 0 {
-                        menu := frm._menuItemMap[cast(uint)(lo_word(auto_cast(wp)))]
+                        menu := frm._menuItemMap[cast(uint)(LOWORD(wp))]
                         if menu != nil && menu.onClick != nil {
                             ea := new_event_args()
                             menu.onClick(menu, &ea)
@@ -603,7 +603,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
                     }
                 case 1: break
                 case :
-                    ctl_hwnd := direct_cast(lp, HWND)
+                    ctl_hwnd := dir_cast(lp, HWND)
                     return SendMessage(ctl_hwnd, CM_CTLCOMMAND, wp, lp)
             }
 
@@ -778,7 +778,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
         //case WM_WINDOWPOSCHANGING:
             //alert("Pos changing")
             /*
-            wps := direct_cast(lp, ^WINDOWPOS)
+            wps := dir_cast(lp, ^WINDOWPOS)
             frm.xpos = int(wps.x)
             frm.ypos = int(wps.y)
             frm.width = int(wps.cx)
@@ -794,7 +794,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         //case WM_WINDOWPOSCHANGED:
             //alert("Pos changed")
-            //wps := direct_cast(lp, ^WINDOWPOS) */
+            //wps := dir_cast(lp, ^WINDOWPOS) */
 
         case WM_SIZE :
             frm := app.winMap[hw]
@@ -808,8 +808,8 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         case WM_MOVE :
             frm := app.winMap[hw]
-            frm.xpos = get_x_lparam(lp)
-            frm.ypos = get_y_lparam(lp)
+            frm.xpos = int(get_x_lpm(lp))
+            frm.ypos = int(get_y_lpm(lp))
             if frm.onMoved != nil {
                 ea := new_event_args()
                 frm.onMoved(frm, &ea)
@@ -819,7 +819,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         case WM_MOVING :
             frm := app.winMap[hw]
-            rct := direct_cast(lp, ^RECT)
+            rct := dir_cast(lp, ^RECT)
             frm.xpos = int(rct.left)
             frm.ypos = int(rct.top)
             if frm.onMoving != nil {
@@ -867,7 +867,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
             // return 0
 
         case WM_NOTIFY :
-            nm := direct_cast(lp, ^NMHDR)
+            nm := dir_cast(lp, ^NMHDR)
             return SendMessage(nm.hwndFrom, CM_NOTIFY, wp, lp )
 
         case WM_DESTROY:
@@ -886,8 +886,8 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         // Menu related
         case WM_MEASUREITEM:
-            pmi := direct_cast(lp, LPMEASUREITEMSTRUCT)
-            mi := direct_cast(pmi.itemData, ^MenuItem)
+            pmi := dir_cast(lp, LPMEASUREITEMSTRUCT)
+            mi := dir_cast(pmi.itemData, ^MenuItem)
             // ptf("wm measure item - menu name : %s\n", mi.text)
             if mi.kind == .Base_Menu || mi.kind == .Popup {
                 hdc := GetDC(hw)
@@ -900,12 +900,12 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
                 pmi.itemWidth = 150
                 pmi.itemHeight = 25
             }
-            return to_lresult(true)
+            return toLRES(true)
 
         case WM_DRAWITEM:
             frm := app.winMap[hw]
-            dis := direct_cast(lp, LPDRAWITEMSTRUCT)
-            mi := direct_cast(dis.itemData, ^MenuItem)
+            dis := dir_cast(lp, LPDRAWITEMSTRUCT)
+            mi := dir_cast(dis.itemData, ^MenuItem)
             // ptf("wm draw item - menu name : %s\n", mi.text)
             txtClrRef := mi.fgColor.ref
 
@@ -946,9 +946,9 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         case WM_MENUSELECT:
             frm := app.winMap[hw]
-            menu_okay, pmenu := getMenuFromHmenu(frm, direct_cast(lp, HMENU))
-            mid := cast(uint)(lo_word(auto_cast(wp))) // Could be an id of a child menu or index of a child menu
-            hwwpm := hi_word(auto_cast(wp))
+            menu_okay, pmenu := getMenuFromHmenu(frm, dir_cast(lp, HMENU))
+            mid := cast(uint)(LOWORD(wp)) // Could be an id of a child menu or index of a child menu
+            hwwpm := HIWORD(wp)
             if menu_okay {
                 menu_okay = false
                 menu : ^MenuItem
@@ -966,7 +966,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         case WM_INITMENUPOPUP:
             frm := app.winMap[hw]
-            menu_okay, menu := getMenuFromHmenu(frm, direct_cast(wp, HMENU))
+            menu_okay, menu := getMenuFromHmenu(frm, dir_cast(wp, HMENU))
             if menu_okay && menu.onPopup != nil {
                 ea:= new_event_args()
                 menu.onPopup(menu, &ea)
@@ -974,7 +974,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         case WM_UNINITMENUPOPUP:
             frm := app.winMap[hw]
-            menu_okay, menu := getMenuFromHmenu(frm, direct_cast(wp, HMENU))
+            menu_okay, menu := getMenuFromHmenu(frm, dir_cast(wp, HMENU))
             if menu_okay && menu.onCloseup != nil {
                 ea:= new_event_args()
                 menu.onCloseup(menu, &ea)

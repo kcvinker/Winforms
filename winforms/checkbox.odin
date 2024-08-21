@@ -52,7 +52,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
 @private new_checkbox1 :: proc(parent : ^Form, txt : string = "", autoc: b8 = false) -> ^CheckBox
 {
-    cbtxt := len(txt) == 0 ? concat_number("CheckBox_", _cbcount ) : txt
+    cbtxt := len(txt) == 0 ? conc_num("CheckBox_", _cbcount ) : txt
     cb := cb_ctor(parent, cbtxt, 10, 10, 0, 0 )
     if autoc do create_control(cb)
     return cb
@@ -145,14 +145,14 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 cb.onCheckChanged(cb, &ea)
             }
         case CM_CTLLCOLOR :
-            hd := direct_cast(wp, HDC)
+            hd := dir_cast(wp, HDC)
             bkref := get_color_ref(cb.backColor)
             SetBkMode(hd, transparent)
             if cb._bkBrush == nil do cb._bkBrush = CreateSolidBrush(bkref)
-            return to_lresult(cb._bkBrush)
+            return toLRES(cb._bkBrush)
 
         case CM_NOTIFY :
-            nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
+            nmcd := dir_cast(lp, ^NMCUSTOMDRAW)
             switch nmcd.dwDrawStage {
                 case CDDS_PREERASE :
                     return CDRF_NOTIFYPOSTERASE

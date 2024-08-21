@@ -183,7 +183,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
             when T == string {
                 this.cueBanner = value
                 if this._isCreated {
-                    SendMessage(this.handle, EM_SETCUEBANNER, 1, direct_cast(to_wstring(value), LPARAM))
+                    SendMessage(this.handle, EM_SETCUEBANNER, 1, dir_cast(to_wstring(value), LPARAM))
                     // free_all(context.temp_allocator)
                 }
             }
@@ -223,7 +223,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
         case CM_CTLLCOLOR :
             // print("ctl clr rcvd")
             if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
-                dc_handle := direct_cast(wp, HDC)
+                dc_handle := dir_cast(wp, HDC)
                 // SetBkMode(dc_handle, Transparent)
                 if tb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
                 SetBackColor(dc_handle, get_color_ref(tb.backColor))
@@ -231,12 +231,12 @@ textbox_clear_all :: proc(tb : ^TextBox)
 
             } //else do return 0
 
-            return to_lresult(tb._bkBrush)
+            return toLRES(tb._bkBrush)
 
 
 
         // case CM_CTLCOMMAND :
-        //     ncode := hiword_wparam(wp)
+        //     ncode := HIWORD(wp)
         //     if ncode == EN_SETFOCUS {
         //     //    tb._drawFocusRect = true
         //        //SetWindowPos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)

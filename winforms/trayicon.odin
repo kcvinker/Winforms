@@ -130,7 +130,7 @@ tray_update_icon :: proc(this: ^TrayIcon, iconpath: string)
 
 tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNames: ..string) -> ^ContextMenu
 {
-    cmenu := cmenu_ctor_for_tray();
+    cmenu := new_contextmenu();
     contextmenu_add_items(cmenu, ..menuNames)
     cmenu.tray = this
     cmenu._hasTrayParent = true  
@@ -183,7 +183,7 @@ resetIconInternal :: proc(this: ^TrayIcon)
     // display_msg(msg)
     switch msg {
         case WM_DESTROY:            
-            this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+            this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
             Shell_NotifyIcon(NIM_DELETE, &this._nid)
             if this._hTrayIcon != nil do DestroyIcon(this._hTrayIcon)
             if this._cmenuUsed do contextmenu_dtor(this.contextMenu)
@@ -195,7 +195,7 @@ resetIconInternal :: proc(this: ^TrayIcon)
                 case NIN_BALLOONSHOW:
                     print("tray balloon show")
                 case NIN_BALLOONTIMEOUT:
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)                    
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)                    
                     if this.onBalloonClose != nil {
                         ea := new_event_args()
                         this.onBalloonClose(this, &ea)
@@ -203,7 +203,7 @@ resetIconInternal :: proc(this: ^TrayIcon)
                     if this._resetIcon do resetIconInternal(this) // Need to revert the default icon
 
                 case NIN_BALLOONUSERCLICK:
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
                     if this.onBalloonClick != nil {
                         ea := new_event_args()
                         this.onBalloonClick(this, &ea)
@@ -211,14 +211,14 @@ resetIconInternal :: proc(this: ^TrayIcon)
                     if this._resetIcon do resetIconInternal(this) // Need to revert the default icon
 
                 case WM_LBUTTONDOWN:
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
                     if this.onLeftMouseDown != nil {
                         ea := new_event_args()
                         this.onLeftMouseDown(this, &ea)
                     }
                     
                 case WM_LBUTTONUP:
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
                     if this.onLeftMouseUp != nil {
                         ea := new_event_args()
                         this.onLeftMouseUp(this, &ea)
@@ -227,25 +227,27 @@ resetIconInternal :: proc(this: ^TrayIcon)
                         ea := new_event_args()
                         this.onLeftClick(this, &ea)
                     }
-                    if this._cmenuUsed && this.menuTrigger == .Left_Click do tray_show_context_menu(this)
+                    if this._cmenuUsed && this.menuTrigger == .Left_Click {
+                        contextmenu_show(this.contextMenu, 0)
+                    }
 
                 case WM_LBUTTONDBLCLK:
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
                     if this.onLeftDoubleClick != nil {
                         ea := new_event_args()
                         this.onLeftDoubleClick(this, &ea)
                     }
-                    if this._cmenuUsed && this.menuTrigger == .Left_Double_Click do tray_show_context_menu(this)                    
+                    // if this._cmenuUsed && this.menuTrigger == .Left_Double_Click do tray_show_context_menu(this)                    
 
                 case WM_RBUTTONDOWN:
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
                     if this.onRightMouseDown != nil {
                         ea := new_event_args()
                         this.onRightMouseDown(this, &ea)
                     }
 
                 case WM_RBUTTONUP:                    
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
                     if this.onRightMouseUp != nil {
                         ea := new_event_args()
                         this.onRightMouseUp(this, &ea)
@@ -254,10 +256,12 @@ resetIconInternal :: proc(this: ^TrayIcon)
                         ea := new_event_args()
                         this.onRightClick(this, &ea)
                     }
-                    if this._cmenuUsed && this.menuTrigger == .Right_Click do tray_show_context_menu(this)                    
+                    if this._cmenuUsed && this.menuTrigger == .Right_Click {
+                        contextmenu_show(this.contextMenu, 0)
+                    }                    
                     
                 case WM_MOUSEMOVE:
-                    this := direct_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
+                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
                     if this.onMouseMove != nil {
                         ea := new_event_args()
                         this.onMouseMove(this, &ea)

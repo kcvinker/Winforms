@@ -43,11 +43,11 @@ import api "core:sys/windows"
      * Because, at the custom draw area, we need to check the...
      * drawing stage with these literals. But odin didn't allow...
      * us to use dword pointer on lhs and a dword on rhs. So this will fix that problem. */
-    TbTestCdraw := direct_cast( 0x0, DWORD_PTR)
-    TkbTicsCdraw  := direct_cast(0x1, DWORD_PTR)
-    TkbThumbCdraw := direct_cast( 0x2, DWORD_PTR)
-    TkbChannelCdraw := direct_cast( 0x3, DWORD_PTR)
-    TkbItemPrePaint := direct_cast(65537, DWORD_PTR)
+    TbTestCdraw := dir_cast( 0x0, DWORD_PTR)
+    TkbTicsCdraw  := dir_cast(0x1, DWORD_PTR)
+    TkbThumbCdraw := dir_cast( 0x2, DWORD_PTR)
+    TkbChannelCdraw := dir_cast( 0x3, DWORD_PTR)
+    TkbItemPrePaint := dir_cast(65537, DWORD_PTR)
 
 
 // Constants End
@@ -274,8 +274,8 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
 
     // Collectiing required rects
     GetClientRect(tk.handle, &tk._myrc) // Get Trackbar rect
-    SendMessage(tk.handle, TBM_GETTHUMBRECT, 0, direct_cast(&tk._thumbRC, LPARAM)) // Get the thumb rect
-    SendMessage(tk.handle, TBM_GETCHANNELRECT, 0, direct_cast(&tk._chanRC, LPARAM)) // Get the channel rect
+    SendMessage(tk.handle, TBM_GETTHUMBRECT, 0, dir_cast(&tk._thumbRC, LPARAM)) // Get the thumb rect
+    SendMessage(tk.handle, TBM_GETCHANNELRECT, 0, dir_cast(&tk._chanRC, LPARAM)) // Get the channel rect
 
     //2. Calculate thumb offset
     if tk.vertical {
@@ -334,7 +334,7 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
 @private get_thumb_rect :: proc(h : HWND) -> RECT
 {
     rc : RECT
-    SendMessage(h, TBM_GETTHUMBRECT, 0, direct_cast(&rc, LPARAM))
+    SendMessage(h, TBM_GETTHUMBRECT, 0, dir_cast(&rc, LPARAM))
     return rc
 }
 
@@ -478,19 +478,19 @@ set_value :: proc(tk : ^TrackBar, value: int)
 		    if tkb.contextMenu != nil do contextmenu_show(tkb.contextMenu, lp)
 
         case CM_CTLLCOLOR :
-            // hdc := direct_cast(wp, HDC)
+            // hdc := dir_cast(wp, HDC)
             // SetTextColor(hdc, get_color_ref(tkb.foreColor))
             // tkb._bkBrush = CreateSolidBrush(get_color_ref(tkb.backColor))
             tkb := control_cast(TrackBar, ref_data)
             // ptf("tkb brush %d", tkb._bkBrush)
-            return direct_cast(tkb._bkBrush, LRESULT)
+            return dir_cast(tkb._bkBrush, LRESULT)
 
         case CM_NOTIFY :
-            nmh := direct_cast(lp, ^NMHDR)
+            nmh := dir_cast(lp, ^NMHDR)
             if nmh.code == NM_CUSTOMDRAW {
                 tkb := control_cast(TrackBar, ref_data)
                 if tkb.customDraw {
-                    nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
+                    nmcd := dir_cast(lp, ^NMCUSTOMDRAW)
                     switch nmcd.dwDrawStage {
                         case CDDS_PREPAINT: 
                             return CDRF_NOTIFYITEMDRAW
@@ -635,10 +635,10 @@ set_value :: proc(tk : ^TrackBar, value: int)
 
         case WM_HSCROLL, WM_VSCROLL:
             tkb := control_cast(TrackBar, ref_data)
-            lwp := loword_wparam(wp)
+            lwp := LOWORD(wp)
             switch lwp {
                 case TB_THUMBPOSITION:
-                    setup_value_internal(tkb, i32(hiword_wparam(wp)))
+                    setup_value_internal(tkb, i32(HIWORD(wp)))
                     if !tkb.freeMove {
                         pos : i32 = i32(tkb.value)
                         half : f32 = f32(tkb.frequency) / 2

@@ -57,7 +57,7 @@ new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
 @private new_rb1 :: proc(parent : ^Form, autoc: b8 = false) -> ^RadioButton
 {
     rb_count += 1
-    rtxt := concat_number("Radio_Button_", rb_count)
+    rtxt := conc_num("Radio_Button_", rb_count)
     rb := rb_ctor(parent, rtxt, 10, 10, 100, 25 )
     if autoc do create_control(rb)
     return rb
@@ -165,7 +165,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
 		    if rb.contextMenu != nil do contextmenu_show(rb.contextMenu, lp)
 
         case CM_CTLCOMMAND :
-            if hiword_wparam(wp) == 0 {
+            if HIWORD(wp) == 0 {
                 rb.checked = bool(SendMessage(rb.handle, BM_GETCHECK, 0, 0))
                 if rb.onStateChanged != nil {
                     ea := new_event_args()
@@ -259,16 +259,16 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
 
 
         case CM_CTLLCOLOR :
-            hdc := direct_cast(wp, HDC)
+            hdc := dir_cast(wp, HDC)
             SetBkMode(hdc, Transparent)
             SetBackColor(hdc, get_color_ref(rb.backColor))
             rb._hbrush = CreateSolidBrush(get_color_ref(rb.backColor))
             // print("rb bkc ", rb.backColor)
-            // return to_lresult(rb._hbrush)
-            return to_lresult(rb._hbrush)
+            // return toLRES(rb._hbrush)
+            return toLRES(rb._hbrush)
 
         case CM_NOTIFY :
-            nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
+            nmcd := dir_cast(lp, ^NMCUSTOMDRAW)
             switch nmcd.dwDrawStage {
                 case CDDS_PREERASE :
                     return CDRF_NOTIFYPOSTERASE

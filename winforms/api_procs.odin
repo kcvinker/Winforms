@@ -8,11 +8,11 @@ import "base:runtime"
 
 //=================================== Functions===================================
 
-lo_word :: #force_inline proc "contextless" (x: DWORD) -> WORD {return WORD(x & 0xffff)}
-hi_word :: #force_inline proc "contextless" (x: DWORD) -> WORD {return WORD(x >> 16)}
+// lo_word :: #force_inline proc "contextless" (x: DWORD) -> WORD {return WORD(x & 0xffff)}
+// hi_word :: #force_inline proc "contextless" (x: DWORD) -> WORD {return WORD(x >> 16)}
 
-lo_word_wpm :: #force_inline proc "contextless" (x: WPARAM) -> WORD {return WORD(x & 0xffff)}
-hi_word_wpm :: #force_inline proc "contextless" (x: WPARAM) -> WORD {return WORD(x >> 16)}
+// lo_word_wpm :: #force_inline proc "contextless" (x: WPARAM) -> WORD {return WORD(x & 0xffff)}
+// hi_word_wpm :: #force_inline proc "contextless" (x: WPARAM) -> WORD {return WORD(x >> 16)}
 
 
 utf8_to_utf16 :: proc(s: string, allocator := context.temp_allocator) -> []u16 {
@@ -185,6 +185,7 @@ foreign user32 {
    //                                                 uIDNewItem: UINT_PTR,
    //                                                 lpNewItem: LPCWSTR) -> BOOL ---
    @(link_name="SetMenu") SetMenu :: proc(hwnd: HWND, hmenu: HMENU) -> BOOL ---
+   @(link_name="DeleteMenu") DeleteMenu :: proc(menuHwnd: HMENU, uID: UINT, uFlag: UINT) -> BOOL ---
    @(link_name="InsertMenuItemW") InsertMenuItem :: proc(hmenu: HMENU,
                                                          item: uint,
                                                          fByPosition: BOOL,

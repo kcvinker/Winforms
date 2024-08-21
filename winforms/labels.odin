@@ -55,7 +55,7 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
 
 
 @private new_label1 :: proc(parent : ^Form, autoc:b8=false) -> ^Label {
-    txt := concat_number("Label_", _lb_count)
+    txt := conc_num("Label_", _lb_count)
     lb := label_ctor(parent, txt, 10, 10)
     if autoc do create_control(lb)
     return lb
@@ -292,11 +292,11 @@ calculate_label_size :: proc(lb : ^Label) {
             }
 
         case CM_CTLLCOLOR :
-            hdc := direct_cast(wp, HDC)
+            hdc := dir_cast(wp, HDC)
             SetTextColor(hdc, get_color_ref(lb.foreColor))
             SetBackColor(hdc, get_color_ref(lb.backColor))
             lb._hbrush = CreateSolidBrush(get_color_ref(lb.backColor))
-            return to_lresult(lb._hbrush)
+            return toLRES(lb._hbrush)
 
         case WM_DESTROY: lbl_finalize(lb, sc_id)
 

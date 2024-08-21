@@ -176,7 +176,7 @@ control_visibile :: proc(ctl : ^Control, bstate : bool)
 	flag : i32 = SW_HIDE if !bstate else SW_SHOW
 	#partial switch ctl.kind {
 		case .Number_Picker :
-			np := direct_cast(ctl, ^NumberPicker)
+			np := dir_cast(ctl, ^NumberPicker)
 			ShowWindow(np.handle, flag)
 			ShowWindow(np._buddyHandle, flag)
 		case :
@@ -351,7 +351,7 @@ control_set_backcolor :: proc{set_back_color1, set_back_color2}
 			if ctl._isCreated
 			{
 				cref := get_color_ref(clr)
-				SendMessage(ctl.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, LPARAM))
+				SendMessage(ctl.handle, TVM_SETTEXTCOLOR, 0, dir_cast(cref, LPARAM))
 			}
 
 		case : // for all other controls
@@ -384,12 +384,12 @@ control_Setfocus :: proc(ctl : ^Control)
 	//curr_hw := GetFocus()
 	SetFocus(ctl.handle)
 	//SendMessage(hw, WM_UPDATEUISTATE, WPARAM(0x10002), 0)
-	//SendMessage(ctl.handle, WM_SETFOCUS, direct_cast(0, WPARAM), 0)
+	//SendMessage(ctl.handle, WM_SETFOCUS, dir_cast(0, WPARAM), 0)
 	// mdw := WPARAM(make_dword(2, 0x1))
     // SendMessage(ctl.handle, WM_UPDATEUISTATE, mdw, 0)
 	//  mdw := WPARAM(make_dword(1, 0x4 | 0x1))
     //          SendMessage(ctl.handle, WM_CHANGEUISTATE, mdw, 0)
-    //         ptf("low word - %d, hi word - %d\n", loword_wparam(mdw), hiword_wparam(mdw))
+    //         ptf("low word - %d, hi word - %d\n", LOWORD(mdw), HIWORD(mdw))
 
 }
 

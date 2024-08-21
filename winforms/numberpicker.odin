@@ -165,8 +165,8 @@ numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
     np.maxRange = f32(max_val)
     np.minRange = f32(min_val)
     if np._isCreated {
-        wpm := direct_cast(min_val, WPARAM)
-        lpm := direct_cast(max_val, LPARAM)
+        wpm := dir_cast(min_val, WPARAM)
+        lpm := dir_cast(max_val, LPARAM)
         SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
     }
 }
@@ -187,8 +187,8 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 
 @private np_set_range_internal :: proc(np : ^NumberPicker)
 {
-    wpm := direct_cast(i32(np.minRange), WPARAM)
-    lpm := direct_cast(i32(np.maxRange), LPARAM)
+    wpm := dir_cast(i32(np.minRange), WPARAM)
+    lpm := dir_cast(i32(np.maxRange), LPARAM)
     SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
 }
 
@@ -280,7 +280,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                                         i32(np.width),
                                         i32(np.height),
                                         np.parent.handle,
-                                        direct_cast(ctl_id, HMENU),
+                                        dir_cast(ctl_id, HMENU),
                                         app.hInstance,
                                         nil )
 
@@ -292,7 +292,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         SendMessage(np._buddyHandle, WM_SETFONT, WPARAM(np.font.handle), LPARAM(1))
 
         usb := SendMessage(np.handle, UDM_SETBUDDY, WPARAM(np._buddyHandle), 0)
-        oldBuddy : HWND = direct_cast(usb, HWND)
+        oldBuddy : HWND = dir_cast(usb, HWND)
         SendMessage(np.handle, UDM_SETRANGE32, WPARAM(np.minRange), LPARAM(np.maxRange))
 
         set_rects_and_size(np)
@@ -404,7 +404,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 
         case CM_NOTIFY :
             np := control_cast(NumberPicker, ref_data)
-            nm := direct_cast(lp, ^NMUPDOWN)
+            nm := dir_cast(lp, ^NMUPDOWN)
             if nm.hdr.code == UDN_DELTAPOS {
                 tbstr : string = get_ctrl_text_internal(np._buddyHandle)
                 new_val, _ := strconv.parse_f32(tbstr)
@@ -499,12 +499,12 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         case CM_CTLLCOLOR :
             tb := control_cast(NumberPicker, ref_data)
             if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
-                dc_handle := direct_cast(wp, HDC)
+                dc_handle := dir_cast(wp, HDC)
                 SetBkMode(dc_handle, Transparent)
 
                 if tb.foreColor != 0x000000 do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
                 if tb._bkBrush == nil do tb._bkBrush = CreateSolidBrush(get_color_ref(tb.backColor))
-                return to_lresult(tb._bkBrush)
+                return toLRES(tb._bkBrush)
             }
 
         case EM_SETSEL: return 1
@@ -518,7 +518,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 
         case CM_CTLCOMMAND :
             tb := control_cast(NumberPicker, ref_data)
-            ncode := hiword_wparam(wp)
+            ncode := HIWORD(wp)
             if ncode == EN_UPDATE {
                 if tb.hideCaret do HideCaret(hw)
             }

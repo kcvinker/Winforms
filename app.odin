@@ -30,7 +30,7 @@ MakeWindow :: proc()
     create_handle(frm)
 
     // Let's create a tray icon.
-    ti := new_tray_icon("Winforms tray icon!", "winforms-icon.ico")
+    ti = new_tray_icon("Winforms tray icon!", "winforms-icon.ico")
     frm.onMouseClick = frmClickProc // Show a balloon text when clicking on form.
 
     // Let's add a context menu for our tray icon.
@@ -149,7 +149,7 @@ MakeWindow :: proc()
         tray_show_balloon(ti, "Winforms", "Info from Winforms", 3000)
     }
 
-
+    ptf("size of bool %d", size_of(bool))
     start_mainloop(frm)
 }
 

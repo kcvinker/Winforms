@@ -44,7 +44,7 @@ GroupBox :: struct
 
 @private gb_ctor1 :: proc(parent : ^Form, autoc: b8 = false) -> ^GroupBox
 {
-    gb_txt : string = concat_number("GroupBox_", gb_count)
+    gb_txt : string = conc_num("GroupBox_", gb_count)
     gb := gb_ctor(parent, gb_txt, 10, 10, 250, 250)
     gb_count += 1
     if autoc do create_control(gb)
@@ -118,15 +118,15 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 		    if this.contextMenu != nil do contextmenu_show(this.contextMenu, lp)
 
         case CM_CTLLCOLOR :
-            hdc := direct_cast(wp, HDC)
+            hdc := dir_cast(wp, HDC)
             SetBkMode(hdc, Transparent)
             this._bkBrush = CreateSolidBrush(get_color_ref(this.backColor))
             // if this.foreColor != 0x000000 do SetTextColor(hdc, get_color_ref(this.foreColor))
-            return direct_cast(this._bkBrush, LRESULT)
+            return dir_cast(this._bkBrush, LRESULT)
 
         case WM_ERASEBKGND :
             if this._paintBkg {
-                hdc := direct_cast(wp, HDC)
+                hdc := dir_cast(wp, HDC)
                 rc : RECT
                 GetClientRect(this.handle, &rc)
                 rc.bottom -= 2

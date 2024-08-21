@@ -81,9 +81,9 @@ new_event_args :: proc() -> EventArgs
 new_mouse_event_args :: proc(msg : u32, wp : WPARAM, lp : LPARAM) -> MouseEventArgs
 {
 	mea : MouseEventArgs
-	fwKeys := cast(WORD) (wp & 0xffff) //(lo_word(cast(DWORD) wp))
+	fwKeys := LOWORD(wp) // cast(WORD) (wp & 0xffff) //(lo_word(cast(DWORD) wp))
 	//fmt.println("fwKeys - ", fwKeys)
-	mea.delta = cast(i32) (hi_word(cast(DWORD) wp))
+	mea.delta = cast(i32)(HIWORD(wp))
 	switch fwKeys {
 	case 5 : mea.shiftKey = KeyState.Pressed
 	case 9 : mea.ctrlKey = KeyState.Pressed
@@ -93,17 +93,18 @@ new_mouse_event_args :: proc(msg : u32, wp : WPARAM, lp : LPARAM) -> MouseEventA
 
 	switch msg {
 	case WM_MOUSEWHEEL, WM_MOUSEMOVE, WM_MOUSEHOVER, WM_NCHITTEST :
-		mea.x = cast(int) (lo_word(cast(DWORD) lp))
-		mea.y = cast(int) (hi_word(cast(DWORD) lp))
+		mea.x = int(get_x_lpm(lp)) //cast(int) (lo_word(cast(DWORD) lp))
+		mea.y = int(get_y_lpm(lp)) //cast(int) (hi_word(cast(DWORD) lp))
 	case WM_LBUTTONDOWN, WM_LBUTTONUP :
         mea.button = MouseButtons.Left
-        mea.x = cast(int) (lo_word(cast(DWORD) lp))
-        mea.y = cast(int) (hi_word(cast(DWORD) lp))
+        mea.x = int(get_x_lpm(lp)) //
+        mea.y = int(get_y_lpm(lp))
     case WM_RBUTTONDOWN, WM_RBUTTONUP :
         mea.button = MouseButtons.Right ;
-        mea.x = cast(int) (lo_word(cast(DWORD) lp))
-        mea.y = cast(int) (hi_word(cast(DWORD) lp))
+        mea.x = int(get_x_lpm(lp)) //
+        mea.y = int(get_y_lpm(lp))
 	}
+    
 	return mea
 }
 
@@ -132,12 +133,12 @@ new_size_event_args :: proc(m : u32, wpm : WPARAM, lpm : LPARAM) -> SizeEventArg
     sea : SizeEventArgs
     if m == WM_SIZING { // When resizing happening
         sea.sizedOn = SizedPosition(wpm)
-        sea.formRect = direct_cast(lpm, ^RECT)
+        sea.formRect = dir_cast(lpm, ^RECT)
     }
     else { //After resizing finished
         //sea.sized_reason = SizedReason(wpm)
-        sea.clientArea.width = int(loword_lparam(lpm))
-        sea.clientArea.height = int(hiword_lparam(lpm))
+        sea.clientArea.width = int(LOWORD(lpm))
+        sea.clientArea.height = int(HIWORD(lpm))
     }
     return sea
 }
@@ -162,8 +163,8 @@ tree_event_args1 :: proc(ntv : ^NMTREEVIEW) -> TreeEventArgs
         }
     }
 
-    tea.node = direct_cast(ntv.itemNew.lParam, ^TreeNode)
-    tea.oldNode = direct_cast(ntv.itemOld.lParam, ^TreeNode) if ntv.itemOld.lParam > 0 else nil
+    tea.node = dir_cast(ntv.itemNew.lParam, ^TreeNode)
+    tea.oldNode = dir_cast(ntv.itemOld.lParam, ^TreeNode) if ntv.itemOld.lParam > 0 else nil
     return tea
 }
 

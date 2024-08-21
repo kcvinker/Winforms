@@ -9,7 +9,7 @@ import "core:time"
 // print :: fmt.println // Its easy to use. Delete after finishing this module.
 txtFlag : UINT= DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_HIDEPREFIX
 transparent : i32 : 1
-WcButtonW : wstring
+// WcButtonW : wstring
 _buttonCount : int
 
 
@@ -108,14 +108,13 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 @private buttonCtor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^Button
 {
-	// if WcButtonW == nil do WcButtonW = to_wstring("Button")
 	context = global_context
 	// ptf("btn context ui %d", context.user_index)
 	_buttonCount += 1
 	this := new(Button, context.allocator)
 	this.kind = .Button
 	this._textable = true
-	this.text = txt == "" ? concat_number("Button_", _buttonCount) : txt
+	this.text = txt == "" ? conc_num("Button_", _buttonCount) : txt
 	this.width = w
 	this.height = h
 	this.xpos = x
@@ -124,7 +123,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	this.font = p.font
 	this._exStyle = 0
 	this._style = WS_CHILD | WS_TABSTOP | WS_VISIBLE | BS_NOTIFY
-	this._clsName = &btnclass[0] // WcButtonW
+	this._clsName = &btnclass[0]
 	this._drawFlag = 0
 	this.foreColor = p.foreColor
 	this.backColor = p.backColor
@@ -218,8 +217,8 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 @private paint_flat_button :: proc(hdc : HDC, rc : RECT, hbr: HBRUSH, pen: HPEN)
 {
-	SelectObject(hdc, to_hgdi_obj(hbr))
-	SelectObject(hdc, to_hgdi_obj(pen))
+	SelectObject(hdc, toHGDI(hbr))
+	SelectObject(hdc, toHGDI(pen))
 	RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, ROUND_FACTOR, ROUND_FACTOR)
 	FillPath(hdc)
 }
@@ -282,7 +281,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	// print("draw flg ", btn._drawFlag)
 	if btn._drawFlag > 0
 	{
-		nmcd := direct_cast(lpm, ^NMCUSTOMDRAW)
+		nmcd := dir_cast(lpm, ^NMCUSTOMDRAW)
 		switch btn._drawFlag
 		{
 			case 1: ret = set_fore_color_internal(btn, nmcd)

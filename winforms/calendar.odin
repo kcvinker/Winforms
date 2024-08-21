@@ -219,11 +219,11 @@ new_calendar :: proc{new_cal1, new_cal2}
 		    if cal.contextMenu != nil do contextmenu_show(cal.contextMenu, lp)
 
         case CM_NOTIFY :
-            nm := direct_cast(lp, ^NMHDR)
+            nm := dir_cast(lp, ^NMHDR)
             //print("nm.code - ", nm.code)
             switch nm.code {
                 case MCN_SELECT:
-                    nms := direct_cast(lp, ^NMSELCHANGE)
+                    nms := dir_cast(lp, ^NMSELCHANGE)
                     cal.value = systime_to_datetime(nms.stSelStart)
                     if cal.onValueChanged != nil {
                         ea := new_event_args()
@@ -231,7 +231,7 @@ new_calendar :: proc{new_cal1, new_cal2}
                     }
 
                 case MCN_SELCHANGE :
-                    nms := direct_cast(lp, ^NMSELCHANGE)
+                    nms := dir_cast(lp, ^NMSELCHANGE)
                     cal.value = systime_to_datetime(nms.stSelStart)
                     if cal.onSelectionChanged != nil {
                         ea := new_event_args()
@@ -239,7 +239,7 @@ new_calendar :: proc{new_cal1, new_cal2}
                     }
 
                 case MCN_VIEWCHANGE:
-                    nmv := direct_cast(lp, ^NMVIEWCHANGE)
+                    nmv := dir_cast(lp, ^NMVIEWCHANGE)
                     cal.viewMode = ViewMode(nmv.dwNewView)
                     cal.oldView = ViewMode(nmv.dwOldView)
                     if cal.onViewChanged != nil {

@@ -556,7 +556,7 @@ listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 		SendMessage(lv.handle,
 					LVM_INSERTCOLUMNW,
 					WPARAM(lvCol.index),
-					direct_cast(&lvc, LPARAM) )
+					dir_cast(&lvc, LPARAM) )
 
 		// print("LVM_INSERTCOLUMNW res ", res, lvCol.text)
 	} else {
@@ -595,7 +595,7 @@ listview_add_row :: proc{lv_addrow1, lv_addrow2}
 			lvi.iSubItem = i32(i)
 			lvi.pszText = to_wstring(to_str(sItems[i]))
 			iIndx := i32(lvItem.index)
-			SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), direct_cast(&lvi, LPARAM) )
+			SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), dir_cast(&lvi, LPARAM) )
 			// free_all(context.temp_allocator)
 		}
 	}
@@ -632,8 +632,8 @@ listview_add_item :: proc(lv : ^ListView, lvi : ^ListViewItem)
 		iImage = cast(i32) lvi.imageIndex
 		pszText = to_wstring(lvi.text)
 		cchTextMax = i32(len(lvi.text))
-		lParam = direct_cast(lvi, LPARAM)
-	SendMessage(lv.handle, LVM_INSERTITEMW, 0, direct_cast(&item, LPARAM))
+		lParam = dir_cast(lvi, LPARAM)
+	SendMessage(lv.handle, LVM_INSERTITEMW, 0, dir_cast(&item, LPARAM))
 	append(&lv.items, lvi)
 	lv._index += 1
 	// free_all(context.temp_allocator)
@@ -649,7 +649,7 @@ listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_i
 	lvi.iSubItem = i32(sub_indx)
 	lvi.pszText = to_wstring(to_str(sitem))
 	iIndx := i32(item_indx)
-	SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), direct_cast(&lvi, LPARAM) )
+	SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), dir_cast(&lvi, LPARAM) )
 	// free_all(context.temp_allocator)
 }
 
@@ -673,7 +673,7 @@ listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any)
 		lvi.iSubItem = sub_indx
 		lvi.pszText = to_wstring(txt)
 		iIndx := i32(item_indx)
-		SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), direct_cast(&lvi, LPARAM) )
+		SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), dir_cast(&lvi, LPARAM) )
 		sub_indx += 1
 		// free_all(context.temp_allocator)
 	}
@@ -693,7 +693,7 @@ listview_set_column_order :: proc(lv : ListView, col_order : ..i32)
 		SendMessage(lv.handle,
 					 LVM_SETCOLUMNORDERARRAY,
 					 cast(WPARAM) len(col_order),
-					 direct_cast(raw_data(col_order), LPARAM))
+					 dir_cast(raw_data(col_order), LPARAM))
 	}
 }
 
@@ -929,13 +929,13 @@ set_hdr_text_flag :: proc(lvc: ^ListViewColumn) {
 		SendMessage(lv.handle,
 					LVM_SETIMAGELIST,
 					cast(WPARAM) lv._imgList.imageType,
-					direct_cast(lv._imgList.handle, LPARAM))
+					dir_cast(lv._imgList.handle, LPARAM))
 	}
 
 	if len(lv._lvcList) > 0 {
 		res : i32
 		for &col in lv._lvcList {
-			res = i32(SendMessage(lv.handle, LVM_INSERTCOLUMNW, WPARAM(res), direct_cast(&col, LPARAM)))
+			res = i32(SendMessage(lv.handle, LVM_INSERTCOLUMNW, WPARAM(res), dir_cast(&col, LPARAM)))
 			res += 1
 		}
 		delete(lv._lvcList) // We don't want this list anymore
@@ -1005,10 +1005,10 @@ lv_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 		if lv.contextMenu != nil do contextmenu_show(lv.contextMenu, lp)
 
 	case CM_NOTIFY :
-		nmh := direct_cast(lp, ^NMHDR)
+		nmh := dir_cast(lp, ^NMHDR)
 		switch nmh.code {
 		case NM_CUSTOMDRAW:
-			lvcd := direct_cast(lp, ^NMLVCUSTOMDRAW)
+			lvcd := dir_cast(lp, ^NMLVCUSTOMDRAW)
 			switch lvcd.nmcd.dwDrawStage {
 			case CDDS_PREPAINT:
 				return CDRF_NOTIFYITEMDRAW
@@ -1026,10 +1026,10 @@ lv_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 
 	case WM_NOTIFY:
 		// Message from header.
-		nmh := direct_cast(lp, ^NMHDR)
+		nmh := dir_cast(lp, ^NMHDR)
 		switch nmh.code {
 		case NM_CUSTOMDRAW :  // Let's draw header back & fore colors
-			nmcd := direct_cast(lp, ^NMCUSTOMDRAW)
+			nmcd := dir_cast(lp, ^NMCUSTOMDRAW)
 			switch nmcd.dwDrawStage {
 			case CDDS_PREPAINT:
 				return CDRF_NOTIFYITEMDRAW
@@ -1061,14 +1061,14 @@ hdr_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 			case WM_MOUSEMOVE:
 				hti : HDHITTESTINFO
 				hti.pt = get_mouse_points(lp)
-				lv._hdrIndex = i32(SendMessage(hw, HDM_HITTEST, 0, direct_cast(&hti, LPARAM)))
+				lv._hdrIndex = i32(SendMessage(hw, HDM_HITTEST, 0, dir_cast(&hti, LPARAM)))
 
 			case WM_MOUSELEAVE:
 				lv._hdrIndex = -1
 
 			case HDM_LAYOUT:
 				// ptf("hd layout %d\n", size_of(HD_LAYOUT))
-				phl := direct_cast(lp, ^HD_LAYOUT)
+				phl := dir_cast(lp, ^HD_LAYOUT)
 				res := DefSubclassProc(hw, msg, wp, lp)
 				phl.pwpos.cy = i32(lv.headerHeight)
 				return res
@@ -1076,7 +1076,7 @@ hdr_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 			case WM_PAINT:
 				DefSubclassProc(hw, msg, wp, lp)
 				hrc : RECT
-                SendMessage(hw, HDM_GETITEMRECT, WPARAM(len(lv.columns) - 1), direct_cast(&hrc, LPARAM))
+                SendMessage(hw, HDM_GETITEMRECT, WPARAM(len(lv.columns) - 1), dir_cast(&hrc, LPARAM))
                 rc : RECT = {hrc.right + 1, hrc.top, i32(lv.width), hrc.bottom}
                 hdc : HDC = GetDC(hw)
                 api.FillRect(hdc, &rc, lv._hdrBkBrush)

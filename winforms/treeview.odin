@@ -347,7 +347,7 @@ new_treenode :: proc{node_ctor1, node_ctor2, node_ctor3, node_ctor4}
 treeview_expand_all :: proc(tv : ^TreeView)
 {
     for node in tv.nodes {
-        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), direct_cast(node, LPARAM))
+        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), dir_cast(node, LPARAM))
     }
 }
 
@@ -355,18 +355,18 @@ treeview_expand_all :: proc(tv : ^TreeView)
 treeview_collapse_all :: proc(tv : ^TreeView)
 {
     for node in tv.nodes {
-        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), direct_cast(node, LPARAM))
+        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), dir_cast(node, LPARAM))
     }
 }
 
 treeview_expand_node :: proc(tv : ^TreeView, node : ^TreeNode)
 {
-    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), direct_cast(node, LPARAM))
+    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), dir_cast(node, LPARAM))
 }
 
 treeview_collapse_node :: proc(tv : ^TreeView, node : ^TreeNode)
 {
-    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), direct_cast(node, LPARAM))
+    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), dir_cast(node, LPARAM))
 }
 
 
@@ -457,7 +457,7 @@ treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^Tr
     tvi.iImage = i32(node.imageIndex)
     tvi.iSelectedImage = i32(node.selImageIndex)
     tvi.stateMask = TVIS_USERMASK
-    // tvi.lParam = direct_cast(node, LPARAM)
+    // tvi.lParam = dir_cast(node, LPARAM)
     if node.imageIndex > -1 do tvi.mask |= TVIF_IMAGE
     if node.selImageIndex > -1 do tvi.mask |= TVIF_SELECTEDIMAGE
     if node.foreColor != def_fore_clr do tv._nodeClrChange = true
@@ -479,7 +479,7 @@ treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^Tr
     tvi := make_tvitem(tv, node)
     tis : TVINSERTSTRUCT
     tis.itemEx = tvi
-    tis.itemEx.lParam = direct_cast(rawptr(node), LPARAM)
+    tis.itemEx.lParam = dir_cast(rawptr(node), LPARAM)
 
     switch nop {
         case .Add_Node:
@@ -507,10 +507,10 @@ treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^Tr
             err_msg = "Can't Insert Child Node"
     }
 
-    lres := SendMessage(tv.handle, TVM_INSERTITEMW, 0,  direct_cast(&tis, LPARAM) )
+    lres := SendMessage(tv.handle, TVM_INSERTITEMW, 0,  dir_cast(&tis, LPARAM) )
     free(tvi.pszText)
     if lres != 0 {
-        hItem := direct_cast(lres, HTREEITEM)
+        hItem := dir_cast(lres, HTREEITEM)
         node.handle = hItem
         tv._uniqItemID += 1
     } else {
@@ -528,12 +528,12 @@ treeview_delete_node :: proc(tv : ^TreeView, node : ^TreeNode)
 {
     //indx : int
     if node.parentNode == nil {  // it's a top level node
-        SendMessage(tv.handle, TVM_DELETEITEM, 0, direct_cast(node.handle, LPARAM))
+        SendMessage(tv.handle, TVM_DELETEITEM, 0, dir_cast(node.handle, LPARAM))
         indx, _ := find_index(tv.nodes, node.handle )
         node._dispose(node)
         ordered_remove(&tv.nodes, indx) }
     else {   // It's a child node.
-        SendMessage(tv.handle, TVM_DELETEITEM, 0, direct_cast(node.handle, LPARAM))
+        SendMessage(tv.handle, TVM_DELETEITEM, 0, dir_cast(node.handle, LPARAM))
         indx, _ := find_index(node.parentNode.nodes, node.handle )
         node._dispose(node)
         ordered_remove(&node.parentNode.nodes, indx)
@@ -568,7 +568,7 @@ treeview_set_node_color :: proc(tv : ^TreeView, node : ^TreeNode)
 {
     tv.backColor = clr
     cref := get_color_ref(clr)
-    SendMessage(tv.handle, TVM_SETBKCOLOR, 0, direct_cast(cref, LPARAM))
+    SendMessage(tv.handle, TVM_SETBKCOLOR, 0, dir_cast(cref, LPARAM))
 }
 
 treeview_set_line_color :: proc(tv : ^TreeView, clr : uint)
@@ -576,32 +576,32 @@ treeview_set_line_color :: proc(tv : ^TreeView, clr : uint)
     if tv._isCreated {
         tv.lineColor = clr
         cref := get_color_ref(tv.lineColor)
-        SendMessage(tv.handle, TVM_SETLINECOLOR, 0, direct_cast(cref, LPARAM) )
+        SendMessage(tv.handle, TVM_SETLINECOLOR, 0, dir_cast(cref, LPARAM) )
     }
 }
 
 // Set an image list for tree view
 treeview_set_image_list :: proc(tv : ^TreeView, himl : HIMAGELIST)
 {
-    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, direct_cast(himl, LPARAM))// TVSIL_NORMAL = 0
+    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, dir_cast(himl, LPARAM))// TVSIL_NORMAL = 0
 }
 
 treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 16)
 {
     isize := i32(ico_size)
     tv.imageList = ImageList_Create(isize, isize, TVIML_FLAG, i32(nImg), 0 )
-    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, direct_cast(tv.imageList, LPARAM))
+    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, dir_cast(tv.imageList, LPARAM))
 }
 
 @private treenode_color :: proc( lpm : LPARAM) -> LRESULT
 {
     //@static x : int
-    pn := direct_cast(lpm, ^NMTVCUSTOMDRAW)
+    pn := dir_cast(lpm, ^NMTVCUSTOMDRAW)
     switch pn.nmcd.dwDrawStage {
         case CDDS_PREPAINT :
             return CDRF_NOTIFYITEMDRAW
         case CDDS_ITEMPREPAINT :
-            nd := direct_cast(pn.nmcd.lItemParam, ^TreeNode)
+            nd := dir_cast(pn.nmcd.lItemParam, ^TreeNode)
             if nd.foreColor != def_fore_clr {
                 pn.clrText = get_color_ref(nd.foreColor)
             }
@@ -640,15 +640,15 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
     setfont_internal(tv)
     if tv.backColor != app.clrWhite {
         cref := get_color_ref(tv.backColor)
-        SendMessage(tv.handle, TVM_SETBKCOLOR, 0, direct_cast(cref, LPARAM) )
+        SendMessage(tv.handle, TVM_SETBKCOLOR, 0, dir_cast(cref, LPARAM) )
     }
     if tv.foreColor != app.clrBlack {
         cref := get_color_ref(tv.foreColor)
-        SendMessage(tv.handle, TVM_SETTEXTCOLOR, 0, direct_cast(cref, LPARAM) )
+        SendMessage(tv.handle, TVM_SETTEXTCOLOR, 0, dir_cast(cref, LPARAM) )
     }
     if tv.lineColor != app.clrBlack  {
         cref := get_color_ref(tv.lineColor)
-        SendMessage(tv.handle, TVM_SETLINECOLOR, 0, direct_cast(cref, LPARAM) )
+        SendMessage(tv.handle, TVM_SETLINECOLOR, 0, dir_cast(cref, LPARAM) )
     }
 }
 
@@ -696,43 +696,43 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
 		    if tv.contextMenu != nil do contextmenu_show(tv.contextMenu, lp)
 
         case CM_TVNODEEXPAND :
-            node := direct_cast(lp, ^TreeNode)
-            SendMessage(tv.handle, TVM_EXPAND, wp, direct_cast(node.handle, LPARAM))
+            node := dir_cast(lp, ^TreeNode)
+            SendMessage(tv.handle, TVM_EXPAND, wp, dir_cast(node.handle, LPARAM))
             if node.childCount > 0 {
                 for n in node.nodes {
-                    SendMessage(tv.handle, CM_TVNODEEXPAND, wp, direct_cast(n, LPARAM))
+                    SendMessage(tv.handle, CM_TVNODEEXPAND, wp, dir_cast(n, LPARAM))
                 }
             }
            // return 0
 
         case CM_NOTIFY :
-            nm := direct_cast(lp, ^NMHDR)
+            nm := dir_cast(lp, ^NMHDR)
             switch nm.code
             {
                 case TVN_DELETEITEMW :
                     if tv.onNodeDeleted != nil
                     {
-                        // nmtv := direct_cast(lp, ^NMTREEVIEW)
-                        // tn := direct_cast(nmtv.itemOld.lParam, ^TreeNode)
+                        // nmtv := dir_cast(lp, ^NMTREEVIEW)
+                        // tn := dir_cast(nmtv.itemOld.lParam, ^TreeNode)
                         // ptf("%s's array deleted now\n", tn.text)
                         ea := new_event_args()
                         tv.onNodeDeleted(tv, &ea)
                     }
                 case TVN_SELCHANGINGW :
                     if tv.onBeforeSelect != nil {
-                        nmtv := direct_cast(lp, ^NMTREEVIEW)
+                        nmtv := dir_cast(lp, ^NMTREEVIEW)
                         tea := new_tree_event_args(nmtv)
                         tv.onBeforeSelect(tv, &tea)
                     }
                 case TVN_SELCHANGEDW :
-                    nmtv := direct_cast(lp, ^NMTREEVIEW)
+                    nmtv := dir_cast(lp, ^NMTREEVIEW)
                     tea := new_tree_event_args(nmtv)
                     tv.selectedNode = tea.node
                     if tv.onAfterSelect != nil { tv.onAfterSelect(tv, &tea) }
 
                 case NM_TVSTATEIMAGECHANGING :
                     //print("check NM_TVSTATEIMAGECHANGING")
-                    tvsic := direct_cast(lp, ^NMTVSTATEIMAGECHANGING)
+                    tvsic := dir_cast(lp, ^NMTVSTATEIMAGECHANGING)
                     //tea := new_tree_event_args(tvsic)
 
                     if tvsic.iOldStateImageIndex == 1 {
@@ -746,7 +746,7 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
 
                 case TVN_ITEMCHANGINGW :
                     if tv.onBeforeChecked != nil {
-                        tvic := direct_cast(lp, ^TVITEMCHANGE)
+                        tvic := dir_cast(lp, ^TVITEMCHANGE)
                         tea := new_tree_event_args(tvic)
                         if tv._nodeChecked do tea.node.checked = true
                         tv.onBeforeChecked(tv, &tea)
@@ -754,14 +754,14 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
 
                 case TVN_ITEMCHANGEDW :
                     if tv.onAfterChecked != nil {
-                        tvic := direct_cast(lp, ^TVITEMCHANGE)
+                        tvic := dir_cast(lp, ^TVITEMCHANGE)
                         tea := new_tree_event_args(tvic)
                         if tv._nodeChecked do tea.node.checked = true
                         tv.onAfterChecked(tv, &tea)
                     }
 
                 case TVN_ITEMEXPANDINGW :
-                    nmtv := direct_cast(lp, ^NMTREEVIEW)
+                    nmtv := dir_cast(lp, ^NMTREEVIEW)
                     switch nmtv.action {
                         case 1 :
                             if tv.onBeforeCollapse != nil {
@@ -776,7 +776,7 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
                     }
 
                 case TVN_ITEMEXPANDEDW :
-                    nmtv := direct_cast(lp, ^NMTREEVIEW)
+                    nmtv := dir_cast(lp, ^NMTREEVIEW)
                     switch nmtv.action {
                         case 1 :
                             if tv.onAfterCollapse != nil {

@@ -19,9 +19,14 @@ def_fore_clr :: 0x000000
 // In that cases, we need an option for painting in two directions.
 // So this enum will be used in controls which had the ebility to draw a gradient bkgnd.
 GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
-TextAlignment :: enum {Top_Left, Top_Center, Top_Right, Mid_Left, Center, Mid_Right, Bottom_Left, Bottom_Center, Bottom_Right}
+TextAlignment :: enum {
+	Top_Left, Top_Center, Top_Right, Mid_Left, Center, Mid_Right, 
+	Bottom_Left, Bottom_Center, Bottom_Right
+}
 SimpleTextAlignment :: enum {Left, Center, Right}
-TicPosition :: enum {Down_Side, Up_Side, Left_Side, Right_Side, Both_Side} // For trackbar
+TicPosition :: enum {Down_Side, Up_Side, Left_Side, 
+						Right_Side, Both_Side
+					} // For trackbar
 
 
 TimeMode :: enum {Nano_Sec, Micro_Sec, Milli_Sec}
@@ -33,11 +38,13 @@ SizeIncrement :: struct {width, height : int,}
 Area :: struct {width, height : int,}
 WordValue :: enum {Low, High}
 
-// Use this function to update ui components from another thread.
-// Usage : Call this function with required data packed in wpm and lpm.
-// Then set the `onThreadMsg` property of Form struct. It is a function pointer.
-// Signature is `ThreadMsgHandler :: proc(wpm: WPARAM, lpm: LPARAM)`.
-// Function pointer assigned to onThreadMsg property will be called when CM_THREAD_MSG receives.
+/*----------------------------------------------------------------------------------
+Use this function to update ui components from another thread.
+Usage : Call this function with required data packed in wpm and lpm.
+Then set the `onThreadMsg` property of Form struct. It is a function pointer.
+Signature is `ThreadMsgHandler :: proc(wpm: WPARAM, lpm: LPARAM)`.
+Function pointer assigned to onThreadMsg property will be called when CM_THREAD_MSG receives.
+---------------------------------------------------------------------------------------------*/
 send_thread_msg :: proc(formHwnd: HWND, wpm: WPARAM, lpm: LPARAM) -> LRESULT
 {
 	return SendNotifyMessage(formHwnd, CM_THREAD_MSG, wpm, lpm)
@@ -90,7 +97,7 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 @private calculate_ctl_size :: proc(ctl : ^Control)
 {
 	ss : SIZE
-    SendMessage(ctl.handle, BCM_GETIDEALSIZE, 0, direct_cast( &ss, LPARAM))
+    SendMessage(ctl.handle, BCM_GETIDEALSIZE, 0, dir_cast( &ss, LPARAM))
     ctl.width = int(ss.width)
     ctl.height = int(ss.height)
     MoveWindow(ctl.handle, i32(ctl.xpos), i32(ctl.ypos), ss.width, ss.height, true)
@@ -116,11 +123,11 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 	cntr += 1
 }
 
-concat_number :: proc{concat_number1, concat_number2}
-concat_number1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
-concat_number2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
+conc_num :: proc{conc_num1, conc_num2}
+conc_num1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
+conc_num2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 
-direct_cast :: proc(value : $T, $tp : typeid) -> tp
+dir_cast :: proc(value : $T, $tp : typeid) -> tp
 {
 	up := cast(UINT_PTR) value
 	return cast(tp) up
@@ -186,8 +193,8 @@ tostring :: proc(value: $T) -> string
 
 // There a lot of time we need to convert a handle like HBrush to HGDIOBJ.
 // This proc will help for it.
-to_hgdi_obj :: proc(value : $T ) -> HGDIOBJ {return cast(HGDIOBJ) value}
-to_lresult :: proc(value : $T) -> LRESULT
+toHGDI :: proc(value : $T ) -> HGDIOBJ {return cast(HGDIOBJ) value}
+toLRES :: proc(value : $T) -> LRESULT
 {
 	up := cast(UINT_PTR) value
 	return cast(LRESULT) up
@@ -201,30 +208,65 @@ get_virtual_key :: proc(value : LPARAM) -> u32
     return MapVirtualKey(scan_code, MAPVK_VSC_TO_VK)
 }
 
-get_x_lparam :: proc(lpm : LPARAM) -> int { return int(i16(loword_lparam(lpm)))}
-get_y_lparam :: proc(lpm : LPARAM) -> int { return int(i16(hiword_lparam(lpm)))}
+// get_x_lparam :: proc(lpm : LPARAM) -> int { return int(i16(loword_lparam(lpm)))}
+// get_y_lparam :: proc(lpm : LPARAM) -> int { return int(i16(hiword_lparam(lpm)))}
 
-get_mouse_points :: proc(lpm : LPARAM) -> POINT  // Used in mouse messages
+get_mouse_points :: proc{get_mouse_points1, get_mouse_points2}
+
+@private
+get_mouse_points1 :: proc(lpm : LPARAM) -> POINT  // Used in mouse messages
 {
 	pt : POINT
-	pt.x = i32(loword_lparam(lpm))
-	pt.y = i32(hiword_lparam(lpm))
+	pt.x = get_x_lpm(lpm)
+	pt.y = get_y_lpm(lpm)
 	return pt
+}
+
+@private
+get_mouse_points2 :: proc(pt: ^POINT, lpm : LPARAM)  // Used in mouse messages
+{
+	// ptf("dwd ptr lpm %d", (cast(u16)lpm))
+	if lpm == 0 {
+		GetCursorPos(pt)
+	} else {
+		pt.x = get_x_lpm(lpm)
+		pt.y = get_y_lpm(lpm)
+	}
 }
 
 get_mouse_pos_on_msg :: proc() -> POINT
 {
 	result : POINT
     dw_value := GetMessagePos()
-    result.x = LONG(lo_word(dw_value))
-    result.y = LONG(hi_word(dw_value))
+    result.x = i32(LOWORD(dw_value))
+    result.y = i32(HIWORD(dw_value))
+	ptf("x: %d, y: %d", result.x, result.y)
 	return result
 }
 
-loword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x & 0xffff)}
-hiword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x >> 16)}
-loword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return WORD(x & 0xffff)}
-hiword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { return WORD(x >> 16)}
+LOWORD :: #force_inline proc "contextless" (x: $T) -> WORD { return cast(u16)x}
+HIWORD :: #force_inline proc "contextless" (x: $T) -> WORD { return cast(u16)(x >> 16)}
+
+// loword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x & 0xffff)}
+// hiword_wparam :: #force_inline proc "contextless" (x : WPARAM) -> WORD { return WORD(x >> 16)}
+// loword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { 
+// 	return cast(WORD)(cast(DWORD_PTR)x & 0xffff)
+	
+// }
+// hiword_lparam :: #force_inline proc "contextless" (x : LPARAM) -> WORD { 
+// 	// return cast(WORD)(cast(DWORD_PTR)x >> 16)
+// 	return cast(u16)(x >> 16)
+
+// }
+
+get_x_lpm :: #force_inline proc "contextless"(x: LPARAM) -> i32 {
+	return cast(i32)(cast(i16)LOWORD((x)))
+}
+
+get_y_lpm :: #force_inline proc "contextless"(y: LPARAM) -> i32 {
+	return cast(i32)(cast(i16)HIWORD((y)))
+}
+
 
 @private select_gdi_object :: proc(hd : HDC, obj : $T)
 {
@@ -351,7 +393,7 @@ create_control :: proc(c : ^Control)
 								width,
 								height,
 								c.parent.handle,
-								direct_cast(c.controlID, HMENU),
+								dir_cast(c.controlID, HMENU),
 								app.hInstance,
 								nil )
 	// ptf("Creation res %d\n", GetLastError())

@@ -59,7 +59,7 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
     // Collect the data from Combobox control.
     cmInfo : COMBOBOXINFO
     cmInfo.cbSize = size_of(cmInfo)
-    SendMessage(cmb.handle, CB_GETCOMBOBOXINFO, 0, direct_cast(&cmInfo, LPARAM))
+    SendMessage(cmb.handle, CB_GETCOMBOBOXINFO, 0, dir_cast(&cmInfo, LPARAM))
     cd := new_combo_data(cmInfo, cmb.controlID)
     return cd
 }
@@ -141,7 +141,7 @@ combo_add_item :: proc(cmb : ^ComboBox, item : $T )
     }
     append(&cmb.items, sitem)
     if cmb._isCreated {
-        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(sitem), LPARAM))
+        SendMessage(cmb.handle, CB_ADDSTRING, 0, dir_cast(to_wstring(sitem), LPARAM))
         // free_all(context.temp_allocator)
     }
 }
@@ -156,14 +156,14 @@ combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPD
         if value, is_str := i.(string) ; is_str { // Magic -- type assert
             append(&cmb.items, value)
             if cmb._isCreated {
-                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(value), LPARAM))
+                SendMessage(cmb.handle, CB_ADDSTRING, 0, dir_cast(to_wstring(value), LPARAM))
                 // // free_all(context.temp_allocator)
             }
         } else {
             a_string := fmt.tprint(i)
             append(&cmb.items, a_string)
             if cmb._isCreated {
-                SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(a_string), LPARAM))
+                SendMessage(cmb.handle, CB_ADDSTRING, 0, dir_cast(to_wstring(a_string), LPARAM))
                 // // free_all(context.temp_allocator)
             }
         }
@@ -191,7 +191,7 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T )
 @private additem_internal :: proc(cmb : ^ComboBox)
 {
     for i in cmb.items {
-        SendMessage(cmb.handle, CB_ADDSTRING, 0, direct_cast(to_wstring(i), LPARAM))
+        SendMessage(cmb.handle, CB_ADDSTRING, 0, dir_cast(to_wstring(i), LPARAM))
         // free_all(context.temp_allocator)
     }
 }
@@ -212,7 +212,7 @@ combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)
 {
     sitem := fmt.tprint(item)
     wp : i32 = -1
-    indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, WPARAM(wp), direct_cast(to_wstring(sitem), LPARAM))
+    indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, WPARAM(wp), dir_cast(to_wstring(sitem), LPARAM))
     if indx == LB_ERR do return
     SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(indx), 0)
     cmb.selectedIndex = int(indx)
@@ -239,7 +239,7 @@ combo_delete_selected_item :: proc(cmb : ^ComboBox)
 
 combo_delete_item :: proc(cmb : ^ComboBox, indx : int)
 {
-    SendMessage(cmb.handle, CB_DELETESTRING, direct_cast(i32(indx), WPARAM), 0)
+    SendMessage(cmb.handle, CB_DELETESTRING, dir_cast(i32(indx), WPARAM), 0)
     ordered_remove(&cmb.items, indx)
 }
 
@@ -375,7 +375,7 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 		    if cmb.contextMenu != nil do contextmenu_show(cmb.contextMenu, lp)
 
         case CM_CTLCOMMAND :
-            ncode := hiword_wparam(wp)
+            ncode := HIWORD(wp)
            // ptf("WM_COMMAND notification code - %d\n", ncode)
             switch ncode {
                 case CBN_SELCHANGE :
@@ -432,19 +432,19 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
             //print("color combo list box")
             if cmb.foreColor != def_fore_clr || cmb.backColor != def_back_clr {
                 //print("combo color rcvd")
-                dc_handle := direct_cast(wp, HDC)
+                dc_handle := dir_cast(wp, HDC)
                 SetBkMode(dc_handle, Transparent)
                 if cmb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.foreColor))
                 if cmb._bkBrush == nil do cmb._bkBrush = CreateSolidBrush(get_color_ref(cmb.backColor))
-                return to_lresult(cmb._bkBrush)
+                return toLRES(cmb._bkBrush)
             } else {
                 if cmb._bkBrush == nil do cmb._bkBrush = CreateSolidBrush(get_color_ref(cmb.backColor))
-                return to_lresult(cmb._bkBrush)
+                return toLRES(cmb._bkBrush)
             }
 
 
         case WM_PARENTNOTIFY :
-            wp_lw := loword_wparam(wp)
+            wp_lw := LOWORD(wp)
             switch wp_lw {
                 case 512 :  // WM_MOUSEFIRST
                     if cmb.onTBMouseEnter != nil {
@@ -561,11 +561,11 @@ edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 
         case CM_CTLLCOLOR :
             if cmb.foreColor != def_fore_clr || cmb.backColor != def_back_clr {
-                dc_handle := direct_cast(wp, HDC)
+                dc_handle := dir_cast(wp, HDC)
                 // SetBkMode(dc_handle, Transparent)
                 if cmb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.foreColor))
                 if cmb.backColor != def_back_clr do SetBackColor(dc_handle, get_color_ref(cmb.backColor))
-                return to_lresult(cmb._bkBrush)
+                return toLRES(cmb._bkBrush)
             }
 
         case WM_KEYDOWN : // only works in Tb_combo style

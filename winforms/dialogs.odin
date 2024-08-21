@@ -137,7 +137,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     ofn.lpstrTitle = to_wchar_ptr(this.title)
     ofn.nMaxFile = MAX_ARR_SIZE
     ofn.nMaxFileTitle = MAX_PATH
-    ofn.lpstrDefExt = direct_cast(0, ^WCHAR)
+    ofn.lpstrDefExt = dir_cast(0, ^WCHAR)
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST
     if this.multiSel do ofn.Flags = ofn.Flags | OFN_ALLOWMULTISELECT | OFN_EXPLORER
     if this.showHidden do ofn.Flags = ofn.Flags | OFN_FORCESHOWHIDDEN
@@ -169,7 +169,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     ofn.lpstrTitle = to_wchar_ptr(this.title)
     ofn.nMaxFile = MAX_PATH
     ofn.nMaxFileTitle = MAX_PATH
-    ofn.lpstrDefExt = direct_cast(0, ^WCHAR)
+    ofn.lpstrDefExt = dir_cast(0, ^WCHAR)
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT
     ret := cast(int) GetSaveFileName(&ofn)
     if ret != 0 {

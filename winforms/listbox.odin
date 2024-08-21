@@ -157,7 +157,7 @@ listbox_add_item :: proc(lbx : ^ListBox, item : $T) {
     }
     append(&lbx.items, sitem)
     if lbx._isCreated {
-        SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(sitem), LPARAM))
+        SendMessage(lbx.handle, LB_ADDSTRING, 0, dir_cast(to_wstring(sitem), LPARAM))
         // free_all(context.temp_allocator)
     }
 }
@@ -179,7 +179,7 @@ listbox_add_items :: proc(lbx : ^ListBox, items : ..any) {
     }
     if lbx._isCreated {
         for item in tempItems {
-            SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), LPARAM))
+            SendMessage(lbx.handle, LB_ADDSTRING, 0, dir_cast(to_wstring(item), LPARAM))
             // free_all(context.temp_allocator)
         }
     }
@@ -189,7 +189,7 @@ listbox_add_items :: proc(lbx : ^ListBox, items : ..any) {
 lbx_additem_internal :: proc(lbx : ^ListBox) {
     if len(lbx.items) > 0 {
         for item in lbx.items {
-            SendMessage(lbx.handle, LB_ADDSTRING, 0, direct_cast(to_wstring(item), LPARAM))
+            SendMessage(lbx.handle, LB_ADDSTRING, 0, dir_cast(to_wstring(item), LPARAM))
             // free_all(context.temp_allocator)
         }
     }
@@ -210,7 +210,7 @@ listbox_get_selected_indices :: proc(lbx : ^ListBox, alloc := context.allocator)
         if num > 0 {
             buffer := make([dynamic]i32, num, alloc)
             //defer delete(buffer)
-            SendMessage(lbx.handle, LB_GETSELITEMS, direct_cast(num, WPARAM), direct_cast(&buffer[0], LPARAM))
+            SendMessage(lbx.handle, LB_GETSELITEMS, dir_cast(num, WPARAM), dir_cast(&buffer[0], LPARAM))
             return buffer
         } else do return nil  //err_val
     } else do return nil //err_val
@@ -450,16 +450,16 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
         case CM_CTLLCOLOR :
             // ptf("lbx draw flag %d\n", lbx._drawFlag)
             if lbx._drawFlag > 0 {
-                dc_handle := direct_cast(wp, HDC)
+                dc_handle := dir_cast(wp, HDC)
                 SetBkMode(dc_handle, Transparent)
                 if lbx.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(lbx.foreColor))
                 if lbx._bkBrush == nil do lbx._bkBrush = CreateSolidBrush(get_color_ref(lbx.backColor))
-                return to_lresult(lbx._bkBrush)
+                return toLRES(lbx._bkBrush)
             }
 
 
         case CM_CTLCOMMAND :
-            ncode := hiword_wparam(wp)
+            ncode := HIWORD(wp)
             switch ncode {
                 case LBN_DBLCLK :
                     if lbx.onDoubleClick != nil {
