@@ -9,7 +9,7 @@ trayMsgWinRegistered : bool = false
 
 LIMG_FLAG : u32 : LR_DEFAULTCOLOR | LR_LOADFROMFILE
 
-TrayMenuTrigger :: enum{None, Left_Click, Left_Double_Click, Right_Click}
+TrayMenuTrigger :: enum u8 {None, Left_Click, Left_Double_Click = 2, Right_Click = 4, Any_Click = 7}
 BallonIcon :: enum {None, Info, Warning, Error, Custom} 
 
 TrayIcon :: struct
@@ -227,7 +227,7 @@ resetIconInternal :: proc(this: ^TrayIcon)
                         ea := new_event_args()
                         this.onLeftClick(this, &ea)
                     }
-                    if this._cmenuUsed && this.menuTrigger == .Left_Click {
+                    if this._cmenuUsed && (u8(this.menuTrigger) & 1) == 1 {
                         contextmenu_show(this.contextMenu, 0)
                     }
 
@@ -237,7 +237,9 @@ resetIconInternal :: proc(this: ^TrayIcon)
                         ea := new_event_args()
                         this.onLeftDoubleClick(this, &ea)
                     }
-                    // if this._cmenuUsed && this.menuTrigger == .Left_Double_Click do tray_show_context_menu(this)                    
+                    if this._cmenuUsed && u8(this.menuTrigger) & 2 == 2 {
+                        contextmenu_show(this.contextMenu, 0)
+                    }                   
 
                 case WM_RBUTTONDOWN:
                     this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
@@ -256,7 +258,7 @@ resetIconInternal :: proc(this: ^TrayIcon)
                         ea := new_event_args()
                         this.onRightClick(this, &ea)
                     }
-                    if this._cmenuUsed && this.menuTrigger == .Right_Click {
+                    if this._cmenuUsed && u8(this.menuTrigger) & 4 == 4 {
                         contextmenu_show(this.contextMenu, 0)
                     }                    
                     

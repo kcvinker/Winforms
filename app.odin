@@ -34,7 +34,7 @@ MakeWindow :: proc()
     frm.onMouseClick = frmClickProc // Show a balloon text when clicking on form.
 
     // Let's add a context menu for our tray icon. "|" is for separator.
-    tray_add_context_menu(ti, .Right_Click, "Windows", "|", "Linux", "ReactOS")
+    tray_add_context_menu(ti, .Any_Click, "Windows", "|", "Linux", "ReactOS")
     ti.contextMenu.menus[0].onClick = proc(c: ^MenuItem, ea: ^EventArgs) {print("Windows menu selected")}
 
 
@@ -131,11 +131,6 @@ MakeWindow :: proc()
         ofd := ui.file_open_dialog(initFolder = idir, description = "PDF Files", ext = ".pdf")
         ofd.multiSel = true
         x := ui.dialog_show(&ofd, frm.handle)
-        // if x {
-        //     for file in ofd.selectedFiles {
-        //         print(file)
-        //     }
-        // }
         dialog_destroy(&ofd)
     }
 
@@ -151,7 +146,7 @@ MakeWindow :: proc()
         tray_show_balloon(ti, "Winforms", "Info from Winforms", 3000)
     }
 
-    ptf("size of bool %d", size_of(bool))
+
     start_mainloop(frm)
 }
 
@@ -164,7 +159,6 @@ main :: proc()
     // mem.tracking_allocator_init(&temp_track, context.temp_allocator)
 
     context.allocator = mem.tracking_allocator(&track)
-    // context.temp_allocator = mem.tracking_allocator(&temp_track)
     context.user_index = 225
     x := 23
     context.user_ptr = &x
