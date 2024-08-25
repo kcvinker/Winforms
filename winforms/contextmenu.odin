@@ -3,8 +3,6 @@
 
 
 
-
-
 package winforms
 import api "core:sys/windows"
 
@@ -36,7 +34,6 @@ ContextMenu :: struct {
     this._grayBrush = get_solid_brush(0xced4da)
     this._grayCref = get_color_ref(0x979dac)
     if !cmenuMsgWinCreated do register_msgwindow()
-    // create_message_only_window(this)
     return this
 }
 
@@ -56,8 +53,6 @@ new_contextmenu :: proc{new_contextmenu1, new_contextmenu2}
     this.font = new_font("Tahoma", 11)
     return this
 }
-
-
 
 control_add_contextmenu :: proc{add_contextmenu1, add_contextmenu2}
 
@@ -135,7 +130,6 @@ contextmenu_remove_item :: proc(this: ^ContextMenu, indexOrName: $T) -> bool
 }
 
 
-// sw : time.Stopwatch
 @private 
 cmenu_insert_internal :: proc(this: ^MenuItem)
 {
@@ -155,12 +149,8 @@ cmenu_insert_internal :: proc(this: ^MenuItem)
 cmenu_create_handle :: proc(this: ^ContextMenu)
 {
     if len(this.menus) > 0 {
-        for menu in this.menus {
-            // time.stopwatch_start(&sw) 
+        for menu in this.menus { 
             cmenu_insert_internal(menu)
-            // time.stopwatch_stop(&sw)
-            // ptf("menu insertion time %s", time.stopwatch_duration(sw))
-            // time.stopwatch_reset(&sw)
         }
     }
     this._menuInserted = true
@@ -186,9 +176,9 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
 }
 
 
-// Display context menu on right click or short key press.
+// Display context menu on mouse click or short key press.
 // Both TrayIcon and Control class use this function.
-// When using from tray icon, lpm would be zero.
+// When using from tray icon, lpm will be zero.
 contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
 {   
     /*--------------------------------------------------------------------
@@ -205,7 +195,8 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
         if !this._menuInserted do cmenu_create_handle(this)
         pt : POINT
         get_mouse_points(&pt, lpm)
-            /*---------------------------------------------------- 
+
+        /*---------------------------------------------------- 
         Context menus are triggered by either mouse right click
         or keyboard shortcuts like VK_APPS. When triggered from
         a mouse click, lparam contains the mouse points. But when
@@ -262,18 +253,17 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
     api.DestroyMenu(this.handle)
     api.DestroyWindow(this._dummyHwnd)
     free(this)
-    print("context menu dtor finished")
+    // print("context menu dtor finished")
 }
 
 
 @private cmenu_wndproc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM) -> LRESULT
 {
     context = global_context
-    // cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
     // display_msg(msg)
     switch msg {
-        case WM_DESTROY:
-            print("context menu's message-only window destroyed")
+        // case WM_DESTROY:
+        //     print("context menu's message-only window destroyed")
 
         case WM_MEASUREITEM:
             cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
@@ -332,18 +322,6 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
                     if menu.onFocus != nil {
                         ea := new_event_args()
                         menu.onFocus(menu, &ea)
-                    }
-                }
-            }
-        case WM_COMMAND:
-            cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
-            idNumber := uint(LOWORD(wp))
-            if idNumber > 0 {
-                menu, okay := get_menuitem_from_idnumber(cmenu, idNumber)
-                if okay && menu._isEnabled {
-                    if menu.onClick != nil{
-                        ea := new_event_args()
-                        menu.onClick(menu, &ea)
                     }
                 }
             }
