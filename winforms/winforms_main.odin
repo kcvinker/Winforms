@@ -16,7 +16,7 @@ def_font_name       :: "Tahoma"
 def_font_size       :: 11
 def_bgc : Color
 def_fgc : Color
-app : Application // Global variable for storing data needed to create a window.
+app : Application // Global variable for storing data needed by the entire library.
 
 @private
 Application :: struct
@@ -25,18 +25,16 @@ Application :: struct
     hInstance : HINSTANCE,
     trayHwnd : HWND,
     screenWidth, screenHeight : int,
+    scaleFactor, sysDPI: i32,
     formCount : int,
     clrWhite : uint,
     clrBlack : uint,
     fontHeight : LONG,
     mainLoopStarted : bool,
     nidUsed : bool,
-    cmenuUsed : bool,
     startState : FormState,
     globalFont : Font,
     iccx : INITCOMMONCONTROLSEX,    
-    curr_context: ^runtime.Context,
-    wftrack: ^mem.Tracking_Allocator,
     winMap : map[HWND]^Form,
     
 }
@@ -55,17 +53,19 @@ app_start :: proc()
     app.clrBlack = pure_black    
 }
 
+@private get_system_dpi :: proc(this: ^Application)
+{
+    hdc: HDC = GetDC(nil)
+    defer ReleaseDC(nil, hdc)
+    this.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY)    
+    this.scaleFactor = GetScaleFactorForDevice(0)
+}
+
 @private
 app_finalize :: proc(this: Application) // Will be executed right after main loop exit
 {
-    print(5959)
     if this.nidUsed {
         if this.trayHwnd != nil do DestroyWindow(this.trayHwnd)
-        UnregisterClass(&trayClass[0], app.hInstance)
-        print("tray icon resources deleted from app_finalize")
     }
     delete(this.winMap)
-    if this.cmenuUsed do UnregisterClass(&cmenuClass[0], this.hInstance)
-    UnregisterClass(&winFormsClass[0], this.hInstance)
-    // free(this)
 }

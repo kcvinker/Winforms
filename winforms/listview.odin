@@ -286,23 +286,23 @@ new_listview :: proc{lv_constructor1, lv_constructor2, lv_constructor3, lv_const
 	return this
 }
 
-@private lv_constructor1 :: proc(f : ^Form, autoc: b8 = false) -> ^ListView
+@private lv_constructor1 :: proc(parent : ^Form) -> ^ListView
 {
-	lv := lv_constructor(f, 10, 10, 200, 180)
-	if autoc do create_control(lv)
+	lv := lv_constructor(parent, 10, 10, 200, 180)
+	if parent.createChilds do create_control(lv)
 	return lv
 }
 
-@private lv_constructor2 :: proc(f : ^Form, x, y : int, autoc: b8 = false) -> ^ListView {
-	lv := lv_constructor(f, x, y, 200, 180)
-	if autoc do create_control(lv)
+@private lv_constructor2 :: proc(parent : ^Form, x, y : int) -> ^ListView {
+	lv := lv_constructor(parent, x, y, 200, 180)
+	if parent.createChilds do create_control(lv)
 	return lv
 }
 
-@private lv_constructor3 :: proc(f : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^ListView
+@private lv_constructor3 :: proc(parent : ^Form, x, y, w, h : int) -> ^ListView
 {
-	lv := lv_constructor(f, x, y, w, h)
-	if autoc do create_control(lv)
+	lv := lv_constructor(parent, x, y, w, h)
+	if parent.createChilds do create_control(lv)
 	return lv
 }
 

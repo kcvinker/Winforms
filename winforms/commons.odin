@@ -368,6 +368,7 @@ Test :: proc()
 // Create a Control. Use this for all controls.
 create_control :: proc(c : ^Control)
 {
+	if c.handle != nil do return
 	// If it's a Combobox, it knows how to manage contril ID.
 	if c.kind != ControlKind.Combo_Box {
 		globalCtlID += 1

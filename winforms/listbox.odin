@@ -48,20 +48,20 @@ ListBox :: struct {
 // Create new listbox type.
 new_listbox :: proc{lbox_ctor1, lbox_ctor2, lbox_ctor3}
 
-@private lbox_ctor1 :: proc(parent : ^Form, autoc: b8 = false) -> ^ListBox {
+@private lbox_ctor1 :: proc(parent : ^Form) -> ^ListBox {
     lb := lbox_ctor(parent, 10, 10, 180, 200)
-    if autoc do create_control(lb)
+    if parent.createChilds do create_control(lb)
     return lb
 }
-@private lbox_ctor2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^ListBox {
+@private lbox_ctor2 :: proc(parent : ^Form, x, y : int) -> ^ListBox {
     lb := lbox_ctor(parent, x, y, 180, 200)
-    if autoc do create_control(lb)
+    if parent.createChilds do create_control(lb)
     return lb
 }
 
-@private lbox_ctor3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^ListBox {
+@private lbox_ctor3 :: proc(parent : ^Form, x, y, w, h : int) -> ^ListBox {
     lb := lbox_ctor(parent, x, y, w, h)
-    if autoc do create_control(lb)
+    if parent.createChilds do create_control(lb)
     return lb
 }
 //----------------------------------------------------------------------

@@ -92,24 +92,24 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
 
 new_combobox :: proc{new_combo1, new_combo2, new_combo3}
 
-@private new_combo1 :: proc(parent : ^Form, autoc: b8 = false) -> ^ComboBox
+@private new_combo1 :: proc(parent : ^Form) -> ^ComboBox
 {
     cmb := cmb_ctor(parent)
-    if autoc do create_control(cmb)
+    if parent.createChilds do create_control(cmb)
     return cmb
 }
 
-@private new_combo2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false ) -> ^ComboBox
+@private new_combo2 :: proc(parent : ^Form, x, y : int ) -> ^ComboBox
 {
     cmb := cmb_ctor(parent, x = x, y= y)
-    if autoc do create_control(cmb)
+    if parent.createChilds do create_control(cmb)
     return cmb
 }
 
-@private new_combo3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false ) -> ^ComboBox
+@private new_combo3 :: proc(parent : ^Form, x, y, w, h : int ) -> ^ComboBox
 {
     cmb := cmb_ctor(parent, w, h, x, y)
-    if autoc do create_control(cmb)
+    if parent.createChilds do create_control(cmb)
     return cmb
 }
 

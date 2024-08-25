@@ -115,28 +115,28 @@ NMUPDOWN :: struct {
     return this
 }
 
-@private np_ctor1 :: proc(parent : ^Form, autoc: b8 = false) -> ^NumberPicker
+@private np_ctor1 :: proc(parent : ^Form) -> ^NumberPicker
 {
     np := np_ctor(parent,10, 10, 80, 25 )
-    if autoc do create_control(np)
+    if parent.createChilds do create_control(np)
     return np
 }
 
-@private np_ctor2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
+@private np_ctor2 :: proc(parent : ^Form, x, y : int, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, 80, 25)
     numberpicker_set_decimal_precision(np, deciPrec)
     np.step = step
-    if autoc do create_control(np)
+    if parent.createChilds do create_control(np)
     return np
 }
 
-@private np_ctor3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
+@private np_ctor3 :: proc(parent : ^Form, x, y, w, h : int, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, w, h)
     numberpicker_set_decimal_precision(np, deciPrec)
     np.step = step
-    if autoc do create_control(np)
+    if parent.createChilds do create_control(np)
     return np
 }
 

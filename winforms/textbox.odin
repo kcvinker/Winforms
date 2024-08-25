@@ -68,40 +68,40 @@ TextBox :: struct
 // TextBox control constructor.
 new_textbox :: proc{new_tb1, new_tb2, new_tb3, new_tb4, new_tb5}
 
-@private new_tb1 :: proc(parent : ^Form, autoc: b8 = false) -> ^TextBox
+@private new_tb1 :: proc(parent : ^Form) -> ^TextBox
 {
     tb := tb_ctor(parent, 10, 10, 180, 27)
-    if autoc do create_control(tb)
+    if parent.createChilds do create_control(tb)
     return tb
 }
 
-@private new_tb2 :: proc(parent : ^Form, x, y: int, autoc: b8 = false) -> ^TextBox
+@private new_tb2 :: proc(parent : ^Form, x, y: int) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, 180, 27)
-    if autoc do create_control(tb)
+    if parent.createChilds do create_control(tb)
     return tb
 }
 
-@private new_tb3 :: proc(parent : ^Form, x, y, w, h: int, autoc: b8 = false) -> ^TextBox
+@private new_tb3 :: proc(parent : ^Form, x, y, w, h: int) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, w, h)
-    if autoc do create_control(tb)
+    if parent.createChilds do create_control(tb)
     return tb
 }
 
-@private new_tb4 :: proc(parent : ^Form, txt: string, x, y: int, autoc: b8 = false) -> ^TextBox
+@private new_tb4 :: proc(parent : ^Form, txt: string, x, y: int) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, 180, 27)
     tb.text = txt
-    if autoc do create_control(tb)
+    if parent.createChilds do create_control(tb)
     return tb
 }
 
-@private new_tb5 :: proc(parent : ^Form, txt: string, x, y, w, h: int, autoc: b8 = false) -> ^TextBox
+@private new_tb5 :: proc(parent : ^Form, txt: string, x, y, w, h: int) -> ^TextBox
 {
     tb := tb_ctor(parent, x, y, w, h)
     tb.text = txt
-    if autoc do create_control(tb)
+    if parent.createChilds do create_control(tb)
     return tb
 }
 

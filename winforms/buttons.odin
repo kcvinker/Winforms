@@ -133,31 +133,31 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	return this
 }
 
-@private new_button1 :: proc(parent : ^Form, autoc : b8 = false) -> ^Button
+@private new_button1 :: proc(parent : ^Form) -> ^Button
 {
 	btn := buttonCtor(parent, "", 10, 10, 120, 35)
-	if autoc do create_control(btn)
+	if parent.createChilds do create_control(btn)
 	return btn
 }
 
-@private new_button2 :: proc(parent : ^Form, txt : string, autoc : b8 = false) -> ^Button
+@private new_button2 :: proc(parent : ^Form, txt : string) -> ^Button
 {
 	btn := buttonCtor(parent, txt, 10, 10, 120, 35)
-	if autoc do create_control(btn)
+	if parent.createChilds do create_control(btn)
 	return btn
 }
 
-@private new_button3 :: proc(parent : ^Form, txt : string, x, y : int, autoc : b8 = false) -> ^Button
+@private new_button3 :: proc(parent : ^Form, txt : string, x, y : int) -> ^Button
 {
 	btn := buttonCtor(parent, txt, x, y, 120, 35)
-	if autoc do create_control(btn)
+	if parent.createChilds do create_control(btn)
 	return btn
 }
 
-@private new_button4 :: proc(parent : ^Form, txt : string, x, y, w, h: int, autoc : b8 = false) -> ^Button
+@private new_button4 :: proc(parent : ^Form, txt : string, x, y, w, h: int) -> ^Button
 {
 	btn := buttonCtor(parent, txt, x, y, w, h)
-	if autoc do create_control(btn)
+	if parent.createChilds do create_control(btn)
 	return btn
 }
 
@@ -445,17 +445,10 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 		case WM_DESTROY: //btn_finalize(btn, hw, sc_id)
 			btn := control_cast(Button, ref_data)
-
 			btn_finalize(btn, hw, sc_id)
 			free(btn,  context.allocator)
 			RemoveWindowSubclass(hw, btn_wnd_proc, sc_id)
-		// case WM_NCDESTROY:
-		// 	// if btn == nil {
-		// 	// 	print("button is nil")
-		// 	// } else {
-		// 	// 	print("button is active still")
-		// 	// }
-
+		
 
 		case : return DefSubclassProc(hw, msg, wp, lp)
 	}

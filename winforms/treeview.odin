@@ -186,18 +186,6 @@ NodeNotifyHandler :: proc(node : ^TreeNode)
 
 // End Constants
 
-
-    // ItemMask :: enum {
-    //     Text = 0x1,
-    //     Image = 0x2,
-    //     Param = 0x4,
-    //     State = 0x8,
-    //     HANDLE = 0x10,
-    //     Sel_Image = 0x20,
-    //     Children = 0x40,
-    //     Di_Set_Item = 0x1000,
-    // }
-
     ChildData :: enum {Child_Auto = -2, Child_Callback = -1, Zero = 0, One = 1,}
     NodeOp :: enum {Add_Node, Insert_Node, Add_Child, Insert_Child,}
 
@@ -288,24 +276,24 @@ new_treeview :: proc{new_tv1, new_tv2, new_tv3}
     return this
 }
 
-@private new_tv1 :: proc(parent : ^Form, autoc: b8 = false) -> ^TreeView
+@private new_tv1 :: proc(parent : ^Form) -> ^TreeView
 {
     tv := tv_ctor(parent, 10, 10, 200, 250)
-    if autoc do create_control(tv)
+    if parent.createChilds do create_control(tv)
     return tv
 }
 
-@private new_tv2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^TreeView
+@private new_tv2 :: proc(parent : ^Form, x, y : int) -> ^TreeView
 {
     tv := tv_ctor(parent, x, y, 200, 250)
-    if autoc do create_control(tv)
+    if parent.createChilds do create_control(tv)
     return tv
 }
 
-@private new_tv3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^TreeView
+@private new_tv3 :: proc(parent : ^Form, x, y, w, h : int) -> ^TreeView
 {
     tv := tv_ctor(parent, x, y, w, h)
-    if autoc do create_control(tv)
+    if parent.createChilds do create_control(tv)
     return tv
 }
 

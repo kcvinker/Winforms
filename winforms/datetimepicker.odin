@@ -134,23 +134,6 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
         dwFlags : DWORD,
     }
 
-    // DATETIMEPICKERINFO :: struct {
-    //     cbSize : DWORD,
-    //     rcCheck : RECT,
-    //     stateCheck : DWORD,
-    //     rcButton : RECT,
-    //     stateButton : DWORD,
-    //     hwndEdit : HWND,
-    //     hwndUD : HWND,
-    //     hwndDropDown : HWND,
-    // }
-
-    // DtpInfo :: struct {
-    //     tb_handle,
-    //     ud_handle,
-    //     dd_handle,
-    //     dtp_handle : HWND,
-    // }
 
 // End of API Types
 
@@ -184,24 +167,24 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
     return dtp
 }
 
-@private new_dtp1 :: proc(parent : ^Form, autoc: b8 = false) -> ^DateTimePicker
+@private new_dtp1 :: proc(parent : ^Form) -> ^DateTimePicker
 {
     dtp := dtp_ctor(parent, 10, 10, 120, 30 )
-    if autoc do create_control(dtp)
+    if parent.createChilds do create_control(dtp)
     return dtp
 }
 
-@private new_dtp2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^DateTimePicker
+@private new_dtp2 :: proc(parent : ^Form, x, y : int) -> ^DateTimePicker
 {
     dtp := dtp_ctor(parent, x, y, 120, 30)
-    if autoc do create_control(dtp)
+    if parent.createChilds do create_control(dtp)
     return dtp
 }
 
-@private new_dtp3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^DateTimePicker
+@private new_dtp3 :: proc(parent : ^Form, x, y, w, h : int) -> ^DateTimePicker
 {
     dtp := dtp_ctor(parent,x, y, w, h)
-    if autoc do create_control(dtp)
+    if parent.createChilds do create_control(dtp)
     return dtp
 }
 

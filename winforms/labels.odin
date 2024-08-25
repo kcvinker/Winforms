@@ -54,22 +54,22 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
 }
 
 
-@private new_label1 :: proc(parent : ^Form, autoc:b8=false) -> ^Label {
+@private new_label1 :: proc(parent : ^Form) -> ^Label {
     txt := conc_num("Label_", _lb_count)
     lb := label_ctor(parent, txt, 10, 10)
-    if autoc do create_control(lb)
+    if parent.createChilds do create_control(lb)
     return lb
 }
 
-@private new_label2 :: proc(parent : ^Form, txt : string, x, y : int,  autoc:b8=false) -> ^Label {
+@private new_label2 :: proc(parent : ^Form, txt : string, x, y : int) -> ^Label {
     lb := label_ctor(parent, txt, x, y)
-    if autoc do create_control(lb)
+    if parent.createChilds do create_control(lb)
     return lb
 }
 
-@private new_label3 :: proc(parent : ^Form, txt : string, x, y, w, h : int, autoc:b8=false) -> ^Label {
+@private new_label3 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> ^Label {
     lb := label_ctor(parent, txt, x, y, w, h)
-    if autoc do create_control(lb)
+    if parent.createChilds do create_control(lb)
     return lb
 }
 

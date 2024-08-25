@@ -54,33 +54,33 @@ RadioButton :: struct
 
 new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
 
-@private new_rb1 :: proc(parent : ^Form, autoc: b8 = false) -> ^RadioButton
+@private new_rb1 :: proc(parent : ^Form) -> ^RadioButton
 {
     rb_count += 1
     rtxt := conc_num("Radio_Button_", rb_count)
     rb := rb_ctor(parent, rtxt, 10, 10, 100, 25 )
-    if autoc do create_control(rb)
+    if parent.createChilds do create_control(rb)
     return rb
 }
 
-@private new_rb2 :: proc(parent : ^Form, txt : string, autoc:b8 = false) -> ^RadioButton
+@private new_rb2 :: proc(parent : ^Form, txt : string) -> ^RadioButton
 {
     rb := rb_ctor(parent, txt, 10, 10, 100, 25 )
-    if autoc do create_control(rb)
+    if parent.createChilds do create_control(rb)
     return rb
 }
 
-@private new_rb3 :: proc(parent : ^Form, txt : string, x, y : int, autoc: b8 = false) -> ^RadioButton
+@private new_rb3 :: proc(parent : ^Form, txt : string, x, y : int) -> ^RadioButton
 {
     rb := rb_ctor(parent, txt, x, y, 100, 25 )
-    if autoc do create_control(rb)
+    if parent.createChilds do create_control(rb)
     return rb
 }
 
-@private new_rb4 :: proc(parent : ^Form, txt : string, x, y, w, h : int, autoc: b8 = false) -> ^RadioButton
+@private new_rb4 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> ^RadioButton
 {
     rb := rb_ctor(parent, txt, x, y, w, h )
-    if autoc do create_control(rb)
+    if parent.createChilds do create_control(rb)
     return rb
 }
 
@@ -145,26 +145,29 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
 }
 
 
-@private rb_finalize :: proc(rb: ^RadioButton, scid: UINT_PTR)
+@private rb_finalize :: proc(rb: ^RadioButton, hw: HWND, scid: UINT_PTR)
 {
     delete_gdi_object(rb._hbrush)
-    RemoveWindowSubclass(rb.handle, rb_wnd_proc, scid)
-    free(rb)
+    free(rb, context.allocator)
+    RemoveWindowSubclass(hw, rb_wnd_proc, scid)
 }
 
 @private rb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context //runtime.default_context()
-    rb := control_cast(RadioButton, ref_data)
+    context = global_context    
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY : rb_finalize(rb, sc_id)
+        case WM_DESTROY : 
+            rb := control_cast(RadioButton, ref_data)
+            rb_finalize(rb, hw, sc_id)
 
         case WM_CONTEXTMENU:
+            rb := control_cast(RadioButton, ref_data)
 		    if rb.contextMenu != nil do contextmenu_show(rb.contextMenu, lp)
 
         case CM_CTLCOMMAND :
+            rb := control_cast(RadioButton, ref_data)
             if HIWORD(wp) == 0 {
                 rb.checked = bool(SendMessage(rb.handle, BM_GETCHECK, 0, 0))
                 if rb.onStateChanged != nil {
@@ -173,6 +176,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
                 }
             }
          case WM_LBUTTONDOWN:
+            rb := control_cast(RadioButton, ref_data)
             rb._mDownHappened = true
             if rb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -181,12 +185,14 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             }
 
         case WM_RBUTTONDOWN:
+            rb := control_cast(RadioButton, ref_data)
             rb._mRDownHappened = true
             if rb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onRightMouseDown(rb, &mea)
             }
         case WM_LBUTTONUP :
+            rb := control_cast(RadioButton, ref_data)
             if rb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onMouseUp(rb, &mea)
@@ -197,6 +203,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             }
 
         case CM_LMOUSECLICK :
+            rb := control_cast(RadioButton, ref_data)
             if rb.onMouseClick != nil {
                 ea := new_event_args()
                 rb.onMouseClick(rb, &ea)
@@ -204,6 +211,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             }
 
         case WM_LBUTTONDBLCLK :
+            rb := control_cast(RadioButton, ref_data)
             rb._mDownHappened = false
             if rb.onDoubleClick != nil {
                 ea := new_event_args()
@@ -212,6 +220,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             }
 
         case WM_RBUTTONUP :
+            rb := control_cast(RadioButton, ref_data)
             if rb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onRightMouseUp(rb, &mea)
@@ -222,6 +231,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             }
 
         case CM_RMOUSECLICK :
+            rb := control_cast(RadioButton, ref_data)
             rb._mRDownHappened = false
             if rb.onRightClick != nil {
                 ea := new_event_args()
@@ -230,11 +240,13 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             }
 
         case WM_MOUSEHWHEEL:
+            rb := control_cast(RadioButton, ref_data)
             if rb.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onMouseScroll(rb, &mea)
             }
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
+            rb := control_cast(RadioButton, ref_data)
             if rb._isMouseEntered {
                 if rb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
@@ -251,6 +263,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
         //end case--------------------
 
         case WM_MOUSELEAVE :
+            rb := control_cast(RadioButton, ref_data)
             rb._isMouseEntered = false
             if rb.onMouseLeave != nil {
                 ea := new_event_args()
@@ -259,6 +272,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
 
 
         case CM_CTLLCOLOR :
+            rb := control_cast(RadioButton, ref_data)
             hdc := dir_cast(wp, HDC)
             SetBkMode(hdc, Transparent)
             SetBackColor(hdc, get_color_ref(rb.backColor))
@@ -268,6 +282,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             return toLRES(rb._hbrush)
 
         case CM_NOTIFY :
+            rb := control_cast(RadioButton, ref_data)
             nmcd := dir_cast(lp, ^NMCUSTOMDRAW)
             switch nmcd.dwDrawStage {
                 case CDDS_PREERASE :

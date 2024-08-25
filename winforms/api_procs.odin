@@ -101,6 +101,11 @@ FILETIME_as_unix_nanoseconds :: proc "contextless" (ft: FILETIME) -> i64 {
 //    return EnableWindow(hw, bEnable)
 // }
 
+foreign import "system:Shcore.lib"
+@(default_calling_convention = "fast")
+foreign Shcore {
+   @(link_name="GetScaleFactorForDevice") GetScaleFactorForDevice :: proc(disp: i32) -> i32 ---
+}
 
 foreign import "system:user32.lib"
 @(default_calling_convention = "fast")

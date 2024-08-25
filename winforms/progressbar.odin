@@ -93,26 +93,26 @@ BarTheme :: enum {System_Color, Custom_Color }
 
 new_progressbar :: proc{pb_new1, pb_new2, pb_new3}
 
-@private pb_new1 :: proc(parent : ^Form, autoc:b8 = false) -> ^ProgressBar
+@private pb_new1 :: proc(parent : ^Form) -> ^ProgressBar
 {
     pb := pb_ctor(parent, 10, 10, 200, 25)
-    if autoc do create_control(pb)
+    if parent.createChilds do create_control(pb)
     return pb
 }
 
-@private pb_new2 :: proc(parent : ^Form, x, y : int, autoc:b8 = false, perc: bool = false) -> ^ProgressBar
+@private pb_new2 :: proc(parent : ^Form, x, y : int, perc: bool = false) -> ^ProgressBar
 {
     pb := pb_ctor(parent, x, y, 200, 25)
     pb.showPercentage = perc
-    if autoc do create_control(pb)
+    if parent.createChilds do create_control(pb)
     return pb
 }
 
-@private pb_new3 :: proc(parent : ^Form, x, y, w, h : int, autoc:b8 = false, perc: bool = false) -> ^ProgressBar
+@private pb_new3 :: proc(parent : ^Form, x, y, w, h : int, perc: bool = false) -> ^ProgressBar
 {
     pb := pb_ctor(parent, x, y, w, h)
     pb.showPercentage = perc
-    if autoc do create_control(pb)
+    if parent.createChilds do create_control(pb)
     return pb
 }
 

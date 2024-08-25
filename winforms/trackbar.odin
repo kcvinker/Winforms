@@ -163,24 +163,24 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     return this
 }
 
-@private new_tbar1 :: proc(parent : ^Form, autoc: b8 = false) -> ^TrackBar
+@private new_tbar1 :: proc(parent : ^Form) -> ^TrackBar
 {
     tkb := tbar_ctor(parent, 10, 10, _def_tkb_width, _def_tkb_height)
-    if autoc do create_control(tkb)
+    if parent.createChilds do create_control(tkb)
     return tkb
 }
 
-@private new_tbar2 :: proc(parent : ^Form, x, y : int, autoc: b8 = false) -> ^TrackBar
+@private new_tbar2 :: proc(parent : ^Form, x, y : int) -> ^TrackBar
 {
     tkb := tbar_ctor(parent, x, y, _def_tkb_width, _def_tkb_height)
-    if autoc do create_control(tkb)
+    if parent.createChilds do create_control(tkb)
     return tkb
 }
 
-@private new_tbar3 :: proc(parent : ^Form, x, y, w, h : int, autoc: b8 = false) -> ^TrackBar
+@private new_tbar3 :: proc(parent : ^Form, x, y, w, h : int) -> ^TrackBar
 {
     tkb := tbar_ctor(parent, x, y, w, h)
-    if autoc do create_control(tkb)
+    if parent.createChilds do create_control(tkb)
     return tkb
 }
 

@@ -50,25 +50,25 @@ CheckBox :: struct
 // Constructor for Checkbox type.
 new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
-@private new_checkbox1 :: proc(parent : ^Form, txt : string = "", autoc: b8 = false) -> ^CheckBox
+@private new_checkbox1 :: proc(parent : ^Form, txt : string = "") -> ^CheckBox
 {
     cbtxt := len(txt) == 0 ? conc_num("CheckBox_", _cbcount ) : txt
     cb := cb_ctor(parent, cbtxt, 10, 10, 0, 0 )
-    if autoc do create_control(cb)
+    if parent.createChilds do create_control(cb)
     return cb
 }
 
-@private new_checkbox2 :: proc(parent : ^Form, txt : string, x, y : int, autoc: b8 = false) -> ^CheckBox
+@private new_checkbox2 :: proc(parent : ^Form, txt : string, x, y : int) -> ^CheckBox
 {
     cb := cb_ctor(parent, txt, x, y, 0, 0)
-    if autoc do create_control(cb)
+    if parent.createChilds do create_control(cb)
     return cb
 }
 
-@private new_checkbox3 :: proc(parent : ^Form, txt : string, x, y, w, h : int, autoc: b8 = false) -> ^CheckBox
+@private new_checkbox3 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> ^CheckBox
 {
     cb := cb_ctor(parent, txt, x, y, w, h)
-    if autoc do create_control(cb)
+    if parent.createChilds do create_control(cb)
     return cb
 }
 

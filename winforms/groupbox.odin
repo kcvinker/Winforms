@@ -42,24 +42,23 @@ GroupBox :: struct
     return gb
 }
 
-@private gb_ctor1 :: proc(parent : ^Form, autoc: b8 = false) -> ^GroupBox
+@private gb_ctor1 :: proc(parent : ^Form) -> ^GroupBox
 {
     gb_txt : string = conc_num("GroupBox_", gb_count)
     gb := gb_ctor(parent, gb_txt, 10, 10, 250, 250)
     gb_count += 1
-    if autoc do create_control(gb)
+    if parent.createChilds do create_control(gb)
     return gb
 }
 
 @private gb_ctor2 :: proc(parent : ^Form,
                             txt : string,
                             x, y : int,
-                            w: int = 200, h: int = 200,
-                            autoc: b8 = false) -> ^GroupBox
+                            w: int = 200, h: int = 200) -> ^GroupBox
 {
     gb := gb_ctor(parent, txt, x, y, w, h)
     gb_count += 1
-    if autoc do create_control(gb)
+    if parent.createChilds do create_control(gb)
     return gb
 }
 

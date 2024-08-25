@@ -8,7 +8,7 @@ import "core:time"
 import api "core:sys/windows"
 
 
-// Some better window colors
+// Some window colors
 /*
     0xF5FFFA
     0xF5F5F5
@@ -28,6 +28,7 @@ Form :: struct
     start_pos : StartPosition,
     style : FormStyle,
     minimizeBox, maximizeBox : bool,
+    createChilds: bool,
     windowState : FormState,
     menubar : ^MenuBar,
 
@@ -44,7 +45,7 @@ Form :: struct
     onClosed : EventHandler,
     onThreadMsg: ThreadMsgHandler,
 
-    _isLoaded : bool,
+    _isLoaded : bool,    
     _gdraw : FormGradient,
     _drawMode : FormDrawMode,
     _cDrawChilds : [dynamic]HWND,
@@ -59,17 +60,6 @@ Form :: struct
 
 }
 
-Timer :: struct {
-	interval: u32,
-	onTick: EventHandler,
-	_parentHwnd: HWND,
-    _idNum: UINT_PTR,
-    _isEnabled: bool,
-}
-
-
-
-
 print_points :: proc(frm: ^Form) { frm.onMouseUp = print_point_func }
 
 // Set the colors to draw a gradient background in form.
@@ -83,16 +73,12 @@ form_set_gradient :: proc(this: ^Form, clr1, clr2 : uint,top_bottom := true)
     if this._isCreated do InvalidateRect(this.handle, nil, false)
 }
 
-/*=====================================================
-This will display the window.
-And it will check if the main loop is started or not.
-If not started, it will start the main loop 
-========================================================*/
+// Start the main loop and display the form
 start_mainloop :: proc(this: ^Form)
 {
     create_child_handles(this)
-
-    //app.mainLoopStarted = true
+    // ShowWindow(this.handle, 5)
+    UpdateWindow(this.handle)
     ms : MSG
     for GetMessage(&ms, nil, 0, 0) != 0
     {
@@ -117,25 +103,6 @@ form_addTimer :: proc(this: ^Form, interval: u32 = 100, tickHandler: EventHandle
     this._timerMap[tm._idNum] = tm
     return tm
 }
-
-timer_start :: proc(this: ^Timer)
-{
-    this._isEnabled = true
-    SetTimer(this._parentHwnd, this._idNum, this.interval, nil)
-}
-
-timer_stop :: proc(this: ^Timer)
-{
-    KillTimer(this._parentHwnd, this._idNum)
-    this._isEnabled = false
-}
-
-@private timer_dtor :: proc(this: ^Timer)
-{
-    if this._isEnabled do KillTimer(this._parentHwnd, this._idNum)
-    free(this)
-}
-
 
 FormDrawMode :: enum { Default, Flat_Color, Gradient,}
 //GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
@@ -251,7 +218,7 @@ new_form :: proc{new_form1, new_form2}
 {
     if this._menubarUsed do menubar_create_handle(this.menubar)
     if len(this._controls) > 0 {
-        for ctl in this._controls {
+        for ctl in this._controls {            
             if ctl.handle == nil do create_control(ctl)
         }
     }
@@ -299,7 +266,6 @@ print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
     @static x : int = 1
     fmt.printf("[%d] X: %d,  Y: %d\n", x, mea.x, mea.y)
     x+= 1
-    // for _, v in wftrack.allocation_map { ptf("winforms: %v leaked %v bytes\n", v.location, v.size) }
 }
 
 @private register_class :: proc()
@@ -313,7 +279,7 @@ print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
     win_class.hInstance = app.hInstance
     win_class.hIcon = LoadIcon(nil, IDI_APPLICATION)
     win_class.hCursor = LoadCursor(nil, IDC_ARROW)
-    win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) //cast(HBRUSH) (cast(UINT_PTR) Color_Window + 1)
+    win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) 
     win_class.lpszMenuName = nil
     win_class.lpszClassName = &winFormsClass[0]
     res := RegisterClassEx(&win_class)
@@ -496,13 +462,6 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData)
         timer.onTick(this, &ea)
     }
 }
-
-/*
-    This type is used for holding information about the program for whole run time.
-    We need to keep some info from the very beginning to the very end.
-*/
-
-// sw : time.Stopwatch
 
 
 @private
