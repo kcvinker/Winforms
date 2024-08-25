@@ -33,8 +33,8 @@ MakeWindow :: proc()
     ti = new_tray_icon("Winforms tray icon!", "winforms-icon.ico")
     frm.onMouseClick = frmClickProc // Show a balloon text when clicking on form.
 
-    // Let's add a context menu for our tray icon.
-    tray_add_context_menu(ti, .Right_Click, "Windows", "Linux", "ReactOS")
+    // Let's add a context menu for our tray icon. "|" is for separator.
+    tray_add_context_menu(ti, .Right_Click, "Windows", "|", "Linux", "ReactOS")
     ti.contextMenu.menus[0].onClick = proc(c: ^MenuItem, ea: ^EventArgs) {print("Windows menu selected")}
 
 
@@ -43,7 +43,9 @@ MakeWindow :: proc()
     tmr = form_addTimer(frm, 400, timer_ontick)
 
     mbar := new_menubar(frm, "File", "Edit", "Format")
-    menubar_add_items(mbar, mbar.menus[0], "New Work", "New Client", "Exit")
+
+    // Add some sub menus. "|" is for separator.
+    menubar_add_items(mbar, mbar.menus[0], "New Work", "New Client", "|", "Exit")
     menubar_add_items(mbar, mbar.menus[1], "New Client", "Copy", "Delete")
     menubar_add_items(mbar, mbar.menus[2], "Font", "Line Space", "Para Spce")
     menubar_add_items(mbar, mbar.menus[0].menus[0], "Contract Work", "Carriage Work", "Transmission Work")
@@ -93,7 +95,7 @@ MakeWindow :: proc()
     listview_add_row(lv, "Win8", "Catalina", "Debian")
     listview_add_row(lv, "Win10", " Big Sur", "Kali")
 
-    control_add_contextmenu(lv, "Compile", "Link Only", "Make DLL", "Make Console")
+    control_add_contextmenu(lv, "Compile", "Link Only", "|", "Make Console")
     lv.contextMenu.menus[0].onClick = contextmenu_click // Handler for "Compile" menu
 
     tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20, autoc = true)
