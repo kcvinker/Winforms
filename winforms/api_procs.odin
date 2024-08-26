@@ -191,10 +191,10 @@ foreign user32 {
    //                                                 lpNewItem: LPCWSTR) -> BOOL ---
    @(link_name="SetMenu") SetMenu :: proc(hwnd: HWND, hmenu: HMENU) -> BOOL ---
    @(link_name="DeleteMenu") DeleteMenu :: proc(menuHwnd: HMENU, uID: UINT, uFlag: UINT) -> BOOL ---
-   @(link_name="InsertMenuItemW") InsertMenuItem :: proc(hmenu: HMENU,
-                                                         item: uint,
-                                                         fByPosition: BOOL,
-                                                         lpmi: LPCMENUITEMINFO) -> BOOL ---
+   // @(link_name="InsertMenuItemW") InsertMenuItem :: proc(hmenu: HMENU,
+   //                                                       item: uint,
+   //                                                       fByPosition: BOOL,
+   //                                                       lpmi: LPCMENUITEMINFO) -> BOOL ---
    // @(link_name="TrackPopupMenu") TrackPopupMenu :: proc(hmenu: HMENU,
    //                                                       uFlags: uint,
    //                                                       x, y, nReserved: int,
@@ -265,7 +265,7 @@ foreign gdi32 {
    @(link_name="CreatePatternBrush") CreatePatternBrush :: proc(hbmp : HBITMAP) -> HBRUSH ---
    @(link_name="DeleteDC") DeleteDC :: proc(hdc : HDC) -> BOOL---
    @(link_name="SetTextColor") SetTextColor :: proc(hdc : HDC, clr : COLORREF) -> COLORREF ---
-   @(link_name="SetBkMode") SetBkMode :: proc(hdc : HDC, mode : i32) -> i32 ---
+   // @(link_name="SetBkMode") SetBkMode :: proc(hdc : HDC, mode : i32) -> i32 ---
    @(link_name="Rectangle") Rectangle :: proc(hdc : HDC, left, top, right, bottom : i32) -> BOOL---
    @(link_name="CreatePen") CreatePen :: proc(style, #any_int width : i32, cref : COLORREF) -> HPEN ---
    @(link_name="GetTextExtentPoint32W") GetTextExtentPoint32 :: proc(dch : HDC,

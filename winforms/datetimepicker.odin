@@ -378,16 +378,14 @@ dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                     }
             }
 
-        case WM_LBUTTONDOWN:
-            dtp._mDownHappened = true
+        case WM_LBUTTONDOWN:            
             if dtp.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.onMouseDown(dtp, &mea)
                 return 0
             }
 
-        case WM_RBUTTONDOWN:
-            dtp._mRDownHappened = true
+        case WM_RBUTTONDOWN:            
             if dtp.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.onRightMouseDown(dtp, &mea)
@@ -397,17 +395,10 @@ dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
             if dtp.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.onMouseUp(dtp, &mea)
-            }
-            if dtp._mDownHappened {
-                dtp._mDownHappened = false
-                SendMessage(dtp.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            dtp._mDownHappened = false
-            if dtp.onMouseClick != nil {
+            }  
+            if dtp.onClick != nil {
                 ea := new_event_args()
-                dtp.onMouseClick(dtp, &ea)
+                dtp.onClick(dtp, &ea)
                 return 0
             }
 
@@ -422,14 +413,7 @@ dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
             if dtp.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 dtp.onRightMouseUp(dtp, &mea)
-            }
-            if dtp._mRDownHappened {
-                dtp._mRDownHappened = false
-                SendMessage(dtp.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            dtp._mRDownHappened = false
+            }            
             if dtp.onRightClick != nil {
                 ea := new_event_args()
                 dtp.onRightClick(dtp, &ea)

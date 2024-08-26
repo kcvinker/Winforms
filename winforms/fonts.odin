@@ -45,35 +45,23 @@ new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal,
 
 new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
-CreateFont_handle :: proc(fnt : ^Font, hw : HWND = nil) 
+CreateFont_handle :: proc(this : ^Font) 
 {
-	if app.fontHeight == 0 && hw != nil {
-		dcHwnd : HDC = GetDC(hw)
-		app.fontHeight = -MulDiv(i32(fnt.size), GetDeviceCaps(dcHwnd, LOGPIXELSY), 72)
-		ReleaseDC(hw, dcHwnd)
-	}
-	
-	bValue := bool(false)
-
-	// fnt.handle = CreateFont(fontHeight, 0, 0, 0, i32(fnt.weight), DWORD(fnt.italics),
-	// 							DWORD(fnt.underline),
-	// 							DWORD(bValue),
-	// 							DWORD(1),
-	// 							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-	// 							DEFAULT_QUALITY, DEFAULT_PITCH, to_wstring(fnt.name))
-	// Changed this and used this function from 19-jan-2023
+	scale: f32 = f32(app.scaleFactor) / 100.0
+	fsiz:= i32(scale * f32(this.size))
+	iHeight := -MulDiv(fsiz , app.sysDPI, 72)
 	lf : LOGFONT
-	lf.lfItalic = cast(byte)fnt.italics
-	lf.lfUnderline = cast(byte)fnt.underline
-	lf.lfFaceName = to_wstring(fnt.name)
+	lf.lfItalic = cast(byte)this.italics
+	lf.lfUnderline = cast(byte)this.underline
+	lf.lfFaceName = to_wstring(this.name)
 	lf.lfHeight = app.fontHeight
-	lf.lfWeight = cast(LONG)fnt.weight
+	lf.lfWeight = cast(LONG)this.weight
 	lf.lfCharSet = DEFAULT_CHARSET
 	lf.lfOutPrecision = OUT_DEFAULT_PRECIS
 	lf.lfClipPrecision = CLIP_DEFAULT_PRECIS
 	lf.lfQuality = DEFAULT_QUALITY
 	lf.lfPitchAndFamily = DEFAULT_PITCH
-	fnt.handle = CreateFontIndirect(&lf)
+	this.handle = CreateFontIndirect(&lf)
 
 }
 

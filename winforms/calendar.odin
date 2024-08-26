@@ -276,8 +276,7 @@ new_calendar :: proc{new_cal1, new_cal2}
             }
 
 
-            case WM_LBUTTONDOWN:
-            cal._mDownHappened = true
+        case WM_LBUTTONDOWN:            
             if cal.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.onMouseDown(cal, &mea)
@@ -285,7 +284,7 @@ new_calendar :: proc{new_cal1, new_cal2}
             }
 
         case WM_RBUTTONDOWN:
-            cal._mRDownHappened = true
+            
             if cal.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.onRightMouseDown(cal, &mea)
@@ -296,18 +295,11 @@ new_calendar :: proc{new_cal1, new_cal2}
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.onMouseUp(cal, &mea)
             }
-            if cal._mDownHappened {
-                cal._mDownHappened = false
-                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            cal._mDownHappened = false
-            if cal.onMouseClick != nil {
+           if cal.onClick != nil {
                 ea := new_event_args()
-                cal.onMouseClick(cal, &ea)
+                cal.onClick(cal, &ea)
                 return 0
-            }
+            }     
 
         case WM_LBUTTONDBLCLK :
             if cal.onDoubleClick != nil {
@@ -321,18 +313,12 @@ new_calendar :: proc{new_cal1, new_cal2}
                 mea := new_mouse_event_args(msg, wp, lp)
                 cal.onRightMouseUp(cal, &mea)
             }
-            if cal._mRDownHappened {
-                cal._mRDownHappened = false
-                SendMessage(cal.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            cal._mRDownHappened = false
             if cal.onRightClick != nil {
                 ea := new_event_args()
                 cal.onRightClick(cal, &ea)
                 return 0
-            }
+            }        
+            
         case WM_DESTROY: cal_finalize(cal, sc_id)
 
         case :

@@ -217,9 +217,9 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
         We are using TPM_RETURNCMD in the tpm_flag, so we don't get the 
         WM_COMMAND in our wndproc, we will get the selected menu id in return value.
         ----------------------------------------------------------------------------*/
-        mid := api.TrackPopupMenu(this.handle, TPM_FLAG, int(pt.x), int(pt.y), 0, this._dummyHwnd, nil)
+        mid := uint(api.TrackPopupMenu(this.handle, TPM_FLAG, pt.x, pt.y, 0, this._dummyHwnd, nil))
         if mid > 0 {
-            menu, okay := get_menuitem_from_idnumber(this, uint(mid))
+            menu, okay := get_menuitem_from_idnumber(this, mid)
             if okay && menu._isEnabled {
                 if menu.onClick != nil{
                     ea := new_event_args()
@@ -293,7 +293,7 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
                 if !mi._isEnabled do txtClrRef = cmenu._grayCref
             }
 
-            SetBkMode(dis.hDC, 1)
+            api.SetBkMode(dis.hDC, api.BKMODE.TRANSPARENT)
             dis.rcItem.left += 25
             SelectObject(dis.hDC, cast(HGDIOBJ)cmenu.font.handle)
             SetTextColor(dis.hDC, txtClrRef)

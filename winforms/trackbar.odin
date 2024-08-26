@@ -538,18 +538,15 @@ set_value :: proc(tk : ^TrackBar, value: int)
 
         case WM_LBUTTONDOWN:
            // tkb._draw_focus_rct = true
-           tkb := control_cast(TrackBar, ref_data)
-            tkb._mDownHappened = true
+           tkb := control_cast(TrackBar, ref_data)            
             if tkb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.onMouseDown(tkb, &mea)
                 return 0
             }
 
-
         case WM_RBUTTONDOWN :
-            tkb := control_cast(TrackBar, ref_data)
-            tkb._mRDownHappened = true
+            tkb := control_cast(TrackBar, ref_data)            
             if tkb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.onRightMouseDown(tkb, &mea)
@@ -560,18 +557,10 @@ set_value :: proc(tk : ^TrackBar, value: int)
             if tkb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.onMouseUp(tkb, &mea)
-            }
-            if tkb._mDownHappened {
-                tkb._mDownHappened = false
-                SendMessage(tkb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            tkb := control_cast(TrackBar, ref_data)
-            tkb._mDownHappened = false
-            if tkb.onMouseClick != nil {
+            }            
+            if tkb.onClick != nil {
                 ea := new_event_args()
-                tkb.onMouseClick(tkb, &ea)
+                tkb.onClick(tkb, &ea)
                 return 0
             }
 
@@ -588,15 +577,7 @@ set_value :: proc(tk : ^TrackBar, value: int)
             if tkb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tkb.onRightMouseUp(tkb, &mea)
-            }
-            if tkb._mRDownHappened {
-                tkb._mRDownHappened = false
-                SendMessage(tkb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            tkb := control_cast(TrackBar, ref_data)
-            tkb._mRDownHappened = false
+            }           
             if tkb.onRightClick != nil {
                 ea := new_event_args()
                 tkb.onRightClick(tkb, &ea)

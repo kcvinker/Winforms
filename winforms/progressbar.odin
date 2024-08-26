@@ -3,6 +3,7 @@
 package winforms
 import "base:runtime"
 import "core:fmt"
+import api "core:sys/windows"
 
 ICC_PROGRESS_CLASS :: 0x20
 
@@ -232,7 +233,7 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
         GetTextExtentPoint32(hdc, wtext, tlen, &ss)
         x: i32 = (i32(this.width) - ss.width) / 2;
         y: i32 = (i32(this.height) - ss.height) / 2;
-        SetBkMode(hdc, 1);
+        api.SetBkMode(hdc, api.BKMODE.TRANSPARENT);
         SetTextColor(hdc, get_color_ref(this.foreColor));
         TextOut(hdc, x, y, wtext, tlen)
         // free_all(context.temp_allocator)
@@ -306,40 +307,27 @@ DTT_SHADOWCOLOR :: 4
 		    if pb.contextMenu != nil do contextmenu_show(pb.contextMenu, lp)
 
         case WM_LBUTTONDOWN:
-           // pb._draw_focus_rct = true
-            pb._mDownHappened = true
-            if pb.onMouseDown != nil
-            {
+           // pb._draw_focus_rct = true            
+            if pb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onMouseDown(pb, &mea)
                 return 0
             }
 
-
-        case WM_RBUTTONDOWN :
-            pb._mRDownHappened = true
-            if pb.onRightMouseDown != nil
-            {
+        case WM_RBUTTONDOWN :           
+            if pb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onRightMouseDown(pb, &mea)
             }
 
         case WM_LBUTTONUP :
-            if pb.onMouseUp != nil
-            {
+            if pb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onMouseUp(pb, &mea)
-            }
-            if pb._mDownHappened {
-                pb._mDownHappened = false
-                SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            pb._mDownHappened = false
-            if pb.onMouseClick != nil {
+            }            
+            if pb.onClick != nil {
                 ea := new_event_args()
-                pb.onMouseClick(pb, &ea)
+                pb.onClick(pb, &ea)
                 return 0
             }
 
@@ -354,14 +342,7 @@ DTT_SHADOWCOLOR :: 4
             if pb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onRightMouseUp(pb, &mea)
-            }
-            if pb._mRDownHappened {
-                pb._mRDownHappened = false
-                SendMessage(pb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            pb._mRDownHappened = false
+            }            
             if pb.onRightClick != nil {
                 ea := new_event_args()
                 pb.onRightClick(pb, &ea)

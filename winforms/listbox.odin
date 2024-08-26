@@ -1,6 +1,7 @@
 package winforms
 import "base:runtime"
 import "core:fmt"
+import api "core:sys/windows"
 //import "core:slice"
 
 WcListBoxW : wstring = L("ListBox")
@@ -451,7 +452,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
             // ptf("lbx draw flag %d\n", lbx._drawFlag)
             if lbx._drawFlag > 0 {
                 dc_handle := dir_cast(wp, HDC)
-                SetBkMode(dc_handle, Transparent)
+                api.SetBkMode(dc_handle, api.BKMODE.TRANSPARENT)
                 if lbx.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(lbx.foreColor))
                 if lbx._bkBrush == nil do lbx._bkBrush = CreateSolidBrush(get_color_ref(lbx.backColor))
                 return toLRES(lbx._bkBrush)
@@ -492,8 +493,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
 
 
             }
-        case WM_LBUTTONDOWN:
-            lbx._mDownHappened = true
+        case WM_LBUTTONDOWN:            
             if lbx.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lbx.onMouseDown(lbx, &mea)
@@ -503,21 +503,13 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
             if lbx.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lbx.onMouseUp(lbx, &mea)
-            }
-            if lbx._mDownHappened {
-                lbx._mDownHappened = false
-                SendMessage(lbx.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            lbx._mDownHappened = false
-            if lbx.onMouseClick != nil {
+            }            
+            if lbx.onClick != nil {
                 ea := new_event_args()
-                lbx.onMouseClick(lbx, &ea)
+                lbx.onClick(lbx, &ea)
                 return 0
             }
-        case WM_RBUTTONDOWN:
-            lbx._mRDownHappened = true
+        case WM_RBUTTONDOWN:            
             if lbx.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lbx.onRightMouseDown(lbx, &mea)
@@ -527,14 +519,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int) {
             if lbx.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lbx.onRightMouseUp(lbx, &mea)
-            }
-            if lbx._mRDownHappened {
-                lbx._mRDownHappened = false
-                SendMessage(lbx.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            lbx._mRDownHappened = false
+            }            
             if lbx.onRightClick != nil {
                 ea := new_event_args()
                 lbx.onRightClick(lbx, &ea)

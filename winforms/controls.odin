@@ -76,7 +76,7 @@ Control :: struct
 	onGotFocus,
 	onLostFocus ,
 	onMouseEnter,
-	onMouseClick,
+	onClick,
 	onRightClick,
 	onDoubleClick,
 	onMouseLeave,
@@ -111,7 +111,7 @@ Control :: struct
 // This is used to set the defualt font right creating the control handle.
 @private setfont_internal :: proc(ctl : ^Control)
 {
-	if ctl.font.handle == nil do CreateFont_handle(&ctl.font, ctl.handle)
+	if ctl.font.handle == nil do CreateFont_handle(&ctl.font)
 	SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
 
 }
@@ -211,12 +211,8 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int,
 	underline = fu
 	_defFontChanged = true
 	if ctl.handle != nil { // Only set the font if control handle is created.
-		CreateFont_handle(&ctl.font, ctl.handle)
+		CreateFont_handle(&ctl.font)
 		SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
-		// if ctl.kind == .Label { // Label need special care only because of the autosize property
-		// 	lb := cast(^Label) ctl
-		// 	if lb.autoSize do calculate_ctl_size(lb)
-		// }
 	}
 	if ctl._fp_size_fix != nil do ctl._fp_size_fix(ctl)
 }
@@ -402,7 +398,6 @@ control_Setfocus :: proc(ctl : ^Control)
 // Left Mouse down, up, click
 	ctrl_left_mousedown_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM)
 	{
-		ctl._mDownHappened = true
 		if ctl.onMouseDown != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
 			ctl.onMouseDown(ctl, &mea)
@@ -411,29 +406,21 @@ control_Setfocus :: proc(ctl : ^Control)
 
 	ctrl_left_mouseup_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM)
 	{
-		if ctl._mDownHappened {
-			ctl._mDownHappened = false
-			PostMessage(ctl.handle, CM_LMOUSECLICK, 0, 0)
-		}
 		if ctl.onMouseUp != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
 			ctl.onMouseUp(ctl, &mea)
 		}
-	}
-
-	ctrl_left_mouseclick_handler :: proc(ctl: ^Control)
-	{
-		if ctl.onMouseClick != nil {
+		if ctl.onClick != nil {
 			ea := new_event_args()
-			ctl.onMouseClick(ctl, &ea)
+			ctl.onClick(ctl, &ea)
 		}
 	}
+	
 // End section
 
 // Right mouse down, up, click
 	ctrl_right_mousedown_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM)
 	{
-		ctl._mDownHappened = true
 		if ctl.onRightMouseDown != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
 			ctl.onRightMouseDown(ctl, &mea)
@@ -442,23 +429,16 @@ control_Setfocus :: proc(ctl : ^Control)
 
 	ctrl_right_mouseup_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM)
 	{
-		if ctl._mDownHappened {
-			ctl._mDownHappened = false
-			PostMessage(ctl.handle, CM_RMOUSECLICK, 0, 0)
-		}
 		if ctl.onRightMouseUp != nil {
 			mea := new_mouse_event_args(msg, wpm, lpm)
 			ctl.onRightMouseUp(ctl, &mea)
 		}
-	}
-
-	ctrl_right_mouseclick_handler :: proc(ctl: ^Control)
-	{
 		if ctl.onRightClick != nil {
 			ea := new_event_args()
 			ctl.onRightClick(ctl, &ea)
 		}
 	}
+
 // End section
 
 // Mouse wheel, enter, move, leave
@@ -515,15 +495,9 @@ ctrl_killfocus_handler :: proc(ctl: ^Control)
 @private ctrl_set_font :: proc(this: ^Control, value: $T)
 {
 	when T == Font { this.font = value } else {print("Type error...")}
-	if this.font.handle == nil do CreateFont_handle(&this.font, this.handle)
+	if this.font.handle == nil do CreateFont_handle(&this.font)
 	if this._isCreated do SendMessage(this.handle, WM_SETFONT, WPARAM(this.font.handle), LPARAM(1))
 }
-
-// ctrl_destructor :: proc(ctl: ^Control, ctx: runtime.Context) {
-// 	context = ctx
-// 	// free(ctl.font)
-// 	print("font freed in control ", ctx.user_index)
-// }
 
 // End section
 

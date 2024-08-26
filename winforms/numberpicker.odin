@@ -288,7 +288,9 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     if np.handle != nil && np._buddyHandle != nil {
         // HWND oldBuddy = HWND(SendMessage(np.handle, UDM_SETBUDDY, convert_to(WPARAM, np._buddyHandle), 0))
         set_np_subclass(np, np_wnd_proc, buddy_wnd_proc)
-        if np.font.handle != np.parent.font.handle || np.font.handle == nil do CreateFont_handle(&np.font, np._buddyHandle)
+        if np.font.handle != np.parent.font.handle || np.font.handle == nil {
+            CreateFont_handle(&np.font)
+        }
         SendMessage(np._buddyHandle, WM_SETFONT, WPARAM(np.font.handle), LPARAM(1))
 
         usb := SendMessage(np.handle, UDM_SETBUDDY, WPARAM(np._buddyHandle), 0)
@@ -500,7 +502,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             tb := control_cast(NumberPicker, ref_data)
             if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
                 dc_handle := dir_cast(wp, HDC)
-                SetBkMode(dc_handle, Transparent)
+                api.SetBkMode(dc_handle, api.BKMODE.TRANSPARENT)
 
                 if tb.foreColor != 0x000000 do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
                 if tb._bkBrush == nil do tb._bkBrush = CreateSolidBrush(get_color_ref(tb.backColor))

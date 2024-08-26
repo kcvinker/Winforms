@@ -249,17 +249,14 @@ textbox_clear_all :: proc(tb : ^TextBox)
         //     }
 
         case WM_LBUTTONDOWN:
-           // tb._drawFocusRect = true
-            tb._mDownHappened = true
+           // tb._drawFocusRect = true            
             if tb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.onMouseDown(tb, &mea)
                 //return 0
-            }
-            //return 0
+            }            
 
-        case WM_RBUTTONDOWN :
-            tb._mRDownHappened = true
+        case WM_RBUTTONDOWN :            
             if tb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.onRightMouseDown(tb, &mea)
@@ -269,17 +266,10 @@ textbox_clear_all :: proc(tb : ^TextBox)
             if tb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.onMouseUp(tb, &mea)
-            }
-            if tb._mDownHappened {
-                tb._mDownHappened = false
-                SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            tb._mDownHappened = false
-            if tb.onMouseClick != nil {
+            }            
+            if tb.onClick != nil {
                 ea := new_event_args()
-                tb.onMouseClick(tb, &ea)
+                tb.onClick(tb, &ea)
                 //return 0
             }
 
@@ -294,14 +284,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
             if tb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 tb.onRightMouseUp(tb, &mea)
-            }
-            if tb._mRDownHappened {
-                tb._mRDownHappened = false
-                SendMessage(tb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            tb._mRDownHappened = false
+            }            
             if tb.onRightClick != nil {
                 ea := new_event_args()
                 tb.onRightClick(tb, &ea)

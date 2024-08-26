@@ -4,7 +4,7 @@ package winforms
 import "core:fmt"
 import "base:runtime"
 import "core:time"
-
+import api "core:sys/windows"
 
 // print :: fmt.println // Its easy to use. Delete after finishing this module.
 txtFlag : UINT= DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_HIDEPREFIX
@@ -187,7 +187,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	btxt := to_wstring(btn.text)
 	// defer // free_all(context.temp_allocator)
 	SetTextColor(ncd.hdc, get_color_ref(btn.foreColor))
-	SetBkMode(ncd.hdc, 1)
+	api.SetBkMode(ncd.hdc, api.BKMODE.TRANSPARENT)
 	DrawText(ncd.hdc, btxt, -1, &ncd.rc, txtFlag)
 	return CDRF_NOTIFYPOSTPAINT
 	
@@ -346,42 +346,27 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 			// time.stopwatch_stop(&sw)
             // ptf("button getting time in lb DOWN %s", time.stopwatch_duration(sw))
             // time.stopwatch_reset(&sw)
-			btn._mDownHappened = true
+			// btn._mDownHappened = true
 			if btn.onMouseDown != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onMouseDown(btn, &mea)
 			}
 		case WM_RBUTTONDOWN:
 			btn := control_cast(Button, ref_data)
-			btn._mRDownHappened = true
+			// btn._mRDownHappened = true
 			if btn.onRightMouseDown != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onRightMouseDown(btn, &mea)
 			}
 		case WM_LBUTTONUP :
-			// btn := control_cast(Button, ref_data)
-			// time.stopwatch_start(&sw) 
-			// btn := control_cast(Button, ref_data)
-			// btn := btnMap[hw]
-			btn := control_cast(Button, ref_data)
-			// time.stopwatch_stop(&sw)
-            // ptf("button getting time in lb UP %s", time.stopwatch_duration(sw))
-            // time.stopwatch_reset(&sw)
+			btn := control_cast(Button, ref_data)				
 			if btn.onMouseUp != nil	{
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onMouseUp(btn, &mea)
-			}
-			if btn._mDownHappened {
-				btn._mDownHappened = false
-				SendMessage(btn.handle, CM_LMOUSECLICK, 0, 0)
-			}
-
-		case CM_LMOUSECLICK :
-			btn := control_cast(Button, ref_data)
-			btn._mDownHappened = false
-			if btn.onMouseClick != nil {
+			}	
+			if btn.onClick != nil {
 				ea := new_event_args()
-				btn.onMouseClick(btn, &ea)
+				btn.onClick(btn, &ea)
 				return 0
 			}
 
@@ -391,14 +376,6 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onRightMouseUp(btn, &mea)
 			}
-			if btn._mRDownHappened {
-				btn._mRDownHappened = false
-				SendMessage(btn.handle, CM_RMOUSECLICK, 0, 0)
-			}
-
-		case CM_RMOUSECLICK :
-			btn := control_cast(Button, ref_data)
-			btn._mRDownHappened = false
 			if btn.onRightClick != nil {
 				ea := new_event_args()
 				btn.onRightClick(btn, &ea)

@@ -50,15 +50,16 @@ app_start :: proc()
     app.iccx.dwIcc = ICC_STANDARD_CLASSES
     InitCommonControlsEx(&app.iccx)    
     app.clrWhite = pure_white
-    app.clrBlack = pure_black    
+    app.clrBlack = pure_black
+    get_system_dpi()    
 }
 
-@private get_system_dpi :: proc(this: ^Application)
+@private get_system_dpi :: proc()
 {
     hdc: HDC = GetDC(nil)
     defer ReleaseDC(nil, hdc)
-    this.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY)    
-    this.scaleFactor = GetScaleFactorForDevice(0)
+    app.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY)    
+    app.scaleFactor = GetScaleFactorForDevice(0)
 }
 
 @private

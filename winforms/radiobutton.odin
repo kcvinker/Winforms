@@ -6,6 +6,7 @@
 
 package winforms
 import "base:runtime"
+import api "core:sys/windows"
 //import "core:fmt"
 
 rb_count : int
@@ -176,8 +177,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
                 }
             }
          case WM_LBUTTONDOWN:
-            rb := control_cast(RadioButton, ref_data)
-            rb._mDownHappened = true
+            rb := control_cast(RadioButton, ref_data)            
             if rb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onMouseDown(rb, &mea)
@@ -185,8 +185,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             }
 
         case WM_RBUTTONDOWN:
-            rb := control_cast(RadioButton, ref_data)
-            rb._mRDownHappened = true
+            rb := control_cast(RadioButton, ref_data)            
             if rb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onRightMouseDown(rb, &mea)
@@ -196,23 +195,15 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             if rb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onMouseUp(rb, &mea)
-            }
-            if rb._mDownHappened {
-                rb._mDownHappened = false
-                SendMessage(rb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            rb := control_cast(RadioButton, ref_data)
-            if rb.onMouseClick != nil {
+            }            
+            if rb.onClick != nil {
                 ea := new_event_args()
-                rb.onMouseClick(rb, &ea)
+                rb.onClick(rb, &ea)
                 return 0
             }
 
         case WM_LBUTTONDBLCLK :
-            rb := control_cast(RadioButton, ref_data)
-            rb._mDownHappened = false
+            rb := control_cast(RadioButton, ref_data)            
             if rb.onDoubleClick != nil {
                 ea := new_event_args()
                 rb.onDoubleClick(rb, &ea)
@@ -224,15 +215,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
             if rb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 rb.onRightMouseUp(rb, &mea)
-            }
-            if rb._mRDownHappened {
-                rb._mRDownHappened = false
-                SendMessage(rb.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            rb := control_cast(RadioButton, ref_data)
-            rb._mRDownHappened = false
+            }            
             if rb.onRightClick != nil {
                 ea := new_event_args()
                 rb.onRightClick(rb, &ea)
@@ -274,7 +257,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
         case CM_CTLLCOLOR :
             rb := control_cast(RadioButton, ref_data)
             hdc := dir_cast(wp, HDC)
-            SetBkMode(hdc, Transparent)
+            api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
             SetBackColor(hdc, get_color_ref(rb.backColor))
             rb._hbrush = CreateSolidBrush(get_color_ref(rb.backColor))
             // print("rb bkc ", rb.backColor)

@@ -265,7 +265,7 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
 
 @private insert_menu_internal :: proc(mi: ^MenuItem, parent: HMENU)
 {
-	mii : MENUITEMINFO
+	mii : api.MENUITEMINFOW
     mii.cbSize = size_of(mii)
     mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA | MIIM_SUBMENU | MIIM_STATE
     mii.fType = MF_OWNERDRAW
@@ -274,7 +274,7 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
     mii.dwItemData = dir_cast(rawptr(mi), ULONG_PTR)
     mii.wID = auto_cast(mi.idNum)
     mii.hSubMenu = mi._popup ? mi.handle : nil
-    x:= InsertMenuItem(parent, mi.idNum, btrue, &mii)
+    x:= api.InsertMenuItemW(parent, u32(mi.idNum), btrue, &mii)
     mi._isCreated = true
     // ptf("257: Parent handle %d, child name : %s, child handle : %d\n", parent, mi.text, mi.handle)
 }

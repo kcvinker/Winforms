@@ -3,6 +3,7 @@ package winforms
 
 import "core:fmt"
 import "base:runtime"
+import api "core:sys/windows"
 //import "core:reflect"
 
 WcComboW : wstring = L("ComboBox")
@@ -117,12 +118,13 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
 {
     /* There is no other way to change the dropdown style of an existing combo box.
      * We need to destroy the old combo and create a new one with same size and pos.
-     * Then make fill it with old combo items. */
+     * Then fill the old combo items. */
     if cmb._isCreated {
         if cmb.comboStyle == style do return
         cmb.comboStyle = style
         cmb._recreateEnabled = true
         DestroyWindow(cmb.handle)
+        cmb.handle = nil
         create_control(cmb)
     } else {
         // Not now baby
@@ -433,7 +435,7 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
             if cmb.foreColor != def_fore_clr || cmb.backColor != def_back_clr {
                 //print("combo color rcvd")
                 dc_handle := dir_cast(wp, HDC)
-                SetBkMode(dc_handle, Transparent)
+                api.SetBkMode(dc_handle, api.BKMODE.TRANSPARENT)
                 if cmb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.foreColor))
                 if cmb._bkBrush == nil do cmb._bkBrush = CreateSolidBrush(get_color_ref(cmb.backColor))
                 return toLRES(cmb._bkBrush)
@@ -465,7 +467,7 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 
 
         case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mDownHappened = true
+            
             if cmb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cmb.onMouseDown(cmb, &mea)
@@ -475,44 +477,30 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 
         case WM_LBUTTONUP :  // Only work in lb_comb and the triange btn of tb_combo
             if cmb.onMouseUp != nil {
-            mea := new_mouse_event_args(msg, wp, lp)
-            cmb.onMouseUp(cmb, &mea)
+                mea := new_mouse_event_args(msg, wp, lp)
+                cmb.onMouseUp(cmb, &mea)
             }
-            if cmb._mDownHappened {
-                cmb._mDownHappened = false
-                SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
-            }
+            if cmb.onClick != nil {
+                ea := new_event_args()
+                cmb.onClick(cmb, &ea)
+                return 0
+            }            
 
-        case CM_LMOUSECLICK :
-            if cmb.onMouseClick != nil {
-            ea := new_event_args()
-            cmb.onMouseClick(cmb, &ea)
-            return 0
-            }
-
-         case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mRDownHappened = true
+         case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo            
             if cmb.onRightMouseDown != nil {
-            mea := new_mouse_event_args(msg, wp, lp)
-            cmb.onRightMouseDown(cmb, &mea)
+                mea := new_mouse_event_args(msg, wp, lp)
+                cmb.onRightMouseDown(cmb, &mea)
             }
 
         case WM_RBUTTONUP :
             if cmb.onRightMouseUp != nil {
-            mea := new_mouse_event_args(msg, wp, lp)
-            cmb.onRightMouseUp(cmb, &mea)
+                mea := new_mouse_event_args(msg, wp, lp)
+                cmb.onRightMouseUp(cmb, &mea)
             }
-            if cmb._mRDownHappened {
-                cmb._mRDownHappened = false
-                SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            cmb._mRDownHappened = false
             if cmb.onRightClick != nil {
-            ea := new_event_args()
-            cmb.onRightClick(cmb, &ea)
-            return 0
+                ea := new_event_args()
+                cmb.onRightClick(cmb, &ea)
+                return 0
             }
 
         case WM_MOUSEHWHEEL:
@@ -580,8 +568,7 @@ edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                 cmb.onKeyUp(cmb, &kea)
             }
 
-        case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo
-            cmb._mDownHappened = true
+        case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo             
             if cmb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cmb.onMouseDown(cmb, &mea)
@@ -594,18 +581,12 @@ edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                 mea := new_mouse_event_args(msg, wp, lp)
                 cmb.onMouseUp(cmb, &mea)
             }
-            if cmb._mDownHappened {
-                cmb._mDownHappened = false
-                SendMessage(cmb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            if cmb.onMouseClick != nil {
+            if cmb.onClick != nil {
                 ea := new_event_args()
-                cmb.onMouseClick(cmb, &ea)
+                cmb.onClick(cmb, &ea)
                 return 0
             }
-
+      
         case WM_RBUTTONDOWN: // Only work in lb_comb and the triange btn of tb_combo
             cmb._mRDownHappened = true
             if cmb.onRightMouseDown != nil {
@@ -618,14 +599,7 @@ edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
             if cmb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cmb.onRightMouseUp(cmb, &mea)
-            }
-            if cmb._mRDownHappened {
-                cmb._mRDownHappened = false
-                SendMessage(cmb.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            cmb._mRDownHappened = false
+            } 
             if cmb.onRightClick != nil {
                 ea := new_event_args()
                 cmb.onRightClick(cmb, &ea)

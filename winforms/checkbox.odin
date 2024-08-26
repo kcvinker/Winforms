@@ -1,7 +1,7 @@
 package winforms
 
 import "base:runtime"
-
+import api "core:sys/windows"
 // WcCheckBoxW : wstring = L("Button")
 
 CheckBox :: struct
@@ -147,7 +147,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
         case CM_CTLLCOLOR :
             hd := dir_cast(wp, HDC)
             bkref := get_color_ref(cb.backColor)
-            SetBkMode(hd, transparent)
+            api.SetBkMode(hd, api.BKMODE.TRANSPARENT)
             if cb._bkBrush == nil do cb._bkBrush = CreateSolidBrush(bkref)
             return toLRES(cb._bkBrush)
 
@@ -168,16 +168,14 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                     return CDRF_SKIPDEFAULT
             }
 
-        case WM_LBUTTONDOWN:
-            cb._mDownHappened = true
+        case WM_LBUTTONDOWN:            
             if cb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.onMouseDown(cb, &mea)
                 return 0
             }
 
-        case WM_RBUTTONDOWN:
-            cb._mRDownHappened = true
+        case WM_RBUTTONDOWN:            
             if cb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.onRightMouseDown(cb, &mea)
@@ -187,20 +185,13 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.onMouseUp(cb, &mea)
             }
-            if cb._mDownHappened {
-                cb._mDownHappened = false
-                SendMessage(cb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            if cb.onMouseClick != nil {
+            if cb.onClick != nil {
                 ea := new_event_args()
-                cb.onMouseClick(cb, &ea)
+                cb.onClick(cb, &ea)
                 return 0
-            }
+            }           
 
-        case WM_LBUTTONDBLCLK :
-            cb._mDownHappened = false
+        case WM_LBUTTONDBLCLK :            
             if cb.onDoubleClick != nil {
                 ea := new_event_args()
                 cb.onDoubleClick(cb, &ea)
@@ -212,18 +203,11 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.onRightMouseUp(cb, &mea)
             }
-            if cb._mRDownHappened {
-                cb._mRDownHappened = false
-                SendMessage(cb.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            cb._mRDownHappened = false
-            if cb.onRightClick != nil {
+           if cb.onRightClick != nil {
                 ea := new_event_args()
                 cb.onRightClick(cb, &ea)
                 return 0
-            }
+            }       
 
         case WM_MOUSEHWHEEL:
             if cb.onMouseScroll != nil {

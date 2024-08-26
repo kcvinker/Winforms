@@ -195,7 +195,7 @@ new_form :: proc{new_form1, new_form2}
 
 @private set_form_font_internal :: proc(frm : ^Form) // deprecated
 {
-    if app.globalFont.handle == nil do CreateFont_handle(&app.globalFont, frm.handle)
+    if app.globalFont.handle == nil do CreateFont_handle(&app.globalFont)
     if frm.font.name == def_font_name && frm.font.size == def_font_size
     {
         // User did not made any changes in font. So use default font handle.
@@ -207,7 +207,7 @@ new_form :: proc{new_form1, new_form2}
         if frm.font.handle == nil
         {
             // User just changed the font name and/or size. Create the font handle
-            CreateFont_handle(&frm.font, frm.handle)
+            CreateFont_handle(&frm.font)
             SendMessage(frm.handle, WM_SETFONT, WPARAM(frm.font.handle), LPARAM(1))
         }
         else { SendMessage(frm.handle, WM_SETFONT, WPARAM(frm.font.handle), LPARAM(1)) }
@@ -254,7 +254,7 @@ create_form :: proc(frm : ^Form )
             app.startState = frm.windowState
         }
         // set_form_font_internal(frm)
-        if frm.font.handle == nil do CreateFont_handle(&frm.font, frm.handle)
+        if frm.font.handle == nil do CreateFont_handle(&frm.font)
         SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) frm)
         ShowWindow(app.mainHandle, cast(i32) app.startState )
     }
@@ -647,9 +647,9 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         case CM_LMOUSECLICK :
             frm := app.winMap[hw]
-            if frm.onMouseClick != nil {
+            if frm.onClick != nil {
                 ea := new_event_args()
-                frm->onMouseClick(&ea)
+                frm->onClick(&ea)
             }
 
         case WM_RBUTTONUP :
@@ -887,7 +887,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
                 if !mi._isEnabled do txtClrRef = frm.menubar._menuGrayCref
             }
 
-            SetBkMode(dis.hDC, 1)
+            api.SetBkMode(dis.hDC, api.BKMODE.TRANSPARENT)
             if mi.kind == .Base_Menu  {
                 dis.rcItem.left += 10
             } else {

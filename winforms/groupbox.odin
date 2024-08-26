@@ -118,7 +118,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 
         case CM_CTLLCOLOR :
             hdc := dir_cast(wp, HDC)
-            SetBkMode(hdc, Transparent)
+            api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
             this._bkBrush = CreateSolidBrush(get_color_ref(this.backColor))
             // if this.foreColor != 0x000000 do SetTextColor(hdc, get_color_ref(this.foreColor))
             return dir_cast(this._bkBrush, LRESULT)

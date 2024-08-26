@@ -31,7 +31,7 @@ MakeWindow :: proc()
     frm.createChilds = true
     // Let's create a tray icon.
     ti = new_tray_icon("Winforms tray icon!", "winforms-icon.ico")
-    frm.onMouseClick = frmClickProc // Show a balloon text when clicking on form.
+    frm.onClick = frmClickProc // Show a balloon text when clicking on form.
 
     // Let's add a context menu for our tray icon. "|" is for separator.
     tray_add_context_menu(ti, .Any_Click, "Windows", "|", "Linux", "ReactOS")
@@ -52,11 +52,11 @@ MakeWindow :: proc()
     mbar.menus[0].menus[1].onClick = newclient_menuclick
 
     b1 := new_button(frm, "Normal", 10, 10, 110, 35 )
-    b1.onMouseClick = open_file_proc
+    b1.onClick = open_file_proc
 
     b2 := new_button(frm, "Flat Color", cright(b1) + 20, 10, 120, 35 )
     set_property(b2, CommonProps.Back_Color, 0x94d2bd)
-    b2.onMouseClick = b2_click_proc
+    b2.onClick = b2_click_proc
 
     b3 := new_button(frm, "Gradient", cright(b2) + 20, 10, 110, 35 )
     button_set_gradient_colors(b3, 0xfb8500, 0xffbe0b)

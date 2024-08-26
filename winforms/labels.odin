@@ -195,14 +195,14 @@ calculate_label_size :: proc(lb : ^Label) {
 
         case WM_LBUTTONDOWN:
            // print("label lbutton down")
-            lb._mDownHappened = true
+            
             if lb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.onMouseDown(lb, &mea)
                 return 0
             }
         case WM_RBUTTONDOWN:
-            lb._mDownHappened = true
+            
             if lb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.onRightMouseDown(lb, &mea)
@@ -212,17 +212,10 @@ calculate_label_size :: proc(lb : ^Label) {
             if lb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.onMouseUp(lb, &mea)
-            }
-            if lb._mDownHappened {
-                lb._mDownHappened = false
-                SendMessage(lb.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            lb._mDownHappened = false
-            if lb.onMouseClick != nil {
+            }            
+            if lb.onClick != nil {
                 ea := new_event_args()
-                lb.onMouseClick(lb, &ea)
+                lb.onClick(lb, &ea)
                 return 0
             }
 
@@ -237,14 +230,7 @@ calculate_label_size :: proc(lb : ^Label) {
             if lb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 lb.onRightMouseUp(lb, &mea)
-            }
-            if lb._mRDownHappened {
-                lb._mDownHappened = false
-                SendMessage(lb.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            lb._mRDownHappened = false
+            }            
             if lb.onRightClick != nil {
                 ea := new_event_args()
                 lb.onRightClick(lb, &ea)

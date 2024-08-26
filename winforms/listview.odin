@@ -883,7 +883,7 @@ set_hdr_text_flag :: proc(lvc: ^ListViewColumn) {
 		// SetTextColor(nmcd.hdc, get_color_ref(lv.headerForeColor))
 		// coltxt := to_wstring(col.text)
 		draw_divider(lv._divPen, nmcd.hdc, nmcd.rc.right, nmcd.rc.top, nmcd.rc.bottom)
-		SetBkMode(nmcd.hdc, 1) // TRANSPARENT
+		api.SetBkMode(nmcd.hdc, api.BKMODE.TRANSPARENT) // TRANSPARENT
 		nmcd.rc.left += 3 // We need some room on the left side
 		DrawText(nmcd.hdc, col._wideText, -1, &nmcd.rc, col._hdrTxtFlag)
 		// print("draw text res ", col._hdrTxtFlag, col.text)

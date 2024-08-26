@@ -66,7 +66,7 @@ tray_show_context_menu :: proc(this: ^TrayIcon)
     pt : POINT    
     if !this.contextMenu._menuInserted do cmenu_create_handle(this.contextMenu)
     GetCursorPos(&pt)
-	api.TrackPopupMenu(this.contextMenu.handle, 2, int(pt.x), int(pt.y), 0, this.contextMenu._dummyHwnd, nil)
+	api.TrackPopupMenu(this.contextMenu.handle, 2, pt.x, pt.y, 0, this.contextMenu._dummyHwnd, nil)
     // ptf("tray context menu res %d", x);    
 }
 
