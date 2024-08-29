@@ -6,11 +6,16 @@
 package winforms
 import api "core:sys/windows"
 
+TPM_RETURNCMD :: 0x0100
+TPM_FLAG : u32: TPM_LEFTBUTTON | TPM_RETURNCMD
+SRCCOPY : DWORD : 0x00CC0020
+
 ContextMenu :: struct {
     using _base: MenuBase,
     parent : ^Control,
     tray : ^TrayIcon,
     width, height : int,
+    customDraw: bool,
 
     _dummyHwnd : HWND,
     _selTxtClr, _grayCref : COLORREF,
@@ -39,7 +44,7 @@ ContextMenu :: struct {
 
 new_contextmenu :: proc{new_contextmenu1, new_contextmenu2}
 
-@private new_contextmenu1 :: proc(parent: ^Control) -> ^ContextMenu
+@private new_contextmenu1 :: proc(parent: ^Control, cdraw: bool) -> ^ContextMenu
 {
     this := cmenu_ctor()
     this.parent = parent
@@ -47,31 +52,35 @@ new_contextmenu :: proc{new_contextmenu1, new_contextmenu2}
     return this
 }
 
-@private new_contextmenu2 :: proc() -> ^ContextMenu
+@private new_contextmenu2 :: proc(cdraw: bool) -> ^ContextMenu
 {
     this := cmenu_ctor()
+    this.customDraw = cdraw
     this.font = new_font("Tahoma", 11)
     return this
 }
 
 control_add_contextmenu :: proc{add_contextmenu1, add_contextmenu2}
 
-add_contextmenu1 :: proc(ctl: ^Control)
+add_contextmenu1 :: proc(ctl: ^Control, cdraw: bool)
 {
-    cmenu := new_contextmenu(ctl)
+    cmenu := new_contextmenu(ctl, cdraw)
+    cmenu.customDraw = cdraw
     ctl.contextMenu = cmenu
     ctl._cmenuUsed = true
 }
 
-add_contextmenu2 :: proc(ctl: ^Control, cmenus: ..string)
+add_contextmenu2 :: proc(ctl: ^Control, cdraw: bool, cmenus: ..string)
 {
-    this := new_contextmenu(ctl)
+    this := new_contextmenu(ctl, cdraw)
+    this.customDraw = cdraw
     ctl.contextMenu = this
     ctl._cmenuUsed = true
     if len(cmenus) > 0 {
         for name in cmenus {
             mtyp : MenuType = name == "|" ? .Seprator : .Context_Menu
             mi := new_menuitem(name, mtyp, this.handle, this._menuCount)
+            mi._ownDraw = this.customDraw
             this._menuCount += 1
             append(&this.menus, mi)
         }
@@ -83,6 +92,7 @@ contextmenu_add_item :: proc(this: ^ContextMenu, item: string) -> ^MenuItem
 {
     mtyp : MenuType = item == "|" ? .Seprator : .Context_Menu
     mi := new_menuitem(item, mtyp, this.handle, this._menuCount)
+    mi._ownDraw = this.customDraw
     this._menuCount += 1
     append(&this.menus, mi)
     return mi
@@ -94,6 +104,7 @@ contextmenu_add_items :: proc(this: ^ContextMenu, items: ..string)
     for item in items {
         mtyp : MenuType = item == "|" ? .Seprator : .Context_Menu
         mi := new_menuitem(item, mtyp, this.handle, this._menuCount)
+        mi._ownDraw = this.customDraw
         this._menuCount += 1
         append(&this.menus, mi)
     }
@@ -175,6 +186,75 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
     if this.font.handle == nil do CreateFont_handle(&this.font)
 }
 
+// @private menuitem_draw_text :: proc(this: ^ContextMenu, mi: ^MenuItem, dis: LPDRAWITEMSTRUCT)
+// {
+//     textWidth := dis.rcItem.right - dis.rcItem.left
+//     textHeight := dis.rcItem.bottom - dis.rcItem.top
+//     if !mi._textCached {
+//         if mi._textMemoryDC != nil {
+//             SelectObject(mi._textMemoryDC, cast(HGDIOBJ)mi._oldTextBitmap)
+//             DeleteObject(cast(HGDIOBJ)mi._textBitmap)
+//             DeleteDC(mi._textMemoryDC)
+//         }
+//         // Create a memory DC and bitmap for the text
+//         mi._textMemoryDC = CreateCompatibleDC(dis.hDC)
+//         mi._textBitmap = CreateCompatibleBitmap(dis.hDC, textWidth, textHeight)
+//         mi._oldTextBitmap = cast(HBITMAP)SelectObject(mi._textMemoryDC, cast(HGDIOBJ)mi._textBitmap)
+
+//         // Set up the text drawing attributes
+//         api.SetBkMode(mi._textMemoryDC, api.BKMODE.TRANSPARENT)
+//         SelectObject(mi._textMemoryDC, cast(HGDIOBJ)this.font.handle)
+//         SetTextColor(mi._textMemoryDC, mi.fgColor.ref)
+
+//         // Draw the text onto the memory DC
+//         textRect := RECT{0, 0, textWidth, textHeight}
+//         DrawText(mi._textMemoryDC, mi._wideText, -1, &textRect, DT_LEFT | DT_SINGLELINE | DT_VCENTER)
+
+//         // Mark the text as cached
+//         mi._textCached = true
+//         mi._textWidth = textWidth
+//         mi._textHeight = textHeight
+//         ptf("one menu text drawn %d", mi.idNum)
+//     }
+// }
+
+@private menuitem_draw_menu :: proc(mi: ^MenuItem, cmenu: ^ContextMenu, dis: LPDRAWITEMSTRUCT)
+{
+    txtClrRef : COLORREF = mi.fgColor.ref
+    if dis.itemState & 1 == 1 {
+        if mi._isEnabled {
+            rc := RECT{ dis.rcItem.left + 4, 
+                        dis.rcItem.top + 2, 
+                        dis.rcItem.right, 
+                        dis.rcItem.bottom - 2
+                        }
+            api.FillRect(dis.hDC, &rc, cmenu._hotBgBrush)
+            FrameRect(dis.hDC, &rc, cmenu._borderBrush)
+            txtClrRef = 0x00000000
+        } else {
+            api.FillRect(dis.hDC, &dis.rcItem, cmenu._grayBrush)
+            txtClrRef = cmenu._grayCref
+        }
+    } else {
+        api.FillRect(dis.hDC, &dis.rcItem, cmenu._defBgBrush)
+        if !mi._isEnabled do txtClrRef = cmenu._grayCref
+    }
+
+    api.SetBkMode(dis.hDC, api.BKMODE.TRANSPARENT)
+    dis.rcItem.left += 25
+    SelectObject(dis.hDC, cast(HGDIOBJ)cmenu.font.handle)
+    SetTextColor(dis.hDC, txtClrRef)
+    DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, DT_LEFT | DT_SINGLELINE | DT_VCENTER)
+    // menuitem_draw_text(cmenu, mi, dis)
+    // BitBlt(dis.hDC, dis.rcItem.left + 25, dis.rcItem.top, 
+    //         mi._textWidth, mi._textHeight, mi._textMemoryDC, 0, 0, SRCCOPY)
+}
+
+// @private menuitem_draw_menus :: proc(this: ^MenuItem, dis: LPDRAWITEMSTRUCT)
+// {
+
+// }
+
 
 // Display context menu on mouse click or short key press.
 // Both TrayIcon and Control class use this function.
@@ -217,25 +297,30 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
         We are using TPM_RETURNCMD in the tpm_flag, so we don't get the 
         WM_COMMAND in our wndproc, we will get the selected menu id in return value.
         ----------------------------------------------------------------------------*/
-        mid := uint(api.TrackPopupMenu(this.handle, TPM_FLAG, pt.x, pt.y, 0, this._dummyHwnd, nil))
-        if mid > 0 {
-            menu, okay := get_menuitem_from_idnumber(this, mid)
+        mid1 := TrackPopupMenu(this.handle, TPM_FLAG, pt.x, pt.y, 0, this._dummyHwnd, nil)
+
+        if mid1 > 0 {
+            menu, okay := get_menuitem_from_idnumber(this, u32(mid1))
             if okay && menu._isEnabled {
                 if menu.onClick != nil{
                     ea := new_event_args()
                     menu.onClick(menu, &ea)
                 }
-            }
+            } 
         }
+        
+      
 
     }
-    
+    //(hMenu: HMENU, uFlags: UINT, x, y: INT, nReserved: INT, hWnd: HWND, prcRect: ^RECT) -> BOOL ---
 }
 
-@private get_menuitem_from_idnumber :: proc(this: ^ContextMenu, idnum: uint) -> (^MenuItem, bool)
+@private get_menuitem_from_idnumber :: proc(this: ^ContextMenu, idnum: u32) -> (^MenuItem, bool)
 {
+    // ptf("given id: %d", idnum)
     if len(this.menus) > 0 {
         for menu in this.menus {
+            // ptf("my id: %d", menu.idNum)
             if menu.idNum == idnum do return menu, true
         }
     }
@@ -276,29 +361,9 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
             cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
             dis := dir_cast(lp, LPDRAWITEMSTRUCT)
             mi := dir_cast(dis.itemData, ^MenuItem)
-            txtClrRef : COLORREF = mi.fgColor.ref
-
-            if dis.itemState & 1 == 1 {
-                if mi._isEnabled {
-                    rc := RECT{dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2}
-                    api.FillRect(dis.hDC, &rc, cmenu._hotBgBrush)
-                    FrameRect(dis.hDC, &rc, cmenu._borderBrush)
-                    txtClrRef = 0x00000000
-                } else {
-                    api.FillRect(dis.hDC, &dis.rcItem, cmenu._grayBrush)
-                    txtClrRef = cmenu._grayCref
-                }
-            } else {
-                api.FillRect(dis.hDC, &dis.rcItem, cmenu._defBgBrush)
-                if !mi._isEnabled do txtClrRef = cmenu._grayCref
-            }
-
-            api.SetBkMode(dis.hDC, api.BKMODE.TRANSPARENT)
-            dis.rcItem.left += 25
-            SelectObject(dis.hDC, cast(HGDIOBJ)cmenu.font.handle)
-            SetTextColor(dis.hDC, txtClrRef)
-            DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, DT_LEFT | DT_SINGLELINE | DT_VCENTER)
+            menuitem_draw_menu(mi, cmenu, dis)
             return 0
+            
 
         case WM_ENTERMENULOOP:
             cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
@@ -314,7 +379,7 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
             }
         case WM_MENUSELECT:
             cmenu := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^ContextMenu)
-            idNumber := uint(LOWORD(wp))
+            idNumber := u32(LOWORD(wp))
             hMenu := dir_cast(lp, HMENU)
             if hMenu != nil && idNumber > 0 {
                 menu, okay := get_menuitem_from_idnumber(cmenu, idNumber)

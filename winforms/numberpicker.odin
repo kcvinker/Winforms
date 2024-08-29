@@ -23,7 +23,9 @@ import api "core:sys/windows"
     UDS_HORZ :: 0x40
     UDS_NOTHOUSANDS :: 0x80
     UDS_HOTTRACK :: 0x100
-
+    DCX_WINDOW1 : u32 : 0x00000001
+    DCX_INTERSECTRGN1 : u32 : 0x00000080 
+    ETO_OPAQUE : u32 :    0x0002
     EN_UPDATE :: 1024
     UDN_FIRST :: (UINT_MAX - 721)
     UDN_DELTAPOS :: (UDN_FIRST - 1)
@@ -472,31 +474,38 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, buddy_wnd_proc, sc_id)
         case WM_PAINT :
-            // if tb.paint != nil {
-            //     ps : PAINTSTRUCT
-            //     hdc := BeginPaint(hw, &ps)
-            //     pea := new_paint_event_args(&ps)
-            //     tb.onTextPaint(tb, &pea)
-            //     EndPaint(hw, &ps)
-            //     return 0
-            // }
+            // print("wm paint")
             /* We are drawing the edge line over the edit border.
              * Because, we need our edit & updown look like a single control. */
-            tb := control_cast(NumberPicker, ref_data)
+            nump := control_cast(NumberPicker, ref_data)
             res := DefSubclassProc(hw, msg, wp, lp)
             hdc : HDC = GetWindowDC(hw)
             defer ReleaseDC(hw, hdc)
-            np_paint_buddy_border(tb, hdc)
-            // DrawEdge(hdc, &tb._tbrc, BDR_SUNKENOUTER, tb._topEdgeFlag) // Right code
-            // DrawEdge(hdc, &tb._tbrc, BDR_RAISEDINNER, tb._botEdgeFlag )
-            // fpen : HPEN = CreatePen(PS_SOLID, 1, tb._bgcRef) // We use Edit's back color.
-            // SelectObject(hdc, HGDIOBJ(fpen))
-            // MoveToEx(hdc, tb._lineX, 1, nil)
-            // LineTo(hdc, tb._lineX, tb.height - 1)
-            // ReleaseDC(hw, hdc)
-            // DeleteObject(HGDIOBJ(fpen))
-
+            np_paint_buddy_border(nump, hdc)           
             return res
+
+        // case WM_NCPAINT:            
+        //     // DefSubclassProc(hw, msg, wp, lp)
+        //     hrgn : api.HRGN = cast(api.HRGN)wp
+        //     nump := control_cast(NumberPicker, ref_data)
+        //     hdc : api.HDC = api.GetDCEx(hw, hrgn, DCX_WINDOW1 | DCX_INTERSECTRGN1)  
+        //     print("hdc = ", hdc)          
+        //     defer ReleaseDC(hw, hdc)
+        //     hBrush : HBRUSH = get_solid_brush(0xe63946)
+        //     defer delete_gdi_object(hBrush)
+        //     rc : RECT
+        //     GetRgnBox(hrgn, &rc)
+        //     print_rect(rc, "hrgn")
+        //     // SetBackColor(hdc, get_color_ref(0xe63946))
+        //     hOld := SelectObject(hdc, cast(HGDIOBJ)hBrush)
+        //     // Rectangle(hdc, rc.left, rc.top + 2, rc.right, rc.bottom)
+        //     // Rectangle(hdc, nump._tbrc.left, nump._tbrc.top + 2, nump._tbrc.right, nump._tbrc.bottom)
+        //     // FrameRect(hdc, &nump._tbrc, hBrush)
+        //     FillRgn(hdc, hrgn, hBrush)
+        //     SelectObject(hdc, hOld)
+        //     return 0
+
+        
 
         case CM_CTLLCOLOR :
             tb := control_cast(NumberPicker, ref_data)

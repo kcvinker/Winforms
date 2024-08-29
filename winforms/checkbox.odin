@@ -1,8 +1,27 @@
+
+/*===========================================CheckBox Docs=========================================================
+    CheckBox struct
+        Constructor: new_checkBox() -> ^CheckBox
+        Properties:
+            All props from Control struct
+            checked         : bool
+            textAlignment   : enum {Left, Right}
+            autoSize        : bool
+        Functions:
+        Events:
+            EventHandler type -proc(^Control, ^EventArgs) [See events.odin]
+                onCheckChanged
+        
+==============================================================================================================*/
+
+
+
+
 package winforms
 
 import "base:runtime"
 import api "core:sys/windows"
-// WcCheckBoxW : wstring = L("Button")
+@private _cbcount : int
 
 CheckBox :: struct
 {
@@ -16,8 +35,11 @@ CheckBox :: struct
     onCheckChanged : EventHandler,
 }
 
-@private _cbcount : int
+// Constructor for Checkbox type.
+new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
+
+//===================================================Private functions=============================================
 @private cb_ctor :: proc(p : ^Form, txt : string, x, y, w, h: int) -> ^CheckBox
 {
     this := new(CheckBox)
@@ -46,9 +68,6 @@ CheckBox :: struct
     append(&p._controls, this)
     return this
 }
-
-// Constructor for Checkbox type.
-new_checkbox :: proc{new_checkbox1, new_checkbox2}
 
 @private new_checkbox1 :: proc(parent : ^Form, txt : string = "") -> ^CheckBox
 {
@@ -107,8 +126,6 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
 	}
 }
 
-
-
 @private cb_finalize :: proc(cb: ^CheckBox, scid: UINT_PTR)
 {
     delete_gdi_object(cb._bkBrush)
@@ -119,12 +136,9 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
 @private cb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                                         sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
-    // context = runtime.default_context()
     context = global_context
     cb := control_cast(CheckBox, ref_data)
-
-    switch msg
-    {
+    switch msg {
         case WM_PAINT :
             if cb.paint != nil {
                 ps : PAINTSTRUCT
@@ -144,6 +158,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 ea := new_event_args()
                 cb.onCheckChanged(cb, &ea)
             }
+
         case CM_CTLLCOLOR :
             hd := dir_cast(wp, HDC)
             bkref := get_color_ref(cb.backColor)
@@ -180,6 +195,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.onRightMouseDown(cb, &mea)
             }
+
         case WM_LBUTTONUP :
             if cb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -214,6 +230,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 mea := new_mouse_event_args(msg, wp, lp)
                 cb.onMouseScroll(cb, &mea)
             }
+
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
             if cb._isMouseEntered {
                 if cb.onMouseMove != nil {
@@ -228,7 +245,6 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                     cb.onMouseEnter(cb, &ea)
                 }
             }
-        //end case--------------------
 
         case WM_MOUSELEAVE :
             cb._isMouseEntered = false
@@ -237,9 +253,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
                 cb.onMouseLeave(cb, &ea)
             }
 
-
         case WM_DESTROY : cb_finalize(cb, sc_id)
-
 
         case : return DefSubclassProc(hw, msg, wp, lp)
     }

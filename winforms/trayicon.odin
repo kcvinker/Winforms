@@ -61,14 +61,14 @@ new_tray_icon :: proc(tooltip: string, iconpath: string = "") -> ^TrayIcon
     return this
 }
 
-tray_show_context_menu :: proc(this: ^TrayIcon)
-{
-    pt : POINT    
-    if !this.contextMenu._menuInserted do cmenu_create_handle(this.contextMenu)
-    GetCursorPos(&pt)
-	api.TrackPopupMenu(this.contextMenu.handle, 2, pt.x, pt.y, 0, this.contextMenu._dummyHwnd, nil)
-    // ptf("tray context menu res %d", x);    
-}
+// tray_show_context_menu :: proc(this: ^TrayIcon)
+// {
+//     pt : POINT    
+//     if !this.contextMenu._menuInserted do cmenu_create_handle(this.contextMenu)
+//     GetCursorPos(&pt)
+// 	TrackPopupMenu(this.contextMenu.handle, 2, pt.x, pt.y, 0, this.contextMenu._dummyHwnd, nil)
+//     // ptf("tray context menu res %d", x);    
+// }
 
 tray_show_balloon :: proc(this: ^TrayIcon, title, message: string, 
                                 timeout: u32,               // In milliseconds. 
@@ -130,7 +130,7 @@ tray_update_icon :: proc(this: ^TrayIcon, iconpath: string)
 
 tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNames: ..string) -> ^ContextMenu
 {
-    cmenu := new_contextmenu();
+    cmenu := new_contextmenu(true);
     contextmenu_add_items(cmenu, ..menuNames)
     cmenu.tray = this
     cmenu._hasTrayParent = true  

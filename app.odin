@@ -24,7 +24,7 @@ MakeWindow :: proc()
     frm = new_form( txt = "Odin is fun")
     frm.width = 1100
     frm.height = 500
-    frm.font = new_font("Tahoma", 13)
+    // frm.font = new_font("Tahoma", 13)
     print_points(frm)
     
     create_handle(frm)
@@ -42,7 +42,8 @@ MakeWindow :: proc()
     // And our timer_ontick proc will be called on each tick.
     tmr = form_addTimer(frm, 400, timer_ontick)
 
-    mbar := new_menubar(frm, "File", "Edit", "Format")
+    mbar := new_menubar(frm, true, "File", "Edit", "Format")
+    
 
     // Add some sub menus. "|" is for separator.
     menubar_add_items(mbar, mbar.menus[0], "New Work", "New Client", "|", "Exit")
@@ -50,7 +51,7 @@ MakeWindow :: proc()
     menubar_add_items(mbar, mbar.menus[2], "Font", "Line Space", "Para Spce")
     menubar_add_items(mbar, mbar.menus[0].menus[0], "Contract Work", "Carriage Work", "Transmission Work")
     mbar.menus[0].menus[1].onClick = newclient_menuclick
-
+    mbar.menus[0].menus[1].menuState = .Checked
     b1 := new_button(frm, "Normal", 10, 10, 110, 35 )
     b1.onClick = open_file_proc
 
@@ -94,8 +95,10 @@ MakeWindow :: proc()
     listview_add_row(lv, "Win8", "Catalina", "Debian")
     listview_add_row(lv, "Win10", " Big Sur", "Kali")
 
-    control_add_contextmenu(lv, "Compile", "Link Only", "|", "Make Console")
+    control_add_contextmenu(lv, true, "Compile", "Link Only", "|", "Make Console")
     lv.contextMenu.menus[0].onClick = contextmenu_click // Handler for "Compile" menu
+    lv.contextMenu.menus[0].menuState = MenuState.Checked
+    // lv.contextMenu._ownDraw = true
 
     tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20)
 
@@ -151,6 +154,9 @@ MakeWindow :: proc()
 
 main :: proc()
 {
+    // BOOL1:: distinct i32
+    // v1 : BOOL1 = 1
+    // ptf("v1: %32b", v1)
     track: mem.Tracking_Allocator
     // temp_track: mem.Tracking_Allocator
 

@@ -1,4 +1,44 @@
 
+/*===========================================Form Docs=========================================================
+    Form struct
+        Constructor: new_form() -> ^Form
+        Properties:
+            Al props from Control struct
+            start_pos       : StartPosition - An enum in this file.
+            style           : FormStyle     - An enum in this file.
+            minimizeBox     : bool
+            maximizeBox     : bool 
+            createChilds    : bool 
+            windowState     : FormState     - An enum in this file.
+            menubar         : ^MenuBar      - See menu.odin
+        Functions:
+            form_set_gradient()     : Set gradient background for form
+            start_mainloop()        : Show the form and start the main loop
+            form_show()             : Show the form
+            form_hide()             : Hide the form
+            form_setstate()         : Set the minimize/maximize state
+            form_addTimer()         : Adds a timer to form.
+            create_handle()         : Create the handle of form
+            print_points()          : Print the mouse cordinates when clicked.
+        Events:
+            EventHandler type -proc(^Control, ^EventArgs) [See events.odin]
+                onLoad 
+                onActivate
+                onDeActivate
+                onMoving
+                onMoved 
+                onMinimized
+                onMaximized
+                onRestored
+                onClosing
+                onClosed 
+            SizeEventHandler type - proc(^Control, ^SizeEventArgs) [See events.odin]
+                 onResizing
+                 onResized 
+            ThreadMsgHandler type - proc(WPARAM, LPARAM)
+                onThreadMsg
+
+==============================================================================================================*/
 package winforms
 
 import "core:fmt"
@@ -18,8 +58,6 @@ import api "core:sys/windows"
     0xEEEEE4
 */
 
-
-menuTxtFlag :: DT_LEFT | DT_SINGLELINE | DT_VCENTER
 
 
 Form :: struct
@@ -53,13 +91,53 @@ Form :: struct
     _controls : [dynamic]^Control,
     _gdBrush: HBRUSH,
     _comboData : [dynamic]ComboData,
-    _menuItemMap : map[uint]^MenuItem,
+    _menuItemMap : map[u32]^MenuItem,
     _menubarUsed: bool,
     _timerMap: map[UINT_PTR]^Timer,
     _formID: int,
-
 }
 
+// Create new form
+new_form :: proc{new_form1, new_form2}
+
+// Users can call 'create_handle()' instead of this.
+create_form :: proc(frm : ^Form )
+{
+    // if app.mainHandle == nil {}
+    if frm.backColor != def_window_color && frm._drawMode != .Gradient do frm._drawMode = .Flat_Color
+    set_start_position(frm)
+    set_form_style(frm)
+    frm.handle = CreateWindowEx(  frm._exStyle,
+                                    &winFormsClass[0],
+                                    to_wstring(frm.text),
+                                    frm._style,
+                                    i32(frm.xpos),
+                                    i32(frm.ypos),
+                                    i32(frm.width),
+                                    i32(frm.height),
+                                    nil,
+                                    nil,
+                                    app.hInstance,
+                                    nil )
+    if frm.handle == nil {
+        fmt.println("Error in CreateWindowEx,", GetLastError()) }
+    else {
+        app.winMap[frm.handle] = frm
+        frm._isCreated = true
+        app.formCount += 1
+        if app.mainHandle == nil {
+            app.mainHandle = frm.handle
+            app.startState = frm.windowState
+        }
+        // set_form_font_internal(frm)
+        if frm.font.handle == nil do CreateFont_handle(&frm.font)
+        SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) frm)
+        ShowWindow(app.mainHandle, cast(i32) app.startState )
+    }
+    // free_all(context.temp_allocator)
+}
+
+// Print the mouse coordinates where it clicked
 print_points :: proc(frm: ^Form) { frm.onMouseUp = print_point_func }
 
 // Set the colors to draw a gradient background in form.
@@ -88,8 +166,13 @@ start_mainloop :: proc(this: ^Form)
     app_finalize(app)
 }
 
+// Show the form
 form_show :: proc(f : Form) { ShowWindow(f.handle, SW_SHOW) }
+
+// Hide the form
 form_hide :: proc(f : Form) { ShowWindow(f.handle, SW_HIDE) }
+
+// Set the maximize/minimize/restore states
 form_setstate :: proc(frm : Form, state : FormState) { ShowWindow(frm.handle, cast(i32) state ) }
 
 /* Add a new timer control to form. Interval is in milliseconds */
@@ -104,8 +187,10 @@ form_addTimer :: proc(this: ^Form, interval: u32 = 100, tickHandler: EventHandle
     return tm
 }
 
+// Drawing mode
 FormDrawMode :: enum { Default, Flat_Color, Gradient,}
-//GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
+
+// Form start position
 StartPosition :: enum
 {
     Top_Left,
@@ -120,9 +205,18 @@ StartPosition :: enum
     Manual,
 }
 
+// Form style
 FormStyle :: enum { Default, Fixed_Single, Fixed_3D, Fixed_Dialog, Fixed_Tool, Sizable_Tool, }
+
+// Starting state of Form
 FormState :: enum {Normal = 1, Minimized, Maximized}
+
+// Private ??
 FormGradient :: struct {c1, c2 : Color, t2b : bool, }
+
+//=================================================================Private Functions=========================
+
+menuTxtFlag :: DT_LEFT | DT_SINGLELINE | DT_VCENTER
 
 @private form_ctor :: proc( t : string = "", w : int = 500, h : int = 400 ) -> ^Form
 {
@@ -147,7 +241,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     f._formID = app.formCount
     f.windowState = .Normal
     f._uDrawChilds = make(map[UINT]HWND)
-
+    // ptf("font name: %s", f.font.name)
     return  f
 }
 
@@ -157,8 +251,6 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 {
     return form_ctor( txt, w, h)
 }
-
-new_form :: proc{new_form1, new_form2}
 
 @private delete_childs :: proc(this: ^Form)
 {
@@ -224,65 +316,11 @@ new_form :: proc{new_form1, new_form2}
     }
 }
 
-// Users can call 'create_handle' instead of this.
-create_form :: proc(frm : ^Form )
-{
-    if app.mainHandle == nil {register_class()}
-    if frm.backColor != def_window_color && frm._drawMode != .Gradient do frm._drawMode = .Flat_Color
-    set_start_position(frm)
-    set_form_style(frm)
-    frm.handle = CreateWindowEx(  frm._exStyle,
-                                    &winFormsClass[0],
-                                    to_wstring(frm.text),
-                                    frm._style,
-                                    i32(frm.xpos),
-                                    i32(frm.ypos),
-                                    i32(frm.width),
-                                    i32(frm.height),
-                                    nil,
-                                    nil,
-                                    app.hInstance,
-                                    nil )
-    if frm.handle == nil {
-        fmt.println("Error in CreateWindowEx,", GetLastError()) }
-    else {
-        app.winMap[frm.handle] = frm
-        frm._isCreated = true
-        app.formCount += 1
-        if app.mainHandle == nil {
-            app.mainHandle = frm.handle
-            app.startState = frm.windowState
-        }
-        // set_form_font_internal(frm)
-        if frm.font.handle == nil do CreateFont_handle(&frm.font)
-        SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) frm)
-        ShowWindow(app.mainHandle, cast(i32) app.startState )
-    }
-    // free_all(context.temp_allocator)
-}
-
-print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
+@private print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
 {
     @static x : int = 1
     fmt.printf("[%d] X: %d,  Y: %d\n", x, mea.x, mea.y)
     x+= 1
-}
-
-@private register_class :: proc()
-{
-    win_class : WNDCLASSEXW
-    win_class.cbSize = size_of(win_class)
-    win_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC
-    win_class.lpfnWndProc = window_proc
-    win_class.cbClsExtra = 0
-    win_class.cbWndExtra = 0
-    win_class.hInstance = app.hInstance
-    win_class.hIcon = LoadIcon(nil, IDI_APPLICATION)
-    win_class.hCursor = LoadCursor(nil, IDC_ARROW)
-    win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) 
-    win_class.lpszMenuName = nil
-    win_class.lpszClassName = &winFormsClass[0]
-    res := RegisterClassEx(&win_class)
 }
 
 @private set_start_position :: proc(frm : ^Form)
@@ -354,34 +392,6 @@ print_point_func :: proc(c: ^Control, mea : ^MouseEventArgs)
     TrackMouseEvent(&tme)
 }
 
-// @private form_gradient_bkg :: proc(this: ^Form, hdc: HDC, rct: RECT)
-// {
-//     tempRct : RECT
-//     brush : HBRUSH
-//     c1 := this._gdraw.c1
-//     c2 := this._gdraw.c2
-//     t2b := this._gdraw.t2b
-//     x := int(c2.red - c1.red)
-//     y := int(c2.green - c1.green)
-//     z := int(c2.blue - c1.blue)
-//     loopEnd := int(rct.bottom if t2b else rct.right)
-//     for i in 0..<loopEnd
-//     {
-//         r, g, b : uint = 0, 0, 0
-//         r = uint(int(c1.red) + int((int(i) * x) / loopEnd))
-//         g = uint(int(c1.green) + int((int(i) * y) / loopEnd))
-//         b = uint(int(c1.blue) + int((int(i) * z) / loopEnd))
-//         // tBrush = CreateSolidBrush((b << 16) | (g << 8) | r)
-//         // rc = RECT()
-//         tempRct.left = 0 if t2b else i32(i)
-//         tempRct.top = i32(i) if t2b else 0
-//         tempRct.right = rct.right if t2b else i32(i + 1)
-//         tempRct.bottom = i32(i) + i32(1) if t2b else i32(loopEnd)
-//         brush = CreateSolidBrush(get_color_ref(r, g, b))
-//         FillRect(hdc, &tempRct, brush)
-//     }
-// }
-
 @private set_back_clr_internal :: proc(this : ^Form, hdc : HDC)
 {
     rct : RECT
@@ -427,12 +437,11 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
     }
 }
 
-
 // It's a private function. Combobox module is the caller.
-collect_combo_data :: proc(frm: ^Form, cd : ComboData) {append(&frm._comboData, cd)}
+@private collect_combo_data :: proc(frm: ^Form, cd : ComboData) {append(&frm._comboData, cd)}
 
 //It's a private function. Combobox module is the caller.
-update_combo_data :: proc(frm: ^Form, cd : ComboData)
+@private update_combo_data :: proc(frm: ^Form, cd : ComboData)
 {
     for &c in frm._comboData {
         if c.comboID == cd.comboID {
@@ -443,7 +452,8 @@ update_combo_data :: proc(frm: ^Form, cd : ComboData)
     }
 }
 
-@private find_combo_data :: proc(frm : ^Form, list_hwnd : HWND) -> (HWND, bool) {
+@private find_combo_data :: proc(frm : ^Form, list_hwnd : HWND) -> (HWND, bool) 
+{
     // We will search for the appropriate data in our combo data list.
     if len(frm._comboData) > 0 {
         for cd in frm._comboData {
@@ -470,15 +480,6 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
     context = global_context
     //display_msg(msg)
     switch msg {
-        // case WM_PARENTNOTIFY :
-        //    // display_msg(msg)
-        //     if lo_word(DWORD(wp)) == WM_CREATE {
-        //         chw := get_lparam_value(lp, HWND)
-        //         return SendMessage(chw, CM_PARENTNOTIFY, 0, 0)
-        //         //ptf("handle from parent notify - %d\n", chw)
-        //     }
-        // case WM_CREATE:
-        //     return 0
         case CM_THREAD_MSG:
             frm := app.winMap[hw]
             if frm.onThreadMsg != nil do frm.onThreadMsg(wp, lp)
@@ -505,17 +506,6 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
                 EndPaint(hw, &ps)
                 return 0
             }
-            // return 1
-
-
-        // case WM_DRAWITEM :
-        //     ctl_hwnd, hwnd_found := frm._uDrawChilds[UINT(wp)]
-        //     if hwnd_found
-        //     {
-        //         return SendMessage(ctl_hwnd, CM_LABELDRAW, 0, lp)
-        //     }
-        //     else do return 0
-
 
         case WM_CTLCOLOREDIT :
             ctl_hwnd := dir_cast(lp, HWND)
@@ -543,17 +533,12 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
                 return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
             }
 
-        // case LB_GETITEMHEIGHT :
-        //     fmt.println("LB_GETITEMHEIGHT")
-                // ctl_hwnd := dir_cast(lp, HWND)
-                // return SendMessage(ctl_hwnd, WM_CTLCOLORBTN, wp, lp )
-
         case WM_COMMAND :
             frm := app.winMap[hw]
             switch HIWORD(wp) {
                 case 0:
                     if len(frm._menuItemMap) > 0 {
-                        menu := frm._menuItemMap[cast(uint)(LOWORD(wp))]
+                        menu := frm._menuItemMap[cast(u32)(LOWORD(wp))]
                         if menu != nil && menu.onClick != nil {
                             ea := new_event_args()
                             menu.onClick(menu, &ea)
@@ -614,12 +599,8 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
                 return 0
             }
 
-        case WM_LBUTTONDOWN:
-            // time.stopwatch_start(&sw)            
+        case WM_LBUTTONDOWN:            
             frm := app.winMap[hw]
-            // time.stopwatch_stop(&sw)
-            // ptf("frm getting time %s", time.stopwatch_duration(sw))
-            // time.stopwatch_reset(&sw)
             frm._mDownHappened = true
             if frm.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -734,26 +715,6 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
                 return 1
             }
             return 1
-        //case WM_WINDOWPOSCHANGING:
-            //alert("Pos changing")
-            /*
-            wps := dir_cast(lp, ^WINDOWPOS)
-            frm.xpos = int(wps.x)
-            frm.ypos = int(wps.y)
-            frm.width = int(wps.cx)
-            frm.height = int(wps.cy)
-            if frm._size_started {
-                frm._size_started = false
-                if frm.onSizeChanging != nil {
-                    ea := new_event_args()
-                    frm.onSizeChanging(frm, &ea)
-                    return 1
-                }
-            }
-
-        //case WM_WINDOWPOSCHANGED:
-            //alert("Pos changed")
-            //wps := dir_cast(lp, ^WINDOWPOS) */
 
         case WM_SIZE :
             frm := app.winMap[hw]
@@ -846,57 +807,29 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
         // Menu related
         case WM_MEASUREITEM:
             pmi := dir_cast(lp, LPMEASUREITEMSTRUCT)
-            mi := dir_cast(pmi.itemData, ^MenuItem)
-            // ptf("wm measure item - menu name : %s\n", mi.text)
-            if mi.kind == .Base_Menu || mi.kind == .Popup {
-                hdc := GetDC(hw)
-                size : SIZE
-                GetTextExtentPoint32(hdc, mi._wideText, len(mi.text), &size)
-                ReleaseDC(hw, hdc)
-                pmi.itemWidth = auto_cast(size.width)
-                pmi.itemHeight = auto_cast(size.height + 10)
-            } else {
-                pmi.itemWidth = 150
-                pmi.itemHeight = 25
-            }
-            return toLRES(true)
+            if pmi.CtlType == ODT_MENU {
+                mi := dir_cast(pmi.itemData, ^MenuItem)            
+                if mi.kind == .Base_Menu || mi.kind == .Popup {
+                    hdc := GetDC(hw)
+                    defer ReleaseDC(hw, hdc)
+                    size : SIZE
+                    GetTextExtentPoint32(hdc, mi._wideText, len(mi.text), &size)                    
+                    pmi.itemWidth = auto_cast(size.width)
+                    pmi.itemHeight = auto_cast(size.height + 10)
+                } else {
+                    pmi.itemWidth = 150
+                    pmi.itemHeight = 25
+                }
+                return toLRES(true)
+            }            
 
         case WM_DRAWITEM:
             frm := app.winMap[hw]
             dis := dir_cast(lp, LPDRAWITEMSTRUCT)
-            mi := dir_cast(dis.itemData, ^MenuItem)
-            // ptf("wm draw item - menu name : %s\n", mi.text)
-            txtClrRef := mi.fgColor.ref
-
-            if dis.itemState == 320 || dis.itemState == 257 {
-                rc : RECT
-                if mi._isEnabled {
-
-                    rc = RECT{dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2}
-                    api.FillRect(dis.hDC, &rc, frm.menubar._menuHotBgBrush)
-                    FrameRect(dis.hDC, &rc, frm.menubar._menuFrameBrush)
-                    txtClrRef = 0x00000000
-                } else {
-
-                    api.FillRect(dis.hDC, &rc, frm.menubar._menuGrayBrush)
-                    txtClrRef = frm.menubar._menuGrayCref
-                }
-            } else {
-                // ptf("draw menu : %s\n", mi.text)
-                api.FillRect(dis.hDC, &dis.rcItem, frm.menubar._menuDefBgBrush)
-                if !mi._isEnabled do txtClrRef = frm.menubar._menuGrayCref
+            if dis.ctlType == ODT_MENU {
+                menubar_draw_menu_items(frm.menubar, dis)
+                return 0
             }
-
-            api.SetBkMode(dis.hDC, api.BKMODE.TRANSPARENT)
-            if mi.kind == .Base_Menu  {
-                dis.rcItem.left += 10
-            } else {
-                dis.rcItem.left += 25
-            }
-            SelectObject(dis.hDC, cast(HGDIOBJ)(frm.menubar.font.handle))
-            SetTextColor(dis.hDC, txtClrRef)
-            DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, menuTxtFlag)
-            return 0
 
         case WM_CONTEXTMENU:
             frm := app.winMap[hw]
@@ -906,7 +839,7 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
         case WM_MENUSELECT:
             frm := app.winMap[hw]
             menu_okay, pmenu := getMenuFromHmenu(frm, dir_cast(lp, HMENU))
-            mid := cast(uint)(LOWORD(wp)) // Could be an id of a child menu or index of a child menu
+            mid := cast(u32)(LOWORD(wp)) // Could be an id of a child menu or index of a child menu
             hwwpm := HIWORD(wp)
             if menu_okay {
                 menu_okay = false

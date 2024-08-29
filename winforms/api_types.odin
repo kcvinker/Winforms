@@ -103,6 +103,7 @@ ULONG_PTR :: api.ULONG_PTR
 ULONG:: api.ULONG
 
 BOOL:: api.BOOL
+BOOL2 :: distinct i32
 WCHAR :: api.WCHAR
 wstring :: [^]WCHAR
 LPCWSTR :: api.LPCWSTR
@@ -215,7 +216,7 @@ LOGFONT :: struct {
 	lfClipPrecision : byte,
 	lfQuality : byte,
 	lfPitchAndFamily : byte,
-	lfFaceName : [^]WCHAR,
+	lfFaceName : [32]WCHAR,
 }
 
 

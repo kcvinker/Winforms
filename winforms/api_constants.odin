@@ -25,6 +25,7 @@ CCS_LEFT    :: 129
 CCS_NOMOVEX :: 130
 CCS_RIGHT   :: 131
 
+ODT_MENU :: 1
 
 
 //Windoe displaying Constants
@@ -35,7 +36,7 @@ SW_SHOWMINIMIZED :: 2
 SW_SHOWMAXIMIZED :: 3
 
 SW_SHOW :: 5
-
+MFS_CHECKED :: 0x00000008
 
 
 

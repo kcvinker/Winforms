@@ -1,4 +1,17 @@
 
+/*===========================================Button Docs=========================================================
+    Button struct
+        Constructor: new_button() -> ^Button
+        Properties:
+            All props from Control struct
+        Functions:
+			button_set_gradient_colors()
+
+        Events:
+			All events from Control struct
+        
+==============================================================================================================*/
+
 package winforms
 
 import "core:fmt"
@@ -33,31 +46,6 @@ Button :: struct
 	_addedInDrawList : b64,
 }
 
-
-FlatDraw :: struct // To manage flat color button drawing
-{
-	defBrush : HBRUSH,
-	hotBrush : HBRUSH,
-	defPen : HPEN,
-	hotPen : HPEN,
-}
-
-GradColor :: struct
-{
-	c1 : Color,
-	c2 : Color,
-}
-
-GradDraw :: struct  // To manage gradient drawing
-{
-	gcDef : GradColor,
-	gcHot : GradColor,
-	defBrush : HBRUSH,
-	hotBrush : HBRUSH,
-	defPen : HPEN,
-	hotPen : HPEN,
-}
-
 // create new Button type
 new_button :: proc{new_button1, new_button2, new_button3, new_button4}
 
@@ -67,6 +55,31 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	if (btn._drawFlag & 4) != 1 do btn._drawFlag += 4
 	gradDrawSetData(&btn._gdraw, clr1, clr2)
     if btn._isCreated do InvalidateRect(btn.handle, nil, false)
+}
+
+//======================================================================Private Functions========================
+@private FlatDraw :: struct // To manage flat color button drawing
+{
+	defBrush : HBRUSH,
+	hotBrush : HBRUSH,
+	defPen : HPEN,
+	hotPen : HPEN,
+}
+
+@private GradColor :: struct
+{
+	c1 : Color,
+	c2 : Color,
+}
+
+@private GradDraw :: struct  // To manage gradient drawing
+{
+	gcDef : GradColor,
+	gcHot : GradColor,
+	defBrush : HBRUSH,
+	hotBrush : HBRUSH,
+	defPen : HPEN,
+	hotPen : HPEN,
 }
 
 @private flatDrawSetData :: proc(fd: ^FlatDraw, c: uint)
@@ -322,6 +335,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
                 EndPaint(hw, &ps)
                 return 0
             }
+
 		case WM_SETFOCUS:
 			btn := control_cast(Button, ref_data)
             if btn.onGotFocus != nil {
@@ -341,23 +355,19 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 			return 0  // Avoid this if you want to show the focus rectangle (....)
 
 		case WM_LBUTTONDOWN:
-			// time.stopwatch_start(&sw) 
 			btn := control_cast(Button, ref_data)
-			// time.stopwatch_stop(&sw)
-            // ptf("button getting time in lb DOWN %s", time.stopwatch_duration(sw))
-            // time.stopwatch_reset(&sw)
-			// btn._mDownHappened = true
 			if btn.onMouseDown != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onMouseDown(btn, &mea)
 			}
+
 		case WM_RBUTTONDOWN:
 			btn := control_cast(Button, ref_data)
-			// btn._mRDownHappened = true
 			if btn.onRightMouseDown != nil {
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onRightMouseDown(btn, &mea)
 			}
+
 		case WM_LBUTTONUP :
 			btn := control_cast(Button, ref_data)				
 			if btn.onMouseUp != nil	{
@@ -388,6 +398,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 				mea := new_mouse_event_args(msg, wp, lp)
 				btn.onMouseScroll(btn, &mea)
 			}
+
 		case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
 			btn := control_cast(Button, ref_data)
 			if btn._isMouseEntered {
@@ -424,8 +435,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 			btn := control_cast(Button, ref_data)
 			btn_finalize(btn, hw, sc_id)
 			free(btn,  context.allocator)
-			RemoveWindowSubclass(hw, btn_wnd_proc, sc_id)
-		
+			RemoveWindowSubclass(hw, btn_wnd_proc, sc_id)		
 
 		case : return DefSubclassProc(hw, msg, wp, lp)
 	}

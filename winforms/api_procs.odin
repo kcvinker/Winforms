@@ -195,14 +195,15 @@ foreign user32 {
    //                                                       item: uint,
    //                                                       fByPosition: BOOL,
    //                                                       lpmi: LPCMENUITEMINFO) -> BOOL ---
-   // @(link_name="TrackPopupMenu") TrackPopupMenu :: proc(hmenu: HMENU,
-   //                                                       uFlags: uint,
-   //                                                       x, y, nReserved: int,
-   //                                                       hwnd: HWND) -> BOOL ---
+   @(link_name="TrackPopupMenu") TrackPopupMenu :: proc(hmenu: HMENU,
+                                                         uFlags: u32,
+                                                         x, y, nReserved: i32,
+                                                         hwnd: HWND, lpr: ^RECT) -> BOOL2 ---
    @(link_name="DestroyMenu") DestroyMenu :: proc(hmenu: HMENU) -> BOOL ---
    @(link_name="SetTimer") SetTimer :: proc(hWnd: HWND, nID: UINT_PTR, uEl: UINT, lpfn: TIMERPROC) -> UINT_PTR ---
    @(link_name="KillTimer") KillTimer :: proc(hWnd: HWND, nID: UINT_PTR) -> BOOL ---
    @(link_name="UnregisterClassW") UnregisterClass :: proc(LPCWSTR, HINSTANCE) -> BOOL ---
+   @(link_name="DrawFrameControl") DrawFrameControl :: proc(HDC, ^RECT, UINT, UINT) -> BOOL ---
 
 
 
@@ -284,6 +285,10 @@ foreign gdi32 {
    @(link_name="RoundRect") RoundRect :: proc(dch : HDC, left, top, right, bottom, width, height : i32) -> BOOL---
    @(link_name="FillPath") FillPath :: proc(dch : HDC) -> BOOL---
    @(link_name="TextOutW") TextOut :: proc(hdc: HDC, x, y: i32, lpTxt: wstring, tLen: i32) -> BOOL---
+   @(link_name="BitBlt") BitBlt :: proc(hdc: HDC, x, y, cx, cy: i32, hdcSrc: HDC, x1, y1: i32, rop: DWORD) -> BOOL---
+   @(link_name="GetRgnBox") GetRgnBox :: proc(hrgn: HRGN, lprc: ^RECT) -> BOOL---
+   @(link_name="ExtTextOutW") ExtTextOut :: proc(hdc: HDC, x, y: i32, opt: u32, lprc: ^RECT, str: LPCWSTR, c: u32, lpdx: ^i32) -> BOOL---
+   @(link_name="FillRgn") FillRgn :: proc(hdc: HDC, hrg: HRGN, hbr: HBRUSH) -> BOOL---
 
 
 } // Gdi32 library

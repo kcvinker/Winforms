@@ -53,14 +53,14 @@ import api "core:sys/windows"
     MF_MOUSESELECT :: 0x00008000
     MF_END :: 0x00000080
     HWND_MESSAGE :: HWND(cast(UINT_PTR)(U64MAX - 3) + 1)
+    ODM_FLAG :: MIIM_ID | MIIM_TYPE | MIIM_DATA | MIIM_SUBMENU | MIIM_STATE
+    SDM_FLAG :: MIIM_ID | MIIM_TYPE | MIIM_STATE | MIIM_SUBMENU
 // End Constants
 
 MenuType :: enum {Base_Menu, Menu_Item, Popup, Context_Menu, Seprator}
 
-TPM_RETURNCMD :: 0x0100
-TPM_FLAG :: TPM_LEFTBUTTON | TPM_RETURNCMD
 
-menuNumber : uint = 101
+menuNumber : u32 = 101
 bf : i32 = 0
 bt : i32 = 1
 bfalse : BOOL = cast(BOOL)bf
@@ -68,17 +68,20 @@ btrue : BOOL = cast(BOOL)bt
 cmenuMsgWinCreated : bool = false
 cmenuClass := []WCHAR {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'C', 'm', 'e', 'n', 'u', 0}
 
+MenuState :: enum u32 {Enabled, Unchecked = 0, Unhilite = 0, Disabled = 3, Checked = 8, Hilite = 128 }
 MenuBase :: struct
 {
     handle: HMENU,
     font: Font,
     menus : [dynamic]^MenuItem,
     _menuCount: uint,
+    _isCreated: bool,
 }
 
 MenuBar :: struct
 {
     using _base: MenuBase,
+    customDraw: bool,
     _pForm: ^Form,
     _menuGrayCref: COLORREF,
     _menuDefBgBrush,
@@ -87,39 +90,24 @@ MenuBar :: struct
     _menuGrayBrush : HBRUSH,
 }
 
-MenuItem :: struct
-{
-    using _base: MenuBase,
-	parentHandle : HMENU,
-	bgColor: Color,
-	fgColor: Color,
-	idNum : uint,
-    text: string,
-	kind: MenuType,
-    hasCheckMark : bool,
-
-    _wideText: LPCWSTR,
-	_index : uint,
-	_evtFlag : uint,
-    _uFlag: uint,
-	_iLevel: int,
-	_isCreated : bool,
-	_isEnabled : bool,
-	_popup : bool,
-	_formMenu : bool,
-    _formHwnd: HWND,
-	_parent: ^MenuItem,
-    _menubar: ^MenuBar,
-
-    // Events
-	onClick, onPopup, onCloseup, onFocus: MenuEventHandler,
-}
-
-
 
 MenuEvents :: enum {On_Click, On_Popup, On_Closeup, On_Focus}
 
+//===================================================================MENUBAR==============================
+
+// Create new menubar
 new_menubar :: proc{menubar_ctor1, menubar_ctor2}
+
+// Add single item to menubar.
+menubar_add_item :: proc{ menubar_additem1, menubar_additem2}
+
+// Add more than one menu items to parent menu.
+menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems3}
+
+// Get the menu item with given name.
+menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
+
+//--------------------Menubar Private funcs------------------------------------
 
 @private menubar_ctor :: proc(frm: ^Form) -> ^MenuBar
 {
@@ -130,8 +118,7 @@ new_menubar :: proc{menubar_ctor1, menubar_ctor2}
     this._menuGrayBrush = get_solid_brush(0xced4da)
     this._menuGrayCref = get_color_ref(0x979dac)
     this._pForm.menubar = this
-    // this.menus = make(map[string]^MenuItem)
-    this._pForm._menuItemMap = make(map[uint]^MenuItem)
+    this._pForm._menuItemMap = make(map[u32]^MenuItem)
     this._pForm._menubarUsed = true
     // ptf("MenuBar handle %d\n", this.handle)
     return this
@@ -142,42 +129,54 @@ new_menubar :: proc{menubar_ctor1, menubar_ctor2}
     return menubar_ctor(frm)
 }
 
-@private menubar_ctor2 :: proc(frm : ^Form, menuitems: ..string) -> ^MenuBar
+@private menubar_ctor2 :: proc(frm : ^Form, cdraw: bool, menuitems: ..string) -> ^MenuBar
 {
     this := menubar_ctor(frm)
+    this.customDraw = cdraw
     menubar_additems1(this, ..menuitems)
     return this
 }
 
-new_menuitem :: proc{menuitem_ctor}
-
-@private menuitem_ctor :: proc(menutxt: string, mtyp: MenuType, pHandle: HMENU, indexNum: uint) -> ^MenuItem
+@private menubar_draw_menu_items :: proc(this: ^MenuBar, dis: LPDRAWITEMSTRUCT)
 {
-    this:= new(MenuItem)
-    this._popup = mtyp == .Base_Menu || mtyp == .Popup ? true : false
-    this.handle = this._popup ? CreatePopupMenu() : CreateMenu()
-    this._index = indexNum
-    this.idNum = menuNumber
-    this.text = menutxt
-    this._wideText = to_wstring(this.text, context.allocator)
-    this.kind = mtyp
-    this.parentHandle = pHandle
-    this.bgColor = new_color(0xe9ecef)
-    this.fgColor = new_color(0x000000)
-    this._isEnabled = true
-    menuNumber += 1
-    // ptf("Menu item handle %d\n", this.handle)
+    mi := dir_cast(dis.itemData, ^MenuItem)
+    // ptf("wm draw item - item state : %d\n", dis.itemState)
+    txtClrRef := mi.fgColor.ref
+    if (dis.itemState & 1 == 1 || dis.itemState == 320) {             
+        rc : RECT
+        if mi._isEnabled {
+            rc = RECT{dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2}
+            api.FillRect(dis.hDC, &rc, this._menuHotBgBrush)
+            FrameRect(dis.hDC, &rc, this._menuFrameBrush)
+            txtClrRef = 0x00000000
+            
+        } else {
 
-	return this
+            api.FillRect(dis.hDC, &rc, this._menuGrayBrush)
+            txtClrRef = this._menuGrayCref
+        }
+        
+    } else {
+        // ptf("draw menu : %s\n", mi.text)
+        api.FillRect(dis.hDC, &dis.rcItem, this._menuDefBgBrush)
+        if !mi._isEnabled do txtClrRef = this._menuGrayCref
+    }
+    api.SetBkMode(dis.hDC, api.BKMODE.TRANSPARENT)
+    if mi.kind == .Base_Menu  {
+        dis.rcItem.left += 10
+    } else {
+        dis.rcItem.left += 25
+    }
+    SelectObject(dis.hDC, cast(HGDIOBJ)(this.font.handle))
+    SetTextColor(dis.hDC, txtClrRef)
+    DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, menuTxtFlag)
 }
-
-// Add single item to menubar.
-menubar_add_item :: proc{ menubar_additem1, menubar_additem2}
 
 menubar_additem1 :: proc(this: ^MenuBar, menuTxt: string, txtColor: uint = 0x000000) -> ^MenuItem
 {
     mi := new_menuitem(menuTxt, MenuType.Base_Menu, this.handle, this._menuCount )
     mi._formHwnd = this._pForm.handle
+    mi._ownDraw = this.customDraw
     mi.fgColor = new_color(txtColor)
     mi._formMenu = true
     this._menuCount += 1
@@ -190,6 +189,7 @@ menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, parent: ^MenuItem, txt
 {
     mi := new_menuitem(menuTxt, MenuType.Menu_Item, parent.handle, parent._menuCount )
     mi._formHwnd = parent._formHwnd
+    mi._ownDraw = this.customDraw
     mi.fgColor = new_color(txtColor)
     mi._formMenu = true
     parent._menuCount += 1
@@ -198,8 +198,6 @@ menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, parent: ^MenuItem, txt
     return mi
 }
 
-// Add more than one menu items to parent menu.
-menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems3}
 
 // Create more than one base menus in this MenuBar.
 @private menubar_additems1 :: proc(this: ^MenuBar, menuTxts: ..string)
@@ -207,6 +205,7 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
     for item in menuTxts {
         mi := new_menuitem(item, MenuType.Base_Menu, this.handle, this._menuCount )
         mi._formHwnd = this._pForm.handle
+        mi._ownDraw = this.customDraw
         mi._formMenu = true
         this._menuCount += 1
         // this.menus[item] = mi
@@ -214,7 +213,6 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
         this._pForm._menuItemMap[mi.idNum] = mi
     }
 }
-
 
 @private menubar_additems2 :: proc(this: ^MenuBar, parentIndex: int, menu_txts: ..string)
 {
@@ -228,23 +226,6 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
 {
     add_multi_childs(parentMenu, this, ..menu_txts)
 }
-
-
-@private add_multi_childs :: proc(this: ^MenuItem, mbar: ^MenuBar, childMenuNames: ..string)
-{
-    for item in childMenuNames {
-        mtyp: MenuType = item == "|" ? MenuType.Seprator : MenuType.Menu_Item
-        mi := new_menuitem(item, mtyp, this.handle, this._menuCount )
-        mi._formHwnd = this._formHwnd
-        mi._formMenu = true
-        this._menuCount += 1
-        append(&this.menus, mi)
-        mbar._pForm._menuItemMap[mi.idNum] = mi
-    }
-}
-
-// Find a child menu with given name and create child menus in it.
-// menubar_additems3 :: proc(this: ^MenuBar, parentName: string, newSubmenu: string, childMenuNames: []string)
 
 // This will get called right before the form first appeared on the screen.
 @private menubar_create_handle :: proc(this: ^MenuBar)
@@ -262,66 +243,6 @@ menubar_add_items :: proc{menubar_additems1, menubar_additems2, menubar_additems
 	}
     SetMenu(this._pForm.handle, this.handle)
 }
-
-@private insert_menu_internal :: proc(mi: ^MenuItem, parent: HMENU)
-{
-	mii : api.MENUITEMINFOW
-    mii.cbSize = size_of(mii)
-    mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA | MIIM_SUBMENU | MIIM_STATE
-    mii.fType = MF_OWNERDRAW
-    mii.dwTypeData = mi._wideText
-    mii.cch = auto_cast(len(mi.text))
-    mii.dwItemData = dir_cast(rawptr(mi), ULONG_PTR)
-    mii.wID = auto_cast(mi.idNum)
-    mii.hSubMenu = mi._popup ? mi.handle : nil
-    x:= api.InsertMenuItemW(parent, u32(mi.idNum), btrue, &mii)
-    mi._isCreated = true
-    // ptf("257: Parent handle %d, child name : %s, child handle : %d\n", parent, mi.text, mi.handle)
-}
-
-@private menuitem_create_handle :: proc(mi: ^MenuItem)
-{
-    switch mi.kind {
-        case .Base_Menu, .Popup:
-            if len(mi.menus) > 0 {
-                for menu in mi.menus {
-                    // ptf("265: menu item name %s\n", menu.text)
-                    menuitem_create_handle(menu)
-                }
-            }
-            insert_menu_internal(mi, mi.parentHandle)
-        case .Menu_Item: insert_menu_internal(mi, mi.parentHandle)
-        case .Seprator: api.AppendMenuW(mi.parentHandle, MF_SEPARATOR, 0, nil)
-        case .Context_Menu: break
-    }
-}
-
-@private find_parentmenu :: proc(frm: ^Form, parentTxt: string) -> (okay: bool, result: ^MenuItem)
-{
-    result = nil
-    okay = false
-    for _, mi in frm._menuItemMap {
-        if mi.text == parentTxt {
-            result = mi
-            okay = true
-            break
-        }
-    }
-    return okay, result
-}
-
-@private get_child_menu_from_id :: proc(mi: ^MenuItem, index: uint) -> (bool, ^MenuItem)
-{
-    if mi._menuCount > 0 {
-        for menu in mi.menus {
-            if menu.idNum == index do return true, menu
-        }
-    }
-    return false, nil
-}
-
-// Get the menu item with given name.
-menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
 
 @private menubar_getitem1 :: proc(this: ^MenuBar, menu_text: string) -> (^MenuItem, bool)
 {
@@ -355,32 +276,6 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     return nil, false
 }
 
-@private find_child_menu :: proc(this: ^MenuItem, child_name: string) -> (^MenuItem, bool)
-{
-    if this.text == child_name do return this, true
-    if len(this.menus) > 0 {
-        for menu in this.menus do if menu.text == child_name do return menu, true
-    }
-    return nil, false
-}
-
-
-
-
-
-
-@private menuitem_dtor :: proc(this: ^MenuItem)
-{
-    if this._menuCount > 0 {
-        for menu in this.menus do menuitem_dtor(menu)
-        delete(this.menus)
-    }
-
-    DestroyMenu(this.handle)
-    free(this._wideText)    
-    free(this)
-}
-
 @private menubar_dtor :: proc(this: ^MenuBar)
 {
     if this._menuCount > 0 {
@@ -397,5 +292,182 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
 }
 
 
+//==================================================MENU ITEM==================================
 
+MenuItem :: struct
+{
+    using _base: MenuBase,
+	parentHandle : HMENU,
+	bgColor: Color,
+	fgColor: Color,
+	idNum : u32,
+    text: string,
+	kind: MenuType,
+    hasCheckMark : bool,
+    menuState : MenuState,
+
+    _wideText: LPCWSTR,
+	_index : uint,
+	_evtFlag : uint,
+    _uFlag: uint,
+	_iLevel: int,
+    _cachedWidth, _cachedHeight: i32,
+	_isEnabled : bool,
+	_popup : bool,
+	_formMenu : bool,
+    _ownDraw: bool,
+    _drawMenu: bool,
+    _formHwnd: HWND,
+	_parent: ^MenuItem,
+    _menubar: ^MenuBar,
+    
+    // _textMemoryDC: HDC,   // Memory DC for caching text
+    // _textBitmap: HBITMAP, // Bitmap for caching text
+    // _oldTextBitmap: HBITMAP, // To restore the original bitmap
+    // _textCached: bool,    // Flag to indicate if the text is cached
+    // _textWidth: i32,      // Width of the cached text bitmap
+    // _textHeight: i32,     // Height of the cached text bitmap
+
+    // Events
+	onClick, onPopup, onCloseup, onFocus: MenuEventHandler,
+}
+
+new_menuitem :: proc{menuitem_ctor}
+
+menu_set_state :: proc(this: ^MenuItem, value: MenuState)
+{
+    if this._isCreated {
+        mii: api.MENUITEMINFOW
+        mii.cbSize = size_of(mii)
+        mii.fMask = MIIM_STATE
+        mii.fState = u32(value)
+        fBypos : BOOL = auto_cast(false)
+        mid: u32 = auto_cast(this.idNum)
+        api.SetMenuItemInfoW(this.parentHandle, mid, fBypos, &mii )
+    } else {
+        this.menuState = value
+    }
+}
+
+//--------------------------------MenuItem Private functions--------------------------------------------------
+@private menuitem_ctor :: proc(menutxt: string, mtyp: MenuType, pHandle: HMENU, indexNum: uint) -> ^MenuItem
+{
+    this:= new(MenuItem)
+    this._popup = mtyp == .Base_Menu || mtyp == .Popup ? true : false
+    this.handle = this._popup ? CreatePopupMenu() : CreateMenu()
+    this._index = indexNum
+    this.idNum = menuNumber
+    this.text = menutxt
+    this._drawMenu = true 
+    this._wideText = to_wstring(this.text, context.allocator)
+    this.kind = mtyp
+    this.parentHandle = pHandle
+    this.bgColor = new_color(0xe9ecef)
+    this.fgColor = new_color(0x000000)
+    this._isEnabled = true
+    menuNumber += 1
+    // ptf("Menu item handle %d\n", this.handle)
+
+	return this
+}
+
+@private add_multi_childs :: proc(this: ^MenuItem, mbar: ^MenuBar, childMenuNames: ..string)
+{
+    for item in childMenuNames {
+        mtyp: MenuType = item == "|" ? MenuType.Seprator : MenuType.Menu_Item
+        mi := new_menuitem(item, mtyp, this.handle, this._menuCount )
+        mi._formHwnd = this._formHwnd
+        mi._ownDraw = mbar.customDraw
+        mi._formMenu = true
+        this._menuCount += 1
+        append(&this.menus, mi)
+        mbar._pForm._menuItemMap[mi.idNum] = mi
+    }
+}
+
+@private insert_menu_internal :: proc(this: ^MenuItem, parent: HMENU)
+{
+    
+	mii : api.MENUITEMINFOW
+    mii.cbSize = size_of(mii)
+    mii.fMask = this._ownDraw ? ODM_FLAG : SDM_FLAG
+    mii.fType = this._ownDraw ? MF_OWNERDRAW : 0 
+    mii.fState = u32(this.menuState)
+    mii.dwTypeData = this._wideText
+    mii.cch = auto_cast(len(this.text))
+    mii.dwItemData = this._ownDraw ? dir_cast(rawptr(this), ULONG_PTR) : 0
+    mii.wID = auto_cast(this.idNum)
+    mii.hSubMenu = this._popup ? this.handle : nil
+    x:= api.InsertMenuItemW(parent, u32(this.idNum), btrue, &mii)
+    this._isCreated = true
+    // ptf("351: insert res: %d, menu name: %s, menu id: %d", x, this.text, mii.wID)
+}
+
+@private menuitem_create_handle :: proc(mi: ^MenuItem)
+{
+    switch mi.kind {
+        case .Base_Menu, .Popup:
+            if len(mi.menus) > 0 {
+                for menu in mi.menus {
+                    // ptf("265: menu item name %s\n", menu.text)
+                    menuitem_create_handle(menu)
+                }
+            }
+            insert_menu_internal(mi, mi.parentHandle)
+        case .Menu_Item: insert_menu_internal(mi, mi.parentHandle)
+        case .Seprator: api.AppendMenuW(mi.parentHandle, MF_SEPARATOR, 0, nil)
+        case .Context_Menu: break
+    }
+}
+
+@private find_parentmenu :: proc(frm: ^Form, parentTxt: string) -> (okay: bool, result: ^MenuItem)
+{
+    result = nil
+    okay = false
+    for _, mi in frm._menuItemMap {
+        if mi.text == parentTxt {
+            result = mi
+            okay = true
+            break
+        }
+    }
+    return okay, result
+}
+
+@private get_child_menu_from_id :: proc(mi: ^MenuItem, index: u32) -> (bool, ^MenuItem)
+{
+    if mi._menuCount > 0 {
+        for menu in mi.menus {
+            if menu.idNum == index do return true, menu
+        }
+    }
+    return false, nil
+}
+
+@private find_child_menu :: proc(this: ^MenuItem, child_name: string) -> (^MenuItem, bool)
+{
+    if this.text == child_name do return this, true
+    if len(this.menus) > 0 {
+        for menu in this.menus do if menu.text == child_name do return menu, true
+    }
+    return nil, false
+}
+
+@private menuitem_dtor :: proc(this: ^MenuItem)
+{
+    if this._menuCount > 0 {
+        for menu in this.menus do menuitem_dtor(menu)
+        delete(this.menus)
+    }
+
+    // if this._textMemoryDC != nil {
+    //     SelectObject(this._textMemoryDC, cast(HGDIOBJ)this._oldTextBitmap)
+    //     DeleteObject(cast(HGDIOBJ)this._textBitmap)
+    //     DeleteDC(this._textMemoryDC)
+    // }
+
+    DestroyMenu(this.handle)
+    free(this._wideText)    
+    free(this)
+}
 

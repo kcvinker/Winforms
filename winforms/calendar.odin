@@ -2,6 +2,26 @@
     Created on : 18-Jan-2022 04:30 PM
     Author : kcvinu
 */
+/*===========================================Calendar Docs=========================================================
+    Calendar struct
+        Constructor: new_calendar() -> ^Calendar
+        Properties:
+            All props from Control struct
+            value           : DateTime
+            viewMode        : ViewMode enum
+            oldView         : ViewMode enum
+            showWeekNum     : b64
+            noTodayCircle   : b64
+            noToday         : b64
+            noTrailingDates : b64
+            shortDayNames   : b64
+        Functions:
+        Events:
+            EventHandler type -proc(^Control, ^EventArgs) [See events.odin]
+                onValueChanged
+                onViewChanged
+                onSelectionChanged        
+==============================================================================================================*/
 
 package winforms
 import "base:runtime"
@@ -25,6 +45,9 @@ Calendar :: struct
     onViewChanged,
     onSelectionChanged : EventHandler,
 }
+
+// Create a new Calendar control.
+new_calendar :: proc{new_cal1, new_cal2}
 
 // Enum for setting Calendar's view mode.
 // Posible values : month, year, decade, centuary
@@ -54,9 +77,6 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     append(&p._controls, this)
     return this
 }
-
-// Create a new Calendar control.
-new_calendar :: proc{new_cal1, new_cal2}
 
 @private new_cal1 :: proc(parent : ^Form, x, y : int) -> ^Calendar
 {

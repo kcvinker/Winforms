@@ -25,7 +25,8 @@ Application :: struct
     hInstance : HINSTANCE,
     trayHwnd : HWND,
     screenWidth, screenHeight : int,
-    scaleFactor, sysDPI: i32,
+    sysDPI: i32,
+    scaleFactor: f64,
     formCount : int,
     clrWhite : uint,
     clrBlack : uint,
@@ -51,6 +52,8 @@ app_start :: proc()
     InitCommonControlsEx(&app.iccx)    
     app.clrWhite = pure_white
     app.clrBlack = pure_black
+    
+    register_class()
     get_system_dpi()    
 }
 
@@ -59,7 +62,26 @@ app_start :: proc()
     hdc: HDC = GetDC(nil)
     defer ReleaseDC(nil, hdc)
     app.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY)    
-    app.scaleFactor = GetScaleFactorForDevice(0)
+    scale := f64(GetScaleFactorForDevice(0))
+    app.scaleFactor = scale / 100.0
+	
+}
+
+@private register_class :: proc()
+{
+    win_class : WNDCLASSEXW
+    win_class.cbSize = size_of(win_class)
+    win_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC
+    win_class.lpfnWndProc = window_proc
+    win_class.cbClsExtra = 0
+    win_class.cbWndExtra = 0
+    win_class.hInstance = app.hInstance
+    win_class.hIcon = LoadIcon(nil, IDI_APPLICATION)
+    win_class.hCursor = LoadCursor(nil, IDC_ARROW)
+    win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) 
+    win_class.lpszMenuName = nil
+    win_class.lpszClassName = &winFormsClass[0]
+    res := RegisterClassEx(&win_class)
 }
 
 @private

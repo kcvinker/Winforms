@@ -2,7 +2,7 @@ package winforms
 import "core:mem"
 import "base:runtime"
 
-_def_font_name :: "Tahoma"
+_def_font_name :: "DejaVu Sans Condensed"
 _def_font_size :: 12
 
 Font :: struct
@@ -47,14 +47,15 @@ new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
 CreateFont_handle :: proc(this : ^Font) 
 {
-	scale: f32 = f32(app.scaleFactor) / 100.0
-	fsiz:= i32(scale * f32(this.size))
-	iHeight := -MulDiv(fsiz , app.sysDPI, 72)
+	fsiz:= i32(app.scaleFactor * f64(this.size))
+	iHeight : i32 = -MulDiv(fsiz , app.sysDPI, 72)
+	wfname : []u16 = utf8_to_utf16(this.name)
+
 	lf : LOGFONT
 	lf.lfItalic = cast(byte)this.italics
 	lf.lfUnderline = cast(byte)this.underline
-	lf.lfFaceName = to_wstring(this.name)
-	lf.lfHeight = app.fontHeight
+	copy(lf.lfFaceName[:], wfname) 
+	lf.lfHeight = iHeight
 	lf.lfWeight = cast(LONG)this.weight
 	lf.lfCharSet = DEFAULT_CHARSET
 	lf.lfOutPrecision = OUT_DEFAULT_PRECIS
@@ -62,6 +63,9 @@ CreateFont_handle :: proc(this : ^Font)
 	lf.lfQuality = DEFAULT_QUALITY
 	lf.lfPitchAndFamily = DEFAULT_PITCH
 	this.handle = CreateFontIndirect(&lf)
+	// for w in wfname {
+	// 	ptf("f digit : %d", w)
+	// }
 
 }
 

@@ -1,4 +1,43 @@
 
+/*===========================================ComboBox Docs=========================================================
+    ComboBox struct
+        Constructor: new_comboBox() -> ^ComboBox
+        Properties:
+            All props from Control struct
+            comboStyle          : DropDownStyle enum
+            items               : [dynamic]string
+            visibleItemCount    : int
+            selectedIndex       : int
+            selectedItem        : string
+        Functions:
+            combo_set_style()
+            combo_add_item()
+            combo_open_list()
+            combo_close_list()
+            combo_add_items()
+            combo_add_array()
+            combo_get_selected_index()
+            combo_set_selected_index()
+            combo_set_selected_item()
+            combo_get_selected_item()
+            combo_delete_selected_item()
+            combo_delete_item()
+            combo_clear_items()
+        Events:
+            EventHandler type -proc(^Control, ^EventArgs) [See events.odin]
+                onSelectionChanged
+                onSelectionCommitted
+                onSelectionCancelled
+                onTextChanged
+                onTextUpdated
+                onListOpened
+                onListClosed
+                onTBClick
+                onTBMouseLeave
+                onTBMouseEnter
+        
+==============================================================================================================*/
+
 package winforms
 
 import "core:fmt"
@@ -37,6 +76,113 @@ ComboBox :: struct
     onTBMouseEnter : EventHandler,
 }
 
+// Create new ComboBox
+new_combobox :: proc{new_combo1, new_combo2, new_combo3}
+
+// Show combo's dropdown list
+combo_open_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, WPARAM(1), 0) }
+
+// Close combo's dropdown list
+combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, WPARAM(0), 0) }
+
+// Add an item to combo.
+combo_add_item :: proc(cmb : ^ComboBox, item : $T )
+{
+    sitem : string
+    when T == string {
+        sitem = item
+    } else {
+        sitem := fmt.tprint(an_item)
+    }
+    append(&cmb.items, sitem)
+    if cmb._isCreated {
+        SendMessage(cmb.handle, CB_ADDSTRING, 0, dir_cast(to_wstring(sitem), LPARAM))
+        // free_all(context.temp_allocator)
+    }
+}
+
+// Add items to combo in bulk
+combo_add_items :: proc{add_items2}
+
+// Add an array to combo box
+combo_add_array :: proc(cmb : ^ComboBox, items : []$T )
+{
+    //print("called once")
+    when T == string {
+        for i in items {
+            append(&cmb.items, i)
+        }
+    } else {
+        for i in items {
+            a_string := fmt.tprint(i)
+            append(&cmb.items, a_string)
+        }
+    }
+    // IMPORTANT - add code for update combo items
+}
+
+// Get the selected index number
+combo_get_selected_index :: proc(cmb : ^ComboBox) -> int
+{
+    cmb.selectedIndex = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
+    return cmb.selectedIndex
+}
+
+// Set the item in given index as selected item
+combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)
+{
+    SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(i32(indx)), 0)
+    cmb.selectedIndex = indx
+}
+
+// Set the given item as selected item
+combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)
+{
+    sitem := fmt.tprint(item)
+    wp : i32 = -1
+    indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, WPARAM(wp), dir_cast(to_wstring(sitem), LPARAM))
+    if indx == LB_ERR do return
+    SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(indx), 0)
+    cmb.selectedIndex = int(indx)
+    cmb.selectedItem = sitem
+    // free_all(context.temp_allocator)
+}
+
+// Get the selected item
+combo_get_selected_item :: proc(cmb : ^ComboBox) -> any
+{
+    indx := int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
+    if indx > -1 {
+        return cmb.items[indx]
+    } else do return ""
+}
+
+// Delete the selected item
+combo_delete_selected_item :: proc(cmb : ^ComboBox)
+{
+    indx := i32(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
+    if indx > -1 {
+        SendMessage(cmb.handle, CB_DELETESTRING, WPARAM(indx), 0)
+        ordered_remove(&cmb.items, int(indx))
+    }
+}
+
+// Delete the item in given index
+combo_delete_item :: proc(cmb : ^ComboBox, indx : int)
+{
+    SendMessage(cmb.handle, CB_DELETESTRING, dir_cast(i32(indx), WPARAM), 0)
+    ordered_remove(&cmb.items, indx)
+}
+
+// Clear all items from combo
+combo_clear_items :: proc(cmb : ^ComboBox)
+{
+    SendMessage(cmb.handle, CB_DELETESTRING, 0, 0)
+    // TODO - clear dynamic array of combo.
+}
+
+
+//============================================Private functions==========================================
 ComboData :: struct
 {
     listBoxHwnd : HWND,
@@ -91,8 +237,6 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
     return cmb
 }
 
-new_combobox :: proc{new_combo1, new_combo2, new_combo3}
-
 @private new_combo1 :: proc(parent : ^Form) -> ^ComboBox
 {
     cmb := cmb_ctor(parent)
@@ -132,26 +276,6 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 }
 
-
-combo_add_item :: proc(cmb : ^ComboBox, item : $T )
-{
-    sitem : string
-    when T == string {
-        sitem = item
-    } else {
-        sitem := fmt.tprint(an_item)
-    }
-    append(&cmb.items, sitem)
-    if cmb._isCreated {
-        SendMessage(cmb.handle, CB_ADDSTRING, 0, dir_cast(to_wstring(sitem), LPARAM))
-        // free_all(context.temp_allocator)
-    }
-}
-
-combo_open_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, WPARAM(1), 0) }
-combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPDOWN, WPARAM(0), 0) }
-
-
 @private add_items2 :: proc(cmb : ^ComboBox, items : ..any )
 {
     for i in items {
@@ -172,24 +296,6 @@ combo_close_list :: proc(cmb : ^ComboBox) { SendMessage(cmb.handle, CB_SHOWDROPD
     }
 }
 
-combo_add_items :: proc{add_items2}
-
-combo_add_array :: proc(cmb : ^ComboBox, items : []$T )
-{
-    //print("called once")
-    when T == string {
-        for i in items {
-            append(&cmb.items, i)
-        }
-    } else {
-        for i in items {
-            a_string := fmt.tprint(i)
-            append(&cmb.items, a_string)
-        }
-    }
-    // IMPORTANT - add code for update combo items
-}
-
 @private additem_internal :: proc(cmb : ^ComboBox)
 {
     for i in cmb.items {
@@ -198,58 +304,6 @@ combo_add_array :: proc(cmb : ^ComboBox, items : []$T )
     }
 }
 
-combo_get_selected_index :: proc(cmb : ^ComboBox) -> int
-{
-    cmb.selectedIndex = int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
-    return cmb.selectedIndex
-}
-
-combo_set_selected_index :: proc(cmb : ^ComboBox, indx : int)
-{
-    SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(i32(indx)), 0)
-    cmb.selectedIndex = indx
-}
-
-combo_set_selected_item :: proc(cmb : ^ComboBox, item : $T)
-{
-    sitem := fmt.tprint(item)
-    wp : i32 = -1
-    indx := cast(i32) SendMessage(cmb.handle, CB_FINDSTRINGEXACT, WPARAM(wp), dir_cast(to_wstring(sitem), LPARAM))
-    if indx == LB_ERR do return
-    SendMessage(cmb.handle, CB_SETCURSEL, WPARAM(indx), 0)
-    cmb.selectedIndex = int(indx)
-    cmb.selectedItem = sitem
-    // free_all(context.temp_allocator)
-}
-
-combo_get_selected_item :: proc(cmb : ^ComboBox) -> any
-{
-    indx := int(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
-    if indx > -1 {
-        return cmb.items[indx]
-    } else do return ""
-}
-
-combo_delete_selected_item :: proc(cmb : ^ComboBox)
-{
-    indx := i32(SendMessage(cmb.handle, CB_GETCURSEL, 0, 0))
-    if indx > -1 {
-        SendMessage(cmb.handle, CB_DELETESTRING, WPARAM(indx), 0)
-        ordered_remove(&cmb.items, int(indx))
-    }
-}
-
-combo_delete_item :: proc(cmb : ^ComboBox, indx : int)
-{
-    SendMessage(cmb.handle, CB_DELETESTRING, dir_cast(i32(indx), WPARAM), 0)
-    ordered_remove(&cmb.items, indx)
-}
-
-combo_clear_items :: proc(cmb : ^ComboBox)
-{
-    SendMessage(cmb.handle, CB_DELETESTRING, 0, 0)
-    // TODO - clear dynamic array of combo.
-}
 
 @private check_mouse_leave :: proc(cmb: ^ComboBox) -> bool
 {
@@ -357,8 +411,7 @@ combo_clear_items :: proc(cmb : ^ComboBox)
 cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
-    // context = runtime.default_context()
-    context = global_context//app.curr_context^
+    context = global_context
     cmb := control_cast(ComboBox, ref_data)
     //display_msg(msg)
     switch msg {
@@ -444,7 +497,6 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                 return toLRES(cmb._bkBrush)
             }
 
-
         case WM_PARENTNOTIFY :
             wp_lw := LOWORD(wp)
             switch wp_lw {
@@ -465,15 +517,12 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                     }
             }
 
-
-        case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo
-            
+        case WM_LBUTTONDOWN:  // Only work in lb_comb and the triange btn of tb_combo            
             if cmb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 cmb.onMouseDown(cmb, &mea)
                 return 0
             }
-
 
         case WM_LBUTTONUP :  // Only work in lb_comb and the triange btn of tb_combo
             if cmb.onMouseUp != nil {
@@ -532,7 +581,6 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                     }
                 }
             }
-
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }
@@ -575,7 +623,6 @@ edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                 return 0
             }
 
-
         case WM_LBUTTONUP :  // Only work in lb_comb and the triange btn of tb_combo
             if cmb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -593,7 +640,6 @@ edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                 mea := new_mouse_event_args(msg, wp, lp)
                 cmb.onRightMouseDown(cmb, &mea)
             }
-
 
         case WM_RBUTTONUP :
             if cmb.onRightMouseUp != nil {
@@ -630,10 +676,6 @@ edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                     }
                 }
             }
-
-
-
     }
-
     return DefSubclassProc(hw, msg, wp, lp)
 }

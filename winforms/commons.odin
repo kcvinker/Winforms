@@ -340,14 +340,21 @@ array_search :: proc{	dynamic_array_search, static_array_search,}
 }
 
 
-// @private
-// print_rect :: proc(rc : RECT) {
-// 	ptf("left : %d\n", rc.left)
-// 	ptf("top : %d\n", rc.top)
-// 	ptf("right : %d\n", rc.right)
-// 	ptf("bottom : %d\n", rc.bottom)
-// 	print("----------------------------------------------------")
-// }
+@private
+print_rect :: proc(rc : RECT, name: string) {
+	ptf("[%s]	%d, %d, %d, %d", name, rc.left, rc.top, rc.right, rc.bottom)
+	// print("----------------------------------------------------")
+}
+
+@private
+screen_to_window :: proc(rc: RECT, hw: HWND) -> RECT
+{
+	p1: POINT = {rc.left, rc.top}
+	p2: POINT = {rc.right, rc.bottom}
+	api.ScreenToClient(hw, api.LPPOINT(&p1))
+	api.ScreenToClient(hw, api.LPPOINT(&p2))
+	return {p1.x, p1.y, p2.x, p2.y}
+}
 
 @private set_rect :: proc(rc : ^RECT, left, top, right, bottom: i32)
 {
