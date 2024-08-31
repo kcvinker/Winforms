@@ -1,11 +1,24 @@
+
+/*===========================GroupBox Docs==============================
+    GroupBox struct
+        Constructor: new_groupbox() -> ^GroupBox
+        Properties:
+            All props from Control struct
+        Functions:
+            gbx
+            gby
+        Events:
+            All events from Control struct
+        
+===============================================================================*/
+
+
 package winforms
 
 // import "core:fmt"
 import "base:runtime"
 import api "core:sys/windows"
 
-gbstyle : DWORD : WS_CHILD | WS_VISIBLE | BS_GROUPBOX
-gbexstyle : DWORD : WS_EX_CONTROLPARENT | WS_EX_LEFT | WS_EX_TRANSPARENT
 
 GroupBox :: struct
 {
@@ -14,6 +27,20 @@ GroupBox :: struct
     _paintBkg : b64,
 }
 
+// Groupbox control's constructor
+new_groupbox :: proc{gb_ctor1, gb_ctor2}
+
+gbx :: #force_inline proc(this: ^GroupBox, offset: int) -> int
+{
+    return this.xpos + offset
+}
+
+gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
+{
+    return this.ypos + offset
+}
+
+//==============================Private Functions==================================
 @private gb_count : int = 1
 
 @private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^GroupBox
@@ -62,9 +89,6 @@ GroupBox :: struct
     return gb
 }
 
-// Groupbox control's constructor
-new_groupbox :: proc{gb_ctor1, gb_ctor2}
-
 @private gb_before_creation :: proc(gb : ^GroupBox)
 {
     if gb.backColor != gb.parent.backColor do gb._paintBkg = true
@@ -75,16 +99,6 @@ new_groupbox :: proc{gb_ctor1, gb_ctor2}
 	set_subclass(this, gb_wnd_proc)
     // SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
     
-}
-
-gbx :: #force_inline proc(this: ^GroupBox, offset: int) -> int
-{
-    return this.xpos + offset
-}
-
-gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
-{
-    return this.ypos + offset
 }
 
 @private gb_finalize :: proc(this: ^GroupBox, scid: UINT_PTR)
@@ -103,11 +117,11 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
     //display_msg(msg)
     switch msg {
         case WM_PAINT :
-            if this.paint != nil {
+            if this.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                this.paint(this, &pea)
+                this.onPaint(this, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

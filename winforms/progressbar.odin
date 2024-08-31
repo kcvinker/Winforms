@@ -294,11 +294,11 @@ DTT_SHADOWCOLOR :: 4
     switch msg {
         case WM_DESTROY : pb_finalize(pb, sc_id)
         case WM_PAINT : return pb_draw_percentage(pb, hw, msg, wp, lp)
-            // if pb.paint != nil {
+            // if pb.onPaint != nil {
             //     ps : PAINTSTRUCT
             //     hdc := BeginPaint(hw, &ps)
             //     pea := new_paint_event_args(&ps)
-            //     pb.paint(pb, &pea)
+            //     pb.onPaint(pb, &pea)
             //     EndPaint(hw, &ps)
             //     return 0
             // }

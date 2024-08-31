@@ -4,7 +4,7 @@ package winforms
 EventHandler :: proc(sender : ^Control, ea : ^EventArgs) //distinct #type
 MouseEventHandler :: proc(sender : ^Control, e : ^MouseEventArgs)
 KeyEventHandler :: proc(sender : ^Control, e : ^KeyEventArgs)
-DateTimeEventHandler :: proc(sender : ^Control, e : ^DateTimeEvent)
+DateTimeEventHandler :: proc(sender : ^Control, e : ^DateTimeEventArgs)
 PaintEventHandler :: proc(sender : ^Control, e : ^PaintEventArgs)
 SizeEventHandler :: proc(sender : ^Control, e : ^SizeEventArgs)
 LBoxEventHandler :: proc(sender : ^Control, e : string)
@@ -40,7 +40,7 @@ KeyEventArgs :: struct
     suppressKeyPress : bool,
 }
 
-DateTimeEvent :: struct
+DateTimeEventArgs :: struct
 {
     using base : EventArgs,
     dateString : string,

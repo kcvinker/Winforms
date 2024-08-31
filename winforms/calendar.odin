@@ -26,7 +26,6 @@
 package winforms
 import "base:runtime"
 
-// WcCalenderClassW : wstring = to_wstring("SysMonthCal32")
 WcCalenderClassW : []WCHAR = {'S','y','s','M','o','n','t','h','C','a','l','3','2',0}
 
 Calendar :: struct
@@ -91,75 +90,6 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     if parent.createChilds do create_control(c)
     return c
 }
-
-// Api constants.
-    MCM_FIRST :: 0x1000
-    MCM_GETMINREQRECT :: (MCM_FIRST + 9)
-    MCM_SETCOLOR :: (MCM_FIRST + 10)
-    MCM_GETCALENDARGRIDINFO :: (MCM_FIRST + 24)
-
-    MCN_FIRST :: 4294966550
-    MCN_GETDAYSTATE :: (MCN_FIRST + 3)
-    MCN_SELCHANGE :: (MCN_FIRST - 3)
-    MCN_SELECT :: MCN_FIRST
-    MCN_VIEWCHANGE :: (MCN_FIRST-4)
-
-    MCMV_MONTH :: 0
-    MCMV_YEAR :: 1
-    MCMV_DECADE :: 2
-    MCMV_CENTURY :: 3
-    MCMV_MAX :: MCMV_CENTURY
-
-    MCGIP_CALENDARBODY :: 6
-    MCGIP_CALENDAR :: 4
-    MCGIF_RECT :: 0x2
-
-    //NM_RELEASEDCAPTURE :: 4294967280
-
-// End of API constants.
-
-// Api Types
-    NMSELCHANGE :: struct
-    {
-        nmhdr : NMHDR,
-        stSelStart,
-        stSelEnd : SYSTEMTIME,
-    }
-
-    NMVIEWCHANGE :: struct
-    {
-        nmhdr : NMHDR,
-        dwOldView : DWORD,
-        dwNewView : DWORD,
-    }
-
-    MCGRIDINFO :: struct
-    {
-        cbSize : UINT,
-        dwPart : DWORD,
-        dwFlags : DWORD,
-        iCalendar : i32,
-        iRow : i32,
-        iCol : i32,
-        bSelecte : bool,
-        stStart : SYSTEMTIME,
-        stEnd : SYSTEMTIME,
-        rc : RECT,
-        pszName : wstring,
-        cchNam : size_t,
-    }
-
-    NMMOUSE :: struct
-    {
-        nmhdr : NMHDR,
-        dwItemSpec : DWORD_PTR,
-        dwItemData : DWORD_PTR,
-        pt : POINT,
-        dwHitInfo : LPARAM,
-
-    }
-
-// End of API Types
 
 @private set_cal_style :: proc(c : ^Calendar)
 {
@@ -226,11 +156,11 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     switch msg {
 
         case WM_PAINT :
-            if cal.paint != nil {
+            if cal.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                cal.paint(cal, &pea)
+                cal.onPaint(cal, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

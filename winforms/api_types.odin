@@ -146,6 +146,60 @@ TRACKMOUSEEVENT :: struct
 	dwHoverTime : DWORD,
 }
 
+NMSELCHANGE :: struct
+    {
+        nmhdr : NMHDR,
+        stSelStart,
+        stSelEnd : SYSTEMTIME,
+    }
+
+    NMVIEWCHANGE :: struct
+    {
+        nmhdr : NMHDR,
+        dwOldView : DWORD,
+        dwNewView : DWORD,
+    }
+
+    MCGRIDINFO :: struct
+    {
+        cbSize : UINT,
+        dwPart : DWORD,
+        dwFlags : DWORD,
+        iCalendar : i32,
+        iRow : i32,
+        iCol : i32,
+        bSelecte : bool,
+        stStart : SYSTEMTIME,
+        stEnd : SYSTEMTIME,
+        rc : RECT,
+        pszName : wstring,
+        cchNam : size_t,
+    }
+
+    NMMOUSE :: struct
+    {
+        nmhdr : NMHDR,
+        dwItemSpec : DWORD_PTR,
+        dwItemData : DWORD_PTR,
+        pt : POINT,
+        dwHitInfo : LPARAM,
+
+    }
+
+	NMDATETIMECHANGE :: struct
+    {
+        nmhdr : NMHDR,
+        dwFlags : DWORD,
+        st : SYSTEMTIME,
+    }
+
+    NMDATETIMESTRINGW :: struct
+    {
+        nmhdr :  NMHDR,
+        pszUserString : wstring,
+        st : SYSTEMTIME,
+        dwFlags : DWORD,
+    }
 
 // RECT :: struct
 // {

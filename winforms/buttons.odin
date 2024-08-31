@@ -19,17 +19,8 @@ import "base:runtime"
 import "core:time"
 import api "core:sys/windows"
 
-// print :: fmt.println // Its easy to use. Delete after finishing this module.
-txtFlag : UINT= DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_HIDEPREFIX
 transparent : i32 : 1
-// WcButtonW : wstring
 _buttonCount : int
-
-
-MOUSE_CLICKED :: 0b1
-MOUSE_OVER :: 0b1000000
-BTN_FOCUSED :: 0b10000
-ROUND_FACTOR : i32 : 5
 btnclass := [7]WCHAR {'B', 'u', 't', 't', 'o', 'n', 0}
 
 ButtonStyle :: enum {Default, Flat, Gradient,}
@@ -327,11 +318,11 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	switch msg {
 		case WM_PAINT :
 			btn := control_cast(Button, ref_data)
-            if btn.paint != nil {
+            if btn.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                btn.paint(btn, &pea)
+                btn.onPaint(btn, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

@@ -208,11 +208,11 @@ textbox_clear_all :: proc(tb : ^TextBox)
     switch msg {
         case WM_PAINT :
 
-            if tb.paint != nil {
+            if tb.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                tb.paint(tb, &pea)
+                tb.onPaint(tb, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

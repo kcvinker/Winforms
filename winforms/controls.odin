@@ -1,14 +1,74 @@
 /*
-	Updated on 3rd week of 2023 October.
-	Reason : In first version, controls are merely structs. They are lived in stack. After doing some nice projects in
-	non-GCed languages like C3, I gained some knowledge and courage to work with heap objects.
-	So, I decided to re-write entire Winforms library & now controls are structs which living in heap.
-	So, we can handle them like classes. Besides that, I wrote some nice constructors for controls like
-	ListView. Now, you don't need to manually call the create_handle function for every control. Just pass a
-	boolean parameter to the constructor and it wil call the function for you.
-	IMPORTANT: Improved the memory leak scanning via passing the context to wndproc functions of all controls.
-	Now, you can see the memory leaks & bad frees by calling 'show_memory_report' function.
+	Major Update on 3rd week of 2023 October.
 */
+
+/*===========================================Control Docs=========================================================
+    Control struct
+        Constructor: No constructor available. It's an abstract type.
+        Properties:
+            kind 		: ControlKind - An enum in this file.
+			name 		: string
+			handle 		: HWND
+			controlID 	: UINT
+			parent 		: ^Form
+			text 		: string
+			width		: int
+			height 		: int
+			xpos		: int
+			ypos 		: int
+			font 		: Font
+			backColor 	: uint
+			foreColor 	: uint
+			enabled 	: bool
+			visible 	: bool
+			contextMenu : ^ContextMenu [See contextmenu.odin]
+        Functions:
+			control_enable	
+			cright
+			cbottom
+			control_visibile
+			control_setdisable
+			control_set_forecolor
+			control_set_font
+			control_set_font_name
+			control_set_font_size
+			control_set_position
+			control_set_size
+			control_set_text
+			control_get_text
+			control_set_backcolor
+			control_set_forecolor
+			control_Setfocus
+        Events:
+			PaintEventHandler type - proc(^Control, ^PaintEventArgs) [See events.odin]
+				onPaint
+            EventHandler type - proc(^Control, ^EventArgs) [See events.odin]
+                onGotFocus
+				onLostFocus 
+				onMouseEnter
+				onClick
+				onRightClick
+				onDoubleClick
+				onMouseLeave
+				onSizeChanging
+				onSizeChanged
+				onDestroy
+			MouseEventHandler type - proc(^Control, ^MouseEventArgs) [See events.odin]
+				onMouseDown
+				onRightMouseDown
+				onMouseUp
+				onRightMouseUp
+				onMouseScroll
+				onMouseMove
+				onMouseHover
+			KeyEventHandler type - proc(^Control, ^KeyEventArgs) [See events.odin]
+				onKeyUp
+				onKeyDown
+				onKeyPress
+==============================================================================================================*/
+
+
+
 package winforms
 
 import "base:runtime"
@@ -17,26 +77,7 @@ import "core:sys/windows"
 globalSubClassID : int = 2001
 globalCtlID : UINT= 100
 
-ControlKind :: enum
-{
-	Form,
-	Button,
-	Calendar,
-	Check_Box,
-	Combo_Box,
-	Date_Time_Picker,
-	Group_Box,
-	Label,
-	List_Box,
-	List_View,
-	Number_Picker,
-	Panel,
-	Progress_Bar,
-	Radio_Button,
-	Text_Box,
-	Track_Bar,
-	Tree_View,
-}
+
 
 // A base class for all controls & Form.
 Control :: struct
@@ -72,7 +113,7 @@ Control :: struct
 
 	clrChanged : bool,
 
-	paint : PaintEventHandler,
+	onPaint : PaintEventHandler,
 	onGotFocus,
 	onLostFocus ,
 	onMouseEnter,
@@ -97,30 +138,27 @@ Control :: struct
 	onDestroy : EventHandler,
 }
 
-@private control_cast :: proc($T : typeid, refd : DWORD_PTR) -> ^T
+// Type of control
+ControlKind :: enum
 {
-	return cast(^T) (cast(UINT_PTR) refd)
+	Form,
+	Button,
+	Calendar,
+	Check_Box,
+	Combo_Box,
+	Date_Time_Picker,
+	Group_Box,
+	Label,
+	List_Box,
+	List_View,
+	Number_Picker,
+	Panel,
+	Progress_Bar,
+	Radio_Button,
+	Text_Box,
+	Track_Bar,
+	Tree_View,
 }
-
-@private set_subclass :: proc(ctl : ^Control, fn_ptr : SUBCLASSPROC )
-{
-	SetWindowSubclass(ctl.handle, fn_ptr, UINT_PTR(globalSubClassID), to_dwptr(ctl) )
-	globalSubClassID += 1
-}
-
-// This is used to set the defualt font right creating the control handle.
-@private setfont_internal :: proc(ctl : ^Control)
-{
-	if ctl.font.handle == nil do CreateFont_handle(&ctl.font)
-	SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
-
-}
-
-redraw :: proc{redraw_ctl1, redraw_ctl2}
-@private
-redraw_ctl1 :: proc(ctl : ^Control) { if ctl._isCreated do InvalidateRect(ctl.handle, nil, false) }
-@private
-redraw_ctl2:: proc(ctl : Control) { if ctl._isCreated do InvalidateRect(ctl.handle, nil, false) }
 
 // Enable or disable a control or form.
 control_enable :: proc(ctl : ^Control, bstate : bool)
@@ -134,38 +172,15 @@ control_enable :: proc(ctl : ^Control, bstate : bool)
 	}
 }
 
-@private map_parent_points :: proc(this: ^Control) -> RECT
-{
-    rc : RECT
-    firstHwnd : HWND
-    if this._isCreated
-	{
-        GetClientRect(this.handle, &rc)
-        firstHwnd = this.handle
-	} else {
-        firstHwnd = this.parent.handle
-        rc = RECT{i32(this.xpos), i32(this.ypos),
-					i32(this.xpos + this.width), i32(this.ypos + this.height )}
-	}
-    MapWindowPoints(firstHwnd, this.parent.handle, cast(^POINT)&rc, 2)
-    return rc
-}
-
+// Get the right point of control
 cright :: proc(this: ^Control) -> int
 {
-	// rc : RECT
-	// GetClientRect(this.handle, &rc)
-	// MapWindowPoints(this.handle, this.parent.handle, cast(^POINT)&rc, 2);
-	// return int(rc.right)
 	return int(map_parent_points(this).right)
 }
 
+// Get the bottom point of control
 cbottom :: proc(this: ^Control) -> int
 {
-	// rc : RECT
-	// GetClientRect(this.handle, &rc)
-	// MapWindowPoints(this.handle, this.parent.handle, cast(^POINT)&rc, 2);
-	// return int(rc.bottom)
 	return int(map_parent_points(this).bottom)
 }
 
@@ -184,20 +199,12 @@ control_visibile :: proc(ctl : ^Control, bstate : bool)
 	}
 }
 
+// Enable or disable control
 control_setdisable :: proc(this: ^Control, value: b8)
 {
 	if this._isCreated do windows.EnableWindow(this.handle, !value)
 }
 
-control_set_foreground :: proc(this: ^Control)
-{
-	if this._isCreated do SetForegroundWindow(this.handle)
-}
-
-// control_isdisable :: proc(this: ^Control) -> b8
-// {
-// 	if this._isCreated do EnableWindow(this.handle, !value)
-// }
 
 // To set a user defined font before or after creating the control handle
 control_set_font :: proc(ctl : ^Control, fn : string, fsz : int,
@@ -217,6 +224,7 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int,
 	if ctl._fp_size_fix != nil do ctl._fp_size_fix(ctl)
 }
 
+// Set control's font name
 control_set_font_name :: proc(ctl : ^Control, fn : string)
 {
 	ctl.font._defFontChanged = true
@@ -224,13 +232,13 @@ control_set_font_name :: proc(ctl : ^Control, fn : string)
 	if ctl._isCreated do control_set_font(ctl, fn, ctl.font.size)
 }
 
+// Set control's font size
  control_set_font_size :: proc(ctl : ^Control, fsz : int, )
 {
 	ctl.font._defFontChanged = true
 	ctl.font.size = fsz
 	if ctl._isCreated do control_set_font(ctl, ctl.font.name, fsz)
 }
-
 
 // To set the position of a control or form
 control_set_position :: proc(ctl : ^Control, x, y : int)
@@ -248,29 +256,15 @@ control_set_size :: proc(ctl : ^Control, width, height : int)
 	SetWindowPos(ctl.handle, nil, 0, 0, i32(mw), i32(mh),SWP_NOMOVE | SWP_NOZORDER)
 }
 
-// To set the text of the control or form.
-// Note :- This is not applicable for all controls.
+// To set the text of the control or form. Note :- This is not applicable for all controls.
 control_set_text :: proc(ctl : ^Control, txt : string)
 {
 	if ctl._textable {
 		ctl.text = txt
 		if ctl._isCreated {
-			// #partial switch ctl.kind {
-			// 	case .Label : // Label need special care only because of the autosize property
-			// 		lb := cast(^Label) ctl
-			// 		if lb.autoSize do calculate_ctl_size(lb)
-			// 	case .Check_Box :
-			// 		cb := cast(^CheckBox) ctl
-			// 		if cb.autoSize do calculate_ctl_size(cb)
-			// 	case .Radio_Button :
-			// 		rb := cast(^RadioButton) ctl
-			// 		if rb.autoSize do calculate_ctl_size(rb)
-			// }
 			SetWindowText(ctl.handle, to_wstring(txt))
-			// free_all(context.temp_allocator)
 		}
 	}
-
 }
 
 // To get the text from the control or form.
@@ -280,11 +274,66 @@ control_get_text :: proc(ctl : Control, alloc := context.allocator) -> string
 {
 	tlen := GetWindowTextLength(ctl.handle)
 	wsBuffer := make([]WCHAR, tlen + 1, alloc)
-	// wsBuffer : wstring = &wsBuffer[0]
-	//defer delete(wsBuffer)
 	GetWindowText(ctl.handle, &wsBuffer[0], i32(len(wsBuffer)))
 	return utf16_to_utf8(wsBuffer, alloc)
 }
+
+// To set the back color of a control or form. Note :- This is not applicable for all controls.
+control_set_backcolor :: proc{set_back_color1, set_back_color2}
+
+// To set the fore color of a control or form. Note :- This is not applicable for all controls.
+control_set_forecolor :: proc{set_fore_color1, set_fore_color2}
+
+// Writen to set a control's focus, but it seems not working.
+control_Setfocus :: proc(ctl : ^Control)
+{
+	// This is not working as i intented. This will erase the text box's back color.
+	// I don't know how to fix this.
+	SetFocus(ctl.handle)
+}
+
+//=================================================================Private Functions==========================
+@private control_cast :: proc($T : typeid, refd : DWORD_PTR) -> ^T
+{
+	return cast(^T) (cast(UINT_PTR) refd)
+}
+
+@private set_subclass :: proc(ctl : ^Control, fn_ptr : SUBCLASSPROC )
+{
+	SetWindowSubclass(ctl.handle, fn_ptr, UINT_PTR(globalSubClassID), to_dwptr(ctl) )
+	globalSubClassID += 1
+}
+
+// This is used to set the defualt font right creating the control handle.
+@private setfont_internal :: proc(ctl : ^Control)
+{
+	if ctl.font.handle == nil do CreateFont_handle(&ctl.font)
+	SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
+
+}
+
+@private redraw :: proc{redraw_ctl1, redraw_ctl2}
+@private redraw_ctl1 :: proc(ctl : ^Control) { if ctl._isCreated do InvalidateRect(ctl.handle, nil, false) }
+@private redraw_ctl2:: proc(ctl : Control) { if ctl._isCreated do InvalidateRect(ctl.handle, nil, false) }
+
+
+@private map_parent_points :: proc(this: ^Control) -> RECT
+{
+    rc : RECT
+    firstHwnd : HWND
+    if this._isCreated
+	{
+        GetClientRect(this.handle, &rc)
+        firstHwnd = this.handle
+	} else {
+        firstHwnd = this.parent.handle
+        rc = RECT{i32(this.xpos), i32(this.ypos),
+					i32(this.xpos + this.width), i32(this.ypos + this.height )}
+	}
+    MapWindowPoints(firstHwnd, this.parent.handle, cast(^POINT)&rc, 2)
+    return rc
+}
+
 
 // To get the text from a control or form as a wstring.
 // Note :- This is not applicable for all controls. [[[Caller must free the buffer]]]
@@ -329,9 +378,7 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 	}
 }
 
-// To set the back color of a control or form.
-// Note :- This is not applicable for all controls.
-control_set_backcolor :: proc{set_back_color1, set_back_color2}
+
 //-------------------------------------------------------------
 
 @private set_fore_color1 :: proc(ctl : ^Control, clr : uint)
@@ -367,34 +414,16 @@ control_set_backcolor :: proc{set_back_color1, set_back_color2}
 	}
 }
 
-// To set the fore color of a control or form.
-// Note :- This is not applicable for all controls.
-control_set_forecolor :: proc{set_fore_color1, set_fore_color2}
+
 //--------------------------------------------------------------
 
-// Writen to set a control's focus, but it seems not working.
-control_Setfocus :: proc(ctl : ^Control)
-{
-	// This is not working as i intented. This will erase the text box's back color.
-	// I don't know how to fix this.
-	//curr_hw := GetFocus()
-	SetFocus(ctl.handle)
-	//SendMessage(hw, WM_UPDATEUISTATE, WPARAM(0x10002), 0)
-	//SendMessage(ctl.handle, WM_SETFOCUS, dir_cast(0, WPARAM), 0)
-	// mdw := WPARAM(make_dword(2, 0x1))
-    // SendMessage(ctl.handle, WM_UPDATEUISTATE, mdw, 0)
-	//  mdw := WPARAM(make_dword(1, 0x4 | 0x1))
-    //          SendMessage(ctl.handle, WM_CHANGEUISTATE, mdw, 0)
-    //         ptf("low word - %d, hi word - %d\n", LOWORD(mdw), HIWORD(mdw))
 
-}
 
 
 
 // set_focus :: proc(hwnd : HWND) {SetFocus(hwnd)}
 
 // Common control message handlers
-
 // Left Mouse down, up, click
 	ctrl_left_mousedown_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM)
 	{

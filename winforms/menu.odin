@@ -1,5 +1,46 @@
 // Created on 13-Nov-2023 06:13 PM
 // Menu related features
+/*===========================Menu Docs==============================
+    MenuBase struct
+        Constructor : Abstract type, no ctor
+        Properties:
+            handle  : HMENU
+            font    : Font
+            menus   : [dynamic]^MenuItem
+
+    MenuBar struct
+        Constructor : new_menubar() -> ^menuBar
+        Properties:
+            customDraw: bool
+        Functions:
+            menubar_add_item
+            menubar_add_items
+            menubar_get_item
+
+    MenuItem struct
+        Constructor : new_menuitem() -> ^MenuItem
+        Properties:
+            parentHandle : HMENU
+            bgColor         : Color
+            fgColor         : Color
+            idNum           : u32
+            text            : string
+            kind            : MenuType
+            hasCheckMark    : bool
+            menuState       : MenuState
+
+        Functions:
+           menu_set_state
+             
+        Events:
+            MenuEventHandler type events - proc(^MenuItem, ^EventArgs)
+                onClick
+                onPopup
+                onCloseup
+                onFocus    
+===============================================================================*/
+
+
 package winforms
 
 import api "core:sys/windows"
@@ -59,7 +100,9 @@ import api "core:sys/windows"
 
 MenuType :: enum {Base_Menu, Menu_Item, Popup, Context_Menu, Seprator}
 
-
+//https://www.codeproject.com/Tips/5256198/Yet-Another-Fully-Functional-ownerdraw-Menu
+//https://www.codeproject.com/articles/16529/simple-menus-that-display-icons-minimalistic-appro
+//https://www.codeproject.com/Articles/7503/An-examination-of-menus-from-a-beginner-s-point-of
 menuNumber : u32 = 101
 bf : i32 = 0
 bt : i32 = 1
@@ -172,7 +215,7 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, menuTxtFlag)
 }
 
-menubar_additem1 :: proc(this: ^MenuBar, menuTxt: string, txtColor: uint = 0x000000) -> ^MenuItem
+@private menubar_additem1 :: proc(this: ^MenuBar, menuTxt: string, txtColor: uint = 0x000000) -> ^MenuItem
 {
     mi := new_menuitem(menuTxt, MenuType.Base_Menu, this.handle, this._menuCount )
     mi._formHwnd = this._pForm.handle
@@ -185,7 +228,8 @@ menubar_additem1 :: proc(this: ^MenuBar, menuTxt: string, txtColor: uint = 0x000
     return mi
 }
 
-menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, parent: ^MenuItem, txtColor: uint = 0x000000) -> ^MenuItem
+@private menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, 
+                                    parent: ^MenuItem, txtColor: uint = 0x000000) -> ^MenuItem
 {
     mi := new_menuitem(menuTxt, MenuType.Menu_Item, parent.handle, parent._menuCount )
     mi._formHwnd = parent._formHwnd

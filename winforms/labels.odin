@@ -1,3 +1,19 @@
+
+/*===========================Label Docs==============================
+    Label struct
+        Constructor: new_label() -> ^Label
+        Properties:
+            All props from Control struct
+            autoSize        : bool
+            borderStyle     : LabelBorder
+            textAlignment   : TextAlignment
+            multiLine       : bool
+        Functions:
+        Events:
+            All events from Control struct
+        
+===============================================================================*/
+
 package winforms
 import "base:runtime"
 //import "core:time"
@@ -20,11 +36,18 @@ Label :: struct {
     _txtAlign : DWORD,
 }
 
+// Label control's constructor
+new_label :: proc{new_label1, new_label2, new_label3}
+
+
+
 // Border style for Label.
 // Possible values : no_border, single_line, sunken_border
 LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
 
-@private label_ctor :: proc(p : ^Form, txt : string, x, y: int, w: int = 0, h : int = 0) -> ^Label {
+//==================================Private Functions==================================
+@private label_ctor :: proc(p : ^Form, txt : string, x, y: int, w: int = 0, h : int = 0) -> ^Label 
+{
     // if WcLabelW == nil do WcLabelW = to_wstring("Static")
     _lb_count += 1
     this := new(Label)
@@ -53,34 +76,30 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     return this
 }
 
-
-@private new_label1 :: proc(parent : ^Form) -> ^Label {
+@private new_label1 :: proc(parent : ^Form) -> ^Label 
+{
     txt := conc_num("Label_", _lb_count)
     lb := label_ctor(parent, txt, 10, 10)
     if parent.createChilds do create_control(lb)
     return lb
 }
 
-@private new_label2 :: proc(parent : ^Form, txt : string, x, y : int) -> ^Label {
+@private new_label2 :: proc(parent : ^Form, txt : string, x, y : int) -> ^Label 
+{
     lb := label_ctor(parent, txt, x, y)
     if parent.createChilds do create_control(lb)
     return lb
 }
 
-@private new_label3 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> ^Label {
+@private new_label3 :: proc(parent : ^Form, txt : string, x, y, w, h : int) -> ^Label 
+{
     lb := label_ctor(parent, txt, x, y, w, h)
     if parent.createChilds do create_control(lb)
     return lb
 }
 
-
-
-// Label control's constructor
-new_label :: proc{new_label1, new_label2, new_label3}
-
-
-
-@private check_for_autosize :: proc(lb : ^Label) {
+@private check_for_autosize :: proc(lb : ^Label) 
+{
     if lb.multiLine do lb.autoSize = false
     if lb.width != 0 do lb.autoSize = false // User might change width explicitly
     if lb.height != 0 do lb.autoSize = false // User might change width explicitly
@@ -89,7 +108,8 @@ new_label :: proc{new_label1, new_label2, new_label3}
     // }
 }
 
-@private adjust_border :: proc(lb : ^Label) {
+@private adjust_border :: proc(lb : ^Label) 
+{
     if lb.borderStyle == .Sunken_Border {
         lb._style |= SS_SUNKEN
     } else if lb.borderStyle == .Single_Line {
@@ -97,7 +117,8 @@ new_label :: proc{new_label1, new_label2, new_label3}
     }
 }
 
-@private adjust_alignment :: proc(lb : ^Label) {
+@private adjust_alignment :: proc(lb : ^Label) 
+{
     switch lb.textAlignment {
         case .Top_Left : lb._txtAlign = DT_TOP | DT_LEFT
         case .Top_Center : lb._txtAlign = DT_TOP | DT_CENTER
@@ -119,7 +140,8 @@ new_label :: proc{new_label1, new_label2, new_label3}
     }
 }
 
-@private set_lbl_bk_clr :: proc(lb :^Label, clr : uint) {
+@private set_lbl_bk_clr :: proc(lb :^Label, clr : uint) 
+{
     lb.backColor = clr
     if lb._isCreated {
         lb._hbrush = nil
@@ -127,8 +149,8 @@ new_label :: proc{new_label1, new_label2, new_label3}
     }
 }
 
-@private
-calculate_label_size :: proc(lb : ^Label) {
+@private calculate_label_size :: proc(lb : ^Label) 
+{
     // Labels are creating with zero width & height.
     // We need to find appropriate size if it is an auto sized label.
     hdc := GetDC(lb.handle)
@@ -142,17 +164,18 @@ calculate_label_size :: proc(lb : ^Label) {
     // free_all(context.temp_allocator)
 }
 
-@private lbl_before_creation :: proc(lb : ^Label) {
+@private lbl_before_creation :: proc(lb : ^Label) 
+{
     if lb.borderStyle != .No_Border do adjust_border(lb)
     check_for_autosize(lb)
     //adjust_alignment(lb)
 }
 
-@private lbl_after_creation :: proc(lb : ^Label) {
+@private lbl_after_creation :: proc(lb : ^Label) 
+{
     if lb.autoSize do calculate_label_size(lb)
     set_subclass(lb, label_wnd_proc)
 }
-
 
 @private label_property_setter :: proc(this: ^Label, prop: LabelProps, value: $T)
 {
@@ -163,7 +186,6 @@ calculate_label_size :: proc(lb : ^Label) {
 		case .Multi_Line: break
     }
 }
-
 
 @private lbl_finalize :: proc(lbl: ^Label, scid: UINT_PTR)
 {
@@ -181,11 +203,11 @@ calculate_label_size :: proc(lb : ^Label) {
     switch msg {
 
         case WM_PAINT :
-            if lb.paint != nil {
+            if lb.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                lb.paint(lb, &pea)
+                lb.onPaint(lb, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

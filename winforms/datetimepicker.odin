@@ -1,70 +1,45 @@
 
+/*===========================DateTimePicker Docs==============================
+    DateTimePicker struct
+        Constructor: new_datetimepicker() -> ^DateTimePicker
+        Properties:
+            All props from Control struct
+            format          : DtpFormat
+            formatString    : string
+            rightAlign      : b64
+            fourDigitYear   : b64
+            value           : DateTime
+            showWeekNum     : b64
+            noTodayCircle   : b64
+            noToday         : b64
+            noTrailingDates : b64
+            showUpdown      : b64
+            shortDayNames   : b64
+        Functions:
+            dtp_set_value
+            dtp_set_custom_format
+
+        Events:
+            EventHandler type -proc(^Control, ^EventArgs) [See events.odin]
+                onCalendarOpened
+                onValueChanged
+                onCalendarClosed            
+            DateTimeEventHandler type -proc(^TrayIcon, ^DateTimeEventArgs) [See events.odin]
+                 onTextChanged 
+        
+===============================================================================*/
+
+
 package winforms		// Notes : write func for setting value by user.
 
 // import "core:strings"
 import "core:fmt"
 import "base:runtime"
 
-ICC_DATE_CLASSES :: 0x100
-DTM_GETIDEALSIZE :: (DTM_FIRST+15)
+
 isDtpClassInit : bool = false
 WcDTPClassW : wstring = L("SysDateTimePick32")
 
-//#region dtp styles
-    //DTN_FIRST :: i64(-740)   //~u64(0) - 740  // 0xFFFFFFFFFFFFFD1C
-    //DTN_LAST :: ~u64(0) - 745 - 1
-    //DTN_FIRST2 :: i64(-753)      //~u64(0) - 753  // 0xFFFFFFFFFFFFFD0F
-    //DTN_LAST2 ::  ~u64(0) - 799 - 1
-    DtnFirst :: u64(4294966556)
-    DTN_DATETIMECHANGE :: u64(4294966537) //DTN_FIRST2-6
-    DTN_DROPDOWN :: u64(4294967280) //u64(18446744073709550862) // DTN_FIRST2 - 1
-    DTN_CLOSEUP :: u64(140728898419983) //u64(18446744073709550863) //DTN_FIRST2
-    DTN_USERSTRINGW :: u64(18446744073709550871) //(DTN_FIRST-5)
-    DTN_WMKEYDOWNW :: u64(18446744073709550872)   //(DTN_FIRST-4)
-    DTN_FORMATW :: u64(18446744073709550873) //(DTN_FIRST-3)
-    DTN_FORMATQUERYW :: u64(18446744073709550874) //(DTN_FIRST-2)
-    DtnUserStr :: DtnFirst - 5
-
-    DTM_FIRST :: 0x1000
-    DTM_SETFORMATW :: DTM_FIRST + 50
-	DTM_SETFORMATA :: 0x1005
-    DTM_GETDATETIMEPICKERINFO :: DTM_FIRST + 14
-    DTM_SETMCCOLOR :: DTM_FIRST + 6
-    DTM_GETMCSTYLE :: (DTM_FIRST + 12)
-    DTM_SETMCSTYLE  :: (DTM_FIRST + 11)
-    DTM_SETSYSTEMTIME :: (DTM_FIRST + 2)
-
-    MCSC_BACKGROUND :: 0
-    MCSC_TEXT :: 1
-    MCSC_TITLEBK :: 2
-    CSC_TITLETEXT :: 3
-    MCSC_MONTHBK :: 4
-    MCSC_TRAILINGTEXT :: 5
-
-    MCS_DAYSTATE :: 0x1
-    MCS_MULTISELECT :: 0x2
-    MCS_WEEKNUMBERS :: 0x4
-    MCS_NOTODAYCIRCLE :: 0x8
-    MCS_NOTODAY :: 0x10
-    MCS_NOTRAILINGDATES :: 0x40
-    MCS_SHORTDAYSOFWEEK :: 0x80
-    MCS_NOSELCHANGEONNAV :: 0x100
-
-    subVal : i32 = -1
-    myDtnfirst : u64 : 4294966556
-    myDtnFirst2 : u64 : 4294966543
-    myDtnDropdown : u64 : 4294966542
-    myDtnCloseup := myDtnFirst2
-
-    DTS_UPDOWN :: 0x1
-    DTS_SHOWNONE :: 0x2
-    DTS_SHORTDATEFORMAT :: 0x0
-    DTS_LONGDATEFORMAT :: 0x4
-    DTS_SHORTDATECENTURYFORMAT :: 0xc
-    DTS_TIMEFORMAT :: 0x9
-    DTS_APPCANPARSE :: 0x10
-    DTS_RIGHTALIGN :: 0x20
-//#endregion
 
 // Date time time format for DTP control.
 // Possible values : long = 1, short = 2, time = 4, custom = 8
@@ -118,25 +93,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
     }
 }
 
-// Api Types
-    NMDATETIMECHANGE :: struct
-    {
-        nmhdr : NMHDR,
-        dwFlags : DWORD,
-        st : SYSTEMTIME,
-    }
-
-    NMDATETIMESTRINGW :: struct
-    {
-        nmhdr :  NMHDR,
-        pszUserString : wstring,
-        st : SYSTEMTIME,
-        dwFlags : DWORD,
-    }
-
-
-// End of API Types
-
+//==================================Private Functions========================
 @private dtp_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^DateTimePicker
 {
     if !isDtpClassInit { // global var of this module. Then we need to initialize the date class control.
@@ -298,11 +255,6 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
 }
 
 
-
-
-
-
-
 @private dtp_finalize :: proc(dtp: ^DateTimePicker, scid: UINT_PTR)
 {
     RemoveWindowSubclass(dtp.handle, dtp_wnd_proc, scid)
@@ -320,11 +272,11 @@ dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
     switch msg {
         case WM_DESTROY: dtp_finalize(dtp, sc_id)
         case WM_PAINT :
-            if dtp.paint != nil {
+            if dtp.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                dtp.paint(dtp, &pea)
+                dtp.onPaint(dtp, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }
@@ -338,7 +290,7 @@ dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                 case DtnUserStr :
                     if dtp.onTextChanged != nil {
                         dts := dir_cast(lp, ^NMDATETIMESTRINGW)
-                        dtea : DateTimeEvent
+                        dtea : DateTimeEventArgs
                         dtea.dateString = wstring_to_string(dts.pszUserString)
                         dtp.onTextChanged(dtp, &dtea )
                         // After invoking the event, send this message to set the time in dtp

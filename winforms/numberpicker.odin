@@ -1,3 +1,33 @@
+/*===========================NumberPicker Docs==============================
+    NumberPicker struct
+        Constructor : new_numberpicker() -> ^NumberPicker
+        Properties:
+            All properties from Control struct
+            buttonOnLeft        : bool
+            textAlignment       : SimpleTextAlignment - An enum in this file.
+            minRange            : f32
+            maxRange            : f32
+            hasSeparator        : bool
+            autoRotate          : bool - Value become min value after max value and vice versa.
+            hideCaret           : bool
+            value               : f32
+            formatString        : string
+            decimalPrecision    : int
+            trackMouseLeave     : bool - Set true if you want to subscribe mouse leave event.
+            step                : f32        
+
+        Functions:
+            numberpicker_set_range
+            numberpicker_set_decimal_precision
+             
+        Events:
+            EventHandler type events - proc(^Control, ^EventArgs)
+                onValueChanged 
+            PaintEventHandler type events - proc(^Control, ^PaintEventArgs)
+                onButtonPaint
+                onTextPaint    
+===============================================================================*/
+
 package winforms
 
 import "base:runtime"
@@ -35,17 +65,18 @@ import api "core:sys/windows"
 
 NumberPicker :: struct {
     using control : Control,
-    buttonOnLeft: bool,
     textAlignment : SimpleTextAlignment,
-    minRange, maxRange : f32,
+    minRange: f32,
+    maxRange : f32,
+    value : f32,
+    step : f32,
+    buttonOnLeft: bool,
     hasSeparator : bool,
     autoRotate : bool, // use UDS_WRAP style
     hideCaret : bool,
-    value : f32,
-    formatString : string,
-    decimalPrecision : int,
     trackMouseLeave : bool,
-    step : f32,
+    formatString : string,
+    decimalPrecision : int,    
 
     _buddyHandle : HWND,
     _buddyStyle : DWORD,
@@ -59,7 +90,6 @@ NumberPicker :: struct {
     _udrc : RECT,
     _myrc : RECT,
     _updatedTxt : string,
-
     _topEdgeFlag : DWORD,
     _botEdgeFlag : DWORD,
     _txtPos : SimpleTextAlignment,
@@ -72,6 +102,35 @@ NumberPicker :: struct {
     onValueChanged : EventHandler,
 }
 
+// Create new NumberPicker
+new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
+
+numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
+{
+    np.maxRange = f32(max_val)
+    np.minRange = f32(min_val)
+    if np._isCreated {
+        wpm := dir_cast(min_val, WPARAM)
+        lpm := dir_cast(max_val, LPARAM)
+        SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
+    }
+}
+
+numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
+{
+    this.decimalPrecision = value
+    if value == 0 {
+        this.formatString = "%d"
+    } else if value > 0 {        
+        this.formatString = fmt.tprintf("%%.%df", value)
+    } else {
+        print("numberpicker_set_decimal_precision: Value must be greater than zero...!")
+    }
+
+    if this._isCreated do np_display_value_internal(this)
+}
+
+
 StepOprator :: enum {Add, Sub}
 ButtonAlignment :: enum {Right, Left}
 NMUPDOWN :: struct {
@@ -80,7 +139,7 @@ NMUPDOWN :: struct {
     iDelta : i32,
 }
 
-
+//===================================================================Private Functions======================
 @private np_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^NumberPicker
 {
     if !is_np_inited { // Then we need to initialize the date class control.
@@ -142,8 +201,6 @@ NMUPDOWN :: struct {
     return np
 }
 
-new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
-
 @private set_np_styles :: proc(np : ^NumberPicker)
 {
     if np.buttonOnLeft {
@@ -162,30 +219,6 @@ new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
     np._borderBrush = CreateSolidBrush(clr.ref)
 }
 
-numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
-{
-    np.maxRange = f32(max_val)
-    np.minRange = f32(min_val)
-    if np._isCreated {
-        wpm := dir_cast(min_val, WPARAM)
-        lpm := dir_cast(max_val, LPARAM)
-        SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
-    }
-}
-
-numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
-{
-    this.decimalPrecision = value
-    if value == 0 {
-        this.formatString = "%d"
-    } else if value > 0 {        
-        this.formatString = fmt.tprintf("%%.%df", value)
-    } else {
-        print("numberpicker_set_decimal_precision: Value must be greater than zero...!")
-    }
-
-    if this._isCreated do np_display_value_internal(this)
-}
 
 @private np_set_range_internal :: proc(np : ^NumberPicker)
 {
@@ -252,8 +285,6 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     SendMessage(np._buddyHandle, EM_SETSEL, WPARAM(wpm), 0)
 }
 
-
-
 @private np_before_creation :: proc(np : ^NumberPicker)
 {
     if !is_np_inited {
@@ -266,8 +297,6 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     set_np_styles(np)
     np._bgcRef = get_color_ref(np.backColor)
 }
-
-
 
 @private np_after_creation :: proc(np : ^NumberPicker)
 {
@@ -362,17 +391,44 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     FrameRect(hdc, &this._tbrc, this._borderBrush)
     fpen: HPEN = CreatePen(PS_SOLID, 2, get_color_ref(this.backColor))
     defer delete_gdi_object(fpen)
-    SelectObject(hdc, HGDIOBJ(fpen) )
+    hOldObj := SelectObject(hdc, HGDIOBJ(fpen) )
     MoveToEx(hdc, this._lineX, 1, nil)
     LineTo(hdc, this._lineX, this._tbrc.bottom - 2)
+    SelectObject(hdc, hOldObj)
 }
 
+// Special subclassing for NumberPicker control. Remove_subclass is written in dtor
+@private set_np_subclass :: proc(np : ^NumberPicker, np_func, buddy_func : SUBCLASSPROC )
+{
+	np_dwp := cast(DWORD_PTR)(cast(UINT_PTR) np)
+	SetWindowSubclass(np.handle, np_func, UINT_PTR(globalSubClassID), np_dwp )
+	globalSubClassID += 1
+
+	SetWindowSubclass(np._buddyHandle, buddy_func, UINT_PTR(globalSubClassID), np_dwp )
+	globalSubClassID += 1
+}
+
+@private is_mouse_on_me :: proc(np : ^NumberPicker) -> bool
+{
+    /*-----------------------------------------------------------------------------
+        If this returns False, onMouseLeave event will triggered
+    Since, updown control is a combo of an edit and button controls...
+    we have no better options to control the mouse enter & leave mechanism.
+    Now, we create an imaginary rect over the bondaries of these two controls.
+    If mouse is inside that rect, there is no mouse leave. Perfect hack.
+    fmt.println(np.parent.handle)
+    ---------------------------------------------------------------------------*/
+    pt : POINT
+    GetCursorPos(&pt)
+    ScreenToClient(np.parent.handle, &pt)
+    return bool(PtInRect(&np._myrc, pt))
+}
 
 @private np_finalize :: proc(np: ^NumberPicker, scid: UINT_PTR)
 {
     delete_gdi_object(np._bkBrush)
-    RemoveWindowSubclass(np.handle, np_wnd_proc, scid)
     delete_gdi_object(np._borderBrush)
+    RemoveWindowSubclass(np.handle, np_wnd_proc, scid)    
     free(np)
 }
 
@@ -391,7 +447,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 
         case WM_PAINT :
             np := control_cast(NumberPicker, ref_data)
-            if np.paint != nil {
+            if np.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
@@ -474,38 +530,16 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, buddy_wnd_proc, sc_id)
         case WM_PAINT :
-            // print("wm paint")
-            /* We are drawing the edge line over the edit border.
-             * Because, we need our edit & updown look like a single control. */
+            /* 
+             * We are drawing the edge line over the edit border.
+             * Because, we need our edit & updown look like a single control. 
+             */
             nump := control_cast(NumberPicker, ref_data)
             res := DefSubclassProc(hw, msg, wp, lp)
             hdc : HDC = GetWindowDC(hw)
             defer ReleaseDC(hw, hdc)
             np_paint_buddy_border(nump, hdc)           
-            return res
-
-        // case WM_NCPAINT:            
-        //     // DefSubclassProc(hw, msg, wp, lp)
-        //     hrgn : api.HRGN = cast(api.HRGN)wp
-        //     nump := control_cast(NumberPicker, ref_data)
-        //     hdc : api.HDC = api.GetDCEx(hw, hrgn, DCX_WINDOW1 | DCX_INTERSECTRGN1)  
-        //     print("hdc = ", hdc)          
-        //     defer ReleaseDC(hw, hdc)
-        //     hBrush : HBRUSH = get_solid_brush(0xe63946)
-        //     defer delete_gdi_object(hBrush)
-        //     rc : RECT
-        //     GetRgnBox(hrgn, &rc)
-        //     print_rect(rc, "hrgn")
-        //     // SetBackColor(hdc, get_color_ref(0xe63946))
-        //     hOld := SelectObject(hdc, cast(HGDIOBJ)hBrush)
-        //     // Rectangle(hdc, rc.left, rc.top + 2, rc.right, rc.bottom)
-        //     // Rectangle(hdc, nump._tbrc.left, nump._tbrc.top + 2, nump._tbrc.right, nump._tbrc.bottom)
-        //     // FrameRect(hdc, &nump._tbrc, hBrush)
-        //     FillRgn(hdc, hrgn, hBrush)
-        //     SelectObject(hdc, hOld)
-        //     return 0
-
-        
+            return res  
 
         case CM_CTLLCOLOR :
             tb := control_cast(NumberPicker, ref_data)
@@ -595,30 +629,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     return 0 // DefSubclassProc(hw, msg, wp, lp)
 }
 
-// Special subclassing for NumberPicker control. Remove_subclass is written in dtor
-@private set_np_subclass :: proc(np : ^NumberPicker, np_func, buddy_func : SUBCLASSPROC )
-{
-	np_dwp := cast(DWORD_PTR)(cast(UINT_PTR) np)
-	SetWindowSubclass(np.handle, np_func, UINT_PTR(globalSubClassID), np_dwp )
-	globalSubClassID += 1
 
-	SetWindowSubclass(np._buddyHandle, buddy_func, UINT_PTR(globalSubClassID), np_dwp )
-	globalSubClassID += 1
-}
-
-@private is_mouse_on_me :: proc(np : ^NumberPicker) -> bool
-{
-    // If this returns False, onMouseLeave event will triggered
-    // Since, updown control is a combo of an edit and button controls...
-    // we have no better options to control the mouse enter & leave mechanism.
-    // Now, we create an imaginary rect over the bondaries of these two controls.
-    // If mouse is inside that rect, there is no mouse leave. Perfect hack.
-    // fmt.println(np.parent.handle)
-    pt : POINT
-    GetCursorPos(&pt)
-    ScreenToClient(np.parent.handle, &pt)
-    return bool(PtInRect(&np._myrc, pt))
-}
 
 
 

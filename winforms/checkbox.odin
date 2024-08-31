@@ -21,6 +21,7 @@ package winforms
 
 import "base:runtime"
 import api "core:sys/windows"
+
 @private _cbcount : int
 
 CheckBox :: struct
@@ -140,11 +141,11 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
     cb := control_cast(CheckBox, ref_data)
     switch msg {
         case WM_PAINT :
-            if cb.paint != nil {
+            if cb.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                cb.paint(cb, &pea)
+                cb.onPaint(cb, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

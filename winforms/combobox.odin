@@ -43,7 +43,7 @@ package winforms
 import "core:fmt"
 import "base:runtime"
 import api "core:sys/windows"
-//import "core:reflect"
+
 
 WcComboW : wstring = L("ComboBox")
 
@@ -304,7 +304,6 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 }
 
-
 @private check_mouse_leave :: proc(cmb: ^ComboBox) -> bool
 {
     /* Since combo box is a combination of button, edit and list box...
@@ -392,8 +391,6 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 }
 
-
-
 @private cmb_finalize :: proc(cmb: ^ComboBox, scid: UINT_PTR)
 {
     RemoveWindowSubclass(cmb.handle, cmb_wnd_proc, scid)
@@ -406,7 +403,6 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 }
 
-
 @private
 cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
@@ -416,11 +412,11 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
     //display_msg(msg)
     switch msg {
         case WM_PAINT :
-            if cmb.paint != nil {
+            if cmb.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                cmb.paint(cmb, &pea)
+                cmb.onPaint(cmb, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

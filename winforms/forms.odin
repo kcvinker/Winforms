@@ -216,8 +216,6 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 
 //=================================================================Private Functions=========================
 
-menuTxtFlag :: DT_LEFT | DT_SINGLELINE | DT_VCENTER
-
 @private form_ctor :: proc( t : string = "", w : int = 500, h : int = 400 ) -> ^Form
 {
     if app.formCount == 0 do global_context = context
@@ -403,7 +401,6 @@ menuTxtFlag :: DT_LEFT | DT_SINGLELINE | DT_VCENTER
         this._gdBrush = create_gradient_brush(hdc, rct, this._gdraw.c1, this._gdraw.c2, this._gdraw.t2b)
     }
     api.FillRect(hdc, &rct, this._gdBrush)
-    // DeleteObject(HGDIOBJ(hbr))
 }
 
 FindHwnd :: enum {lb_hwnd, tb_hwnd}
@@ -473,7 +470,6 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
     }
 }
 
-
 @private
 window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
 {
@@ -498,11 +494,11 @@ window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> 
 
         case WM_PAINT :
             frm := app.winMap[hw]
-            if frm.paint != nil {
+            if frm.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
                 pea := new_paint_event_args(&ps)
-                frm.paint(frm, &pea)
+                frm.onPaint(frm, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }

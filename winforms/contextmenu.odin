@@ -1,14 +1,33 @@
 // Moved on 25-Aug-2024 20:52 
 // ContextMenu related features
+/*===========================ContextMenu Docs==============================
+    ContextMenu struct
+        Constructor: new_contextMenu() -> ^ContextMenu
+        Properties:
+            All props from MenuBase struct
+            parent          : ^Control
+            customDraw      : bool
+        Functions:
+            control_add_contextmenu()
+            contextmenu_add_item()
+            contextmenu_add_items()
+            cmenu_create_handle()
 
+        Events:
+            ContextMenuEventHandler type -proc(^ContextMenu, ^EventArgs) [See events.odin]
+                onMenuShown
+                onMenuClose
+            
+            TrayIconEventHandler type -proc(^TrayIcon, ^EventArgs) [See events.odin]
+                onTrayMenuShown
+                onTrayMenuClose
+        
+===============================================================================*/
 
 
 package winforms
 import api "core:sys/windows"
 
-TPM_RETURNCMD :: 0x0100
-TPM_FLAG : u32: TPM_LEFTBUTTON | TPM_RETURNCMD
-SRCCOPY : DWORD : 0x00CC0020
 
 ContextMenu :: struct {
     using _base: MenuBase,
@@ -26,66 +45,11 @@ ContextMenu :: struct {
     onTrayMenuShown, onTrayMenuClose: TrayIconEventHandler,
 }
 
-@private cmenu_ctor :: proc() -> ^ContextMenu
-{
-    this := new(ContextMenu)
-    this.handle = CreatePopupMenu()
-    this._rightClick = true
-    this.width = 120
-    this.height = 25
-    this._defBgBrush = get_solid_brush(0xe9ecef)
-    this._hotBgBrush = get_solid_brush(0x90e0ef)
-    this._borderBrush = get_solid_brush(0x0077b6)
-    this._grayBrush = get_solid_brush(0xced4da)
-    this._grayCref = get_color_ref(0x979dac)
-    if !cmenuMsgWinCreated do register_msgwindow()
-    return this
-}
-
+// Context menu constructor
 new_contextmenu :: proc{new_contextmenu1, new_contextmenu2}
 
-@private new_contextmenu1 :: proc(parent: ^Control, cdraw: bool) -> ^ContextMenu
-{
-    this := cmenu_ctor()
-    this.parent = parent
-    this.font = parent.font
-    return this
-}
-
-@private new_contextmenu2 :: proc(cdraw: bool) -> ^ContextMenu
-{
-    this := cmenu_ctor()
-    this.customDraw = cdraw
-    this.font = new_font("Tahoma", 11)
-    return this
-}
-
+// Adds a context menu to given control
 control_add_contextmenu :: proc{add_contextmenu1, add_contextmenu2}
-
-add_contextmenu1 :: proc(ctl: ^Control, cdraw: bool)
-{
-    cmenu := new_contextmenu(ctl, cdraw)
-    cmenu.customDraw = cdraw
-    ctl.contextMenu = cmenu
-    ctl._cmenuUsed = true
-}
-
-add_contextmenu2 :: proc(ctl: ^Control, cdraw: bool, cmenus: ..string)
-{
-    this := new_contextmenu(ctl, cdraw)
-    this.customDraw = cdraw
-    ctl.contextMenu = this
-    ctl._cmenuUsed = true
-    if len(cmenus) > 0 {
-        for name in cmenus {
-            mtyp : MenuType = name == "|" ? .Seprator : .Context_Menu
-            mi := new_menuitem(name, mtyp, this.handle, this._menuCount)
-            mi._ownDraw = this.customDraw
-            this._menuCount += 1
-            append(&this.menus, mi)
-        }
-    }
-}
 
 // Adds single item to context menu
 contextmenu_add_item :: proc(this: ^ContextMenu, item: string) -> ^MenuItem
@@ -140,20 +104,6 @@ contextmenu_remove_item :: proc(this: ^ContextMenu, indexOrName: $T) -> bool
     return res
 }
 
-
-@private 
-cmenu_insert_internal :: proc(this: ^MenuItem)
-{
-    if len(this.menus) > 0 {
-        for menu in this.menus {cmenu_insert_internal(menu)}
-    }
-    if this.kind == .Context_Menu {         
-        insert_menu_internal(this, this.parentHandle)
-    } else if this.kind == .Seprator {
-        api.AppendMenuW(this.parentHandle, MF_SEPARATOR, 0, nil)
-    }
-}
-
 // Creates all the menu items. This will get called automatically at the first usage.
 // But you can call this explicitly after you added the last menu item.
 // That will imrove the context menu opening speed.
@@ -165,6 +115,76 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
         }
     }
     this._menuInserted = true
+}
+
+//===============================================Private Functions===========================
+@private cmenu_ctor :: proc() -> ^ContextMenu
+{
+    this := new(ContextMenu)
+    this.handle = CreatePopupMenu()
+    this._rightClick = true
+    this.width = 120
+    this.height = 25
+    this._defBgBrush = get_solid_brush(0xe9ecef)
+    this._hotBgBrush = get_solid_brush(0x90e0ef)
+    this._borderBrush = get_solid_brush(0x0077b6)
+    this._grayBrush = get_solid_brush(0xced4da)
+    this._grayCref = get_color_ref(0x979dac)
+    if !cmenuMsgWinCreated do register_msgwindow()
+    return this
+}
+
+@private new_contextmenu1 :: proc(parent: ^Control, cdraw: bool) -> ^ContextMenu
+{
+    this := cmenu_ctor()
+    this.parent = parent
+    this.font = parent.font
+    return this
+}
+
+@private new_contextmenu2 :: proc(cdraw: bool) -> ^ContextMenu
+{
+    this := cmenu_ctor()
+    this.customDraw = cdraw
+    this.font = new_font("Tahoma", 11)
+    return this
+}
+
+@private add_contextmenu1 :: proc(ctl: ^Control, cdraw: bool)
+{
+    cmenu := new_contextmenu(ctl, cdraw)
+    cmenu.customDraw = cdraw
+    ctl.contextMenu = cmenu
+    ctl._cmenuUsed = true
+}
+
+@private add_contextmenu2 :: proc(ctl: ^Control, cdraw: bool, cmenus: ..string)
+{
+    this := new_contextmenu(ctl, cdraw)
+    this.customDraw = cdraw
+    ctl.contextMenu = this
+    ctl._cmenuUsed = true
+    if len(cmenus) > 0 {
+        for name in cmenus {
+            mtyp : MenuType = name == "|" ? .Seprator : .Context_Menu
+            mi := new_menuitem(name, mtyp, this.handle, this._menuCount)
+            mi._ownDraw = this.customDraw
+            this._menuCount += 1
+            append(&this.menus, mi)
+        }
+    }
+}
+
+@private cmenu_insert_internal :: proc(this: ^MenuItem)
+{
+    if len(this.menus) > 0 {
+        for menu in this.menus {cmenu_insert_internal(menu)}
+    }
+    if this.kind == .Context_Menu {         
+        insert_menu_internal(this, this.parentHandle)
+    } else if this.kind == .Seprator {
+        api.AppendMenuW(this.parentHandle, MF_SEPARATOR, 0, nil)
+    }
 }
 
 @private register_msgwindow :: proc()
@@ -185,38 +205,6 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
     SetWindowLongPtr(this._dummyHwnd, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
     if this.font.handle == nil do CreateFont_handle(&this.font)
 }
-
-// @private menuitem_draw_text :: proc(this: ^ContextMenu, mi: ^MenuItem, dis: LPDRAWITEMSTRUCT)
-// {
-//     textWidth := dis.rcItem.right - dis.rcItem.left
-//     textHeight := dis.rcItem.bottom - dis.rcItem.top
-//     if !mi._textCached {
-//         if mi._textMemoryDC != nil {
-//             SelectObject(mi._textMemoryDC, cast(HGDIOBJ)mi._oldTextBitmap)
-//             DeleteObject(cast(HGDIOBJ)mi._textBitmap)
-//             DeleteDC(mi._textMemoryDC)
-//         }
-//         // Create a memory DC and bitmap for the text
-//         mi._textMemoryDC = CreateCompatibleDC(dis.hDC)
-//         mi._textBitmap = CreateCompatibleBitmap(dis.hDC, textWidth, textHeight)
-//         mi._oldTextBitmap = cast(HBITMAP)SelectObject(mi._textMemoryDC, cast(HGDIOBJ)mi._textBitmap)
-
-//         // Set up the text drawing attributes
-//         api.SetBkMode(mi._textMemoryDC, api.BKMODE.TRANSPARENT)
-//         SelectObject(mi._textMemoryDC, cast(HGDIOBJ)this.font.handle)
-//         SetTextColor(mi._textMemoryDC, mi.fgColor.ref)
-
-//         // Draw the text onto the memory DC
-//         textRect := RECT{0, 0, textWidth, textHeight}
-//         DrawText(mi._textMemoryDC, mi._wideText, -1, &textRect, DT_LEFT | DT_SINGLELINE | DT_VCENTER)
-
-//         // Mark the text as cached
-//         mi._textCached = true
-//         mi._textWidth = textWidth
-//         mi._textHeight = textHeight
-//         ptf("one menu text drawn %d", mi.idNum)
-//     }
-// }
 
 @private menuitem_draw_menu :: proc(mi: ^MenuItem, cmenu: ^ContextMenu, dis: LPDRAWITEMSTRUCT)
 {
@@ -250,16 +238,10 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
     //         mi._textWidth, mi._textHeight, mi._textMemoryDC, 0, 0, SRCCOPY)
 }
 
-// @private menuitem_draw_menus :: proc(this: ^MenuItem, dis: LPDRAWITEMSTRUCT)
-// {
-
-// }
-
-
 // Display context menu on mouse click or short key press.
 // Both TrayIcon and Control class use this function.
 // When using from tray icon, lpm will be zero.
-contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
+@private contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
 {   
     /*--------------------------------------------------------------------
     We are creating the message-only window right before the context menu
@@ -327,8 +309,6 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
     return nil, false
 }
 
-
-
 @private contextmenu_dtor :: proc(this: ^ContextMenu)
 {
     if len(this.menus) > 0 {
@@ -340,7 +320,6 @@ contextmenu_show :: proc(this: ^ContextMenu, lpm: LPARAM)
     free(this)
     // print("context menu dtor finished")
 }
-
 
 @private cmenu_wndproc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM) -> LRESULT
 {
