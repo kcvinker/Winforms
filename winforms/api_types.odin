@@ -201,6 +201,27 @@ NMSELCHANGE :: struct
         dwFlags : DWORD,
     }
 
+	NMUPDOWN :: struct {
+		hdr : NMHDR,
+		iPos : i32,
+		iDelta : i32,
+	}
+
+	 PBTM :: enum {
+        PP_BAR = 1,
+        PP_BARVERT = 2,
+        PP_CHUNK = 3,
+        PP_CHUNKVERT = 4,
+        PP_FILL = 5,
+        PP_FILLVERT = 6,
+        PP_PULSEOVERLAY = 7,
+        PP_MOVEOVERLAY = 8,
+        PP_PULSEOVERLAYVERT = 9,
+        PP_MOVEOVERLAYVERT = 10,
+        PP_TRANSPARENTBAR = 11,
+        PP_TRANSPARENTBARVERT = 12,
+    }
+
 // RECT :: struct
 // {
 // 	left:   i32,

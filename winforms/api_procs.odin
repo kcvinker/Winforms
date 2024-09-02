@@ -33,6 +33,20 @@ utf8_to_utf16 :: proc(s: string, allocator := context.temp_allocator) -> []u16 {
     return text[:n]
 }
 
+utf8_to_utf16_with_array :: proc(s: string, wchar_arr: []u16, allocator := context.temp_allocator)  
+{
+    slen := i32(len(s))
+    if slen < 1 do return
+    b := transmute([]byte)s
+    cstr := raw_data(b)
+    n := MultiByteToWideChar(CP_UTF8, 0, cstr, slen, nil, 0)
+    if n == 0 do return
+    n1 := MultiByteToWideChar(CP_UTF8, 0, cstr, slen, &wchar_arr[0], n)    
+    wchar_arr[n] = 0
+    for n >= 1 && wchar_arr[n - 1] == 0 { n -= 1 }
+    
+}
+
 to_wstring :: proc(s: string, allocator := context.temp_allocator) -> ^u16 {
    if res := utf8_to_utf16(s, allocator); res != nil {
       return &res[0]

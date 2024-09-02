@@ -69,7 +69,7 @@ MakeWindow :: proc()
     dtp := new_datetimepicker(frm, cright(cmb) + 20, 10)
     gb := new_groupbox(frm, "Format Options", 10, cbottom(b1) + 20, w=230, h=110)
     lb1 := new_label(frm, "Line_Space", gbx(gb, 10), gby(gb, 40))
-    np1 := new_numberpicker(frm, cright(lb1) + 15, gby(gb, 35), deciPrec = 2, step = 0.25)
+    np1 := new_numberpicker(frm, cright(lb1) + 15, gby(gb, 35), deciPrec = 2, step = 1.5)
     np1.foreColor = 0x9d0208
     lb2 := new_label(frm, "Col Width", gbx(gb, 10), cbottom(lb1) + 20)
     np2 := new_numberpicker(frm, np1.xpos, cbottom(np1) + 15)

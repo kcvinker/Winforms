@@ -186,8 +186,40 @@ package winforms
 // End of Menu constants.
 
 // NumberPicker constants.
+    UD_MAXVAL :: 0x7fff
+    UD_MINVAL :: (-UD_MAXVAL)
+    ICC_UPDOWN_CLASS :: 0x10
+    UDS_WRAP :: 0x1
+    UDS_SETBUDDYINT :: 0x2
+    UDS_ALIGNRIGHT :: 0x4
+    UDS_ALIGNLEFT :: 0x8
+    UDS_AUTOBUDDY :: 0x10
+    UDS_ARROWKEYS :: 0x20
+    UDS_HORZ :: 0x40
+    UDS_NOTHOUSANDS :: 0x80
+    UDS_HOTTRACK :: 0x100
+    DCX_WINDOW1 : u32 : 0x00000001
+    DCX_INTERSECTRGN1 : u32 : 0x00000080 
+    ETO_OPAQUE : u32 :    0x0002
+    EN_UPDATE :: 1024
+    UDN_FIRST :: (UINT_MAX - 721)
+    UDN_DELTAPOS :: (UDN_FIRST - 1)
+    swp_flag : DWORD: SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER
 
 // End of NumberPicker constants.
+
+// ProgressBar Constants
+    ICC_PROGRESS_CLASS :: 0x20
+    PBS_SMOOTH :: 0x1
+    PBS_VERTICAL :: 0x4
+    PBS_MARQUEE :: 0x8
+    PBM_SETBKCOLOR :: (0x2000 + 1)
+    PBM_SETMARQUEE :: (WM_USER + 10)
+
+    TMT_FILLCOLOR :: 3802
+    DTT_COLORPROP :: 128
+    DTT_SHADOWCOLOR :: 4
+// End of ProgressBar Constants
 
 // RadioButton constants.
 

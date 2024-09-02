@@ -18,7 +18,7 @@ package winforms
 import "base:runtime"
 //import "core:time"
 
-WcLabelW : wstring = L("Static")
+WcLabelW : []WCHAR = {'S', 't', 'a', 't', 'i', 'c', 0}
 
 // this is for labels
 @private _lb_count := 0
@@ -48,7 +48,6 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
 //==================================Private Functions==================================
 @private label_ctor :: proc(p : ^Form, txt : string, x, y: int, w: int = 0, h : int = 0) -> ^Label 
 {
-    // if WcLabelW == nil do WcLabelW = to_wstring("Static")
     _lb_count += 1
     this := new(Label)
     this.autoSize = true
@@ -67,7 +66,7 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     this._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED
     this._SizeIncr.width = 2
     this._SizeIncr.height = 3
-    this._clsName = WcLabelW
+    this._clsName = &WcLabelW[0]
     this.autoSize = (w != 0 || h != 0) ? false : true
     this._fp_beforeCreation = cast(CreateDelegate) lbl_before_creation
     this._fp_afterCreation = cast(CreateDelegate) lbl_after_creation

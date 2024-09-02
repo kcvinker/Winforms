@@ -1,40 +1,42 @@
 // Created on 30-Jan-2022 12:37 AM
 
+/*===========================================ProgressBar Docs=========================================================
+    ProgressBar struct
+        Constructor: new_progressbar() -> ^ProgressBar
+        Properties:
+            All props from Control struct
+            minValue        : int
+            maxValue        : int
+            step            : int
+            style           : BarStyle
+            orientation     : BarAlign
+            value           : int
+            showPercentage  : bool
+        Functions:
+			progressbar_increment
+            progressbar_start_marquee
+            progressbar_pause_marquee
+            progressbar_restart_marquee
+            progressbar_stop_marquee
+            progressbar_change_style
+            progressbar_set_value
+
+        Events:
+			All events from Control struct
+        
+==============================================================================================================*/
+
+
 package winforms
 import "base:runtime"
 import "core:fmt"
 import api "core:sys/windows"
 
-ICC_PROGRESS_CLASS :: 0x20
 
-// Constants
-
-    PBS_SMOOTH :: 0x1
-    PBS_VERTICAL :: 0x4
-    PBS_MARQUEE :: 0x8
-    PBM_SETBKCOLOR :: (0x2000 + 1)
-    PBM_SETMARQUEE :: (WM_USER + 10)
-
-    PBTM :: enum {
-        PP_BAR = 1,
-        PP_BARVERT = 2,
-        PP_CHUNK = 3,
-        PP_CHUNKVERT = 4,
-        PP_FILL = 5,
-        PP_FILLVERT = 6,
-        PP_PULSEOVERLAY = 7,
-        PP_MOVEOVERLAY = 8,
-        PP_PULSEOVERLAYVERT = 9,
-        PP_MOVEOVERLAYVERT = 10,
-        PP_TRANSPARENTBAR = 11,
-        PP_TRANSPARENTBARVERT = 12,
-    }
-
-
-// Constants End
 
 WcProgressClassW : wstring = L("msctls_progress32")
 pgbcount : int = 0
+
 ProgressBar :: struct
 {
     using control : Control,
@@ -51,86 +53,7 @@ ProgressBar :: struct
     speed : i32,
 }
 
-BarStyle :: enum {Block, Marquee}
-BarAlign :: enum {Horizontal, Vertical}
-BarTheme :: enum {System_Color, Custom_Color }
-
-@private pb_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^ProgressBar
-{
-    if pgbcount == 0
-    {
-        app.iccx.dwIcc = ICC_PROGRESS_CLASS
-        InitCommonControlsEx(&app.iccx)
-    }
-    this := new(ProgressBar)
-    pgbcount += 1
-    this.kind = .Progress_Bar
-    this.parent = f
-    this.font = f.font
-    this.xpos = x
-    this.ypos = y
-    this.width = w
-    this.height = h
-    this.minValue = 0
-    this.maxValue = 100
-    this.step = 1
-    this.speed = 30
-    this.style = .Block
-    this._theme = .System_Color
-    this._clsName = WcProgressClassW
-    this._fp_beforeCreation = cast(CreateDelegate) pb_before_creation
-	this._fp_afterCreation = cast(CreateDelegate) pb_after_creation
-
-    this._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH
-    this._exStyle = WS_EX_STATICEDGE
-    append(&f._controls, this)
-    return this
-}
-
-@private pb_dtor :: proc(pb : ^ProgressBar)
-{
-    if pb._hvstm != nil do CloseThemeData(pb._hvstm)
-}
-
 new_progressbar :: proc{pb_new1, pb_new2, pb_new3}
-
-@private pb_new1 :: proc(parent : ^Form) -> ^ProgressBar
-{
-    pb := pb_ctor(parent, 10, 10, 200, 25)
-    if parent.createChilds do create_control(pb)
-    return pb
-}
-
-@private pb_new2 :: proc(parent : ^Form, x, y : int, perc: bool = false) -> ^ProgressBar
-{
-    pb := pb_ctor(parent, x, y, 200, 25)
-    pb.showPercentage = perc
-    if parent.createChilds do create_control(pb)
-    return pb
-}
-
-@private pb_new3 :: proc(parent : ^Form, x, y, w, h : int, perc: bool = false) -> ^ProgressBar
-{
-    pb := pb_ctor(parent, x, y, w, h)
-    pb.showPercentage = perc
-    if parent.createChilds do create_control(pb)
-    return pb
-}
-
-@private pb_adjust_styles :: proc(pb : ^ProgressBar)
-{
-    if pb.style == .Marquee do pb._style |= PBS_MARQUEE
-    if pb.orientation == .Vertical do pb._style |= PBS_VERTICAL
-}
-
-// Remove visual styles from progress bar.
-// You can set back color & fore color now.
-// progressbar_set_theme :: proc(pb : ^ProgressBar, border : bool, fclr : UINT,bclr : uint = 0xFFFFFF) {
-//     pb._theme = .custom_color
-//     pb.foreColor = fclr
-//     pb.backColor = bclr
-//     //if border do pb._style |= WS_BORDER
-// }
 
 // Increment progress bar value one step.
 progressbar_increment :: proc(this : ^ProgressBar)
@@ -206,7 +129,84 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
     }
 }
 
+BarStyle :: enum {Block, Marquee}
+BarAlign :: enum {Horizontal, Vertical}
+BarTheme :: enum {System_Color, Custom_Color }
 
+@private pb_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^ProgressBar
+{
+    if pgbcount == 0
+    {
+        app.iccx.dwIcc = ICC_PROGRESS_CLASS
+        InitCommonControlsEx(&app.iccx)
+    }
+    this := new(ProgressBar)
+    pgbcount += 1
+    this.kind = .Progress_Bar
+    this.parent = f
+    this.font = f.font
+    this.xpos = x
+    this.ypos = y
+    this.width = w
+    this.height = h
+    this.minValue = 0
+    this.maxValue = 100
+    this.step = 1
+    this.speed = 30
+    this.style = .Block
+    this._theme = .System_Color
+    this._clsName = WcProgressClassW
+    this._fp_beforeCreation = cast(CreateDelegate) pb_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) pb_after_creation
+
+    this._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH
+    this._exStyle = WS_EX_STATICEDGE
+    append(&f._controls, this)
+    return this
+}
+
+@private pb_dtor :: proc(pb : ^ProgressBar)
+{
+    if pb._hvstm != nil do CloseThemeData(pb._hvstm)
+}
+
+@private pb_new1 :: proc(parent : ^Form) -> ^ProgressBar
+{
+    pb := pb_ctor(parent, 10, 10, 200, 25)
+    if parent.createChilds do create_control(pb)
+    return pb
+}
+
+@private pb_new2 :: proc(parent : ^Form, x, y : int, perc: bool = false) -> ^ProgressBar
+{
+    pb := pb_ctor(parent, x, y, 200, 25)
+    pb.showPercentage = perc
+    if parent.createChilds do create_control(pb)
+    return pb
+}
+
+@private pb_new3 :: proc(parent : ^Form, x, y, w, h : int, perc: bool = false) -> ^ProgressBar
+{
+    pb := pb_ctor(parent, x, y, w, h)
+    pb.showPercentage = perc
+    if parent.createChilds do create_control(pb)
+    return pb
+}
+
+@private pb_adjust_styles :: proc(pb : ^ProgressBar)
+{
+    if pb.style == .Marquee do pb._style |= PBS_MARQUEE
+    if pb.orientation == .Vertical do pb._style |= PBS_VERTICAL
+}
+
+// Remove visual styles from progress bar.
+// You can set back color & fore color now.
+// progressbar_set_theme :: proc(pb : ^ProgressBar, border : bool, fclr : UINT,bclr : uint = 0xFFFFFF) {
+//     pb._theme = .custom_color
+//     pb.foreColor = fclr
+//     pb.backColor = bclr
+//     //if border do pb._style |= WS_BORDER
+// }
 
 @private pb_set_range_internal :: proc(pb : ^ProgressBar)
 {
@@ -254,7 +254,6 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
     if pb.value > 0 do SendMessage(pb.handle, PBM_SETPOS, WPARAM(i32(pb.value)), 0)
 }
 
-
 @private progressbar_property_setter :: proc(this: ^ProgressBar, prop: ProgressBarProps, value: $T)
 {
 	switch prop {
@@ -272,17 +271,11 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
 	}
 }
 
-
 @private pb_finalize :: proc(pb: ^ProgressBar, scid: UINT_PTR)
 {
     RemoveWindowSubclass(pb.handle, pb_wnd_proc, scid)
     free(pb)
 }
-
-
-TMT_FILLCOLOR :: 3802
-DTT_COLORPROP :: 128
-DTT_SHADOWCOLOR :: 4
 
 @private pb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT

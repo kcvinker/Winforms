@@ -34,36 +34,17 @@ import "base:runtime"
 import "core:fmt"
 import "core:strconv"
 import "core:strings"
+import "core:math"
 import api "core:sys/windows"
 
-// Constants ----------
-    is_np_inited : bool = false
-    ICC_UPDOWN_CLASS :: 0x10
-    WcNumPickerW : wstring = L("msctls_updown32")
 
-    UD_MAXVAL :: 0x7fff
-    UD_MINVAL :: (-UD_MAXVAL)
+is_np_inited : bool = false    
+WcNumPickerW : wstring = L("msctls_updown32")    
 
-    UDS_WRAP :: 0x1
-    UDS_SETBUDDYINT :: 0x2
-    UDS_ALIGNRIGHT :: 0x4
-    UDS_ALIGNLEFT :: 0x8
-    UDS_AUTOBUDDY :: 0x10
-    UDS_ARROWKEYS :: 0x20
-    UDS_HORZ :: 0x40
-    UDS_NOTHOUSANDS :: 0x80
-    UDS_HOTTRACK :: 0x100
-    DCX_WINDOW1 : u32 : 0x00000001
-    DCX_INTERSECTRGN1 : u32 : 0x00000080 
-    ETO_OPAQUE : u32 :    0x0002
-    EN_UPDATE :: 1024
-    UDN_FIRST :: (UINT_MAX - 721)
-    UDN_DELTAPOS :: (UDN_FIRST - 1)
-    swp_flag : DWORD: SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER
+//MAX_VALUE :: 16 // Increase this value if you need more than 15 digits on 
 
-// Constants
-
-NumberPicker :: struct {
+NumberPicker :: struct 
+{
     using control : Control,
     textAlignment : SimpleTextAlignment,
     minRange: f32,
@@ -95,6 +76,7 @@ NumberPicker :: struct {
     _txtPos : SimpleTextAlignment,
     _bgcRef : COLORREF,
     _lineX : i32,
+    _disValArr: [dynamic]WCHAR,  
 
     // Events
     onButtonPaint,
@@ -105,39 +87,31 @@ NumberPicker :: struct {
 // Create new NumberPicker
 new_numberpicker :: proc{np_ctor1, np_ctor2, np_ctor3}
 
-numberpicker_set_range :: proc(np : ^NumberPicker, max_val, min_val : int)
+// Set the max & min ranges for this NumberPicker
+numberpicker_set_range :: proc(this : ^NumberPicker, max_val, min_val : int)
 {
-    np.maxRange = f32(max_val)
-    np.minRange = f32(min_val)
-    if np._isCreated {
+    this.maxRange = f32(max_val)
+    this.minRange = f32(min_val)
+    if this._isCreated {
         wpm := dir_cast(min_val, WPARAM)
         lpm := dir_cast(max_val, LPARAM)
-        SendMessage(np.handle, UDM_SETRANGE32, wpm, lpm)
+        SendMessage(this.handle, UDM_SETRANGE32, wpm, lpm)
+        new_arr_size := calc_value_array_size(this)
+        if new_arr_size > len(this._disValArr) do resize(&this._disValArr, new_arr_size)
     }
 }
 
+// Set the decimal precision. Default is zero.
 numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 {
-    this.decimalPrecision = value
-    if value == 0 {
-        this.formatString = "%d"
-    } else if value > 0 {        
-        this.formatString = fmt.tprintf("%%.%df", value)
-    } else {
-        print("numberpicker_set_decimal_precision: Value must be greater than zero...!")
-    }
-
-    if this._isCreated do np_display_value_internal(this)
+    set_decimal_precision(this, value)
+    new_arr_size := calc_value_array_size(this)
+    if new_arr_size > len(this._disValArr) do resize(&this._disValArr, new_arr_size)
 }
-
 
 StepOprator :: enum {Add, Sub}
 ButtonAlignment :: enum {Right, Left}
-NMUPDOWN :: struct {
-    hdr : NMHDR,
-    iPos : i32,
-    iDelta : i32,
-}
+
 
 //===================================================================Private Functions======================
 @private np_ctor :: proc(p : ^Form, x, y, w, h : int) -> ^NumberPicker
@@ -179,6 +153,7 @@ NMUPDOWN :: struct {
 @private np_ctor1 :: proc(parent : ^Form) -> ^NumberPicker
 {
     np := np_ctor(parent,10, 10, 80, 25 )
+    alloc_value_array(np)
     if parent.createChilds do create_control(np)
     return np
 }
@@ -186,7 +161,8 @@ NMUPDOWN :: struct {
 @private np_ctor2 :: proc(parent : ^Form, x, y : int, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, 80, 25)
-    numberpicker_set_decimal_precision(np, deciPrec)
+    set_decimal_precision(np, deciPrec)
+    alloc_value_array(np)
     np.step = step
     if parent.createChilds do create_control(np)
     return np
@@ -195,7 +171,8 @@ NMUPDOWN :: struct {
 @private np_ctor3 :: proc(parent : ^Form, x, y, w, h : int, deciPrec: int = 0, step: f32 = 1) -> ^NumberPicker
 {
     np := np_ctor(parent, x, y, w, h)
-    numberpicker_set_decimal_precision(np, deciPrec)
+    set_decimal_precision(np, deciPrec)
+    alloc_value_array(np)
     np.step = step
     if parent.createChilds do create_control(np)
     return np
@@ -218,7 +195,6 @@ NMUPDOWN :: struct {
     clr : Color = new_color(0xABABAB) // Gray color for edit control border
     np._borderBrush = CreateSolidBrush(clr.ref)
 }
-
 
 @private np_set_range_internal :: proc(np : ^NumberPicker)
 {
@@ -252,7 +228,39 @@ NMUPDOWN :: struct {
     } else {        
         val_str = fmt.tprintf(np.formatString, np.value)
     }    
-    SetWindowText(np._buddyHandle, to_wchar_ptr(val_str))               
+
+    // We are filling our static wchar array with what va_str contains.
+    utf8_to_utf16_with_array(val_str, np._disValArr[:])
+    SetWindowText(np._buddyHandle, &np._disValArr[0])               
+}
+
+@private set_decimal_precision :: proc(this: ^NumberPicker, value: int)
+{
+    this.decimalPrecision = value
+    if value == 0 {
+        this.formatString = "%d"
+    } else if value > 0 {        
+        this.formatString = fmt.tprintf("%%.%df", value)
+    } else {
+        print("numberpicker_set_decimal_precision: Value must be greater than zero...!")
+    }  
+
+    if this._isCreated do np_display_value_internal(this)
+}
+
+@private calc_value_array_size :: proc(this: ^NumberPicker) -> int
+{
+    val_digits := int(math.log10(this.maxRange)) + 1
+    return val_digits + this.decimalPrecision + 2
+}
+
+@private alloc_value_array :: proc(this: ^NumberPicker) 
+{
+    // Let's calculate the size of our array to hold the value string.
+    val_digits := int(math.log10(this.maxRange)) + 1
+    arr_len := val_digits + this.decimalPrecision + 2
+    this._disValArr = make([dynamic]u16, arr_len)
+    // ptf("array size %d", arr_len)
 }
 
 @private set_rects_and_size :: proc(np : ^NumberPicker)
@@ -424,12 +432,13 @@ NMUPDOWN :: struct {
     return bool(PtInRect(&np._myrc, pt))
 }
 
-@private np_finalize :: proc(np: ^NumberPicker, scid: UINT_PTR)
+@private np_finalize :: proc(this: ^NumberPicker, scid: UINT_PTR)
 {
-    delete_gdi_object(np._bkBrush)
-    delete_gdi_object(np._borderBrush)
-    RemoveWindowSubclass(np.handle, np_wnd_proc, scid)    
-    free(np)
+    delete_gdi_object(this._bkBrush)
+    delete_gdi_object(this._borderBrush)
+    RemoveWindowSubclass(this.handle, np_wnd_proc, scid)  
+    delete(this._disValArr)  
+    free(this)
 }
 
 
