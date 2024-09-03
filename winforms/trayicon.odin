@@ -1,5 +1,37 @@
 // Created on 03-Aug-2024 08:46 PM
 
+/*===========================================TrayIcon Docs=========================================================
+    TrayIcon struct
+        Constructor: new_tray_icon() -> ^TrayIcon
+        Properties:
+            All props from Control struct
+            menuTrigger     : TrayMenuTrigger - An enum in this file
+            contextMenu     : ^ContextMenu 
+            userData        : rawptr 
+        Functions:
+			tray_show_balloon
+            tray_update_tooltip
+            tray_update_icon
+            tray_add_context_menu
+
+        Events:
+			All events from Control struct
+            TrayIconEventHandler type [proc(^TrayIcon, ^EventARgs)]
+                onBalloonShow
+                onBalloonClose
+                onBalloonClick                
+                onMouseMove
+                onLeftMouseDown
+                onLeftMouseUp                
+                onRightMouseDown
+                onRightMouseUp
+                onLeftClick
+                onRightClick
+                onLeftDoubleClick
+            
+==============================================================================================================*/
+
+
 package winforms
 
 import api "core:sys/windows"
@@ -10,7 +42,7 @@ trayMsgWinRegistered : bool = false
 LIMG_FLAG : u32 : LR_DEFAULTCOLOR | LR_LOADFROMFILE
 
 TrayMenuTrigger :: enum u8 {None, Left_Click, Left_Double_Click = 2, Right_Click = 4, Any_Click = 7}
-BallonIcon :: enum {None, Info, Warning, Error, Custom} 
+BalloonIcon :: enum {None, Info, Warning, Error, Custom} 
 
 TrayIcon :: struct
 {
@@ -28,6 +60,7 @@ TrayIcon :: struct
     onRightClick, onLeftDoubleClick: TrayIconEventHandler
 }
 
+// Create new tray icon
 new_tray_icon :: proc(tooltip: string, iconpath: string = "") -> ^TrayIcon
 {
     this := new(TrayIcon)
@@ -61,19 +94,11 @@ new_tray_icon :: proc(tooltip: string, iconpath: string = "") -> ^TrayIcon
     return this
 }
 
-// tray_show_context_menu :: proc(this: ^TrayIcon)
-// {
-//     pt : POINT    
-//     if !this.contextMenu._menuInserted do cmenu_create_handle(this.contextMenu)
-//     GetCursorPos(&pt)
-// 	TrackPopupMenu(this.contextMenu.handle, 2, pt.x, pt.y, 0, this.contextMenu._dummyHwnd, nil)
-//     // ptf("tray context menu res %d", x);    
-// }
-
+// Show balloon notifiction on tray
 tray_show_balloon :: proc(this: ^TrayIcon, title, message: string, 
                                 timeout: u32,               // In milliseconds. 
                                 noSound := false,           // Do you want a silent balloon?
-                                icon : BallonIcon = .Info,  // Use any system icon or custom icon.
+                                icon : BalloonIcon = .Info,  // Use any system icon or custom icon.
                                 iconpath := "")             // If custom icon, give the path.
 {
     modifyIcon := false;
@@ -107,6 +132,7 @@ tray_show_balloon :: proc(this: ^TrayIcon, title, message: string,
     // ptf("balloon result - %d", x)	
 }
 
+// Update tooltip for tray icon
 tray_update_tooltip :: proc(this: ^TrayIcon, tooltip: string)
 {
     this._nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP // This is for safety,'cause flags might be zero.
@@ -115,6 +141,7 @@ tray_update_tooltip :: proc(this: ^TrayIcon, tooltip: string)
     Shell_NotifyIcon(NIM_MODIFY, &this._nid)
 }
 
+// Update icon for tray icon
 tray_update_icon :: proc(this: ^TrayIcon, iconpath: string)
 {    
     this._hTrayIcon = LoadImage(nil, to_wstring(iconpath), IMAGE_ICON, 0, 0, LIMG_FLAG)
@@ -127,7 +154,7 @@ tray_update_icon :: proc(this: ^TrayIcon, iconpath: string)
     Shell_NotifyIcon(NIM_MODIFY, &this._nid)    
 }
 
-
+// Add context menu to tray icon
 tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNames: ..string) -> ^ContextMenu
 {
     cmenu := new_contextmenu(true);
@@ -140,23 +167,21 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
     return cmenu
 }
 
+//=======================================Private Functions================================
 
-tray_icon_finalize :: proc(this: ^TrayIcon)
+@private tray_icon_finalize :: proc(this: ^TrayIcon)
 {
     DestroyWindow(this._msgWinHwnd)
     app.trayHwnd = nil // So that app's finalizer won't call this finalizer.
 }
 
-@private
-resetIconInternal :: proc(this: ^TrayIcon)
+@private resetIconInternal :: proc(this: ^TrayIcon)
 {
     this._nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP
     this._nid.hIcon = this._hTrayIcon
     Shell_NotifyIcon(NIM_MODIFY, &this._nid)
     this._resetIcon = false // Revert to default state.
 }
-
-
 
 @private register_tray_msgwindow :: proc()
 {

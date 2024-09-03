@@ -1,13 +1,31 @@
 /*
     Created on : 01-Feb-2022 08:38 AM
     Name : RadioButton type.
-    IDE : VSCode
 */
+
+/*===========================================RadioButton Docs=========================================================
+    RadioButton struct
+        Constructor: new_radiobutton() -> ^RadioButton
+        Properties:
+            All props from Control struct
+            textAlignment   : enum {left, right}
+            checked         : bool
+            checkOnClick    : bool
+            autoSize        : bool
+        Functions:
+			radiobutton_set_state
+            radiobutton_set_autocheck
+
+        Events:
+			All events from Control struct
+        
+==============================================================================================================*/
+
 
 package winforms
 import "base:runtime"
 import api "core:sys/windows"
-//import "core:fmt"
+
 
 rb_count : int
 WcRadioBtnClassW := L("Button")
@@ -24,6 +42,39 @@ RadioButton :: struct
     onStateChanged : EventHandler,
 }
 
+new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
+
+radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool)
+{
+    state := 0x0001 if bstate else 0x0000
+    SendMessage(rb.handle, BM_SETCHECK, WPARAM(state), 0)
+}
+
+// Change Radio Button's behaviour. Normally radio button will change it's checked state when it clicked.
+// But you can change that behaviour by passing a false to this function.
+radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
+{
+    ready_to_change : bool
+    if auto_check {
+         if !rb.checkOnClick {
+            rb._style =  WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON
+            rb.checkOnClick = true
+            ready_to_change = true
+        }
+    } else {
+       if rb.checkOnClick {
+            rb._style = WS_VISIBLE | WS_CHILD  | BS_RADIOBUTTON
+            rb.checkOnClick = false
+            ready_to_change = true
+        }
+    }
+    if ready_to_change {
+        SetWindowLongPtr(rb.handle, GWL_STYLE, LONG_PTR(rb._style))
+        InvalidateRect(rb.handle, nil, true)
+    }
+}
+
+//===========================================Private Functions======================================
 @private rb_ctor :: proc(f : ^Form, txt : string, x, y, w, h : int) -> ^RadioButton
 {
     this := new(RadioButton)
@@ -52,8 +103,6 @@ RadioButton :: struct
     append(&f._controls, this)
     return this
 }
-
-new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
 
 @private new_rb1 :: proc(parent : ^Form) -> ^RadioButton
 {
@@ -91,36 +140,6 @@ new_radiobutton :: proc{new_rb1, new_rb2, new_rb3, new_rb4}
     //if rb.textAlignment = .right do rb.
 }
 
-radiobutton_set_state :: proc(rb : ^RadioButton, bstate: bool)
-{
-    state := 0x0001 if bstate else 0x0000
-    SendMessage(rb.handle, BM_SETCHECK, WPARAM(state), 0)
-}
-
-// Change Radio Button's behaviour. Normally radio button will change it's checked state when it clicked.
-// But you can change that behaviour by passing a false to this function.
-radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
-{
-    ready_to_change : bool
-    if auto_check {
-         if !rb.checkOnClick {
-            rb._style =  WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON
-            rb.checkOnClick = true
-            ready_to_change = true
-        }
-    } else {
-       if rb.checkOnClick {
-            rb._style = WS_VISIBLE | WS_CHILD  | BS_RADIOBUTTON
-            rb.checkOnClick = false
-            ready_to_change = true
-        }
-    }
-    if ready_to_change {
-        SetWindowLongPtr(rb.handle, GWL_STYLE, LONG_PTR(rb._style))
-        InvalidateRect(rb.handle, nil, true)
-    }
-}
-
 @private rb_before_creation :: proc(rb : ^RadioButton)
 {
     rb_adjust_styles(rb)
@@ -144,7 +163,6 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
         case .Auto_Size: break
 	}
 }
-
 
 @private rb_finalize :: proc(rb: ^RadioButton, hw: HWND, scid: UINT_PTR)
 {

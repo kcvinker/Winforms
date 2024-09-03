@@ -1,9 +1,61 @@
 
-
 /*
     Created on : 06-Feb-2022 7:36:35 PM
     Name : TreeView type
 */
+
+/*===========================================TreeView Docs=========================================================
+    TreeView struct
+        Constructor: new_treeview() -> ^TreeView
+        Properties:
+            All props from Control struct
+            noLines         : bool
+            noButtons       : bool
+            hasCheckBoxes   : bool
+            fullRowSelect   : bool
+            editable        : bool
+            showSelection   : bool
+            hotTracking     : bool
+            selectedNode    : ^TreeNode
+            nodes           : [dynamic]^TreeNode
+            imageList       : HIMAGELIST
+            lineColor       : uint
+        Functions:
+			new_treenode
+            treeview_expand_all
+            treeview_collapse_all
+            treeview_expand_node
+            treeview_collapse_node
+            treeview_add_node
+            treeview_add_nodes
+            treeview_insert_node
+            treeview_add_child_node
+            treeview_add_childnodes
+            treeview_insert_child_node
+            treeview_delete_node
+            treeview_set_node_color
+            treeview_set_line_color
+            treeview_set_image_list
+            treeview_create_image_list
+
+        Events:
+			All events from Control struct
+            EventHandler type [proc(^Control, ^EventARgs)]
+                onBeginEdit
+                onEndEdit
+                onNodeDeleted
+            TreeEventHandler type [proc(^Control, ^TreeEventARgs)]
+                onBeforeChecked
+                onAfterChecked
+                onBeforeSelect
+                onAfterSelect
+                onBeforeExpand
+                onAfterExpand
+                onBeforeCollapse
+                onAfterCollapse
+               
+==============================================================================================================*/
+
 
 package winforms
 
@@ -12,185 +64,15 @@ import "base:runtime"
 //import "core:fmt"
 
 g_node_id : int = 100
-ICC_TREEVIEW_CLASSES :: 0x2
 WcTreeViewClassW : wstring = L("SysTreeView32")
 tvcount : int = 0
+
 TreeNodeArray :: distinct ^[dynamic]^TreeNode
 NodeDisposeHandler :: proc(node : ^TreeNode)
 NodeNotifyHandler :: proc(node : ^TreeNode)
+ChildData :: enum {Child_Auto = -2, Child_Callback = -1, Zero = 0, One = 1,}
+NodeOp :: enum {Add_Node, Insert_Node, Add_Child, Insert_Child,}
 
-// Constants =============================================
-
-    //TreeNodeCollection ::
-    TVITEMEXW :: struct
-    {
-        mask : u32,
-        hItem : HTREEITEM,
-        state,
-        stateMask : u32,
-        pszText : wstring,
-        cchTextMax,
-        iImage,
-        iSelectedImage ,
-        cChildren : i32,
-        lParam : LPARAM,
-        iIntegral : i32,
-        uStateEx : u32,
-        hwnd : HWND,
-        iExpandedImage,
-        iReserved : i32,
-    }
-
-    TVINSERTSTRUCT :: struct
-    {
-        hParent : HTREEITEM,
-        hInsertAfter : HTREEITEM,
-        itemEx : TVITEMEXW,
-    }
-
-    NMTVDISPINFOEXW :: struct
-    {
-        hdr : NMHDR,
-        item : TVITEMEXW,
-    }
-
-    TVITEM :: struct
-    {
-        mask : u32,
-        hItem : HTREEITEM,
-        state,
-        stateMask : u32,
-        pszText : wstring,
-        cchTextMax,
-        iImage,
-        iSelectedImage ,
-        cChildren : i32,
-        lParam : LPARAM,
-    }
-
-    NMTREEVIEW :: struct
-    {
-        hdr : NMHDR,
-        action : u32,
-        itemOld : TVITEM,
-        itemNew : TVITEM,
-        ptDrag : POINT,
-    }
-
-    NMTVSTATEIMAGECHANGING :: struct
-    {
-        hdr : NMHDR,
-        hti : HTREEITEM,
-        iOldStateImageIndex : i32,
-        iNewStateImageIndex : i32,
-    }
-
-    TVITEMCHANGE :: struct
-    {
-        hdr : NMHDR,
-        uChanged : u32,
-        hItem : HTREEITEM,
-        uStateNew : u32,
-        uStateOld : u32,
-        lParam : LPARAM,
-    }
-
-    NMTVCUSTOMDRAW :: struct
-    {
-        nmcd : NMCUSTOMDRAW,
-        clrText : COLORREF,
-        clrTextBk : COLORREF,
-        iLevel : i32,
-    }
-
-// Constants
-    TVS_HASBUTTONS :: 0x1
-    TVS_HASLINES :: 0x2
-    TVS_LINESATROOT :: 0x4
-    TVS_EDITLABELS :: 0x8
-    TVS_DISABLEDRAGDROP :: 0x10
-    TVS_SHOWSELALWAYS :: 0x20
-    TVS_RTLREADING :: 0x40
-    TVS_NOTOOLTIPS :: 0x80
-    TVS_CHECKBOXES :: 0x100
-    TVS_TRACKSELECT :: 0x200
-    TVS_SINGLEEXPAND :: 0x400
-    TVS_INFOTIP :: 0x800
-    TVS_FULLROWSELECT :: 0x1000
-    TVS_NOSCROLL :: 0x2000
-    TVS_NONEVENHEIGHT :: 0x4000
-    TVS_NOHSCROLL :: 0x8000
-    TVS_EX_NOSINGLECOLLAPSE :: 0x1
-
-    TVIS_STATEIMAGEMASK :: 0xF000
-    TVIS_USERMASK :: 0xF000
-
-    // The +1 is needed. Add always +1 to this type of expressions.
-    TVI_ROOT :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0x10000) + 1) 
-    TVI_FIRST :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0xffff) + 1)
-    TVI_LAST :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0xfffe) + 1)
-    TVI_SORT :: HTREEITEM(cast(UINT_PTR)(U64MAX - 0xfffd) + 1)
-
-    TVIF_CHILDREN :: 0x40
-    TVIF_DI_SETITEM :: 0x1000
-    TVIF_HANDLE :: 0x10
-    TVIF_IMAGE :: 0x2
-    TVIF_INTEGRAL :: 0x80
-    TVIF_PARAM :: 0x4
-    TVIF_SELECTEDIMAGE :: 0x20
-    TVIF_STATE :: 0x8
-    TVIF_TEXT :: 0x1
-
-    TVE_COLLAPSE      :: 1
-    TVE_EXPAND        :: 2
-    TVE_TOGGLE        :: 3
-    TVE_COLLAPSERESET :: 0x8000
-
-    TVNA_ADD :: 1
-    TVNA_ADDFIRST :: 2
-    TVNA_ADDCHILD :: 3
-    TVNA_ADDCHILDFIRST :: 4
-    TVNA_INSERT :: 5
-
-    TVIML_FLAG :: 0x00000020 | 0x00000001
-
-    TV_FIRST :: 0x1100
-    TVN_FIRST :: 4294966896
-    TVM_DELETEITEM :: (TV_FIRST+1)
-    TVM_EXPAND  :: TV_FIRST + 2
-    TVM_INSERTITEMW :: (TV_FIRST + 50)
-    TVM_SETIMAGELIST :: (TV_FIRST + 9)
-    TVM_SETBKCOLOR :: (TV_FIRST + 29)
-    TVM_SETTEXTCOLOR :: (TV_FIRST + 30)
-    TVM_SETLINECOLOR :: (TV_FIRST + 40)
-
-    TVN_KEYDOWN :: (TVN_FIRST-12)
-    TVN_SINGLEEXPAND :: (TVN_FIRST-15)
-    TVN_ITEMCHANGINGW ::  (TVN_FIRST-17)
-    TVN_ITEMCHANGEDW  :: (TVN_FIRST-19)
-
-    TVN_SELCHANGINGW :: (TVN_FIRST-50)
-    TVN_SELCHANGEDW  :: (TVN_FIRST-51)
-    TVN_GETDISPINFOW ::(TVN_FIRST-52)
-    TVN_ITEMEXPANDINGW :: (TVN_FIRST-54)
-    TVN_ITEMEXPANDEDW :: (TVN_FIRST-55)
-    TVN_DELETEITEMW :: (TVN_FIRST-58)
-    TVN_BEGINLABELEDITW :: (TVN_FIRST-59)
-    TVN_ENDLABELEDITW :: (TVN_FIRST-60)
-
-    NM_TVSTATEIMAGECHANGING :: 4294967272 //(NM_FIRST-24) // it is equal to (max(u32) - 24) + 1
-
-    TVC_UNKNOWN  :: 0x0
-    TVC_BYMOUSE :: 0x1
-    TVC_BYKEYBOARD :: 0x2
-
-// End Constants
-
-    ChildData :: enum {Child_Auto = -2, Child_Callback = -1, Zero = 0, One = 1,}
-    NodeOp :: enum {Add_Node, Insert_Node, Add_Child, Insert_Child,}
-
-
-// Constants End
 
 TreeView :: struct
 {
@@ -246,7 +128,118 @@ TreeNode :: struct
     _nodeCount : int,
 }
 
+// Create new treeview
 new_treeview :: proc{new_tv1, new_tv2, new_tv3}
+
+// Create new tree view node.
+new_treenode :: proc{node_ctor1, node_ctor2, node_ctor3, node_ctor4}
+
+// Expland all tree nodes
+treeview_expand_all :: proc(tv : ^TreeView)
+{
+    for node in tv.nodes {
+        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), dir_cast(node, LPARAM))
+    }
+}
+
+// Collapse all tree nodes
+treeview_collapse_all :: proc(tv : ^TreeView)
+{
+    for node in tv.nodes {
+        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), dir_cast(node, LPARAM))
+    }
+}
+
+// Expand the given node
+treeview_expand_node :: proc(tv : ^TreeView, node : ^TreeNode)
+{
+    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), dir_cast(node, LPARAM))
+}
+
+// Collapse the given node
+treeview_collapse_node :: proc(tv : ^TreeView, node : ^TreeNode)
+{
+    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), dir_cast(node, LPARAM))
+}
+
+// Add a new root node to tree view.
+treeview_add_node :: proc(tv : ^TreeView, node : ^TreeNode)
+{
+    tv_addnode_internal(tv, node, NodeOp.Add_Node)
+}
+
+// Add the given root nodes into treeview.
+treeview_add_nodes :: proc{treeview_add_nodes1, treeview_add_nodes2}
+
+// Inserts given root node to given index.
+treeview_insert_node :: proc(tv : ^TreeView, node : ^TreeNode, index : int)
+{
+    tv_addnode_internal(tv, node, NodeOp.Insert_Node, index)
+}
+
+// Add a child node to given parent node.
+treeview_add_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^TreeNode)
+{
+    tv_addnode_internal(tv, node, NodeOp.Add_Child, -1, parent)
+}
+
+// Add given child nodes to given parent node.
+treeview_add_childnodes :: proc{treeview_add_child_nodes1,
+                                treeview_add_child_nodes2,
+                                treeview_add_child_nodes3}
+
+// Iserts a child node to given parent node at given index
+treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^TreeNode, index: int)
+{
+    tv_addnode_internal(tv, node, NodeOp.Insert_Child, index, parent)
+}
+
+// Delete a node from treeview
+treeview_delete_node :: proc(tv : ^TreeView, node : ^TreeNode)
+{
+    //indx : int
+    if node.parentNode == nil {  // it's a top level node
+        SendMessage(tv.handle, TVM_DELETEITEM, 0, dir_cast(node.handle, LPARAM))
+        indx, _ := find_index(tv.nodes, node.handle )
+        node._dispose(node)
+        ordered_remove(&tv.nodes, indx) }
+    else {   // It's a child node.
+        SendMessage(tv.handle, TVM_DELETEITEM, 0, dir_cast(node.handle, LPARAM))
+        indx, _ := find_index(node.parentNode.nodes, node.handle )
+        node._dispose(node)
+        ordered_remove(&node.parentNode.nodes, indx)
+    }
+}
+
+// Apply colors to TreeNode
+treeview_set_node_color :: proc(tv : ^TreeView, node : ^TreeNode)
+{
+    tv._nodeClrChange = true
+    if tv._isCreated do InvalidateRect(tv.handle, nil, true)
+}
+
+treeview_set_line_color :: proc(tv : ^TreeView, clr : uint)
+{
+    if tv._isCreated {
+        tv.lineColor = clr
+        cref := get_color_ref(tv.lineColor)
+        SendMessage(tv.handle, TVM_SETLINECOLOR, 0, dir_cast(cref, LPARAM) )
+    }
+}
+
+// Set an image list for tree view
+treeview_set_image_list :: proc(tv : ^TreeView, himl : HIMAGELIST)
+{
+    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, dir_cast(himl, LPARAM))// TVSIL_NORMAL = 0
+}
+
+treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 16)
+{
+    isize := i32(ico_size)
+    tv.imageList = ImageList_Create(isize, isize, TVIML_FLAG, i32(nImg), 0 )
+    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, dir_cast(tv.imageList, LPARAM))
+}
+// ======================================Private Functions=======================================
 
 @private tv_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^TreeView
 {
@@ -297,9 +290,6 @@ new_treeview :: proc{new_tv1, new_tv2, new_tv3}
     return tv
 }
 
-// Create new tree view node.
-new_treenode :: proc{node_ctor1, node_ctor2, node_ctor3, node_ctor4}
-
 @private treenode_ctor :: proc(txt : string, img : int = -1, simg : int = -1,
                                  fclr : uint = def_fore_clr, bk_clr : uint = def_back_clr) -> ^TreeNode
 {
@@ -331,50 +321,14 @@ new_treenode :: proc{node_ctor1, node_ctor2, node_ctor3, node_ctor4}
     return treenode_ctor(txt, img_indx, sel_img_indx, txt_clr, back_clr)
 }
 
-// Expand all nodes.
-treeview_expand_all :: proc(tv : ^TreeView)
-{
-    for node in tv.nodes {
-        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), dir_cast(node, LPARAM))
-    }
-}
-
-// Collapse all nodes
-treeview_collapse_all :: proc(tv : ^TreeView)
-{
-    for node in tv.nodes {
-        SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), dir_cast(node, LPARAM))
-    }
-}
-
-treeview_expand_node :: proc(tv : ^TreeView, node : ^TreeNode)
-{
-    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_EXPAND), dir_cast(node, LPARAM))
-}
-
-treeview_collapse_node :: proc(tv : ^TreeView, node : ^TreeNode)
-{
-    SendMessage(tv.handle, CM_TVNODEEXPAND, WPARAM(TVE_COLLAPSE), dir_cast(node, LPARAM))
-}
-
-
-// Adds a new root node to tree view.
-treeview_add_node :: proc(tv : ^TreeView, node : ^TreeNode)
-{
-    tv_addnode_internal(tv, node, NodeOp.Add_Node)
-}
-
-// Adds the given root nodes into treeview.
-treeview_add_nodes :: proc{treeview_add_nodes1, treeview_add_nodes2}
-
-treeview_add_nodes1 :: proc(tv : ^TreeView, nodes : ..^TreeNode )
+@private treeview_add_nodes1 :: proc(tv : ^TreeView, nodes : ..^TreeNode )
 {
     for node in nodes {
         tv_addnode_internal(tv, node, NodeOp.Add_Node)
     }
 }
 
-treeview_add_nodes2 :: proc(tv : ^TreeView, nodetexts : ..string )
+@private treeview_add_nodes2 :: proc(tv : ^TreeView, nodetexts : ..string )
 {
     for txt in nodetexts {
         node:= new_treenode(txt)
@@ -382,31 +336,14 @@ treeview_add_nodes2 :: proc(tv : ^TreeView, nodetexts : ..string )
     }
 }
 
-// Inserts given root node to given index.
-treeview_insert_node :: proc(tv : ^TreeView, node : ^TreeNode, index : int)
-{
-    tv_addnode_internal(tv, node, NodeOp.Insert_Node, index)
-}
-
-// Adds a child node to given parent node.
-treeview_add_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^TreeNode)
-{
-    tv_addnode_internal(tv, node, NodeOp.Add_Child, -1, parent)
-}
-
-// Adds given child nodes to given parent node.
-treeview_add_childnodes :: proc{treeview_add_child_nodes1,
-                                treeview_add_child_nodes2,
-                                treeview_add_child_nodes3}
-
-treeview_add_child_nodes1 :: proc(tv : ^TreeView, parent: ^TreeNode, nodes : ..^TreeNode)
+@private treeview_add_child_nodes1 :: proc(tv : ^TreeView, parent: ^TreeNode, nodes : ..^TreeNode)
 {
     for node in nodes {
         tv_addnode_internal(tv, node, NodeOp.Add_Child, -1, parent)
     }
 }
 
-treeview_add_child_nodes2 :: proc(tv : ^TreeView, parent: ^TreeNode, nodetexts : ..string)
+@private treeview_add_child_nodes2 :: proc(tv : ^TreeView, parent: ^TreeNode, nodetexts : ..string)
 {
     for txt in nodetexts {
         node:= new_treenode(txt)
@@ -414,7 +351,7 @@ treeview_add_child_nodes2 :: proc(tv : ^TreeView, parent: ^TreeNode, nodetexts :
     }
 }
 
-treeview_add_child_nodes3 :: proc(tv : ^TreeView, parentIndex: int, nodetexts : ..string)
+@private treeview_add_child_nodes3 :: proc(tv : ^TreeView, parentIndex: int, nodetexts : ..string)
 {
     if parentIndex < len(tv.nodes)
     {
@@ -428,12 +365,6 @@ treeview_add_child_nodes3 :: proc(tv : ^TreeView, parentIndex: int, nodetexts : 
     else {
         print("Error: Parent index is bigger that node count")
     }
-}
-
-// Iserts a child node to given parent node at given index
-treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^TreeNode, index: int)
-{
-    tv_addnode_internal(tv, node, NodeOp.Insert_Child, index, parent)
 }
 
 @private make_tvitem :: proc(tv: ^TreeView, node: ^TreeNode) -> TVITEMEXW
@@ -511,23 +442,6 @@ treeview_insert_child_node :: proc(tv : ^TreeView, node : ^TreeNode, parent: ^Tr
     }
 }
 
-// delete a node from treeview
-treeview_delete_node :: proc(tv : ^TreeView, node : ^TreeNode)
-{
-    //indx : int
-    if node.parentNode == nil {  // it's a top level node
-        SendMessage(tv.handle, TVM_DELETEITEM, 0, dir_cast(node.handle, LPARAM))
-        indx, _ := find_index(tv.nodes, node.handle )
-        node._dispose(node)
-        ordered_remove(&tv.nodes, indx) }
-    else {   // It's a child node.
-        SendMessage(tv.handle, TVM_DELETEITEM, 0, dir_cast(node.handle, LPARAM))
-        indx, _ := find_index(node.parentNode.nodes, node.handle )
-        node._dispose(node)
-        ordered_remove(&node.parentNode.nodes, indx)
-    }
-}
-
 // Sometimes we need to remove a node from it's parent's node list, we need to find the index of that node.
 @private find_index :: proc(list : [dynamic]^TreeNode, hti : HTREEITEM) ->(idx : int, ok : bool)
 {
@@ -545,40 +459,11 @@ treeview_delete_node :: proc(tv : ^TreeView, node : ^TreeNode)
     free(n)
 }
 
-// Apply colors to TreeNode
-treeview_set_node_color :: proc(tv : ^TreeView, node : ^TreeNode)
-{
-    tv._nodeClrChange = true
-    if tv._isCreated do InvalidateRect(tv.handle, nil, true)
-}
-
 @private treeview_set_back_color :: proc(tv : ^Control, clr : uint)
 {
     tv.backColor = clr
     cref := get_color_ref(clr)
     SendMessage(tv.handle, TVM_SETBKCOLOR, 0, dir_cast(cref, LPARAM))
-}
-
-treeview_set_line_color :: proc(tv : ^TreeView, clr : uint)
-{
-    if tv._isCreated {
-        tv.lineColor = clr
-        cref := get_color_ref(tv.lineColor)
-        SendMessage(tv.handle, TVM_SETLINECOLOR, 0, dir_cast(cref, LPARAM) )
-    }
-}
-
-// Set an image list for tree view
-treeview_set_image_list :: proc(tv : ^TreeView, himl : HIMAGELIST)
-{
-    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, dir_cast(himl, LPARAM))// TVSIL_NORMAL = 0
-}
-
-treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 16)
-{
-    isize := i32(ico_size)
-    tv.imageList = ImageList_Create(isize, isize, TVIML_FLAG, i32(nImg), 0 )
-    SendMessage(tv.handle, TVM_SETIMAGELIST, 0, dir_cast(tv.imageList, LPARAM))
 }
 
 @private treenode_color :: proc( lpm : LPARAM) -> LRESULT
@@ -655,7 +540,6 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
         case .Line_Color: break
 	}
 }
-
 
 @private tv_finalize :: proc(tv: ^TreeView, scid: UINT_PTR)
 {

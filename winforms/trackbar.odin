@@ -3,61 +3,73 @@
     Name : TrackBar type.
 */
 
+/*===========================================TrackBar Docs=========================================================
+    TrackBar struct
+        Constructor: new_trackbar() -> ^TrackBar
+        Properties:
+            All props from Control struct
+            ticPos          : bool
+            TicPosition     : bool
+            noTick          : bool
+            channelColor    : uint
+            ticColor        : uint
+            ticWidth        : int
+            minRange        : int 
+            maxRange        : int
+            frequency       : i32
+            pageSIze        : int
+            lineSize        : int
+            ticLength       : i32
+            defaultTics     : bool
+            value           : int
+            vertical        : bool
+            reversed        : bool
+            selRange        : bool
+            noThumb         : bool
+            toolTip         : bool
+            customDraw      : bool
+            freeMove        : bool
+            selColor        : uint
+            channelStyle    : ChannelStyle - An enum in this file
+        Functions:
+			trackbar_set_value
+
+        Events:
+			All events from Control struct
+            EventHandler type [proc(^Control, ^EventARgs)]
+                onValueChanged
+                onDragging
+                onDragged
+==============================================================================================================*/
+
+
 package winforms
 import "base:runtime"
 import "core:fmt"
 import api "core:sys/windows"
 
 // Constants
-    TBS_AUTOTICKS :: 0x1
-    TBS_VERT :: 0x2
-    TBS_HORZ :: 0x0
-    TBS_TOP :: 0x4
-    TBS_BOTTOM :: 0x0
-    TBS_LEFT :: 0x4
-    TBS_RIGHT :: 0x0
-    TBS_BOTH :: 0x8
-    TBS_NOTICKS :: 0x10
-    TBS_ENABLESELRANGE :: 0x20
-    TBS_FIXEDLENGTH :: 0x40
-    TBS_NOTHUMB :: 0x80
-    TBS_TOOLTIPS :: 0x100
-    TBS_REVERSED :: 0x200
-    TBS_DOWNISLEFT :: 0x400
-
-    THUMB_LINE_LOW :: 0
-    THUMB_LINE_HIGH :: 1
-    THUMB_PAGE_LOW :: 2
-    THUMB_PAGE_HIGH :: 3
-    TB_THUMBPOSITION :: 4
-    TB_THUMBTRACK :: 5
-
-    TBCD_TICS : u32 : 0x1
-    TBCD_THUMB : u32 : 0x2
-    TBCD_CHANNEL : u32 : 0x3
-
-    BIG_CHANNEL_EDGE :: BF_ADJUST | BF_RECT | BF_FLAT
+    
 
 
-    /* We are converting these literals to dword pointer.
-     * Because, at the custom draw area, we need to check the...
-     * drawing stage with these literals. But odin didn't allow...
-     * us to use dword pointer on lhs and a dword on rhs. So this will fix that problem. */
-    TbTestCdraw := dir_cast( 0x0, DWORD_PTR)
-    TkbTicsCdraw  := dir_cast(0x1, DWORD_PTR)
-    TkbThumbCdraw := dir_cast( 0x2, DWORD_PTR)
-    TkbChannelCdraw := dir_cast( 0x3, DWORD_PTR)
-    TkbItemPrePaint := dir_cast(65537, DWORD_PTR)
-
-
-// Constants End
+/*-------------------------------------------------------------------------- 
+We are converting these literals to dword pointer.
+Because, at the custom draw area, we need to check the...
+drawing stage with these literals. But odin didn't allow...
+us to use dword pointer on lhs and a dword on rhs. So this will fix that problem. 
+----------------------------------------------------------------------------------*/
+TbTestCdraw := dir_cast( 0x0, DWORD_PTR)
+TkbTicsCdraw  := dir_cast(0x1, DWORD_PTR)
+TkbThumbCdraw := dir_cast( 0x2, DWORD_PTR)
+TkbChannelCdraw := dir_cast( 0x3, DWORD_PTR)
+TkbItemPrePaint := dir_cast(65537, DWORD_PTR)
 
 WcTrackbarClassW : wstring = L("msctls_trackbar32")
 trkcount : int = 0
-_def_tkb_width :: 150
-_def_tkb_height :: 30
 
-TrackBar :: struct {
+
+TrackBar :: struct 
+{
     using control : Control,
     ticPos : TicPosition,
     noTick : bool,
@@ -99,6 +111,17 @@ TrackBar :: struct {
     onValueChanged, onDragging, onDragged : EventHandler,
 }
 
+// Create new TrackBar
+new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
+
+// Set trackbar value
+trackbar_set_value :: proc(tk : ^TrackBar, value: int)
+{
+    if value > tk.maxRange || value < tk.minRange do return
+    SendMessage(tk.handle, TBM_SETPOS, WPARAM(1), LPARAM(i32(value)) )
+}
+
+
 // This struct is to hold the tic's physical pos and logical pos.
 TicData :: struct
 {
@@ -109,6 +132,7 @@ TicData :: struct
 // Define drawing style for channel.
 ChannelStyle ::enum {classic, outline,}
 
+//=================================================Private Functions===========================
 @private new_ticdata :: proc(pp: i32, lp: i32) -> TicData
 {
     tc : TicData
@@ -116,8 +140,6 @@ ChannelStyle ::enum {classic, outline,}
     tc.logPoint = lp
     return tc
 }
-
-new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
 
 @private tbar_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^TrackBar
 {
@@ -389,12 +411,6 @@ new_trackbar :: proc{new_tbar1, new_tbar2, new_tbar3}
     SendMessage(tk.handle, TBM_SETTICFREQ, WPARAM(tk.frequency), 0)
     SendMessage(tk.handle, TBM_SETPAGESIZE, 0, LPARAM(tk.pageSIze))
     SendMessage(tk.handle, TBM_SETLINESIZE, 0, LPARAM(tk.lineSize))
-}
-
-set_value :: proc(tk : ^TrackBar, value: int)
-{
-    if value > tk.maxRange || value < tk.minRange do return
-    SendMessage(tk.handle, TBM_SETPOS, WPARAM(1), LPARAM(i32(value)) )
 }
 
 @private trackbar_backcolor_setter :: proc(this: ^TrackBar, clr: uint)

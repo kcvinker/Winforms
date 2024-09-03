@@ -1,14 +1,35 @@
+
+/*===========================================TextBox Docs=========================================================
+    TextBox struct
+        Constructor: new_textbox() -> ^TextBox
+        Properties:
+            All props from Control struct
+            textAlignment   : TbTextAlign - An enum in this file
+            multiLine       : bool
+            textType        : TextType - An enum in this file
+            textCase        : TextCase - An enum in this file
+            hideSelection   : bool
+            readOnly        : bool
+            cueBanner       : string
+            focusRectColor  : uint
+        Functions:
+			textbox_set_selection
+            textbox_set_readonly
+            textbox_clear_all
+
+        Events:
+			All events from Control struct
+            onTextChanged - EventHandler type [proc(^Control, ^EventARgs)]
+==============================================================================================================*/
+
+
 package winforms
 import "base:runtime"
 import "core:fmt"
 import api "core:sys/windows"
 
-EN_SETFOCUS :: 256
-UIS_CLEAR :: 2
-UISF_HIDEFOCUS :: 0x1
+
 WcEditClassW : wstring = L("Edit")
-TBSTYLE :: WS_CHILD | WS_VISIBLE | ES_LEFT | WS_TABSTOP | ES_AUTOHSCROLL | WS_OVERLAPPED | WS_CLIPCHILDREN|WS_CLIPSIBLINGS
-TBEXSTYLE :: WS_EX_LEFT | WS_EX_LTRREADING  | WS_EX_CLIENTEDGE
 
 // Text case for Textbox control.
 // Possible values : default, lower_case, upper_case
@@ -33,12 +54,46 @@ TextBox :: struct
     readOnly : bool,
     cueBanner : string,
     focusRectColor : uint,
+
     onTextChanged : EventHandler,
     _bkBrush : HBRUSH,
     _drawFocusRect : bool,
     _frcRef : COLORREF,
 }
 
+// TextBox control constructor.
+new_textbox :: proc{new_tb1, new_tb2, new_tb3, new_tb4, new_tb5}
+
+// Select or de-select all the text in TextBox control.
+textbox_set_selection :: proc(tb : ^TextBox, value : bool)
+{
+    wpm, lpm : i32
+    if value {
+        wpm = 0
+        lpm = -1
+    } else {
+        wpm = -1
+        lpm = 0
+    }
+    SendMessage(tb.handle, EM_SETSEL, WPARAM(wpm), LPARAM(lpm))
+}
+
+// Set a TextBox's read only state.
+textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool)
+{
+    SendMessage(tb.handle, EM_SETREADONLY, WPARAM(bstate), 0)
+    tb.readOnly = bstate
+}
+
+textbox_clear_all :: proc(tb : ^TextBox)
+{
+    if tb._isCreated {
+        SetWindowText(tb.handle, to_wstring(""))
+        // free_all(context.temp_allocator)
+    }
+}
+
+//==========================================Private Functions==================================
 @private tb_ctor :: proc(p : ^Form, x, y, w, h: int) -> ^TextBox
 {
     this := new(TextBox)
@@ -64,9 +119,6 @@ TextBox :: struct
     append(&p._controls, this)
     return this
 }
-
-// TextBox control constructor.
-new_textbox :: proc{new_tb1, new_tb2, new_tb3, new_tb4, new_tb5}
 
 @private new_tb1 :: proc(parent : ^Form) -> ^TextBox
 {
@@ -128,35 +180,6 @@ new_textbox :: proc{new_tb1, new_tb2, new_tb3, new_tb4, new_tb5}
     if tb._isCreated do InvalidateRect(tb.handle, nil, false)
 }
 
-// Select or de-select all the text in TextBox control.
-textbox_set_selection :: proc(tb : ^TextBox, value : bool)
-{
-    wpm, lpm : i32
-    if value {
-        wpm = 0
-        lpm = -1
-    } else {
-        wpm = -1
-        lpm = 0
-    }
-    SendMessage(tb.handle, EM_SETSEL, WPARAM(wpm), LPARAM(lpm))
-}
-
-// Set a TextBox's read only state.
-textbox_set_readonly :: proc(tb : ^TextBox, bstate : bool)
-{
-    SendMessage(tb.handle, EM_SETREADONLY, WPARAM(bstate), 0)
-    tb.readOnly = bstate
-}
-
-textbox_clear_all :: proc(tb : ^TextBox)
-{
-    if tb._isCreated {
-        SetWindowText(tb.handle, to_wstring(""))
-        // free_all(context.temp_allocator)
-    }
-}
-
 @private tb_before_creation :: proc(tb : ^TextBox) {adjust_styles(tb)}
 
 @private tb_after_creation :: proc(tb : ^TextBox)
@@ -190,15 +213,12 @@ textbox_clear_all :: proc(tb : ^TextBox)
 	}
 }
 
-
 @private tb_finalize :: proc(tb: ^TextBox, scid: UINT_PTR)
 {
     delete_gdi_object(tb._bkBrush)
     RemoveWindowSubclass(tb.handle, tb_wnd_proc, scid)
     free(tb)
 }
-
-
 
 @private tb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
 

@@ -222,6 +222,88 @@ NMSELCHANGE :: struct
         PP_TRANSPARENTBARVERT = 12,
     }
 
+	TVITEMEXW :: struct
+    {
+        mask : u32,
+        hItem : HTREEITEM,
+        state,
+        stateMask : u32,
+        pszText : wstring,
+        cchTextMax,
+        iImage,
+        iSelectedImage ,
+        cChildren : i32,
+        lParam : LPARAM,
+        iIntegral : i32,
+        uStateEx : u32,
+        hwnd : HWND,
+        iExpandedImage,
+        iReserved : i32,
+    }
+
+    TVINSERTSTRUCT :: struct
+    {
+        hParent : HTREEITEM,
+        hInsertAfter : HTREEITEM,
+        itemEx : TVITEMEXW,
+    }
+
+    NMTVDISPINFOEXW :: struct
+    {
+        hdr : NMHDR,
+        item : TVITEMEXW,
+    }
+
+    TVITEM :: struct
+    {
+        mask : u32,
+        hItem : HTREEITEM,
+        state,
+        stateMask : u32,
+        pszText : wstring,
+        cchTextMax,
+        iImage,
+        iSelectedImage ,
+        cChildren : i32,
+        lParam : LPARAM,
+    }
+
+    NMTREEVIEW :: struct
+    {
+        hdr : NMHDR,
+        action : u32,
+        itemOld : TVITEM,
+        itemNew : TVITEM,
+        ptDrag : POINT,
+    }
+
+    NMTVSTATEIMAGECHANGING :: struct
+    {
+        hdr : NMHDR,
+        hti : HTREEITEM,
+        iOldStateImageIndex : i32,
+        iNewStateImageIndex : i32,
+    }
+
+    TVITEMCHANGE :: struct
+    {
+        hdr : NMHDR,
+        uChanged : u32,
+        hItem : HTREEITEM,
+        uStateNew : u32,
+        uStateOld : u32,
+        lParam : LPARAM,
+    }
+
+    NMTVCUSTOMDRAW :: struct
+    {
+        nmcd : NMCUSTOMDRAW,
+        clrText : COLORREF,
+        clrTextBk : COLORREF,
+        iLevel : i32,
+    }
+
+
 // RECT :: struct
 // {
 // 	left:   i32,
