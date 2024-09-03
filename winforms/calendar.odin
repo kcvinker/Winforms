@@ -39,6 +39,7 @@ Calendar :: struct
     noToday : b64,
     noTrailingDates : b64,
     shortDayNames : b64,
+    
     // Events
     onValueChanged,
     onViewChanged,
@@ -49,9 +50,9 @@ Calendar :: struct
 new_calendar :: proc{new_cal1, new_cal2}
 
 // Enum for setting Calendar's view mode.
-// Posible values : month, year, decade, centuary
 ViewMode :: enum {Month, Year, Decade, Centuary}
 
+//===================================================Private functions=============================================
 @private calendar_ctor :: proc(p : ^Form, x, y : int) -> ^Calendar
 {
     if !isDtpClassInit { // Then we need to initialize the date class control.

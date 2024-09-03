@@ -181,9 +181,28 @@ combo_clear_items :: proc(cmb : ^ComboBox)
     // TODO - clear dynamic array of combo.
 }
 
+// Set combo box's drop down style
+combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
+{
+    /* There is no other way to change the dropdown style of an existing combo box.
+     * We need to destroy the old combo and create a new one with same size and pos.
+     * Then fill the old combo items. */
+    if cmb._isCreated {
+        if cmb.comboStyle == style do return
+        cmb.comboStyle = style
+        cmb._recreateEnabled = true
+        DestroyWindow(cmb.handle)
+        cmb.handle = nil
+        create_control(cmb)
+    } else {
+        // Not now baby
+        cmb.comboStyle = style
+    }
+}
+
 
 //============================================Private functions==========================================
-ComboData :: struct
+@private ComboData :: struct
 {
     listBoxHwnd : HWND,
     comboHwnd : HWND,
@@ -191,7 +210,7 @@ ComboData :: struct
     comboID : u32,
 }
 
-new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
+@private new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
 {
     cd : ComboData
     cd.comboHwnd = cbi.hwndCombo
@@ -256,24 +275,6 @@ new_combo_data :: proc(cbi : COMBOBOXINFO, id : u32) -> ComboData
     cmb := cmb_ctor(parent, w, h, x, y)
     if parent.createChilds do create_control(cmb)
     return cmb
-}
-
-combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
-{
-    /* There is no other way to change the dropdown style of an existing combo box.
-     * We need to destroy the old combo and create a new one with same size and pos.
-     * Then fill the old combo items. */
-    if cmb._isCreated {
-        if cmb.comboStyle == style do return
-        cmb.comboStyle = style
-        cmb._recreateEnabled = true
-        DestroyWindow(cmb.handle)
-        cmb.handle = nil
-        create_control(cmb)
-    } else {
-        // Not now baby
-        cmb.comboStyle = style
-    }
 }
 
 @private add_items2 :: proc(cmb : ^ComboBox, items : ..any )
@@ -403,8 +404,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 }
 
-@private
-cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     context = global_context
@@ -582,8 +582,7 @@ cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 }
 
 
-@private
-edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     context = runtime.default_context()
