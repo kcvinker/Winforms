@@ -279,7 +279,7 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
         We are using TPM_RETURNCMD in the tpm_flag, so we don't get the 
         WM_COMMAND in our wndproc, we will get the selected menu id in return value.
         ----------------------------------------------------------------------------*/
-        mid1 := TrackPopupMenu(this.handle, TPM_FLAG, pt.x, pt.y, 0, this._dummyHwnd, nil)
+        mid1 := api.TrackPopupMenu(this.handle, TPM_FLAG, pt.x, pt.y, 0, this._dummyHwnd, nil)
 
         if mid1 > 0 {
             menu, okay := get_menuitem_from_idnumber(this, u32(mid1))
@@ -290,11 +290,7 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
                 }
             } 
         }
-        
-      
-
     }
-    //(hMenu: HMENU, uFlags: UINT, x, y: INT, nReserved: INT, hWnd: HWND, prcRect: ^RECT) -> BOOL ---
 }
 
 @private get_menuitem_from_idnumber :: proc(this: ^ContextMenu, idnum: u32) -> (^MenuItem, bool)
