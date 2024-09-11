@@ -61,165 +61,10 @@ import "base:runtime"
 import api "core:sys/windows"
 //import "core:fmt"
 
-// Constants
-	// Const1
-		IccListViewClass :: 0x1
-		WcListViewClassW : wstring = L("SysListView32")
-		lvcount : int = 0
-		LVS_ICON :: 0x0
-		LVS_REPORT :: 0x1
-		LVS_SMALLICON :: 0x2
-		LVS_LIST :: 0x3
-		LVS_TYPEMASK :: 0x3
-		LVS_SINGLESEL :: 0x4
-		LVS_SHOWSELALWAYS :: 0x8
-		LVS_SORTASCENDING :: 0x10
-		LVS_SORTDESCENDING :: 0x20
-		LVS_SHAREIMAGELISTS :: 0x40
-		LVS_NOLABELWRAP :: 0x80
-		LVS_AUTOARRANGE :: 0x100
-		LVS_EDITLABELS :: 0x200
-		LVS_OWNERDATA :: 0x1000
-		LVS_NOSCROLL :: 0x2000
-		LVS_ALIGNTOP :: 0x0
-		LVS_ALIGNLEFT :: 0x800
-		LVS_ALIGNMASK :: 0xc00
+IccListViewClass :: 0x1
+WcListViewClassW : wstring = L("SysListView32")
+lvcount : int = 0
 
-
-		LVS_EX_GRIDLINES :: 0x1
-		LVS_EX_SUBITEMIMAGES :: 0x2
-		LVS_EX_CHECKBOXES :: 0x4
-		LVS_EX_TRACKSELECT :: 0x8
-		LVS_EX_HEADERDRAGDROP :: 0x10
-		LVS_EX_FULLROWSELECT :: 0x20
-		LVS_EX_ONECLICKACTIVATE :: 0x40
-		LVS_EX_TWOCLICKACTIVATE :: 0x80
-		LVS_EX_FLATSB :: 0x100
-		LVS_EX_REGIONAL :: 0x200
-		LVS_EX_INFOTIP :: 0x400
-		LVS_EX_UNDERLINEHOT :: 0x800
-		LVS_EX_UNDERLINECOLD :: 0x1000
-		LVS_EX_MULTIWORKAREAS :: 0x2000
-		LVS_EX_LABELTIP :: 0x4000
-		LVS_EX_BORDERSELECT :: 0x8000
-		LVS_EX_DOUBLEBUFFER :: 0x10000
-		LVS_EX_HIDELABELS :: 0x20000
-		LVS_EX_SINGLEROW :: 0x40000
-		LVS_EX_SNAPTOGRID :: 0x80000
-		LVS_EX_SIMPLESELECT :: 0x100000
-		LVS_NOCOLUMNHEADER  :: 0x4000
-		LVS_NOSORTHEADER    :: 0x8000
-
-		LVCF_FMT :: 0x1
-		LVCF_WIDTH :: 0x2
-		LVCF_TEXT :: 0x4
-		LVCF_SUBITEM :: 0x8
-		LVCF_IMAGE :: 0x10
-		LVCF_ORDER :: 0x20
-
-		LVCFMT_LEFT :: 0x0
-		LVCFMT_RIGHT :: 0x1
-		LVCFMT_CENTER :: 0x2
-		LVCFMT_JUSTIFYMASK :: 0x3
-		LVCFMT_IMAGE :: 0x800
-		LVCFMT_BITMAP_ON_RIGHT :: 0x1000
-		LVCFMT_COL_HAS_IMAGES :: 0x8000
-
-		LVIF_DI_SETITEM :: 0x1000
-		LVIF_TEXT :: 0x1
-		LVIF_IMAGE :: 0x2
-		LVIF_PARAM :: 0x4
-		LVIF_STATE :: 0x8
-		LVIF_INDENT :: 0x10
-		LVIF_NORECOMPUTE :: 0x800
-		LVIF_GROUPID :: 0x100
-		LVIF_COLUMNS :: 0x200
-
-		LVM_FIRST :: 0x1000
-
-		LVM_SETEXTENDEDLISTVIEWSTYLE :: (LVM_FIRST+54)
-		LVM_INSERTCOLUMNW :: (LVM_FIRST+97)
-		LVM_INSERTITEM :: (LVM_FIRST+77)
-		LVM_SETITEMTEXT :: (LVM_FIRST+116)
-		LVM_SETIMAGELIST :: (LVM_FIRST+3)
-	// Const1
-
-	// U64_MAX := max(u64)
-		LVN_FIRST :: 4294967196 //(U64_MAX - 100) + 1
-
-		LV_WM_SETREDRAW :: 0x000B
-		LVN_COLUMNCLICK ::      (LVN_FIRST-8)
-
-		DEF_HDR_TXT_FLAG : UINT: DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX
-
-		HDM_FIRST ::0x1200
-		HDM_LAYOUT :: (HDM_FIRST + 5)
-		HDM_HITTEST ::(HDM_FIRST + 6)
-		HDM_GETITEMRECT :: (HDM_FIRST + 7)
-	//
-
-	// Structs
-		LVITEM :: struct {
-			mask : u32,
-			iItem : i32,
-			iSubItem : i32,
-			state : u32,
-			stateMask : u32,
-			pszText : wstring,
-			cchTextMax : i32,
-			iImage : i32,
-			lParam : LPARAM,
-			iIndent : i32,
-			iGroupId : i32,
-			cColumns : u32,
-			puColumns : ^u32,
-			piColFmt  : ^i32,
-			iGroup  : i32,
-		}
-
-		LVCOLUMN :: struct {
-			mask : u32,
-			fmt : i32,
-			cx : i32,
-			pszText : wstring,
-			cchTextMax : i32,
-			iSubItem : i32,
-			iImage : i32,
-			iOrder : i32,
-			cxMin : i32,
-			cxDefault : i32,
-			cxIdeal : i32,
-		}
-
-		HDHITTESTINFO :: struct {
-			pt : POINT,
-			flags : uint,
-			iItem : int,
-		}
-
-		HD_LAYOUT :: struct {
-			prc : ^RECT,
-			pwpos : ^WINDOWPOS,
-		}
-
-		NMLVCUSTOMDRAW :: struct {
-			nmcd : NMCUSTOMDRAW,
-			clrText : COLORREF,
-			clrTextBk : COLORREF,
-			iSubItem : i32,
-			dwItemType : DWORD,
-			clrFace : COLORREF,
-			iIconEffect : i32,
-			iIconPhase : i32,
-			iPartId : i32,
-			iStateId : i32,
-			rcText : RECT,
-			uAlign : UINT,
-		}
-	// Structs
-
-
-// Constants End
 
 ListView :: struct
 {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a property
@@ -237,8 +82,11 @@ ListView :: struct
 	hotTrackSelect : bool,
 	editLabel : bool,
 	noHeader : bool,
+	checked : bool,
 	headerBackColor, headerForeColor : uint,
 	headerHeight : int,
+	selectedItemIndex: int,
+	selectedSubItemIndex: int,
 
 	headerClickable : bool,
 	items : [dynamic]^ListViewItem,
@@ -252,8 +100,13 @@ ListView :: struct
 	_hdrBkBrush, _hdrHotBrush : HBRUSH,
 	_bgcRef, _fgcRef : COLORREF,
 	_bgcDraw : bool,
+
 	_divPen : HPEN,
 	_lvcList : [dynamic]LVCOLUMN,
+
+	// Events
+	onSelectionChanged: EventHandler,
+	onCheckedChanged: EventHandler,
 }
 
 // Create a new ListView struct
@@ -1031,7 +884,6 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	//display_msg(msg)
 	switch msg {
 	case WM_DESTROY : lv_finalize(lv, sc_id)
-
 	case WM_SETFOCUS: ctrl_setfocus_handler(lv)
 	case WM_KILLFOCUS: ctrl_killfocus_handler(lv)
 	case WM_CONTEXTMENU:
@@ -1040,22 +892,39 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	case CM_NOTIFY :
 		nmh := dir_cast(lp, ^NMHDR)
 		switch nmh.code {
-		case NM_CUSTOMDRAW:
-			lvcd := dir_cast(lp, ^NMLVCUSTOMDRAW)
-			switch lvcd.nmcd.dwDrawStage {
-			case CDDS_PREPAINT:
-				return CDRF_NOTIFYITEMDRAW
-			case CDDS_ITEMPREPAINT:
-				lvcd.clrTextBk = lv._bgcRef
-				lvcd.clrText = lv._fgcRef
-				// print("iSubItem ", lvcd.nmcd.dwItemSpec)
-				return CDRF_NEWFONT | CDRF_DODEFAULT
-			}
-			return CDRF_DODEFAULT
+			case NM_CUSTOMDRAW:
+				lvcd := dir_cast(lp, ^NMLVCUSTOMDRAW)
+				switch lvcd.nmcd.dwDrawStage {
+				case CDDS_PREPAINT:
+					return CDRF_NOTIFYITEMDRAW
+				case CDDS_ITEMPREPAINT:
+					lvcd.clrTextBk = lv._bgcRef
+					lvcd.clrText = lv._fgcRef
+					// print("iSubItem ", lvcd.nmcd.dwItemSpec)
+					return CDRF_NEWFONT | CDRF_DODEFAULT
+				}
+				return CDRF_DODEFAULT
 
+			case LVN_ITEMCHANGED:
+				nmlv := dir_cast(lp, ^NMLISTVIEW)
+				if nmlv.uNewState == 8192 || nmlv.uNewState == 4096 {
+					lv.checked = nmlv.uNewState == 8192 ? true: false
+					if lv.onCheckedChanged != nil {
+						ea := new_event_args()
+						lv.onCheckedChanged(lv, &ea)
+					}
+				} else {
+					if (nmlv.uNewState == 3) {
+						//print("this area oka");
+						lv.selectedItemIndex = int(nmlv.iItem)
+						lv.selectedSubItemIndex = int(nmlv.iSubItem)
+						if lv.onSelectionChanged != nil {
+							ea := new_event_args()
+							lv.onSelectionChanged(lv, &ea)
+						}                               
+					}
+				}
 		}
-
-
 
 	case WM_NOTIFY:
 		// Message from header.

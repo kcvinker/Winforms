@@ -186,6 +186,76 @@ NMSELCHANGE :: struct
 
     }
 
+    NMLISTVIEW :: struct  {
+        hdr : NMHDR,
+        iItem : i32,
+        iSubItem : i32,
+        uNewState : u32,
+        uOldState : u32,
+        uChanged : u32,
+        ptAction : POINT,
+        lParam : LPARAM,
+    }
+
+    // Structs
+		LVITEM :: struct {
+			mask : u32,
+			iItem : i32,
+			iSubItem : i32,
+			state : u32,
+			stateMask : u32,
+			pszText : wstring,
+			cchTextMax : i32,
+			iImage : i32,
+			lParam : LPARAM,
+			iIndent : i32,
+			iGroupId : i32,
+			cColumns : u32,
+			puColumns : ^u32,
+			piColFmt  : ^i32,
+			iGroup  : i32,
+		}
+
+		LVCOLUMN :: struct {
+			mask : u32,
+			fmt : i32,
+			cx : i32,
+			pszText : wstring,
+			cchTextMax : i32,
+			iSubItem : i32,
+			iImage : i32,
+			iOrder : i32,
+			cxMin : i32,
+			cxDefault : i32,
+			cxIdeal : i32,
+		}
+
+		HDHITTESTINFO :: struct {
+			pt : POINT,
+			flags : uint,
+			iItem : int,
+		}
+
+		HD_LAYOUT :: struct {
+			prc : ^RECT,
+			pwpos : ^WINDOWPOS,
+		}
+
+		NMLVCUSTOMDRAW :: struct {
+			nmcd : NMCUSTOMDRAW,
+			clrText : COLORREF,
+			clrTextBk : COLORREF,
+			iSubItem : i32,
+			dwItemType : DWORD,
+			clrFace : COLORREF,
+			iIconEffect : i32,
+			iIconPhase : i32,
+			iPartId : i32,
+			iStateId : i32,
+			rcText : RECT,
+			uAlign : UINT,
+		}
+
 	NMDATETIMECHANGE :: struct
     {
         nmhdr : NMHDR,
