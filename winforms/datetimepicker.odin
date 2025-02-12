@@ -262,7 +262,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
 }
 
 @private
-dtp_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+dtp_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                 sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()

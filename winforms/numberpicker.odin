@@ -409,10 +409,10 @@ ButtonAlignment :: enum {Right, Left}
 @private set_np_subclass :: proc(np : ^NumberPicker, np_func, buddy_func : SUBCLASSPROC )
 {
 	np_dwp := cast(DWORD_PTR)(cast(UINT_PTR) np)
-	SetWindowSubclass(np.handle, np_func, UINT_PTR(globalSubClassID), np_dwp )
+	api.SetWindowSubclass(np.handle, np_func, UINT_PTR(globalSubClassID), np_dwp )
 	globalSubClassID += 1
 
-	SetWindowSubclass(np._buddyHandle, buddy_func, UINT_PTR(globalSubClassID), np_dwp )
+	api.SetWindowSubclass(np._buddyHandle, buddy_func, UINT_PTR(globalSubClassID), np_dwp )
 	globalSubClassID += 1
 }
 
@@ -442,7 +442,7 @@ ButtonAlignment :: enum {Right, Left}
 }
 
 
-@private np_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private np_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()
@@ -530,7 +530,7 @@ ButtonAlignment :: enum {Right, Left}
     return DefSubclassProc(hw, msg, wp, lp)
 }
 
-@private buddy_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private buddy_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                             sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //runtime.default_context()

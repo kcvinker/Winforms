@@ -72,7 +72,7 @@
 package winforms
 
 import "base:runtime"
-import "core:sys/windows"
+import api "core:sys/windows"
 
 globalSubClassID : int = 2001
 globalCtlID : UINT= 100
@@ -168,7 +168,7 @@ control_enable :: proc(ctl : ^Control, bstate : bool)
 		case .Number_Picker :
 			SendMessage(ctl.handle, WM_ENABLE, WPARAM(bstate), 0)
 		case :
-			windows.EnableWindow(ctl.handle, auto_cast(bstate))
+			api.EnableWindow(ctl.handle, auto_cast(bstate))
 	}
 }
 
@@ -202,7 +202,7 @@ control_visibile :: proc(ctl : ^Control, bstate : bool)
 // Enable or disable control
 control_setdisable :: proc(this: ^Control, value: b8)
 {
-	if this._isCreated do windows.EnableWindow(this.handle, !value)
+	if this._isCreated do api.EnableWindow(this.handle, !value)
 }
 
 
@@ -300,7 +300,7 @@ control_Setfocus :: proc(ctl : ^Control)
 
 @private set_subclass :: proc(ctl : ^Control, fn_ptr : SUBCLASSPROC )
 {
-	SetWindowSubclass(ctl.handle, fn_ptr, UINT_PTR(globalSubClassID), to_dwptr(ctl) )
+	api.SetWindowSubclass(ctl.handle, fn_ptr, UINT_PTR(globalSubClassID), to_dwptr(ctl) )
 	globalSubClassID += 1
 }
 

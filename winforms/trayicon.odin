@@ -202,7 +202,7 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
     // if this.font.handle == nil do CreateFont_handle(&this.font)
 }
 
-@private tray_wndproc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT
+@private tray_wndproc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT
 {
     context = global_context
     // display_msg(msg)

@@ -147,7 +147,7 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     free(cal)
 }
 
-@private cal_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private cal_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                             sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()

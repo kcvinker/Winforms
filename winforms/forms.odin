@@ -471,7 +471,7 @@ FindHwnd :: enum {lb_hwnd, tb_hwnd}
 }
 
 @private
-window_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
+window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
 {
     context = global_context
     //display_msg(msg)

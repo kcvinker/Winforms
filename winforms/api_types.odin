@@ -115,9 +115,9 @@ size_t     :: api.size_t
 
 
 RECT :: api.RECT
-WNDPROC  :: distinct #type proc "fast" (HWND, u32, WPARAM, LPARAM) -> LRESULT
-SUBCLASSPROC :: distinct #type proc "fast" (HWND, u32, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) -> LRESULT
-TIMERPROC :: distinct #type proc "fast" (HWND, UINT, UINT_PTR, DWORD)
+WNDPROC  :: distinct #type proc "stdcall" (HWND, u32, WPARAM, LPARAM) -> LRESULT
+SUBCLASSPROC :: distinct #type proc "stdcall" (HWND, u32, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) -> LRESULT
+TIMERPROC :: distinct #type proc "stdcall" (HWND, UINT, UINT_PTR, DWORD)
 
 WNDCLASSEXW :: struct {
 	cbSize,

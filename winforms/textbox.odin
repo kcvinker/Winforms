@@ -220,7 +220,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
     free(tb)
 }
 
-@private tb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
+@private tb_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
 
     context = global_context //runtime.default_context()
     tb := control_cast(TextBox, ref_data)

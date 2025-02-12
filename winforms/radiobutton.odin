@@ -171,7 +171,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
     RemoveWindowSubclass(hw, rb_wnd_proc, scid)
 }
 
-@private rb_wnd_proc :: proc "fast" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+@private rb_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context    

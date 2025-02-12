@@ -116,13 +116,13 @@ FILETIME_as_unix_nanoseconds :: proc "contextless" (ft: FILETIME) -> i64 {
 // }
 
 foreign import "system:Shcore.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign Shcore {
    @(link_name="GetScaleFactorForDevice") GetScaleFactorForDevice :: proc(disp: i32) -> i32 ---
 }
 
 foreign import "system:user32.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign user32 {
    @(link_name="RegisterClassExW") RegisterClassEx :: proc(wc: ^WNDCLASSEXW) -> i16 ---
    @(link_name="LoadIconW") LoadIcon :: proc(instance: HINSTANCE, icon_name: wstring) -> HICON ---
@@ -226,7 +226,7 @@ foreign user32 {
 
 
 foreign import "system:kernel32.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign kernel32 {
    @(link_name="GetLastError") GetLastError :: proc() -> DWORD ---
    @(link_name="GetModuleHandleW") GetModuleHandle :: proc(module_name: wstring) -> HINSTANCE ---
@@ -262,7 +262,7 @@ foreign kernel32 {
 } // Kernel32 library
 
 foreign import "system:gdi32.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign gdi32 {
    @(link_name="CreateSolidBrush") CreateSolidBrush :: proc(color: COLORREF) -> HBRUSH ---
    @(link_name="CreateFontW") CreateFont :: proc(cHeight, cWidth, cEscapement, cOrientation, cWeight : i32,
@@ -308,9 +308,9 @@ foreign gdi32 {
 } // Gdi32 library
 
 foreign import "system:Comctl32.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign Comctl32 {
-   @(link_name="SetWindowSubclass") SetWindowSubclass :: proc(hw : HWND, pfn : SUBCLASSPROC, uid : UINT_PTR, rd : DWORD_PTR) -> BOOL---
+   //@(link_name="SetWindowSubclass") SetWindowSubclass :: proc(hw : HWND, pfn : SUBCLASSPROC, uid : UINT_PTR, rd : DWORD_PTR) -> BOOL---
    @(link_name="DefSubclassProc") DefSubclassProc :: proc(hw : HWND, ms : u32, wpm : WPARAM, lpm : LPARAM) -> LRESULT ---
    @(link_name="RemoveWindowSubclass") RemoveWindowSubclass :: proc(hw : HWND, pfn : SUBCLASSPROC, uid : UINT_PTR) -> BOOL---
    @(link_name="InitCommonControlsEx") InitCommonControlsEx :: proc(picc_ex : ^INITCOMMONCONTROLSEX) -> BOOL---
@@ -327,7 +327,7 @@ foreign Comctl32 {
 } // Comctrl library
 
 foreign import "system:UxTheme.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign UxTheme {
    @(link_name="SetWindowTheme") SetWindowTheme :: proc(hw : HWND, sub_app : wstring, sub_id : wstring) -> HRESULT ---
    @(link_name="OpenThemeData") OpenThemeData :: proc(hw : HWND, cls_list : wstring) -> HTHEME ---
@@ -361,7 +361,7 @@ foreign UxTheme {
 
 
 foreign import "system:shell32.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign shell32 {
    @(link_name="ExtractIconExW") ExtractIconEx :: proc(  lpszFile : wstring,
                                                          iconIndex : i32,
@@ -376,14 +376,14 @@ foreign shell32 {
 }
 
 foreign import "system:comdlg32.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign comdlg32 {
    @(link_name = "GetOpenFileNameW") GetOpenFileName :: proc(p1: LPOPENFILENAMEW) -> BOOL ---
    @(link_name = "GetSaveFileNameW") GetSaveFileName :: proc(p1: LPOPENFILENAMEW) -> BOOL ---
 }
 
 foreign import "system:ole32.lib"
-@(default_calling_convention = "fast")
+@(default_calling_convention = "stdcall")
 foreign ole32 {
    @(link_name="CoTaskMemFree") CoTaskMemFree :: proc(pv: LPVOID) ---
 }

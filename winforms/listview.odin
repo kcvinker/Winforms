@@ -830,7 +830,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 
 	// Let's collect the header handle and subclass it.
 	lv._hdrHwnd = HWND(cast(UINT_PTR) SendMessage(lv.handle, LVM_GETHEADER, 0, 0))
-	SetWindowSubclass(lv._hdrHwnd, SUBCLASSPROC(hdr_wnd_proc), UINT_PTR(globalSubClassID), to_dwptr(lv))
+	api.SetWindowSubclass(lv._hdrHwnd, SUBCLASSPROC(hdr_wnd_proc), UINT_PTR(globalSubClassID), to_dwptr(lv))
 	globalSubClassID += 1
 
 	// if lv.backColor != 0xFFFFFF do SendMessage(lv.handle, LVM_SETBKCOLOR, 0, LPARAM(lv._bgcRef))
@@ -875,7 +875,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
     free(lv)
 }
 
-@private lv_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private lv_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 												sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT 
 {
 	context = global_context  
@@ -949,7 +949,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	return DefSubclassProc(hw, msg, wp, lp)
 }
 
-@private hdr_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private hdr_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
 												sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT 
 {
 	context = global_context //runtime.default_context()

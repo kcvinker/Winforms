@@ -317,7 +317,7 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
     // print("context menu dtor finished")
 }
 
-@private cmenu_wndproc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM) -> LRESULT
+@private cmenu_wndproc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM) -> LRESULT
 {
     context = global_context
     // display_msg(msg)

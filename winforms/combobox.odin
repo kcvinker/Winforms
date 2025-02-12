@@ -369,7 +369,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 
     // Now, subclass the edit control.
-    SetWindowSubclass(cd.editHwnd, edit_wnd_proc, cmb._editSubclsID, to_dwptr(cmb))
+    api.SetWindowSubclass(cd.editHwnd, edit_wnd_proc, cmb._editSubclsID, to_dwptr(cmb))
     cmb._editSubclsID += 1 // We don't want to use the same id again and again.
 
     if len(cmb.items) > 0 do additem_internal(cmb)
@@ -404,7 +404,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 }
 
-@private cmb_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private cmb_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     context = global_context
@@ -582,7 +582,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
 }
 
 
-@private edit_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private edit_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                 sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
     context = runtime.default_context()

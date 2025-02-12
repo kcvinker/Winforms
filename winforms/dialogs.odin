@@ -52,8 +52,8 @@ import "core:strings"
         newFolBtn, showFiles : bool
     }
 
-    OFNHOOKPROC :: distinct #type proc "fast"(hwnd: HWND, msg: uint, wpm: WPARAM, lpm: LPARAM) -> UINT_PTR
-    BROWSECBPROC :: distinct #type proc "fast"(hwnd: HWND, msg: uint, lpm1: LPARAM, lpm2: LPARAM) -> i32
+    OFNHOOKPROC :: distinct #type proc "stdcall"(hwnd: HWND, msg: uint, wpm: WPARAM, lpm: LPARAM) -> UINT_PTR
+    BROWSECBPROC :: distinct #type proc "stdcall"(hwnd: HWND, msg: uint, lpm1: LPARAM, lpm2: LPARAM) -> i32
 
 // End Type
 

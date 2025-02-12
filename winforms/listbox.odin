@@ -424,7 +424,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int)
     free(lbx)
 }
 
-@private lbx_wnd_proc :: proc "fast" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
+@private lbx_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
                                                     sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT 
 {
     context = global_context 
