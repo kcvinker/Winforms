@@ -171,7 +171,7 @@ get_win_rect :: proc(hw : HWND) -> RECT
 	return rc
 }
 
-make_dword :: proc(lo_val, hi_val, : $T) -> DWORD
+make_dword :: proc(lo_val, hi_val : $T) -> DWORD
 {
 	hv := cast(WORD) hi_val
     lv := cast(WORD) lo_val
