@@ -51,7 +51,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         kind = .Group_Box
         _textable = true
         parent = p
-        font = p.font
+        // font = p.font
         xpos = x
         ypos = y
         text = txt
@@ -65,6 +65,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         _style = gbstyle 
         _exStyle = gbexstyle // WS_EX_TRANSPARENT | WS_EX_RIGHTSCROLLBAR
 
+    font_clone(&p.font, &gb.font )
     append(&p._controls, gb)
     return gb
 }
@@ -104,6 +105,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 @private gb_finalize :: proc(this: ^GroupBox, scid: UINT_PTR)
 {
     delete_gdi_object(this._bkBrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
     RemoveWindowSubclass(this.handle, gb_wnd_proc, scid)
     free(this)
 }

@@ -104,7 +104,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
     this.parent = p
     this.xpos = x
     this.ypos = y
-    this.font = p.font
+    // this.font = p.font
     this.hideSelection = true
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
@@ -116,6 +116,7 @@ textbox_clear_all :: proc(tb : ^TextBox)
     this._clsName = WcEditClassW
     this._fp_beforeCreation = cast(CreateDelegate) tb_before_creation
     this._fp_afterCreation = cast(CreateDelegate) tb_after_creation
+    font_clone(&p.font, &this.font )
     append(&p._controls, this)
     return this
 }
@@ -213,11 +214,12 @@ textbox_clear_all :: proc(tb : ^TextBox)
 	}
 }
 
-@private tb_finalize :: proc(tb: ^TextBox, scid: UINT_PTR)
+@private tb_finalize :: proc(this: ^TextBox, scid: UINT_PTR)
 {
-    delete_gdi_object(tb._bkBrush)
-    RemoveWindowSubclass(tb.handle, tb_wnd_proc, scid)
-    free(tb)
+    delete_gdi_object(this._bkBrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    RemoveWindowSubclass(this.handle, tb_wnd_proc, scid)
+    free(this)
 }
 
 @private tb_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {

@@ -124,7 +124,6 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	this.xpos = x
 	this.ypos = y
 	this.parent = p
-	this.font = p.font
 	this._exStyle = 0
 	this._style = WS_CHILD | WS_TABSTOP | WS_VISIBLE | BS_NOTIFY
 	this._clsName = &btnclass[0]
@@ -133,6 +132,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	this.backColor = p.backColor
 	this._fp_beforeCreation = cast(CreateDelegate) btn_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) btn_after_creation
+	font_clone(&p.font, &this.font )
 	append(&p._controls, this)
 	return this
 }
@@ -302,12 +302,13 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	return ret
 }
 
-@private btn_finalize :: proc(btn: ^Button, hw: HWND, scid: UINT_PTR)
+@private btn_finalize :: proc(this: ^Button, hw: HWND, scid: UINT_PTR)
 {
-	switch btn._drawFlag {
-		case 2, 3: flatDrawDtor(btn._fdraw)
-		case 4, 5: gradDrawDtor(btn._gdraw)
+	switch this._drawFlag {
+		case 2, 3: flatDrawDtor(this._fdraw)
+		case 4, 5: gradDrawDtor(this._gdraw)
 	}
+	if this.font.handle != nil do delete_gdi_object(this.font.handle)
 }
 
 //mc : int = 1

@@ -152,7 +152,7 @@ ChannelStyle ::enum {classic, outline,}
     trkcount += 1
     this.kind = .Track_Bar
     this.parent = f
-    this.font = f.font
+    // this.font = f.font
     this.xpos = x
     this.ypos = y
     this.width = w
@@ -181,6 +181,7 @@ ChannelStyle ::enum {classic, outline,}
     this._fp_beforeCreation = cast(CreateDelegate) tkb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) tkb_after_creation
     this._chanFlag = BF_RECT | BF_ADJUST
+    font_clone(&f.font, &this.font )
     append(&f._controls, this)
     return this
 }
@@ -469,13 +470,14 @@ ChannelStyle ::enum {classic, outline,}
 	}
 }
 
-@private tkb_finalize :: proc(tkb: ^TrackBar, scid: UINT_PTR)
+@private tkb_finalize :: proc(this: ^TrackBar, scid: UINT_PTR)
 {
-    delete_gdi_object(tkb._bkBrush)
-    delete_gdi_object(tkb._selBrush)
-    delete(tkb._ticDataList)
-    RemoveWindowSubclass(tkb.handle, tkb_wnd_proc, scid)
-    free(tkb)
+    delete_gdi_object(this._bkBrush)
+    delete_gdi_object(this._selBrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    delete(this._ticDataList)
+    RemoveWindowSubclass(this.handle, tkb_wnd_proc, scid)
+    free(this)
 }
 
 @private tkb_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,

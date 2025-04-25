@@ -145,7 +145,7 @@ BarTheme :: enum {System_Color, Custom_Color }
     pgbcount += 1
     this.kind = .Progress_Bar
     this.parent = f
-    this.font = f.font
+    // this.font = f.font
     this.xpos = x
     this.ypos = y
     this.width = w
@@ -162,6 +162,7 @@ BarTheme :: enum {System_Color, Custom_Color }
 
     this._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH
     this._exStyle = WS_EX_STATICEDGE
+    font_clone(&f.font, &this.font )
     append(&f._controls, this)
     return this
 }
@@ -272,10 +273,11 @@ BarTheme :: enum {System_Color, Custom_Color }
 	}
 }
 
-@private pb_finalize :: proc(pb: ^ProgressBar, scid: UINT_PTR)
+@private pb_finalize :: proc(this: ^ProgressBar, scid: UINT_PTR)
 {
-    RemoveWindowSubclass(pb.handle, pb_wnd_proc, scid)
-    free(pb)
+    RemoveWindowSubclass(this.handle, pb_wnd_proc, scid)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    free(this)
 }
 
 @private pb_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,

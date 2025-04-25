@@ -218,7 +218,7 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int,
 	underline = fu
 	_defFontChanged = true
 	if ctl.handle != nil { // Only set the font if control handle is created.
-		CreateFont_handle(&ctl.font)
+		font_create_handle(&ctl.font)
 		SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
 	}
 	if ctl._fp_size_fix != nil do ctl._fp_size_fix(ctl)
@@ -307,7 +307,7 @@ control_Setfocus :: proc(ctl : ^Control)
 // This is used to set the defualt font right creating the control handle.
 @private setfont_internal :: proc(ctl : ^Control)
 {
-	if ctl.font.handle == nil do CreateFont_handle(&ctl.font)
+	if ctl.font.handle == nil do font_create_handle(&ctl.font)
 	SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
 
 }
@@ -524,7 +524,7 @@ ctrl_killfocus_handler :: proc(ctl: ^Control)
 @private ctrl_set_font :: proc(this: ^Control, value: $T)
 {
 	when T == Font { this.font = value } else {print("Type error...")}
-	if this.font.handle == nil do CreateFont_handle(&this.font)
+	if this.font.handle == nil do font_create_handle(&this.font)
 	if this._isCreated do SendMessage(this.handle, WM_SETFONT, WPARAM(this.font.handle), LPARAM(1))
 }
 

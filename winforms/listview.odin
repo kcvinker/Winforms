@@ -364,7 +364,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	lvcount += 1
 	this.kind = .List_View
 	this.parent = f
-	this.font = f.font
+	// this.font = f.font
 	this.xpos = x
 	this.ypos = y
 	this.width = w
@@ -387,6 +387,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	this._clsName = WcListViewClassW
 	this._fp_beforeCreation = cast(CreateDelegate) lv_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) lv_after_creation
+	font_clone(&f.font, &this.font )
 	append(&f._controls, this)
 	return this
 }
@@ -859,20 +860,21 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	}
 }
 
-@private lv_finalize :: proc(lv: ^ListView, scid: UINT_PTR) 
+@private lv_finalize :: proc(this: ^ListView, scid: UINT_PTR) 
 {
-	delete_gdi_object(lv._divPen)
-	if lv._imgList.handle != nil do ImageList_Destroy(lv._imgList.handle)
-	if lv._hdrBkBrush != nil do delete_gdi_object(lv._hdrBkBrush)
-	if lv._hdrHotBrush != nil do delete_gdi_object(lv._hdrHotBrush)
-	if lv._cmenuUsed do contextmenu_dtor(lv.contextMenu)
-    RemoveWindowSubclass(lv.handle, lv_wnd_proc, scid)
-    for pcol in lv.columns {lv_col_finalize(pcol)}
-    for pitem in lv.items	 {free(pitem)}
-    delete(lv.items)
-	delete(lv.columns)
+	delete_gdi_object(this._divPen)
+	if this.font.handle != nil do delete_gdi_object(this.font.handle)
+	if this._imgList.handle != nil do ImageList_Destroy(this._imgList.handle)
+	if this._hdrBkBrush != nil do delete_gdi_object(this._hdrBkBrush)
+	if this._hdrHotBrush != nil do delete_gdi_object(this._hdrHotBrush)
+	if this._cmenuUsed do contextmenu_dtor(this.contextMenu)
+    RemoveWindowSubclass(this.handle, lv_wnd_proc, scid)
+    for pcol in this.columns {lv_col_finalize(pcol)}
+    for pitem in this.items	 {free(pitem)}
+    delete(this.items)
+	delete(this.columns)
 
-    free(lv)
+    free(this)
 }
 
 @private lv_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,

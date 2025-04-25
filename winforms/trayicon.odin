@@ -199,7 +199,7 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
     this._msgWinHwnd = CreateWindowEx(0, &trayClass[0], nil, 0, 0, 0, 0, 0, HWND_MESSAGE, nil, app.hInstance, nil)
     ptf("msg win hwnd %d", this._msgWinHwnd)
     SetWindowLongPtr(this._msgWinHwnd, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
-    // if this.font.handle == nil do CreateFont_handle(&this.font)
+    // if this.font.handle == nil do font_create_handle(&this.font)
 }
 
 @private tray_wndproc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT

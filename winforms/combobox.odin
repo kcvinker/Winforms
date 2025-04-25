@@ -236,7 +236,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     cmb := new(ComboBox)
     cmb.kind = .Combo_Box
     cmb.parent = p
-    cmb.font = p.font
+    // cmb.font = p.font
     cmb.xpos = x
     cmb.ypos = y
     cmb.width = w
@@ -252,6 +252,7 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     cmb._clsName = WcComboW
     cmb._fp_beforeCreation = cast(CreateDelegate) cmb_before_creation
 	cmb._fp_afterCreation = cast(CreateDelegate) cmb_after_creation
+    font_clone(&p.font, &cmb.font )
     append(&p._controls, cmb)
     return cmb
 }
@@ -392,15 +393,16 @@ combo_set_style :: proc(cmb : ^ComboBox, style : DropDownStyle)
     }
 }
 
-@private cmb_finalize :: proc(cmb: ^ComboBox, scid: UINT_PTR)
+@private cmb_finalize :: proc(this: ^ComboBox, scid: UINT_PTR)
 {
-    RemoveWindowSubclass(cmb.handle, cmb_wnd_proc, scid)
-    if !cmb._recreateEnabled
+    RemoveWindowSubclass(this.handle, cmb_wnd_proc, scid)
+    if !this._recreateEnabled
     {
-        delete_gdi_object(cmb.font.handle)
-        delete_gdi_object(cmb._bkBrush)
-        delete(cmb.items)
-        free(cmb)
+        delete_gdi_object(this.font.handle)
+        delete_gdi_object(this._bkBrush)
+        if this.font.handle != nil do delete_gdi_object(this.font.handle)
+        delete(this.items)
+        free(this)
     }
 }
 

@@ -45,7 +45,7 @@ new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal,
 
 new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
-CreateFont_handle :: proc(this : ^Font) 
+font_create_handle :: proc(this : ^Font) 
 {
 	fsiz:= i32(app.scaleFactor * f64(this.size))
 	iHeight : i32 = -MulDiv(fsiz , app.sysDPI, 72)
@@ -67,6 +67,19 @@ CreateFont_handle :: proc(this : ^Font)
 	// 	ptf("f digit : %d", w)
 	// }
 
+}
+
+font_clone :: proc(from_font: ^Font, to_font: ^Font)
+{
+	to_font.name = from_font.name
+	to_font.size = from_font.size
+	to_font.weight = from_font.weight
+	to_font.underline = from_font.underline
+	to_font.italics = from_font.italics
+	to_font._defFontChanged = from_font._defFontChanged
+	if from_font.handle != nil {
+		font_create_handle(from_font)
+	}
 }
 
 

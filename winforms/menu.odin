@@ -277,7 +277,7 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     this._menuDefBgBrush = get_solid_brush(0xe9ecef)
     this._menuHotBgBrush = get_solid_brush(0x90e0ef)
     this._menuFrameBrush = get_solid_brush(0x0077b6)
-	if (this.font.handle == nil)  do CreateFont_handle(&this.font)
+	if (this.font.handle == nil)  do font_create_handle(&this.font)
 
     // If there are menus, we need to create the handles for them too.
     if this._menuCount > 0 {

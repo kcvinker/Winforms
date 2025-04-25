@@ -203,7 +203,7 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
 {
     this._dummyHwnd = CreateWindowEx(0, &cmenuClass[0], nil, 0, 0, 0, 0, 0, HWND_MESSAGE, nil, app.hInstance, nil)
     SetWindowLongPtr(this._dummyHwnd, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
-    if this.font.handle == nil do CreateFont_handle(&this.font)
+    if this.font.handle == nil do font_create_handle(&this.font)
 }
 
 @private menuitem_draw_menu :: proc(mi: ^MenuItem, cmenu: ^ContextMenu, dis: LPDRAWITEMSTRUCT)

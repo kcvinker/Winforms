@@ -251,7 +251,7 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
     tvcount += 1
     this.kind = .Tree_View
     this.parent = f
-    this.font = f.font
+    // this.font = f.font
     this._uniqItemID = 100
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
@@ -265,6 +265,7 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
     this._clsName = WcTreeViewClassW
     this._fp_beforeCreation = cast(CreateDelegate) tv_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) tv_after_creation
+    font_clone(&f.font, &this.font )
     append(&f._controls, this)
     return this
 }
@@ -541,13 +542,14 @@ treeview_create_image_list :: proc(tv : ^TreeView, nImg : int, ico_size : int = 
 	}
 }
 
-@private tv_finalize :: proc(tv: ^TreeView, scid: UINT_PTR)
+@private tv_finalize :: proc(this: ^TreeView, scid: UINT_PTR)
 {
-    for n in tv.nodes { n._dispose(n)} // looping thru the child nodes and delete them.
-    delete(tv.nodes)                  // delete all the top level nodes.
-    ImageList_Destroy(tv.imageList)
-    RemoveWindowSubclass(tv.handle, tv_wnd_proc, scid)
-    free(tv)
+    for n in this.nodes { n._dispose(n)} // looping thru the child nodes and delete them.
+    delete(this.nodes)                  // delete all the top level nodes.
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    ImageList_Destroy(this.imageList)
+    RemoveWindowSubclass(this.handle, tv_wnd_proc, scid)
+    free(this)
 }
 
 @private tv_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,

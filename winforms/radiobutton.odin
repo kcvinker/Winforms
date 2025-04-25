@@ -81,7 +81,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
     this.kind = .Radio_Button
     this._textable = true
     this.parent = f
-    this.font = f.font
+    // this.font = f.font
     this.text = txt
     this.xpos = x
     this.ypos = y
@@ -100,6 +100,7 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
     this._fp_beforeCreation = cast(CreateDelegate) rb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) rb_after_creation
     this._inherit_color = true
+    font_clone(&f.font, &this.font )
     append(&f._controls, this)
     return this
 }
@@ -164,10 +165,11 @@ radiobutton_set_autocheck :: proc(rb : ^RadioButton, auto_check : bool )
 	}
 }
 
-@private rb_finalize :: proc(rb: ^RadioButton, hw: HWND, scid: UINT_PTR)
+@private rb_finalize :: proc(this: ^RadioButton, hw: HWND, scid: UINT_PTR)
 {
-    delete_gdi_object(rb._hbrush)
-    free(rb, context.allocator)
+    delete_gdi_object(this._hbrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    free(this, context.allocator)
     RemoveWindowSubclass(hw, rb_wnd_proc, scid)
 }
 

@@ -124,7 +124,7 @@ ButtonAlignment :: enum {Right, Left}
     this := new(NumberPicker)
     this.kind = .Number_Picker
     this.parent = p
-    this.font = p.font
+    // this.font = p.font
     this.width = w
     this.height = h
     this.xpos = x
@@ -146,6 +146,7 @@ ButtonAlignment :: enum {Right, Left}
     this._exStyle = 0x00000000
     this._topEdgeFlag = BF_TOPLEFT
     this._botEdgeFlag = BF_BOTTOM
+    font_clone(&p.font, &this.font )
     append(&p._controls, this)
     return this
 }
@@ -328,7 +329,7 @@ ButtonAlignment :: enum {Right, Left}
         // HWND oldBuddy = HWND(SendMessage(np.handle, UDM_SETBUDDY, convert_to(WPARAM, np._buddyHandle), 0))
         set_np_subclass(np, np_wnd_proc, buddy_wnd_proc)
         if np.font.handle != np.parent.font.handle || np.font.handle == nil {
-            CreateFont_handle(&np.font)
+            font_create_handle(&np.font)
         }
         SendMessage(np._buddyHandle, WM_SETFONT, WPARAM(np.font.handle), LPARAM(1))
 
@@ -436,6 +437,7 @@ ButtonAlignment :: enum {Right, Left}
 {
     delete_gdi_object(this._bkBrush)
     delete_gdi_object(this._borderBrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
     RemoveWindowSubclass(this.handle, np_wnd_proc, scid)  
     delete(this._disValArr)  
     free(this)

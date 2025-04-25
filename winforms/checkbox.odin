@@ -48,7 +48,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
     this.kind = .Check_Box
     this._textable = true
     this.parent = p
-    this.font = p.font
+    // this.font = p.font
     this.text = txt
     this.xpos = x
     this.ypos = y
@@ -66,6 +66,7 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
     this._clsName = &btnclass[0]
     this._fp_beforeCreation = cast(CreateDelegate) cb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) cb_after_creation
+    font_clone(&p.font, &this.font )
     append(&p._controls, this)
     return this
 }
@@ -127,11 +128,12 @@ new_checkbox :: proc{new_checkbox1, new_checkbox2}
 	}
 }
 
-@private cb_finalize :: proc(cb: ^CheckBox, scid: UINT_PTR)
+@private cb_finalize :: proc(this: ^CheckBox, scid: UINT_PTR)
 {
-    delete_gdi_object(cb._bkBrush)
-    RemoveWindowSubclass(cb.handle, cb_wnd_proc, scid)
-    free(cb)
+    delete_gdi_object(this._bkBrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    RemoveWindowSubclass(this.handle, cb_wnd_proc, scid)
+    free(this)
 }
 
 @private cb_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,

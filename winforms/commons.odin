@@ -276,8 +276,7 @@ get_y_lpm :: #force_inline proc "contextless"(y: LPARAM) -> i32 {
 
 @private delete_gdi_object :: proc(obj : $T)
 {
-	gdi_obj := cast(HGDIOBJ) obj
-	DeleteObject(gdi_obj)
+	DeleteObject(cast(HGDIOBJ) obj)
 }
 
 @private dynamic_array_search :: proc(arr : [dynamic]$T, item : T) -> (index : int, is_found : bool)

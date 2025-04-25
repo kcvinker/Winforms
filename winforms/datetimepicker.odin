@@ -106,7 +106,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
     dtp.kind = .Date_Time_Picker
     dtp.text = ""
     dtp.parent = p
-    dtp.font = p.font
+    // dtp.font = p.font
     dtp.xpos = x
     dtp.ypos = y
     dtp.width = w
@@ -120,6 +120,7 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
 
     dtp._style = 0x52000004 //WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT
     dtp._exStyle = WS_EX_LEFT
+    font_clone(&p.font, &dtp.font )
     append(&p._controls, dtp)
     return dtp
 }
@@ -255,10 +256,11 @@ dtp_set_custom_format :: proc(dtp : ^DateTimePicker, fmt_string : string)
 }
 
 
-@private dtp_finalize :: proc(dtp: ^DateTimePicker, scid: UINT_PTR)
+@private dtp_finalize :: proc(this: ^DateTimePicker, scid: UINT_PTR)
 {
-    RemoveWindowSubclass(dtp.handle, dtp_wnd_proc, scid)
-    free(dtp)
+    RemoveWindowSubclass(this.handle, dtp_wnd_proc, scid)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    free(this)
 }
 
 @private

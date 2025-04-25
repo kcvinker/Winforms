@@ -290,7 +290,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int)
     this := new(ListBox)
     this.kind = .List_Box
     this.parent = p
-    this.font = p.font
+    // this.font = p.font
     this.width = w
     this.height = h
     this.xpos = x
@@ -303,6 +303,7 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int)
 	this._fp_beforeCreation = cast(CreateDelegate) lbx_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) lbx_after_creation
     this._dummyIndex = -1
+    font_clone(&p.font, &this.font )
     append(&p._controls, this)
     return this
 }
@@ -415,13 +416,14 @@ listbox_set_selected_index :: proc(lbx : ^ListBox, indx : int)
     }
 }
 
-@private lbx_finalize :: proc(lbx: ^ListBox, scid: UINT_PTR) 
+@private lbx_finalize :: proc(this: ^ListBox, scid: UINT_PTR) 
 {
-    delete(lbx.items)
-    delete(lbx._selIndices)
-    delete_gdi_object(lbx._bkBrush)
-    RemoveWindowSubclass(lbx.handle, lbx_wnd_proc, scid)
-    free(lbx)
+    delete(this.items)
+    delete(this._selIndices)
+    delete_gdi_object(this._bkBrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    RemoveWindowSubclass(this.handle, lbx_wnd_proc, scid)
+    free(this)
 }
 
 @private lbx_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,

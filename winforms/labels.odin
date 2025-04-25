@@ -59,7 +59,7 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     this.xpos = x
     this.ypos = y
     this.parent = p
-    this.font = p.font
+    // this.font = p.font
     this.backColor = p.backColor
     this.foreColor = app.clrBlack
     this._exStyle = 0 // WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
@@ -71,6 +71,7 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     this._fp_beforeCreation = cast(CreateDelegate) lbl_before_creation
     this._fp_afterCreation = cast(CreateDelegate) lbl_after_creation
     this._inherit_color = true
+    font_clone(&p.font, &this.font )
     append(&p._controls, this)
     return this
 }
@@ -186,11 +187,12 @@ LabelBorder :: enum {No_Border, Single_Line, Sunken_Border, }
     }
 }
 
-@private lbl_finalize :: proc(lbl: ^Label, scid: UINT_PTR)
+@private lbl_finalize :: proc(this: ^Label, scid: UINT_PTR)
 {
-    delete_gdi_object(lbl._hbrush)
-    RemoveWindowSubclass(lbl.handle, label_wnd_proc, scid)
-    free(lbl)
+    delete_gdi_object(this._hbrush)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    RemoveWindowSubclass(this.handle, label_wnd_proc, scid)
+    free(this)
 }
 
 @private label_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,

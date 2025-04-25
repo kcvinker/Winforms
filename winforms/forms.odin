@@ -130,7 +130,7 @@ create_form :: proc(frm : ^Form )
             app.startState = frm.windowState
         }
         // set_form_font_internal(frm)
-        if frm.font.handle == nil do CreateFont_handle(&frm.font)
+        if frm.font.handle == nil do font_create_handle(&frm.font)
         SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) frm)
         ShowWindow(app.mainHandle, cast(i32) app.startState )
     }
@@ -285,7 +285,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 
 @private set_form_font_internal :: proc(frm : ^Form) // deprecated
 {
-    if app.globalFont.handle == nil do CreateFont_handle(&app.globalFont)
+    if app.globalFont.handle == nil do font_create_handle(&app.globalFont)
     if frm.font.name == def_font_name && frm.font.size == def_font_size
     {
         // User did not made any changes in font. So use default font handle.
@@ -297,7 +297,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
         if frm.font.handle == nil
         {
             // User just changed the font name and/or size. Create the font handle
-            CreateFont_handle(&frm.font)
+            font_create_handle(&frm.font)
             SendMessage(frm.handle, WM_SETFONT, WPARAM(frm.font.handle), LPARAM(1))
         }
         else { SendMessage(frm.handle, WM_SETFONT, WPARAM(frm.font.handle), LPARAM(1)) }

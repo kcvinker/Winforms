@@ -64,7 +64,7 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     // ptf("calendar context up %d\n", yp^)
     this := new(Calendar)
     this.parent = p
-    this.font = p.font
+    // this.font = p.font
     this.kind = .Calendar
     this.width = 0
     this.height = 0
@@ -74,6 +74,7 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     this._clsName = &WcCalenderClassW[0]
     this._fp_beforeCreation = cast(CreateDelegate) cal_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) cal_after_creation
+    font_clone(&p.font, &this.font )
     append(&p._controls, this)
     return this
 }
@@ -141,10 +142,11 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
 }
 
 
-@private cal_finalize :: proc(cal: ^Calendar, scid: UINT_PTR)
+@private cal_finalize :: proc(this: ^Calendar, scid: UINT_PTR)
 {
-    RemoveWindowSubclass(cal.handle, cal_wnd_proc, scid)
-    free(cal)
+    RemoveWindowSubclass(this.handle, cal_wnd_proc, scid)
+    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    free(this)
 }
 
 @private cal_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
