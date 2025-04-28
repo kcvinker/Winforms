@@ -308,7 +308,7 @@ array_search :: proc{	dynamic_array_search, static_array_search,}
 // This proc will return an HBRUSH to paint the window or a button in gradient colors.
 @private create_gradient_brush :: proc(hdc : HDC, rct : RECT, c1, c2 : Color, t2b : bool = true) -> HBRUSH
 {
-	t_brush : HBRUSH
+	
 	mem_hdc : HDC = CreateCompatibleDC(hdc)
 	hbmp : HBITMAP = CreateCompatibleBitmap(hdc, rct.right, rct.bottom)
 	loop_end : i32 = rct.bottom if t2b else rct.right
@@ -322,18 +322,17 @@ array_search :: proc{	dynamic_array_search, static_array_search,}
 		r = c1.red + uint((i * i32(c2.red - c1.red) / loop_end))
         g = c1.green + uint((i * i32(c2.green - c1.green) / loop_end))
         b = c1.blue + uint((i * i32(c2.blue - c1.blue) / loop_end))
-		t_brush = CreateSolidBrush(get_color_ref(r, g, b))
-
+		t_brush : HBRUSH = CreateSolidBrush(get_color_ref(r, g, b))
+		defer DeleteObject(HGDIOBJ(t_brush))
 		t_rct.left = 0 if t2b else i
 		t_rct.top = i if t2b else 0
 		t_rct.right = rct.right if t2b else i + 1
 		t_rct.bottom = i + 1 if t2b else loop_end
 		api.FillRect(mem_hdc, &t_rct, t_brush)
-		DeleteObject(HGDIOBJ(t_brush))
+		
 	}
 	gradient_brush : HBRUSH = CreatePatternBrush(hbmp)
 	DeleteDC(mem_hdc)
-	DeleteObject(HGDIOBJ(t_brush))
 	DeleteObject(HGDIOBJ(hbmp))
 	return gradient_brush
 }
