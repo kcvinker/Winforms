@@ -260,7 +260,8 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 
 @private form_dtor :: proc(this : ^Form)
 {
-    delete_gdi_object(this.font.handle)
+    // delete_gdi_object(this.font.handle)
+    font_destroy(&this.font)
     delete(this._uDrawChilds)
     delete(this._cDrawChilds)
     delete(this._comboData)

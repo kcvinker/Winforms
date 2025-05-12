@@ -103,6 +103,7 @@ MenuType :: enum {Base_Menu, Menu_Item, Popup, Context_Menu, Seprator}
 //https://www.codeproject.com/Tips/5256198/Yet-Another-Fully-Functional-ownerdraw-Menu
 //https://www.codeproject.com/articles/16529/simple-menus-that-display-icons-minimalistic-appro
 //https://www.codeproject.com/Articles/7503/An-examination-of-menus-from-a-beginner-s-point-of
+
 menuNumber : u32 = 101
 bf : i32 = 0
 bt : i32 = 1
@@ -331,6 +332,7 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     delete_gdi_object(this._menuHotBgBrush)
     delete_gdi_object(this._menuFrameBrush )
     delete_gdi_object(this._menuGrayBrush )
+    font_destroy(&this.font)
     DestroyMenu(this.handle)
     free(this)
 }

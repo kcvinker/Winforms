@@ -124,7 +124,6 @@ ButtonAlignment :: enum {Right, Left}
     this := new(NumberPicker)
     this.kind = .Number_Picker
     this.parent = p
-    // this.font = p.font
     this.width = w
     this.height = h
     this.xpos = x
@@ -437,7 +436,7 @@ ButtonAlignment :: enum {Right, Left}
 {
     delete_gdi_object(this._bkBrush)
     delete_gdi_object(this._borderBrush)
-    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    font_destroy(&this.font)
     RemoveWindowSubclass(this.handle, np_wnd_proc, scid)  
     delete(this._disValArr)  
     free(this)

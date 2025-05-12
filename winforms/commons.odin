@@ -12,6 +12,7 @@ print :: fmt.println
 // All controls has a default back & fore color.
 def_back_clr :: 0xFFFFFF
 def_fore_clr :: 0x000000
+gea : EventArgs = new_event_args()
 
 
 
@@ -370,52 +371,12 @@ Test :: proc()
 	ptf("dw in hex %X\n", dw)
 }
 
-// Create a Control. Use this for all controls.
-create_control :: proc(c : ^Control)
+
+
+create_handle :: proc(ctl : ^$T)
 {
-	if c.handle != nil do return
-	// If it's a Combobox, it knows how to manage contril ID.
-	if c.kind != ControlKind.Combo_Box {
-		globalCtlID += 1
-    	c.controlID = globalCtlID
-	}
-
-	c._fp_beforeCreation(c)
-	width : i32 = 0
-	height : i32 = 0
-	if c.kind != ControlKind.Number_Picker {
-		// NumberPicker needs zero width & height. It can find it's size later.
-		width = i32(c.width)
-		height = i32(c.height)
-	}
-	ctrl_txt_ptr : LPCWSTR = c.text == "" ? nil: to_wstring(c.text)
-
-    c.handle = CreateWindowEx(  c._exStyle,
-								c._clsName,
-								ctrl_txt_ptr,
-								c._style,
-								i32(c.xpos),
-								i32(c.ypos),
-								width,
-								height,
-								c.parent.handle,
-								dir_cast(c.controlID, HMENU),
-								app.hInstance,
-								nil )
-	// ptf("Creation res %d\n", GetLastError())
-
-    if c.handle != nil {
-        c._isCreated = true
-        setfont_internal(c)
-		c._fp_afterCreation(c)
-		// context = runtime.default_context()
-    }
-}
-
-create_handle :: proc(ctl : ^Control)
-{
-	if ctl.kind == .Form {
-		create_form(cast(^Form) ctl)
+	when T == Form {
+		create_form(ctl)
 	} else {
 		create_control(ctl)
 	}

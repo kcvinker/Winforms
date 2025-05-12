@@ -311,8 +311,10 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
         for menu in this.menus do menuitem_dtor(menu)
         delete(this.menus)
     }
+    font_destroy(&this.font)
     api.DestroyMenu(this.handle)
     api.DestroyWindow(this._dummyHwnd)
+    
     free(this)
     // print("context menu dtor finished")
 }

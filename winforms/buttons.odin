@@ -119,6 +119,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	this.kind = .Button
 	this._textable = true
 	this.text = txt == "" ? conc_num("Button_", _buttonCount) : txt
+	this._wtext = new_widestring(txt)
 	this.width = w
 	this.height = h
 	this.xpos = x
@@ -133,6 +134,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	this._fp_beforeCreation = cast(CreateDelegate) btn_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) btn_after_creation
 	font_clone(&p.font, &this.font )
+
 	append(&p._controls, this)
 	return this
 }
@@ -188,13 +190,10 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
 @private set_fore_color_internal :: proc(btn : ^Button, ncd : ^NMCUSTOMDRAW) -> LRESULT
 {
-	btxt := to_wstring(btn.text)
-	// defer // free_all(context.temp_allocator)
 	SetTextColor(ncd.hdc, get_color_ref(btn.foreColor))
 	api.SetBkMode(ncd.hdc, api.BKMODE.TRANSPARENT)
-	DrawText(ncd.hdc, btxt, -1, &ncd.rc, txtFlag)
-	return CDRF_NOTIFYPOSTPAINT
-	
+	DrawText(ncd.hdc, btn._wtext.ptr, -1, &ncd.rc, txtFlag)
+	return CDRF_NOTIFYPOSTPAINT	
 }
 
 @private set_back_color_internal :: proc(btn : ^Button, nmcd : ^NMCUSTOMDRAW) -> LRESULT
@@ -308,7 +307,8 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 		case 2, 3: flatDrawDtor(this._fdraw)
 		case 4, 5: gradDrawDtor(this._gdraw)
 	}
-	if this.font.handle != nil do delete_gdi_object(this.font.handle)
+	widestring_destroy(this._wtext)
+    font_destroy(&this.font)
 }
 
 //mc : int = 1
@@ -328,23 +328,23 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
                 return 0
             }
 
-		case WM_SETFOCUS:
-			btn := control_cast(Button, ref_data)
-            if btn.onGotFocus != nil {
-                ea := new_event_args()
-                btn.onGotFocus(btn, &ea)
-                return 0
-            }
+		// case WM_SETFOCUS:
+		// 	btn := control_cast(Button, ref_data)
+        //     if btn.onGotFocus != nil {
+        //         ea := new_event_args()
+        //         btn.onGotFocus(btn, &ea)
+        //         return 0
+        //     }
 
-        case WM_KILLFOCUS:
-            //btn._draw_focus_rct = false
-			btn := control_cast(Button, ref_data)
-            if btn.onLostFocus != nil {
-                ea := new_event_args()
-                btn.onLostFocus(btn, &ea)
-                return 0
-            }
-			return 0  // Avoid this if you want to show the focus rectangle (....)
+        // case WM_KILLFOCUS:
+        //     //btn._draw_focus_rct = false
+		// 	btn := control_cast(Button, ref_data)
+        //     if btn.onLostFocus != nil {
+        //         ea := new_event_args()
+        //         btn.onLostFocus(btn, &ea)
+        //         return 0
+        //     }
+		// 	return 0  // Avoid this if you want to show the focus rectangle (....)
 
 		case WM_LBUTTONDOWN:
 			btn := control_cast(Button, ref_data)
@@ -367,9 +367,9 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 				btn.onMouseUp(btn, &mea)
 			}	
 			if btn.onClick != nil {
-				ea := new_event_args()
-				btn.onClick(btn, &ea)
-				return 0
+				// ea := new_event_args()
+				btn.onClick(btn, &gea)
+				// return 0
 			}
 
 		case WM_RBUTTONUP :
@@ -379,9 +379,9 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 				btn.onRightMouseUp(btn, &mea)
 			}
 			if btn.onRightClick != nil {
-				ea := new_event_args()
-				btn.onRightClick(btn, &ea)
-				return 0
+				// ea := new_event_args()
+				btn.onRightClick(btn, &gea)
+				// return 0
 			}
 
 		case WM_MOUSEHWHEEL:
@@ -402,8 +402,8 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
             else {
                 btn._isMouseEntered = true
                 if btn.onMouseEnter != nil {
-                    ea := new_event_args()
-                    btn.onMouseEnter(btn, &ea)
+                    // ea := new_event_args()
+                    btn.onMouseEnter(btn, &gea)
                 }
             }
 
@@ -411,8 +411,8 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 			btn := control_cast(Button, ref_data)
 			btn._isMouseEntered = false
             if btn.onMouseLeave != nil {
-                ea := new_event_args()
-                btn.onMouseLeave(btn, &ea)
+                // ea := new_event_args()
+                btn.onMouseLeave(btn, &gea)
             }
 
 		case WM_CONTEXTMENU:

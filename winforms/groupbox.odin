@@ -11,7 +11,7 @@
             All events from Control struct
         
 ===============================================================================*/
-
+//TODO - Use double buffering bkg fill when user changes the size of groubox.
 
 package winforms
 
@@ -24,7 +24,12 @@ GroupBox :: struct
 {
     using control : Control,
     _bkBrush : HBRUSH,
+    _pen : HPEN,
+    _memDC : HDC,
+    _rct : RECT,
+    _txtWidth : i32,
     _paintBkg : b64,
+    
 }
 
 // Groupbox control's constructor
@@ -51,7 +56,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         kind = .Group_Box
         _textable = true
         parent = p
-        // font = p.font
+        _wtext = new_widestring(txt)        
         xpos = x
         ypos = y
         text = txt
@@ -65,7 +70,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         _style = gbstyle 
         _exStyle = gbexstyle // WS_EX_TRANSPARENT | WS_EX_RIGHTSCROLLBAR
 
-    font_clone(&p.font, &gb.font )
+    font_clone(&p.font, &gb.font )  
     append(&p._controls, gb)
     return gb
 }
@@ -90,22 +95,43 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
     return gb
 }
 
-@private gb_before_creation :: proc(gb : ^GroupBox)
+@private gb_before_creation :: proc(this : ^GroupBox)
 {
-    if gb.backColor != gb.parent.backColor do gb._paintBkg = true
+    this._bkBrush = get_solid_brush(this.backColor)
+    this._pen = CreatePen(PS_SOLID, 5, get_color_ref(this.backColor))
+    this._rct = RECT{0, 0, i32(this.width), i32(this.height)}
+    this._fcref = get_color_ref(this.foreColor)
+}
+
+@private gb_double_buffer_fill :: proc(this : ^GroupBox)
+{
+    dc : HDC = GetDC(this.handle)
+    defer ReleaseDC(this.handle, dc)
+    sz : SIZE    
+    select_gdi_object(dc, this.font.handle)
+    GetTextExtentPoint32(dc, this._wtext.ptr, this._wtext.strLen, &sz)
+    this._memDC = CreateCompatibleDC(dc)
+    hBitmap : HBITMAP = CreateCompatibleBitmap(dc, i32(this.width), i32(this.height))
+    select_gdi_object(this._memDC, hBitmap)
+    api.FillRect(this._memDC, &this._rct, this._bkBrush)    
+    this._txtWidth = sz.width + 10
+    
 }
 
 @private gb_after_creation :: proc(this : ^GroupBox)
 {
 	set_subclass(this, gb_wnd_proc)
-    // SetWindowTheme(gb.handle, to_wstring(" "), to_wstring(" "))
+    gb_double_buffer_fill(this)
     
 }
 
 @private gb_finalize :: proc(this: ^GroupBox, scid: UINT_PTR)
 {
     delete_gdi_object(this._bkBrush)
-    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    delete_gdi_object(this._pen)
+    DeleteDC(this._memDC)
+    widestring_destroy(this._wtext)
+    font_destroy(&this.font)
     RemoveWindowSubclass(this.handle, gb_wnd_proc, scid)
     free(this)
 }
@@ -115,43 +141,52 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 {
     // context = runtime.default_context()
     context = global_context
-    this := control_cast(GroupBox, ref_data)
+    
     //display_msg(msg)
     switch msg {
         case WM_PAINT :
-            if this.onPaint != nil {
-                ps : PAINTSTRUCT
-                hdc := BeginPaint(hw, &ps)
-                pea := new_paint_event_args(&ps)
-                this.onPaint(this, &pea)
-                EndPaint(hw, &ps)
-                return 0
-            }
-        case WM_DESTROY : gb_finalize(this, sc_id)
+            this := control_cast(GroupBox, ref_data)
+            ret := DefSubclassProc(hw, msg, wp, lp)
+            gfx := new_graphics(hw)
+            defer gfx_destroy(gfx)
+            gfx_draw_hline(gfx, this._pen, 10, 12, this._txtWidth)
+            gfx_draw_text(gfx, this, 12, 0)
+
+            // if this.onPaint != nil {
+            //     ps : PAINTSTRUCT
+            //     hdc := BeginPaint(hw, &ps)
+            //     pea := new_paint_event_args(&ps)
+            //     this.onPaint(this, &pea)
+            //     EndPaint(hw, &ps)
+            //     return 0
+            // }
+
+        case WM_DESTROY : 
+            this := control_cast(GroupBox, ref_data)
+            gb_finalize(this, sc_id)
 
         case WM_CONTEXTMENU:
+            this := control_cast(GroupBox, ref_data)
 		    if this.contextMenu != nil do contextmenu_show(this.contextMenu, lp)
 
-        case CM_CTLLCOLOR :
-            hdc := dir_cast(wp, HDC)
-            api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
-            this._bkBrush = CreateSolidBrush(get_color_ref(this.backColor))
-            // if this.foreColor != 0x000000 do SetTextColor(hdc, get_color_ref(this.foreColor))
-            return dir_cast(this._bkBrush, LRESULT)
+        // case CM_CTLLCOLOR :
+        //     hdc := dir_cast(wp, HDC)
+        //     api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
+        //     this._bkBrush = CreateSolidBrush(get_color_ref(this.backColor))
+        //     // if this.foreColor != 0x000000 do SetTextColor(hdc, get_color_ref(this.foreColor))
+        //     return dir_cast(this._bkBrush, LRESULT)
+        case WM_GETTEXTLENGTH:
+            return 0
 
-        case WM_ERASEBKGND :
-            if this._paintBkg {
-                hdc := dir_cast(wp, HDC)
-                rc : RECT
-                GetClientRect(this.handle, &rc)
-                rc.bottom -= 2
-                // rc.left += 1
-                api.FillRect(hdc, &rc, CreateSolidBrush(get_color_ref(this.backColor)))
-                return 1
-            }
+        case WM_ERASEBKGND:
+            this := control_cast(GroupBox, ref_data)
+            hdc := dir_cast(wp, HDC)
+            BitBlt(hdc, 0, 0, i32(this.width), i32(this.height), this._memDC, 0, 0, SRCCOPY)
+            return 1
 
 
          case WM_MOUSEHWHEEL:
+            this := control_cast(GroupBox, ref_data)
             if this.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 this.onMouseScroll(this, &mea)
@@ -159,6 +194,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 
         case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
             //print("grop mouse move")
+            this := control_cast(GroupBox, ref_data)
             if this._isMouseEntered {
                 if this.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
@@ -178,6 +214,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 
         case WM_MOUSELEAVE :
            // print("m leaved")
+           this := control_cast(GroupBox, ref_data)
             this._isMouseEntered = false
             if this.onMouseLeave != nil {
                 ea := new_event_args()

@@ -1,7 +1,7 @@
 
 /*
-	Created on : 20-Feb-2022 9:00:25 AM
-		Name : ListView type
+	Created on: 20-Feb-2022 9:00:25 AM
+		Name: ListView type
 */
 /*===========================ListView Docs==============================
     ListView struct
@@ -61,48 +61,48 @@ import "base:runtime"
 import api "core:sys/windows"
 //import "core:fmt"
 
-IccListViewClass :: 0x1
-WcListViewClassW : wstring = L("SysListView32")
-lvcount : int = 0
+IccListViewClass:: 0x1
+WcListViewClassW: wstring = L("SysListView32")
+lvcount: int = 0
 
 
-ListView :: struct
+ListView:: struct
 {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a property
-	using control : Control,
-	itemAlignment : enum {Left, Top},
-	columnAlignment : ColumnAlignment,
+	using control: Control,
+	itemAlignment: enum {Left, Top},
+	columnAlignment: ColumnAlignment,
 
-	viewStyle : ListViewStyle,
-	hideSelection : bool,
-	multiSelection : bool,
-	hasCheckBoxes : bool,
-	fullRowSelect : bool,
-	showGridLines : bool,
-	oneClickActivate : bool,
-	hotTrackSelect : bool,
-	editLabel : bool,
-	noHeader : bool,
-	checked : bool,
-	headerBackColor, headerForeColor : uint,
-	headerHeight : int,
+	viewStyle: ListViewStyle,
+	hideSelection: bool,
+	multiSelection: bool,
+	hasCheckBoxes: bool,
+	fullRowSelect: bool,
+	showGridLines: bool,
+	oneClickActivate: bool,
+	hotTrackSelect: bool,
+	editLabel: bool,
+	noHeader: bool,
+	checked: bool,
+	headerBackColor, headerForeColor: uint,
+	headerHeight: int,
 	selectedItemIndex: int,
 	selectedSubItemIndex: int,
 
-	headerClickable : bool,
-	items : [dynamic]^ListViewItem,
-	columns : [dynamic]^ListViewColumn,
+	headerClickable: bool,
+	items: [dynamic]^ListViewItem,
+	columns: [dynamic]^ListViewColumn,
 
-	_colIndex : i32,
-	_index : i32,
-	_imgList : ImageList,
-	_hdrHwnd : HWND,
-	_hdrIndex : i32,
-	_hdrBkBrush, _hdrHotBrush : HBRUSH,
-	_bgcRef, _fgcRef : COLORREF,
-	_bgcDraw : bool,
+	_colIndex: i32,
+	_index: i32,
+	_imgList: ImageList,
+	_hdrHwnd: HWND,
+	_hdrIndex: i32,
+	_hdrBkBrush, _hdrHotBrush: HBRUSH,
+	_bgcRef, _fgcRef: COLORREF,
+	_bgcDraw: bool,
 
-	_divPen : HPEN,
-	_lvcList : [dynamic]LVCOLUMN,
+	_divPen: HPEN,
+	_lvcList: [dynamic]LVCOLUMN,
 
 	// Events
 	onSelectionChanged: EventHandler,
@@ -110,7 +110,7 @@ ListView :: struct
 }
 
 // Create a new ListView struct
-new_listview :: proc{lv_constructor1, 
+new_listview:: proc{lv_constructor1, 
 					lv_constructor2, 
 					lv_constructor3, 
 					lv_constructor4, 
@@ -118,29 +118,29 @@ new_listview :: proc{lv_constructor1,
 					lv_constructor6, 
 					lv_constructor7}
 
-new_listview_column :: proc{lv_col_constructor1, lv_col_constructor2, lv_col_constructor3}
+new_listview_column:: proc{lv_col_constructor1, lv_col_constructor2, lv_col_constructor3}
 
 // Create new list view item.
-new_listviewitem :: proc{listview_item_constructor1, listview_item_constructor2, listview_item_constructor3}
+new_listviewitem:: proc{listview_item_constructor1, listview_item_constructor2, listview_item_constructor3}
 
-new_listviewcolumn_array :: proc(name_and_width: ..any) -> [dynamic]^ListViewColumn
+new_listviewcolumn_array:: proc(name_and_width: ..any) -> [dynamic]^ListViewColumn
 {
-	colnames : [dynamic]string
-	colwidths : [dynamic]int
+	colnames: [dynamic]string
+	colwidths: [dynamic]int
 	defer delete(colnames)
 	defer delete(colwidths)
 	// Extracting column names and widths
 	for item in name_and_width
 	{
-        if value, is_str := item.(string) ; is_str { append(&colnames, value) }
-        else if value, is_int := item.(int) ; is_int { append(&colwidths, value) }
+        if value, is_str:= item.(string) ; is_str { append(&colnames, value) }
+        else if value, is_int:= item.(int) ; is_int { append(&colwidths, value) }
 	}
 	if len(colnames) == len(colwidths) // If they are same, we can proceed
 	{
-		result : [dynamic]^ListViewColumn
+		result: [dynamic]^ListViewColumn
 		for col, i in colnames
 		{
-			pCol := new_listview_column(col, colwidths[i], ColumnAlignment.Center )
+			pCol:= new_listview_column(col, colwidths[i], ColumnAlignment.Center )
 			append(&result, pCol)
 		}
 		return result
@@ -149,15 +149,15 @@ new_listviewcolumn_array :: proc(name_and_width: ..any) -> [dynamic]^ListViewCol
 }
 
 // Add a column to list view
-listview_add_column :: proc{lv_addCol1, lv_addCol2, lv_addCol3}
+listview_add_column:: proc{lv_addCol1, lv_addCol2, lv_addCol3}
 
 // Add an item and sub items(if any) to list view.
-listview_add_row :: proc{lv_addrow1, lv_addrow2}
+listview_add_row:: proc{lv_addrow1, lv_addrow2}
 
 // Add an item to list view
-listview_add_item :: proc(lv : ^ListView, lvi : ^ListViewItem)
+listview_add_item:: proc(lv: ^ListView, lvi: ^ListViewItem)
 {
-	item : LVITEM
+	item: LVITEM
 	using item
 		mask = LVIF_TEXT | LVIF_PARAM | LVIF_STATE
 		if lvi.imageIndex > -1 do mask |= LVIF_IMAGE
@@ -177,36 +177,36 @@ listview_add_item :: proc(lv : ^ListView, lvi : ^ListViewItem)
 }
 
 // Add a sub item to list view
-listview_add_subitem :: proc(lv : ^ListView, item_indx : int, sitem : any, sub_indx : int)
+listview_add_subitem:: proc(lv: ^ListView, item_indx: int, sitem: any, sub_indx: int)
 {
-	lvi : LVITEM
+	lvi: LVITEM
 	lvi.iSubItem = i32(sub_indx)
 	lvi.pszText = to_wstring(to_str(sitem))
-	iIndx := i32(item_indx)
+	iIndx:= i32(item_indx)
 	SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), dir_cast(&lvi, LPARAM) )
 	// free_all(context.temp_allocator)
 }
 
 // Add a list of sub items to an item in list view
-listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any)
+listview_add_subitems:: proc(lv: ^ListView, item_indx: int, items: ..any)
 {
 	if lv.viewStyle != ListViewStyle.Report do return
-	sItems : [dynamic]string
+	sItems: [dynamic]string
 	defer delete(sItems)
 	for j in items {
-		if value, is_str := j.(string) ; is_str { // Magic -- type assert
+		if value, is_str:= j.(string) ; is_str { // Magic -- type assert
 			append(&sItems, value)
 		} else {
 			append(&sItems, to_str(j))
 		}
 	}
 
-	sub_indx : i32 = 1
+	sub_indx: i32 = 1
 	for txt in sItems {
-		lvi : LVITEM
+		lvi: LVITEM
 		lvi.iSubItem = sub_indx
 		lvi.pszText = to_wstring(txt)
-		iIndx := i32(item_indx)
+		iIndx:= i32(item_indx)
 		SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), dir_cast(&lvi, LPARAM) )
 		sub_indx += 1
 		// free_all(context.temp_allocator)
@@ -216,7 +216,7 @@ listview_add_subitems :: proc(lv : ^ListView, item_indx : int, items : ..any)
 // Set the column order of list view.
 // Example - listview_set_column_order(lv, 2, 1, 0)
 // This will set the column indices in the same order.
-listview_set_column_order :: proc(lv : ListView, col_order : ..i32)
+listview_set_column_order:: proc(lv: ListView, col_order: ..i32)
 {
 	// print("set col order")
 	if lv._isCreated {
@@ -228,13 +228,13 @@ listview_set_column_order :: proc(lv : ListView, col_order : ..i32)
 }
 
 // Returns the column count of this list view
-listview_get_coulmn_count :: proc (lv : ^ListView) -> int
+listview_get_coulmn_count:: proc (lv: ^ListView) -> int
 {
 	x:= cast(int) SendMessage(lv_get_header(lv.handle), 0x1200, 0, 0) // I don't know what is this 0x1200 means.
 	return x
 }
 
-listview_set_style :: proc (lv : ^ListView, view : ListViewStyle)
+listview_set_style:: proc (lv: ^ListView, view: ListViewStyle)
 {
 	lv.viewStyle = view
 	if lv._isCreated {
@@ -242,21 +242,21 @@ listview_set_style :: proc (lv : ^ListView, view : ListViewStyle)
 	}
 }
 
-listview_begin_update :: proc (lv : ^ListView)
+listview_begin_update:: proc (lv: ^ListView)
 {
-	wp_value : bool = false
+	wp_value: bool = false
 	SendMessage(lv.handle, LV_WM_SETREDRAW, WPARAM(wp_value), 0)
 }
 
-listview_end_update :: proc (lv : ^ListView)
+listview_end_update:: proc (lv: ^ListView)
 {
-	wp_value : bool = true
+	wp_value: bool = true
 	SendMessage(lv.handle, LV_WM_SETREDRAW, WPARAM(wp_value), 0)
 }
 
-listview_delete_item :: proc{lv_del_item1, lv_del_item2}
+listview_delete_item:: proc{lv_del_item1, lv_del_item2}
 
-lv_del_item1 :: proc (lv : ^ListView, item : ^ListViewItem)
+lv_del_item1:: proc (lv: ^ListView, item: ^ListViewItem)
 {
 	if lv._isCreated {
 		SendMessage(lv.handle, LVM_DELETEITEM, WPARAM(i32(item.index)), 0)
@@ -265,45 +265,45 @@ lv_del_item1 :: proc (lv : ^ListView, item : ^ListViewItem)
 	}
 }
 
-lv_del_item2 :: proc (lv : ^ListView, item_index : int)
+lv_del_item2:: proc (lv: ^ListView, item_index: int)
 {
 	if lv._isCreated {
 		SendMessage(lv.handle, LVM_DELETEITEM, WPARAM(i32(item_index)), 0)
-		indx := -1
+		indx:= -1
 		for item in lv.items {
 			indx += 1
 			if item.index == item_index	do break
 		}
 		if indx > -1 {
-			item := lv.items[indx]
+			item:= lv.items[indx]
 			ordered_remove(&lv.items, indx)
 			free(item)
 		}
 	}
 }
 
-listview_delete_selected_item :: proc (lv : ^ListView )
+listview_delete_selected_item:: proc (lv: ^ListView )
 {
 	print("Not Implemented")
 }
 
-listview_clear_items :: proc (lv : ^ListView)
+listview_clear_items:: proc (lv: ^ListView)
 {
 	print("Not Implemented")
 }
 
-listview_delete_column :: proc (lv : ^ListView)
+listview_delete_column:: proc (lv: ^ListView)
 {
 	//LVM_DELETECOLUMN
 	print("Not Implemented")
 }
 
-listview_get_item :: proc (lv : ^ListView)
+listview_get_item:: proc (lv: ^ListView)
 {
 	print("Not Implemented")
 }
 
-listview_get_row :: proc (lv : ^ListView) -> []string
+listview_get_row:: proc (lv: ^ListView) -> []string
 {
 	print("Not Implemented")
 	 return nil
@@ -311,60 +311,59 @@ listview_get_row :: proc (lv : ^ListView) -> []string
 
 //=====================================Private Functions======================
 
-ListViewColumn :: struct
+ListViewColumn:: struct
 {
-	text : string,
-	width : int,
-	pLvc : ^LVCOLUMN,
-	index : int,
-	imageIndex : int,
-	hasImage, imageOnRight : bool,
-	alignment : ColumnAlignment,
-	headerAlign : HeaderAlignment,
-	_hdrTxtFlag : UINT,// For header text alignment
-	_wideText : ^u16,
+	text: string,
+	width: int,
+	pLvc: ^LVCOLUMN,
+	index: int,
+	imageIndex: int,
+	hasImage, imageOnRight: bool,
+	alignment: ColumnAlignment,
+	headerAlign: HeaderAlignment,
+	_hdrTxtFlag: UINT,// For header text alignment
+	_wideText: ^u16,
 
 }
 
-ListViewItem :: struct
+ListViewItem:: struct
 {
-	index : int,
-	text : string,
-	backColor : uint,
-	foreColor : uint,
-	font : Font,
-	imageIndex : int,
+	index: int,
+	text: string,
+	backColor: uint,
+	foreColor: uint,
+	font: Font,
+	imageIndex: int,
 }
 
-ListViewSubItem :: struct
+ListViewSubItem:: struct
 {
-	text : string,
-	backColor : uint,
-	foreColor : uint,
-	font : Font,
+	text: string,
+	backColor: uint,
+	foreColor: uint,
+	font: Font,
 }
 
-//ListViewStyle :: enum {Normal, Report, }
-ListViewStyle :: enum {Large_Icon, Report, Small_Icon, List, Tile, }
-ColumnAlignment :: enum {Left, Right, Center,}
-HeaderAlignment :: enum {Left, Right, Center,}
+//ListViewStyle:: enum {Normal, Report, }
+ListViewStyle:: enum {Large_Icon, Report, Small_Icon, List, Tile, }
+ColumnAlignment:: enum {Left, Right, Center,}
+HeaderAlignment:: enum {Left, Right, Center,}
 
 /*----------------------------------------------------------------------------------------------------
 											↓ ListView constructor ↓
 *---------------------------------------------------------------------------------------------------*/
 
-@private lv_constructor :: proc(f : ^Form, x, y, w, h : int) -> ^ListView
+@private lv_constructor:: proc(f: ^Form, x, y, w, h: int) -> ^ListView
 {
-	if lvcount == 0
-	{
+	if lvcount == 0 {
         app.iccx.dwIcc = IccListViewClass
         InitCommonControlsEx(&app.iccx)
     }
-	this := new(ListView)
+	context.user_index = 472
+	this:= new(ListView)
 	lvcount += 1
 	this.kind = .List_View
 	this.parent = f
-	// this.font = f.font
 	this.xpos = x
 	this.ypos = y
 	this.width = w
@@ -380,95 +379,86 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	this.headerForeColor = 0x000000
 	this.backColor = app.clrWhite
 	this.foreColor = app.clrBlack
-
 	this._hdrIndex = -1
 	this.headerHeight = 25
-
 	this._clsName = WcListViewClassW
 	this._fp_beforeCreation = cast(CreateDelegate) lv_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) lv_after_creation
-	font_clone(&f.font, &this.font )
+	font_clone(&f.font, &this.font, 14 )
 	append(&f._controls, this)
 	return this
 }
 
-@private lv_constructor1 :: proc(parent : ^Form) -> ^ListView
+@private lv_constructor1:: proc(parent: ^Form) -> ^ListView
 {
-	lv := lv_constructor(parent, 10, 10, 200, 180)
+	lv:= lv_constructor(parent, 10, 10, 200, 180)
 	if parent.createChilds do create_control(lv)
 	return lv
 }
 
-@private lv_constructor2 :: proc(parent : ^Form, x, y : int) -> ^ListView {
-	lv := lv_constructor(parent, x, y, 200, 180)
+@private lv_constructor2:: proc(parent: ^Form, x, y: int) -> ^ListView {
+	lv:= lv_constructor(parent, x, y, 200, 180)
 	if parent.createChilds do create_control(lv)
 	return lv
 }
 
-@private lv_constructor3 :: proc(parent : ^Form, x, y, w, h : int) -> ^ListView
+@private lv_constructor3:: proc(parent: ^Form, x, y, w, h: int) -> ^ListView
 {
-	lv := lv_constructor(parent, x, y, w, h)
+	lv:= lv_constructor(parent, x, y, w, h)
 	if parent.createChilds do create_control(lv)
 	return lv
 }
 
-@private lv_constructor4 :: proc(f : ^Form, x, y, w, h : int, colnames: ..string) -> ^ListView
+@private lv_constructor4:: proc(f: ^Form, x, y, w, h: int, colnames: ..string) -> ^ListView
 {
-	lv := lv_constructor(f, x, y, w, h)
+	lv:= lv_constructor(f, x, y, w, h)
 	for col in colnames
 	{
-		pCol := new_listview_column(col, set_coloumn_autosize(lv, col))
+		pCol:= new_listview_column(col, set_coloumn_autosize(lv, col))
 		listview_add_column(lv, pCol)
 	}
 	create_control(lv)
 	return lv
 }
 
-@private lv_constructor5 :: proc(f : ^Form, x, y, w, h : int, colnames: []string, widths: []int) -> ^ListView
+@private lv_constructor5:: proc(f: ^Form, x, y, w, h: int, colnames: []string, widths: []int) -> ^ListView
 {
-	lv := lv_constructor(f, x, y, w, h)
-	if len(colnames) == len(widths)
-	{
-		for col, width in colnames
-		{
-			pCol := new_listview_column(col, widths[width])
+	lv:= lv_constructor(f, x, y, w, h)
+	if len(colnames) == len(widths)	{
+		for col, width in colnames {
+			pCol:= new_listview_column(col, widths[width])
 			listview_add_column(lv, pCol)
 		}
 	}
-
 	create_control(lv)
 	return lv
 }
 
-@private lv_constructor6 :: proc(f : ^Form, x, y, w, h : int, coldata: ..any) -> ^ListView
+@private lv_constructor6:: proc(f: ^Form, x, y, w, h: int, coldata: ..any) -> ^ListView
 {
-	lv := lv_constructor(f, x, y, w, h)
-	colnames : [dynamic]string
-	colwidths : [dynamic]int
+	lv:= lv_constructor(f, x, y, w, h)
+	colnames: [dynamic]string
+	colwidths: [dynamic]int
 	defer delete(colnames)
 	defer delete(colwidths)
 	// Extracting column names and widths
-	for item in coldata
-	{
-        if value, is_str := item.(string) ; is_str { append(&colnames, value) } // LEAK
-        else if value, is_int := item.(int) ; is_int { append(&colwidths, value) } // LEAK
+	for item in coldata {
+        if value, is_str:= item.(string) ; is_str { append(&colnames, value) } // LEAK
+        else if value, is_int:= item.(int) ; is_int { append(&colwidths, value) } // LEAK
 	}
-	if len(colnames) == len(colwidths) // If they are same, we can proceed
-	{
-		for col, i in colnames
-		{
-			pCol := new_listview_column(col, colwidths[i])
+	if len(colnames) == len(colwidths) {// If they are same, we can proceed
+		for col, i in colnames {
+			pCol:= new_listview_column(col, colwidths[i])
 			listview_add_column(lv, pCol)
 		}
 	}
-
 	create_control(lv)
 	return lv
 }
 
-@private lv_constructor7 :: proc(f : ^Form, x, y, w, h : int, cols: []^ListViewColumn) -> ^ListView
+@private lv_constructor7:: proc(f: ^Form, x, y, w, h: int, cols: []^ListViewColumn) -> ^ListView
 {
-	lv := lv_constructor(f, x, y, w, h)
+	lv:= lv_constructor(f, x, y, w, h)
 	for pCol in cols { listview_add_column(lv, pCol) }
 	create_control(lv)
 	return lv
@@ -478,9 +468,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 										↓ ListViewColumn constructor ↓
 *-------------------------------------------------------------------------------------------------------------*/
 
-@private lv_col_constructor1 :: proc(txt : string, width : int ) -> ^ListViewColumn
+@private lv_col_constructor1:: proc(txt: string, width: int ) -> ^ListViewColumn
 {
-	lvc := new(ListViewColumn)
+	lvc:= new(ListViewColumn)
 	lvc.text = txt
 	lvc.width = width
 	lvc.hasImage = false
@@ -493,9 +483,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	return lvc
 }
 
-@private lv_col_constructor2 :: proc(txt : string ) -> ^ListViewColumn
+@private lv_col_constructor2:: proc(txt: string ) -> ^ListViewColumn
 {
-	lvc := new(ListViewColumn)
+	lvc:= new(ListViewColumn)
 	lvc.text = txt
 	lvc.width = 100
 	lvc.hasImage = false
@@ -508,10 +498,10 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	return lvc
 }
 
-@private lv_col_constructor3 :: proc(txt : string, width : int, col_align : ColumnAlignment = .Left,
+@private lv_col_constructor3:: proc(txt: string, width: int, col_align: ColumnAlignment = .Left,
 							hdr_align: HeaderAlignment = .Center  ) -> ^ListViewColumn
 {
-	lvc := new(ListViewColumn)
+	lvc:= new(ListViewColumn)
 	lvc.text = txt
 	lvc.width = width
 	lvc.hasImage = false
@@ -525,7 +515,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	return lvc
 }
 
-@private lv_col_finalize :: proc(this: ^ListViewColumn) 
+@private lv_col_finalize:: proc(this: ^ListViewColumn) 
 {
 	free(this._wideText)
 	free(this)
@@ -536,9 +526,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 *-----------------------------------------------------------------------------------------------------------*/
 
 
-@private lv_item_constructor :: proc(txt : string, bgc : uint, fgc : uint, img : int = -1) -> ^ListViewItem
+@private lv_item_constructor:: proc(txt: string, bgc: uint, fgc: uint, img: int = -1) -> ^ListViewItem
 {
-	lvi := new(ListViewItem)
+	lvi:= new(ListViewItem)
 	lvi.backColor = bgc
 	lvi.foreColor = fgc
 	lvi.text = txt
@@ -546,21 +536,21 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	return lvi
 }
 
-@private listview_item_constructor1 :: proc(txt : string) -> ^ListViewItem
+@private listview_item_constructor1:: proc(txt: string) -> ^ListViewItem
 {
-	lvi := lv_item_constructor(txt, white, black)
+	lvi:= lv_item_constructor(txt, white, black)
 	return lvi
 }
 
-@private listview_item_constructor2 :: proc(txt : string, bk_clr, fr_clr : uint) -> ^ListViewItem
+@private listview_item_constructor2:: proc(txt: string, bk_clr, fr_clr: uint) -> ^ListViewItem
 {
-	lvi := lv_item_constructor(txt, bk_clr, fr_clr)
+	lvi:= lv_item_constructor(txt, bk_clr, fr_clr)
 	return lvi
 }
 
-@private listview_item_constructor3 :: proc(txt : string, img : int) -> ^ListViewItem
+@private listview_item_constructor3:: proc(txt: string, img: int) -> ^ListViewItem
 {
-	lvi := lv_item_constructor(txt, white, black, img)
+	lvi:= lv_item_constructor(txt, white, black, img)
 	return lvi
 }
 
@@ -570,10 +560,10 @@ HeaderAlignment :: enum {Left, Right, Center,}
 *--------------------------------------------------------------------------------------------------------*/
 
 
-@private lv_addCol1 :: proc(lv : ^ListView, txt : string, width : int,
-								img : bool = false, imgOnRight : bool = false)
+@private lv_addCol1:: proc(lv: ^ListView, txt: string, width: int,
+								img: bool = false, imgOnRight: bool = false)
 {
-	lvc := new(ListViewColumn)
+	lvc:= new(ListViewColumn)
 	lvc.text = txt
 	lvc.width = width
 	lvc.hasImage = img
@@ -586,7 +576,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	lv_add_column(lv, lvc)
 }
 
-@private lv_addCol2 :: proc(lv : ^ListView, lvc : ^ListViewColumn)
+@private lv_addCol2:: proc(lv: ^ListView, lvc: ^ListViewColumn)
 {
 	lvc.index = int(lv._colIndex)
 	if lvc.headerAlign != .Center do set_hdr_text_flag(lvc)
@@ -594,9 +584,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	lv_add_column(lv, lvc)
 }
 
-@private lv_addCol3 :: proc(lv : ^ListView, txt : string, width : int, align : ColumnAlignment)
+@private lv_addCol3:: proc(lv: ^ListView, txt: string, width: int, align: ColumnAlignment)
 {
-	lvc := new(ListViewColumn)
+	lvc:= new(ListViewColumn)
 	lvc.text = txt
 	lvc.width = width
 	lvc.hasImage = false
@@ -611,9 +601,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 }
 
 // Here is the actual add column work happening.
-@private lv_add_column :: proc(lv : ^ListView, lvCol : ^ListViewColumn)
+@private lv_add_column:: proc(lv: ^ListView, lvCol: ^ListViewColumn)
 {
-	lvc : LVCOLUMN
+	lvc: LVCOLUMN
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM
 	lvc.fmt = cast(i32) lvCol.alignment
 	lvc.cx = i32((lvCol^).width)
@@ -641,59 +631,58 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	append(&lv.columns, lvCol) // We need to add columns if lv is not created now.
 }
 
-@private lv_addrow1 :: proc(lv : ^ListView, items : ..any, )
+@private lv_addrow1:: proc(lv: ^ListView, items: ..any, )
 {
 	if lv.viewStyle != ListViewStyle.Report do return
-	iLen := len(items)
+	iLen:= len(items)
 	if iLen > 0 {
-		sItems : [dynamic]string
+		sItems: [dynamic]string
 		defer delete(sItems)
 		for j in items {
-			if value, is_str := j.(string) ; is_str { // Magic -- type assert
+			if value, is_str:= j.(string); is_str { // Magic -- type assert
 				append(&sItems, value)
 			} else {
 				append(&sItems, to_str(j))
 			}
 		}
-
-		lvItem := listview_item_constructor1(sItems[0])
+		lvItem:= listview_item_constructor1(sItems[0])
 		listview_add_item(lv, lvItem)
 
-		for i := 1; i < iLen; i += 1 {
-			lvi : LVITEM
+		for i:= 1; i < iLen; i += 1 {
+			lvi: LVITEM
 			lvi.iSubItem = i32(i)
 			lvi.pszText = to_wstring(to_str(sItems[i]))
-			iIndx := i32(lvItem.index)
+			iIndx:= i32(lvItem.index)
 			SendMessage(lv.handle, LVM_SETITEMTEXT, WPARAM(iIndx), dir_cast(&lvi, LPARAM) )
 			// free_all(context.temp_allocator)
 		}
 	}
 }
 
-@private lv_addrow2 :: proc(lv : ^ListView, item_txt : any)
+@private lv_addrow2:: proc(lv: ^ListView, item_txt: any)
 {
-	sItem : string
-	if value, is_str := item_txt.(string) ; is_str { // Magic -- type assert
+	sItem: string
+	if value, is_str:= item_txt.(string) ; is_str { // Magic -- type assert
 		sItem = value
 	} else {
 		sItem = to_str(item_txt)
 	}
-	lvItem := listview_item_constructor1(sItem)
+	lvItem:= listview_item_constructor1(sItem)
 	listview_add_item(lv, lvItem)
 }
 
-@private lv_get_header :: proc(lvh : HWND) -> HWND {return cast(HWND) cast(UINT_PTR) SendMessage(lvh, LVM_GETHEADER, 0, 0)}
+@private lv_get_header:: proc(lvh: HWND) -> HWND {return cast(HWND) cast(UINT_PTR) SendMessage(lvh, LVM_GETHEADER, 0, 0)}
 
-@private lv_adjust_styles :: proc(lv : ^ListView) 
+@private lv_adjust_styles:: proc(lv: ^ListView) 
 {
 	#partial switch lv.viewStyle {
-		case .Large_Icon :
+		case .Large_Icon:
 			lv._style |= LVS_ICON
-		case .Report :
+		case .Report:
 			lv._style |= LVS_REPORT
-		case .Small_Icon :
+		case .Small_Icon:
 			lv._style |= LVS_SMALLICON
-		case .List :
+		case .List:
 			lv._style |= LVS_LIST
 	}
 
@@ -702,9 +691,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	if lv.noHeader do lv._style |= LVS_NOCOLUMNHEADER
 }
 
-@private lv_set_extended_styles :: proc(lv : ^ListView) 
+@private lv_set_extended_styles:: proc(lv: ^ListView) 
 {
-	lxs : DWORD
+	lxs: DWORD
 	if lv.showGridLines do lxs |= LVS_EX_GRIDLINES
 	if lv.hasCheckBoxes do lxs |= LVS_EX_CHECKBOXES
 	if lv.fullRowSelect do lxs |= LVS_EX_FULLROWSELECT
@@ -714,7 +703,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	SendMessage(lv.handle, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LPARAM(lxs) )
 }
 
-@private set_hdr_text_flag :: proc(lvc: ^ListViewColumn) 
+@private set_hdr_text_flag:: proc(lvc: ^ListViewColumn) 
 {
 	// print("worked")
 	if lvc.headerAlign == .Left {
@@ -726,19 +715,19 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	}
 }
 
-@private draw_divider :: proc(pen: HPEN, hdc: HDC, xp, yp, y2: i32) 
+@private draw_divider:: proc(pen: HPEN, hdc: HDC, xp, yp, y2: i32) 
 {
 	SelectObject(hdc, HGDIOBJ(pen))
 	MoveToEx(hdc, xp, yp, nil)
 	LineTo(hdc, xp, y2)
 }
 
-@private draw_header :: proc(lv : ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
+@private draw_header:: proc(lv: ^ListView, nmcd: ^NMCUSTOMDRAW) -> LRESULT
 {
 	if len(lv.columns) > 0 	{
 		// ptf("nmcd size %d\n", size_of(NMCUSTOMDRAW))
-		hd_index := cast(i32)nmcd.dwItemSpec
-		col := lv.columns[hd_index]
+		hd_index:= cast(i32)nmcd.dwItemSpec
+		col:= lv.columns[hd_index]
 		// print("hdr drawing started ", col.width, hd_index)
 
 		if col.index > 0 do nmcd.rc.left += 1
@@ -769,7 +758,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 
 		// SelectObject(nmcd.hdc, this.mHdrFont.handle);
 		// SetTextColor(nmcd.hdc, get_color_ref(lv.headerForeColor))
-		// coltxt := to_wstring(col.text)
+		// coltxt:= to_wstring(col.text)
 		draw_divider(lv._divPen, nmcd.hdc, nmcd.rc.right, nmcd.rc.top, nmcd.rc.bottom)
 		api.SetBkMode(nmcd.hdc, api.BKMODE.TRANSPARENT) // TRANSPARENT
 		nmcd.rc.left += 3 // We need some room on the left side
@@ -783,10 +772,10 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	return CDRF_DODEFAULT
 }
 
-@private set_coloumn_autosize :: proc(lv: ^ListView, colname: string) -> int
+@private set_coloumn_autosize:: proc(lv: ^ListView, colname: string) -> int
 {
 	txtlen:= i32(len(colname))
-	ss : SIZE
+	ss: SIZE
 	hdc: HDC = GetDC(lv.handle)
     defer ReleaseDC(lv.handle, hdc)
     SelectObject(hdc, HGDIOBJ(lv.font.handle))
@@ -796,7 +785,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 }
 
 // This will executed right before a list view is created
-@private lv_before_creation :: proc(lv : ^ListView) 
+@private lv_before_creation:: proc(lv: ^ListView) 
 {
 	lv_adjust_styles(lv)
 	lv._hdrBkBrush = create_hbrush(lv.headerBackColor)
@@ -807,7 +796,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 }
 
 // This will executed right after a list view is created
-@private lv_after_creation :: proc(lv : ^ListView) 
+@private lv_after_creation:: proc(lv: ^ListView) 
 {
 	// print("alloc data ", (transmute(^int) alloc.data)^)
 	set_subclass(lv, lv_wnd_proc)
@@ -821,9 +810,12 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	}
 
 	if len(lv._lvcList) > 0 {
-		res : i32
+		res: i32
 		for &col in lv._lvcList {
-			res = i32(SendMessage(lv.handle, LVM_INSERTCOLUMNW, WPARAM(res), dir_cast(&col, LPARAM)))
+			res = i32(SendMessage(	lv.handle, 
+									LVM_INSERTCOLUMNW, 
+									WPARAM(res), 
+									dir_cast(&col, LPARAM)))
 			res += 1
 		}
 		delete(lv._lvcList) // We don't want this list anymore
@@ -835,11 +827,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	globalSubClassID += 1
 
 	// if lv.backColor != 0xFFFFFF do SendMessage(lv.handle, LVM_SETBKCOLOR, 0, LPARAM(lv._bgcRef))
-
-	// print("hdr drawing coooo ")
 }
 
-@private listview_property_setter :: proc(this: ^ListView, prop: ListViewProps, value: $T)
+@private listview_property_setter:: proc(this: ^ListView, prop: ListViewProps, value: $T)
 {
 	switch prop {
 		case .Item_Alignment: break
@@ -860,10 +850,9 @@ HeaderAlignment :: enum {Left, Right, Center,}
 	}
 }
 
-@private lv_finalize :: proc(this: ^ListView, scid: UINT_PTR) 
+@private lv_finalize:: proc(this: ^ListView, scid: UINT_PTR) 
 {
-	delete_gdi_object(this._divPen)
-	if this.font.handle != nil do delete_gdi_object(this.font.handle)
+	delete_gdi_object(this._divPen)	
 	if this._imgList.handle != nil do ImageList_Destroy(this._imgList.handle)
 	if this._hdrBkBrush != nil do delete_gdi_object(this._hdrBkBrush)
 	if this._hdrHotBrush != nil do delete_gdi_object(this._hdrHotBrush)
@@ -873,29 +862,40 @@ HeaderAlignment :: enum {Left, Right, Center,}
     for pitem in this.items	 {free(pitem)}
     delete(this.items)
 	delete(this.columns)
-
+	// font_destroy(&this.font, 12)
     free(this)
 }
 
-@private lv_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
-												sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT 
+@private lv_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+												sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
 {
 	context = global_context  
 	// print("user_index ", (cast(^int) context.user_ptr)^)
-	lv := control_cast(ListView, ref_data)
+	
 	//display_msg(msg)
 	switch msg {
-	case WM_DESTROY : lv_finalize(lv, sc_id)
-	case WM_SETFOCUS: ctrl_setfocus_handler(lv)
-	case WM_KILLFOCUS: ctrl_killfocus_handler(lv)
+	case WM_DESTROY: 
+		lv:= control_cast(ListView, ref_data)
+		lv_finalize(lv, sc_id)
+
+	case WM_SETFOCUS: 
+		lv:= control_cast(ListView, ref_data)
+		ctrl_setfocus_handler(lv)
+
+	case WM_KILLFOCUS: 
+		lv:= control_cast(ListView, ref_data)
+		ctrl_killfocus_handler(lv)
+
 	case WM_CONTEXTMENU:
+		lv:= control_cast(ListView, ref_data)
 		if lv.contextMenu != nil do contextmenu_show(lv.contextMenu, lp)
 
-	case CM_NOTIFY :
-		nmh := dir_cast(lp, ^NMHDR)
+	case CM_NOTIFY:
+		lv:= control_cast(ListView, ref_data)
+		nmh:= dir_cast(lp, ^NMHDR)
 		switch nmh.code {
 			case NM_CUSTOMDRAW:
-				lvcd := dir_cast(lp, ^NMLVCUSTOMDRAW)
+				lvcd:= dir_cast(lp, ^NMLVCUSTOMDRAW)
 				switch lvcd.nmcd.dwDrawStage {
 				case CDDS_PREPAINT:
 					return CDRF_NOTIFYITEMDRAW
@@ -908,11 +908,11 @@ HeaderAlignment :: enum {Left, Right, Center,}
 				return CDRF_DODEFAULT
 
 			case LVN_ITEMCHANGED:
-				nmlv := dir_cast(lp, ^NMLISTVIEW)
+				nmlv:= dir_cast(lp, ^NMLISTVIEW)
 				if nmlv.uNewState == 8192 || nmlv.uNewState == 4096 {
 					lv.checked = nmlv.uNewState == 8192 ? true: false
 					if lv.onCheckedChanged != nil {
-						ea := new_event_args()
+						ea:= new_event_args()
 						lv.onCheckedChanged(lv, &ea)
 					}
 				} else {
@@ -921,7 +921,7 @@ HeaderAlignment :: enum {Left, Right, Center,}
 						lv.selectedItemIndex = int(nmlv.iItem)
 						lv.selectedSubItemIndex = int(nmlv.iSubItem)
 						if lv.onSelectionChanged != nil {
-							ea := new_event_args()
+							ea:= new_event_args()
 							lv.onSelectionChanged(lv, &ea)
 						}                               
 					}
@@ -929,11 +929,12 @@ HeaderAlignment :: enum {Left, Right, Center,}
 		}
 
 	case WM_NOTIFY:
+		lv:= control_cast(ListView, ref_data)
 		// Message from header.
-		nmh := dir_cast(lp, ^NMHDR)
+		nmh:= dir_cast(lp, ^NMHDR)
 		switch nmh.code {
-		case NM_CUSTOMDRAW :  // Let's draw header back & fore colors
-			nmcd := dir_cast(lp, ^NMCUSTOMDRAW)
+		case NM_CUSTOMDRAW:  // Let's draw header back & fore colors
+			nmcd:= dir_cast(lp, ^NMCUSTOMDRAW)
 			switch nmcd.dwDrawStage {
 			case CDDS_PREPAINT:
 				return CDRF_NOTIFYITEMDRAW
@@ -942,54 +943,51 @@ HeaderAlignment :: enum {Left, Right, Center,}
 				return draw_header(lv, nmcd)
 				// return CDRF_SKIPDEFAULT
 			}
-
 		}
-
-
-
 	}
 	return DefSubclassProc(hw, msg, wp, lp)
 }
 
-@private hdr_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
-												sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT 
+@private hdr_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+												sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
 {
 	context = global_context //runtime.default_context()
-	lv := control_cast(ListView, ref_data)
+	
 	// display_msg(msg)
 		switch msg {
-			case WM_DESTROY :
+			case WM_DESTROY:
+				lv:= control_cast(ListView, ref_data)
 				RemoveWindowSubclass(hw, hdr_wnd_proc, UINT_PTR(sc_id) )
 				// print("Removed header subclassing result ", res)
 
 			case WM_MOUSEMOVE:
-				hti : HDHITTESTINFO
+				lv:= control_cast(ListView, ref_data)
+				hti: HDHITTESTINFO
 				hti.pt = get_mouse_points(lp)
 				lv._hdrIndex = i32(SendMessage(hw, HDM_HITTEST, 0, dir_cast(&hti, LPARAM)))
 
 			case WM_MOUSELEAVE:
+				lv:= control_cast(ListView, ref_data)
 				lv._hdrIndex = -1
 
 			case HDM_LAYOUT:
+				lv:= control_cast(ListView, ref_data)
 				// ptf("hd layout %d\n", size_of(HD_LAYOUT))
-				phl := dir_cast(lp, ^HD_LAYOUT)
-				res := DefSubclassProc(hw, msg, wp, lp)
+				phl:= dir_cast(lp, ^HD_LAYOUT)
+				res:= DefSubclassProc(hw, msg, wp, lp)
 				phl.pwpos.cy = i32(lv.headerHeight)
 				return res
 
 			case WM_PAINT:
+				lv:= control_cast(ListView, ref_data)
 				DefSubclassProc(hw, msg, wp, lp)
-				hrc : RECT
+				hrc: RECT
                 SendMessage(hw, HDM_GETITEMRECT, WPARAM(len(lv.columns) - 1), dir_cast(&hrc, LPARAM))
-                rc : RECT = {hrc.right + 1, hrc.top, i32(lv.width), hrc.bottom}
-                hdc : HDC = GetDC(hw)
+                rc: RECT = {hrc.right + 1, hrc.top, i32(lv.width), hrc.bottom}
+                hdc: HDC = GetDC(hw)
                 api.FillRect(hdc, &rc, lv._hdrBkBrush)
                 ReleaseDC(hw, hdc)
                 return 0
-
-
-
-
 
 		}
 	return DefSubclassProc(hw, msg, wp, lp)

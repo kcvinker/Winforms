@@ -136,8 +136,7 @@ BarTheme :: enum {System_Color, Custom_Color }
 //=====================================Private Functions=======================================
 @private pb_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^ProgressBar
 {
-    if pgbcount == 0
-    {
+    if pgbcount == 0 {
         app.iccx.dwIcc = ICC_PROGRESS_CLASS
         InitCommonControlsEx(&app.iccx)
     }
@@ -145,7 +144,6 @@ BarTheme :: enum {System_Color, Custom_Color }
     pgbcount += 1
     this.kind = .Progress_Bar
     this.parent = f
-    // this.font = f.font
     this.xpos = x
     this.ypos = y
     this.width = w
@@ -167,10 +165,6 @@ BarTheme :: enum {System_Color, Custom_Color }
     return this
 }
 
-@private pb_dtor :: proc(pb : ^ProgressBar)
-{
-    if pb._hvstm != nil do CloseThemeData(pb._hvstm)
-}
 
 @private pb_new1 :: proc(parent : ^Form) -> ^ProgressBar
 {
@@ -238,7 +232,6 @@ BarTheme :: enum {System_Color, Custom_Color }
         api.SetBkMode(hdc, api.BKMODE.TRANSPARENT);
         SetTextColor(hdc, get_color_ref(this.foreColor));
         TextOut(hdc, x, y, wtext, tlen)
-        // free_all(context.temp_allocator)
         return ret
     } else {
 
@@ -276,7 +269,7 @@ BarTheme :: enum {System_Color, Custom_Color }
 @private pb_finalize :: proc(this: ^ProgressBar, scid: UINT_PTR)
 {
     RemoveWindowSubclass(this.handle, pb_wnd_proc, scid)
-    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    font_destroy(&this.font)
     free(this)
 }
 
@@ -285,11 +278,16 @@ BarTheme :: enum {System_Color, Custom_Color }
 {
 
     context = global_context //runtime.default_context()
-    pb := control_cast(ProgressBar, ref_data)
+    
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY : pb_finalize(pb, sc_id)
-        case WM_PAINT : return pb_draw_percentage(pb, hw, msg, wp, lp)
+        case WM_DESTROY : 
+            pb := control_cast(ProgressBar, ref_data)
+            pb_finalize(pb, sc_id)
+
+        case WM_PAINT : 
+            pb := control_cast(ProgressBar, ref_data)
+            return pb_draw_percentage(pb, hw, msg, wp, lp)
             // if pb.onPaint != nil {
             //     ps : PAINTSTRUCT
             //     hdc := BeginPaint(hw, &ps)
@@ -300,9 +298,11 @@ BarTheme :: enum {System_Color, Custom_Color }
             // }
 
         case WM_CONTEXTMENU:
+            pb := control_cast(ProgressBar, ref_data)
 		    if pb.contextMenu != nil do contextmenu_show(pb.contextMenu, lp)
 
         case WM_LBUTTONDOWN:
+            pb := control_cast(ProgressBar, ref_data)
            // pb._draw_focus_rct = true            
             if pb.onMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
@@ -310,13 +310,15 @@ BarTheme :: enum {System_Color, Custom_Color }
                 return 0
             }
 
-        case WM_RBUTTONDOWN :           
+        case WM_RBUTTONDOWN:
+            pb := control_cast(ProgressBar, ref_data)           
             if pb.onRightMouseDown != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onRightMouseDown(pb, &mea)
             }
 
-        case WM_LBUTTONUP :
+        case WM_LBUTTONUP:
+            pb := control_cast(ProgressBar, ref_data)
             if pb.onMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onMouseUp(pb, &mea)
@@ -327,14 +329,16 @@ BarTheme :: enum {System_Color, Custom_Color }
                 return 0
             }
 
-        case WM_LBUTTONDBLCLK :
+        case WM_LBUTTONDBLCLK:
+            pb := control_cast(ProgressBar, ref_data)
             if pb.onDoubleClick != nil {
                 ea := new_event_args()
                 pb.onDoubleClick(pb, &ea)
                 return 0
             }
 
-        case WM_RBUTTONUP :
+        case WM_RBUTTONUP:
+            pb := control_cast(ProgressBar, ref_data)
             if pb.onRightMouseUp != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onRightMouseUp(pb, &mea)
@@ -346,11 +350,13 @@ BarTheme :: enum {System_Color, Custom_Color }
             }
 
         case WM_MOUSEHWHEEL:
+            pb := control_cast(ProgressBar, ref_data)
             if pb.onMouseScroll != nil {
                 mea := new_mouse_event_args(msg, wp, lp)
                 pb.onMouseScroll(pb, &mea)
             }
-        case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
+        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
+            pb := control_cast(ProgressBar, ref_data)
             if pb._isMouseEntered {
                 if pb.onMouseMove != nil {
                     mea := new_mouse_event_args(msg, wp, lp)
@@ -365,7 +371,8 @@ BarTheme :: enum {System_Color, Custom_Color }
                 }
             }
 
-        case WM_MOUSELEAVE :
+        case WM_MOUSELEAVE:
+            pb := control_cast(ProgressBar, ref_data)
             pb._isMouseEntered = false
             if pb.onMouseLeave != nil {
                 ea := new_event_args()

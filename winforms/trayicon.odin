@@ -77,7 +77,7 @@ new_tray_icon :: proc(tooltip: string, iconpath: string = "") -> ^TrayIcon
         } 
     }
     xu : uint = 0
-    ptf("notify icon size %d, uint size %d", size_of(this._nid), size_of(xu))
+    // ptf("notify icon size %d, uint size %d", size_of(this._nid), size_of(xu))
     tipTxt : []u16 = utf8_to_utf16(tooltip)
     this._nid.cbSize = size_of(this._nid)
     this._nid.hWnd = this._msgWinHwnd
@@ -88,7 +88,7 @@ new_tray_icon :: proc(tooltip: string, iconpath: string = "") -> ^TrayIcon
     this._nid.hIcon = this._hTrayIcon 
     copy(this._nid.toolTipText[:], tipTxt)
     x := Shell_NotifyIcon(NIM_ADD, &this._nid);  
-    ptf("shell notify res %d", x)
+    // ptf("shell notify res %d", x)
     app.trayHwnd = this._msgWinHwnd
     app.nidUsed = true
     return this
@@ -197,7 +197,7 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
 @private create_tray_msgonly_window :: proc(this: ^TrayIcon)
 {
     this._msgWinHwnd = CreateWindowEx(0, &trayClass[0], nil, 0, 0, 0, 0, 0, HWND_MESSAGE, nil, app.hInstance, nil)
-    ptf("msg win hwnd %d", this._msgWinHwnd)
+    // ptf("msg win hwnd %d", this._msgWinHwnd)
     SetWindowLongPtr(this._msgWinHwnd, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
     // if this.font.handle == nil do font_create_handle(&this.font)
 }
@@ -213,7 +213,7 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
             if this._hTrayIcon != nil do DestroyIcon(this._hTrayIcon)
             if this._cmenuUsed do contextmenu_dtor(this.contextMenu)
             free(this)
-            print("context menu's message-only window destroyed")
+            // print("context menu's message-only window destroyed")
 
         case CM_TRAY_MSG:
             switch lp {

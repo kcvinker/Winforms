@@ -33,19 +33,19 @@ MakeWindow :: proc()
     ti = new_tray_icon("Winforms tray icon!", "winforms-icon.ico")
     frm.onClick = frmClickProc // Show a balloon text when clicking on form.
 
-    // Let's add a context menu for our tray icon. "|" is for separator.
+    // // Let's add a context menu for our tray icon. "|" is for separator.
     tray_add_context_menu(ti, .Any_Click, "Windows", "|", "Linux", "ReactOS")
     ti.contextMenu.menus[0].onClick = proc(c: ^MenuItem, ea: ^EventArgs) {print("Windows menu selected")}
 
 
-    // Let's add a timer to this form which ticks in every 400 ms.
-    // And our timer_ontick proc will be called on each tick.
+    // // Let's add a timer to this form which ticks in every 400 ms.
+    // // And our timer_ontick proc will be called on each tick.
     tmr = form_addTimer(frm, 400, timer_ontick)
 
     mbar := new_menubar(frm, true, "File", "Edit", "Format")
     
 
-    // Add some sub menus. "|" is for separator.
+    // // Add some sub menus. "|" is for separator.
     menubar_add_items(mbar, mbar.menus[0], "New Work", "New Client", "|", "Exit")
     menubar_add_items(mbar, mbar.menus[1], "New Client", "Copy", "Delete")
     menubar_add_items(mbar, mbar.menus[2], "Font", "Line Space", "Para Spce")
@@ -67,7 +67,7 @@ MakeWindow :: proc()
     set_property(cmb, ComboProps.Selected_Index, 0)
 
     dtp := new_datetimepicker(frm, cright(cmb) + 20, 10)
-    gb := new_groupbox(frm, "Format Options", 10, cbottom(b1) + 20, w=230, h=110)
+    gb := new_groupbox(frm, "Format Options", 10, 80, w=230, h=110)
     lb1 := new_label(frm, "Line_Space", gbx(gb, 10), gby(gb, 40))
     np1 := new_numberpicker(frm, cright(lb1) + 15, gby(gb, 35), deciPrec = 2, step = 1.5)
     np1.foreColor = 0x9d0208
@@ -137,7 +137,8 @@ MakeWindow :: proc()
     }
 
     b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
-        ui.timer_start(tmr)
+        // ui.timer_start(tmr)
+        print("duuuup")
     }
 
     timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs) {

@@ -1,20 +1,20 @@
 /*
-    Created on : 18-Jan-2022 04:30 PM
-    Author : kcvinu
+    Created on: 18-Jan-2022 04:30 PM
+    Author: kcvinu
 */
 /*===========================================Calendar Docs=========================================================
     Calendar struct
         Constructor: new_calendar() -> ^Calendar
         Properties:
             All props from Control struct
-            value           : DateTime
-            viewMode        : ViewMode enum
-            oldView         : ViewMode enum
-            showWeekNum     : b64
-            noTodayCircle   : b64
-            noToday         : b64
-            noTrailingDates : b64
-            shortDayNames   : b64
+            value          : DateTime
+            viewMode       : ViewMode enum
+            oldView        : ViewMode enum
+            showWeekNum    : b64
+            noTodayCircle  : b64
+            noToday        : b64
+            noTrailingDates: b64
+            shortDayNames  : b64
         Functions:
         Events:
             EventHandler type -proc(^Control, ^EventArgs) [See events.odin]
@@ -26,43 +26,43 @@
 package winforms
 import "base:runtime"
 
-WcCalenderClassW : []WCHAR = {'S','y','s','M','o','n','t','h','C','a','l','3','2',0}
+WcCalenderClassW: []WCHAR = {'S','y','s','M','o','n','t','h','C','a','l','3','2',0}
 
-Calendar :: struct
+Calendar:: struct
 {
-    using control : Control,
-    value : DateTime,
-    viewMode : ViewMode,
-    oldView : ViewMode,
-    showWeekNum : b64,
-    noTodayCircle : b64,
-    noToday : b64,
-    noTrailingDates : b64,
-    shortDayNames : b64,
+    using control: Control,
+    value: DateTime,
+    viewMode: ViewMode,
+    oldView: ViewMode,
+    showWeekNum: b64,
+    noTodayCircle: b64,
+    noToday: b64,
+    noTrailingDates: b64,
+    shortDayNames: b64,
     
     // Events
     onValueChanged,
     onViewChanged,
-    onSelectionChanged : EventHandler,
+    onSelectionChanged: EventHandler,
 }
 
 // Create a new Calendar control.
-new_calendar :: proc{new_cal1, new_cal2}
+new_calendar:: proc{new_cal1, new_cal2}
 
 // Enum for setting Calendar's view mode.
-ViewMode :: enum {Month, Year, Decade, Centuary}
+ViewMode:: enum {Month, Year, Decade, Centuary}
 
 //===================================================Private functions=============================================
-@private calendar_ctor :: proc(p : ^Form, x, y : int) -> ^Calendar
+@private calendar_ctor:: proc(p: ^Form, x, y: int) -> ^Calendar
 {
     if !isDtpClassInit { // Then we need to initialize the date class control.
         isDtpClassInit = true
         app.iccx.dwIcc = ICC_DATE_CLASSES
         InitCommonControlsEx(&app.iccx)
     }
-    // yp : ^int = cast(^int)context.user_ptr
+    // yp: ^int = cast(^int)context.user_ptr
     // ptf("calendar context up %d\n", yp^)
-    this := new(Calendar)
+    this:= new(Calendar)
     this.parent = p
     // this.font = p.font
     this.kind = .Calendar
@@ -79,21 +79,21 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     return this
 }
 
-@private new_cal1 :: proc(parent : ^Form, x, y : int) -> ^Calendar
+@private new_cal1:: proc(parent: ^Form, x, y: int) -> ^Calendar
 {
-    c := calendar_ctor(parent, x, y)
+    c:= calendar_ctor(parent, x, y)
     if parent.createChilds do create_control(c)
     return c
 }
 
-@private new_cal2 :: proc(parent : ^Form) -> ^Calendar
+@private new_cal2:: proc(parent: ^Form) -> ^Calendar
 {
-    c := calendar_ctor(parent, 10, 10)
+    c:= calendar_ctor(parent, 10, 10)
     if parent.createChilds do create_control(c)
     return c
 }
 
-@private set_cal_style :: proc(c : ^Calendar)
+@private set_cal_style:: proc(c: ^Calendar)
 {
     if c.showWeekNum do c._style |= MCS_WEEKNUMBERS
     if c.noTodayCircle do c._style |= MCS_NOTODAYCIRCLE
@@ -102,27 +102,27 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
     if c.shortDayNames do c._style |= MCS_SHORTDAYSOFWEEK
 }
 
-@private cal_before_creation :: proc(c : ^Calendar)
+@private cal_before_creation:: proc(c: ^Calendar)
 {
     set_cal_style(c)
 }
 
-@private cal_after_creation :: proc(cal : ^Calendar)
+@private cal_after_creation:: proc(cal: ^Calendar)
 {
     set_subclass(cal, cal_wnd_proc)
-    rc : RECT
+    rc: RECT
     SendMessage(cal.handle, MCM_GETMINREQRECT, 0, convert_to(LPARAM, &rc))
     SetWindowPos(cal.handle, nil, i32(cal.xpos), i32(cal.ypos), rc.right, rc.bottom, SWP_NOZORDER)
 }
 
-@private calendar_property_setter :: proc(this: ^Calendar, prop: CalendarProps, value: $T)
+@private calendar_property_setter:: proc(this: ^Calendar, prop: CalendarProps, value: $T)
 {
 	#partial switch prop {
 		case .Value:
             when T == DateTime {
                 this.value = value
                 if this._isCreated {
-                    st := datetime_to_systime(this.value)
+                    st:= datetime_to_systime(this.value)
                     SendMessage(this.handle, MCM_SETCURSEL, 0, &st)
                 }
             }
@@ -142,139 +142,151 @@ ViewMode :: enum {Month, Year, Decade, Centuary}
 }
 
 
-@private cal_finalize :: proc(this: ^Calendar, scid: UINT_PTR)
+@private cal_finalize:: proc(this: ^Calendar, scid: UINT_PTR)
 {
     RemoveWindowSubclass(this.handle, cal_wnd_proc, scid)
-    if this.font.handle != nil do delete_gdi_object(this.font.handle)
+    font_destroy(&this.font)
     free(this)
 }
 
-@private cal_wnd_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM,
-                                            sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
+@private cal_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
+                                            sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     // context = runtime.default_context()
     context = global_context
-    cal := control_cast(Calendar, ref_data)
+    
    //display_msg(msg)
     switch msg {
 
-        case WM_PAINT :
+        case WM_PAINT:
+            cal:= control_cast(Calendar, ref_data)
             if cal.onPaint != nil {
-                ps : PAINTSTRUCT
-                hdc := BeginPaint(hw, &ps)
-                pea := new_paint_event_args(&ps)
+                ps: PAINTSTRUCT
+                hdc:= BeginPaint(hw, &ps)
+                pea:= new_paint_event_args(&ps)
                 cal.onPaint(cal, &pea)
                 EndPaint(hw, &ps)
                 return 0
             }
 
         case WM_CONTEXTMENU:
+            cal:= control_cast(Calendar, ref_data)
 		    if cal.contextMenu != nil do contextmenu_show(cal.contextMenu, lp)
 
-        case CM_NOTIFY :
-            nm := dir_cast(lp, ^NMHDR)
+        case CM_NOTIFY:
+            cal:= control_cast(Calendar, ref_data)
+            nm:= dir_cast(lp, ^NMHDR)
             //print("nm.code - ", nm.code)
             switch nm.code {
                 case MCN_SELECT:
-                    nms := dir_cast(lp, ^NMSELCHANGE)
+                    nms:= dir_cast(lp, ^NMSELCHANGE)
                     cal.value = systime_to_datetime(nms.stSelStart)
                     if cal.onValueChanged != nil {
-                        ea := new_event_args()
+                        ea:= new_event_args()
                         cal.onValueChanged(cal, &ea)
                     }
 
-                case MCN_SELCHANGE :
-                    nms := dir_cast(lp, ^NMSELCHANGE)
+                case MCN_SELCHANGE:
+                    nms:= dir_cast(lp, ^NMSELCHANGE)
                     cal.value = systime_to_datetime(nms.stSelStart)
                     if cal.onSelectionChanged != nil {
-                        ea := new_event_args()
+                        ea:= new_event_args()
                         cal.onSelectionChanged(cal, &ea)
                     }
 
                 case MCN_VIEWCHANGE:
-                    nmv := dir_cast(lp, ^NMVIEWCHANGE)
+                    nmv:= dir_cast(lp, ^NMVIEWCHANGE)
                     cal.viewMode = ViewMode(nmv.dwNewView)
                     cal.oldView = ViewMode(nmv.dwOldView)
                     if cal.onViewChanged != nil {
-                        ea := new_event_args()
+                        ea:= new_event_args()
                         cal.onViewChanged(cal, &ea)
                     }
             }
 
          case WM_MOUSEHWHEEL:
+            cal:= control_cast(Calendar, ref_data)
             if cal.onMouseScroll != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
+                mea:= new_mouse_event_args(msg, wp, lp)
                 cal.onMouseScroll(cal, &mea)
             }
 
-        case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
+        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
+            cal:= control_cast(Calendar, ref_data)
             if cal._isMouseEntered {
                 if cal.onMouseMove != nil {
-                    mea := new_mouse_event_args(msg, wp, lp)
+                    mea:= new_mouse_event_args(msg, wp, lp)
                     cal.onMouseMove(cal, &mea)
                 }
             } else {
                 cal._isMouseEntered = true
                 if cal.onMouseEnter != nil  {
-                    ea := new_event_args()
+                    ea:= new_event_args()
                     cal.onMouseEnter(cal, &ea)
                 }
             }
 
-        case WM_MOUSELEAVE :
+        case WM_MOUSELEAVE:
+            cal:= control_cast(Calendar, ref_data)
             cal._isMouseEntered = false
             if cal.onMouseLeave != nil {
-                ea := new_event_args()
+                ea:= new_event_args()
                 cal.onMouseLeave(cal, &ea)
             }
 
 
-        case WM_LBUTTONDOWN:            
+        case WM_LBUTTONDOWN:     
+            cal:= control_cast(Calendar, ref_data)       
             if cal.onMouseDown != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
+                mea:= new_mouse_event_args(msg, wp, lp)
                 cal.onMouseDown(cal, &mea)
                 return 0
             }
 
         case WM_RBUTTONDOWN:
-            
+            cal:= control_cast(Calendar, ref_data)
             if cal.onRightMouseDown != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
+                mea:= new_mouse_event_args(msg, wp, lp)
                 cal.onRightMouseDown(cal, &mea)
             }
 
-        case WM_LBUTTONUP :
+        case WM_LBUTTONUP:
+            cal:= control_cast(Calendar, ref_data)
             if cal.onMouseUp != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
+                mea:= new_mouse_event_args(msg, wp, lp)
                 cal.onMouseUp(cal, &mea)
             }
            if cal.onClick != nil {
-                ea := new_event_args()
+                ea:= new_event_args()
                 cal.onClick(cal, &ea)
                 return 0
             }     
 
-        case WM_LBUTTONDBLCLK :
+        case WM_LBUTTONDBLCLK:
+            cal:= control_cast(Calendar, ref_data)
             if cal.onDoubleClick != nil {
-                ea := new_event_args()
+                ea:= new_event_args()
                 cal.onDoubleClick(cal, &ea)
                 return 0
             }
 
-        case WM_RBUTTONUP :
+        case WM_RBUTTONUP:
+            cal:= control_cast(Calendar, ref_data)
             if cal.onRightMouseUp != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
+                mea:= new_mouse_event_args(msg, wp, lp)
                 cal.onRightMouseUp(cal, &mea)
             }
             if cal.onRightClick != nil {
-                ea := new_event_args()
+                ea:= new_event_args()
                 cal.onRightClick(cal, &ea)
                 return 0
             }        
             
-        case WM_DESTROY: cal_finalize(cal, sc_id)
+        case WM_DESTROY:
+            cal:= control_cast(Calendar, ref_data) 
+            cal_finalize(cal, sc_id)
 
-        case :
+        case:
         return DefSubclassProc(hw, msg, wp, lp)
 
     }

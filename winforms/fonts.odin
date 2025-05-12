@@ -14,33 +14,26 @@ Font :: struct
 	italics : bool,
 	handle : HFONT,
 	_defFontChanged : bool,
+	_wtext: ^WideString,
 }
 
 new_font_1 :: proc() -> Font
 {
-	// context = ctx
-	f : Font
-	// print("alloc error in font ", ae, " user index : ", ctx.user_index)
-	f.name = _def_font_name
-	f.size = _def_font_size
-	f.weight = FontWeight.Normal
-	f.underline = false
-	f.italics = false
-	f._defFontChanged = false
-	return f
+	return new_font_2(def_font_name, def_font_size)
 }
 
-new_font_2 :: proc(fn : string , fs : int, fw : FontWeight = .Normal, 
+new_font_2 :: proc(fname : string , fs : int, fw : FontWeight = .Normal, 
 							fi : bool = false, fu : bool = false) -> Font
 {
-	f : Font
-	f.name = fn
-	f.size = fs
-	f.weight = fw
-	f.underline = fu
-	f.italics = fi
-	f._defFontChanged = true
-	return f
+	this : Font
+	this.name = fname
+	this.size = fs
+	this.weight = fw
+	this.underline = fu
+	this.italics = fi
+	this._defFontChanged = true
+	this._wtext = new_widestring(fname)
+	return this
 }
 
 new_font :: proc {new_font_1, new_font_2} // Overloaded proc
@@ -49,12 +42,11 @@ font_create_handle :: proc(this : ^Font)
 {
 	fsiz:= i32(app.scaleFactor * f64(this.size))
 	iHeight : i32 = -MulDiv(fsiz , app.sysDPI, 72)
-	wfname : []u16 = utf8_to_utf16(this.name)
 
 	lf : LOGFONT
 	lf.lfItalic = cast(byte)this.italics
 	lf.lfUnderline = cast(byte)this.underline
-	copy(lf.lfFaceName[:], wfname) 
+	copy(lf.lfFaceName[:], this._wtext.ptr[:this._wtext.buffLen])
 	lf.lfHeight = iHeight
 	lf.lfWeight = cast(LONG)this.weight
 	lf.lfCharSet = DEFAULT_CHARSET
@@ -63,22 +55,29 @@ font_create_handle :: proc(this : ^Font)
 	lf.lfQuality = DEFAULT_QUALITY
 	lf.lfPitchAndFamily = DEFAULT_PITCH
 	this.handle = CreateFontIndirect(&lf)
-	// for w in wfname {
-	// 	ptf("f digit : %d", w)
-	// }
-
 }
 
-font_clone :: proc(from_font: ^Font, to_font: ^Font)
+font_clone :: proc(src: ^Font, dst: ^Font, id : int = 0)
 {
-	to_font.name = from_font.name
-	to_font.size = from_font.size
-	to_font.weight = from_font.weight
-	to_font.underline = from_font.underline
-	to_font.italics = from_font.italics
-	to_font._defFontChanged = from_font._defFontChanged
-	if from_font.handle != nil {
-		font_create_handle(from_font)
+	dst.name = src.name
+	dst.size = src.size
+	dst.weight = src.weight
+	dst.underline = src.underline
+	dst.italics = src.italics
+	dst._defFontChanged = src._defFontChanged	
+	widestring_clone(src._wtext, &dst._wtext, id)
+	if src.handle != nil do font_create_handle(src)
+}
+
+font_destroy :: proc(this: ^Font,id: int = 0)
+{
+	if id > 0 do ptf("lv's font wtxt -> %d", int(uintptr(this._wtext)))
+	widestring_destroy(this._wtext, id)
+	this._wtext = nil
+	if this.handle != nil {
+		// ptf("deleting font %s", this.name)
+		delete_gdi_object(this.handle)
+		this.handle = nil
 	}
 }
 

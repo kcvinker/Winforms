@@ -99,7 +99,7 @@ package winforms
 
 // GroupBox constants.
     gbstyle : DWORD : WS_CHILD | WS_VISIBLE | BS_GROUPBOX
-    gbexstyle : DWORD : WS_EX_CONTROLPARENT | WS_EX_LEFT | WS_EX_TRANSPARENT
+    gbexstyle : DWORD : WS_EX_CONTROLPARENT | WS_EX_LEFT // | WS_EX_TRANSPARENT
 // End of GroupBox constants.
 
 // Form Constants

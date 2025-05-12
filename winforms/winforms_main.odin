@@ -7,7 +7,7 @@ import "core:mem"
 import api "core:sys/windows"
 
 winFormsClass := []u16 {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'W', 'i', 'n', 'd', 'o', 'w', 0}
-global_context      : runtime.Context
+global_context      := runtime.default_context() // Context
 def_window_color    : uint  : 0xF5F5F5
 def_fore_color      : uint  : 0x000000
 pure_white          : uint  : 0xFFFFFF
