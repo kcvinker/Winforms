@@ -149,8 +149,8 @@ MakeWindow :: proc()
         tray_show_balloon(ti, "Winforms", "Info from Winforms", 3000)
     }
 
-
     start_mainloop(frm)
+    
 }
 
 main :: proc()

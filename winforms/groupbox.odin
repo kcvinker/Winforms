@@ -24,11 +24,14 @@ GroupBox :: struct
 {
     using control : Control,
     _bkBrush : HBRUSH,
+    _hbmp: HBITMAP,
     _pen : HPEN,
     _memDC : HDC,
     _rct : RECT,
     _txtWidth : i32,
     _paintBkg : b64,
+    _dbFill: b64,
+    _getWidth: b64,
     
 }
 
@@ -55,6 +58,8 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
     using gb
         kind = .Group_Box
         _textable = true
+        _dbFill = true
+        _getWidth = true
         parent = p
         _wtext = new_widestring(txt)        
         xpos = x
@@ -103,36 +108,87 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
     this._fcref = get_color_ref(this.foreColor)
 }
 
-@private gb_double_buffer_fill :: proc(this : ^GroupBox)
+gbx_set_backcolor :: proc(this: ^GroupBox, clr: uint)
 {
-    dc : HDC = GetDC(this.handle)
-    defer ReleaseDC(this.handle, dc)
-    sz : SIZE    
-    select_gdi_object(dc, this.font.handle)
-    GetTextExtentPoint32(dc, this._wtext.ptr, this._wtext.strLen, &sz)
-    this._memDC = CreateCompatibleDC(dc)
-    hBitmap : HBITMAP = CreateCompatibleBitmap(dc, i32(this.width), i32(this.height))
-    select_gdi_object(this._memDC, hBitmap)
-    api.FillRect(this._memDC, &this._rct, this._bkBrush)    
-    this._txtWidth = sz.width + 10
-    
+    this.backColor = clr
+    resetGdiObjects(this, true)
+    check_redraw(this)
+}
+
+gbx_set_height :: proc(this: ^GroupBox, value: int)
+{
+    this.height = value
+    resetGdiObjects(this, false)
+    if this._isCreated do control_setpos(this)
+}
+
+gbx_set_width :: proc(this: ^GroupBox, value: int)
+{
+    this.width = value
+    resetGdiObjects(this, false)
+    if this._isCreated do control_setpos(this)
+}
+
+gbx_set_text :: proc(this: ^GroupBox, value: string)
+{
+    this.text = value
+    widestring_update(&this._wtext, value)
+    this._getWidth = true
+    if this._isCreated do SetWindowText(this.handle, this._wtext.ptr)
+    check_redraw(this)
+}
+
+gbx_set_font :: proc(this: ^GroupBox, fname: string, fsize: int, fweight: FontWeight = .Normal)
+{
+    font_change_font(&this.font, fname, fsize, fweight)
+    this._getWidth = true
+    check_redraw(this)
+}
+
+
+
+@private resetGdiObjects :: proc(this: ^GroupBox, brpn: b64) 
+{
+    if brpn {
+        if this._bkBrush != nil do delete_gdi_object(this._bkBrush)
+        if this._pen != nil do delete_gdi_object(this._pen)
+        this._bkBrush = get_solid_brush(this.backColor)
+        this._pen = CreatePen(PS_SOLID, 2, get_color_ref(this.backColor))
+    }
+    if this._memDC != nil do DeleteDC(this._memDC)
+    if this._hbmp != nil do delete_gdi_object(this._hbmp)    
+    this._dbFill = true
 }
 
 @private gb_after_creation :: proc(this : ^GroupBox)
 {
 	set_subclass(this, gb_wnd_proc)
-    gb_double_buffer_fill(this)
+    // gb_double_buffer_fill(this)
     
 }
 
-@private gb_finalize :: proc(this: ^GroupBox, scid: UINT_PTR)
+@private gbx_property_setter:: proc(this: ^GroupBox, prop: GroupBoxProps, value: $T)
+{
+	switch prop {
+		case .Back_Color:
+            when T == uint do gbx_set_backcolor(this, value)
+		case .Height:
+            when T == int do gbx_set_height(this, value)            
+		case .Text:
+            when T == string do gbx_set_text(this, value)
+		case .Width:
+            when T == int do gbx_set_width(this, value)
+	}
+}
+
+@private gb_finalize :: proc(this: ^GroupBox)
 {
     delete_gdi_object(this._bkBrush)
     delete_gdi_object(this._pen)
+    delete_gdi_object(this._hbmp)
     DeleteDC(this._memDC)
     widestring_destroy(this._wtext)
-    font_destroy(&this.font)
-    RemoveWindowSubclass(this.handle, gb_wnd_proc, scid)
+    font_destroy(&this.font)    
     free(this)
 }
 
@@ -144,7 +200,12 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
     
     //display_msg(msg)
     switch msg {
-        case WM_PAINT :
+         case WM_DESTROY : 
+            RemoveWindowSubclass(hw, gb_wnd_proc, sc_id)
+            this := control_cast(GroupBox, ref_data)
+            gb_finalize(this)
+
+        case WM_PAINT :            
             this := control_cast(GroupBox, ref_data)
             ret := DefSubclassProc(hw, msg, wp, lp)
             gfx := new_graphics(hw)
@@ -152,18 +213,6 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
             gfx_draw_hline(gfx, this._pen, 10, 12, this._txtWidth)
             gfx_draw_text(gfx, this, 12, 0)
 
-            // if this.onPaint != nil {
-            //     ps : PAINTSTRUCT
-            //     hdc := BeginPaint(hw, &ps)
-            //     pea := new_paint_event_args(&ps)
-            //     this.onPaint(this, &pea)
-            //     EndPaint(hw, &ps)
-            //     return 0
-            // }
-
-        case WM_DESTROY : 
-            this := control_cast(GroupBox, ref_data)
-            gb_finalize(this, sc_id)
 
         case WM_CONTEXTMENU:
             this := control_cast(GroupBox, ref_data)
@@ -181,6 +230,20 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         case WM_ERASEBKGND:
             this := control_cast(GroupBox, ref_data)
             hdc := dir_cast(wp, HDC)
+            if this._getWidth {
+                sz : SIZE    
+                select_gdi_object(hdc, this.font.handle)
+                GetTextExtentPoint32(hdc, this._wtext.ptr, this._wtext.strLen, &sz)                
+                this._txtWidth = sz.width + 10
+                this._getWidth = false
+            }
+            if this._dbFill {
+                this._memDC = CreateCompatibleDC(hdc)
+                this._hbmp = CreateCompatibleBitmap(hdc, i32(this.width), i32(this.height))
+                select_gdi_object(this._memDC, this._hbmp)
+                api.FillRect(this._memDC, &this._rct, this._bkBrush)  
+                this._dbFill = false
+            }
             BitBlt(hdc, 0, 0, i32(this.width), i32(this.height), this._memDC, 0, 0, SRCCOPY)
             return 1
 

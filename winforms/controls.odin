@@ -205,6 +205,10 @@ create_control :: proc(c : ^Control)
     }
 }
 
+control_setpos :: #force_inline proc(this: ^Control) {
+    SetWindowPos(this.handle, nil, this.xpos, this.ypos, this.width, this.height, SWP_NOZORDER)
+}
+
 // Enable or disable a control or form.
 control_enable :: proc(ctl : ^Control, bstate : bool)
 {
@@ -398,9 +402,15 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 		case .Button:
 			btn := cast(^Button) ctl
 			btn_backcolor_control(btn, clr)
+
+		case .Group_Box:
+			gb:= cast(^GroupBox) ctl 
+			gbx_set_backcolor(gb, clr)
+
 		case .Track_Bar:
 			tkb := cast(^TrackBar) ctl
 			trackbar_backcolor_setter(tkb, clr)
+
 		case .Tree_View :
 			treeview_set_back_color(ctl, clr)
 
@@ -597,7 +607,8 @@ CheckBoxProps :: enum{Checked = int(max(CalendarProps)) + 1, Text_Alignment, Aut
 ComboProps :: enum{Combo_Style = int(max(CheckBoxProps)) + 1, Visible_Item_Count, Selected_Index, Selected_Item}
 DTPProps :: enum{Format = int(max(ComboProps)) + 1, Format_String, Right_Align, Four_Digit_Year, Value, Show_Updown}
 FormProps :: enum{Start_Pos = int(max(DTPProps)) + 1, Style, Minimize_Box, Window_State}
-LabelProps :: enum{Auto_Size = int(max(FormProps)) + 1, Border_Style, Text_Alignment, Multi_Line}
+GroupBoxProps :: enum{Back_Color = int(max(FormProps)) + 1, Height, Text, Width}
+LabelProps :: enum{Auto_Size = int(max(GroupBoxProps)) + 1, Border_Style, Text_Alignment, Multi_Line}
 ListBoxProps :: enum{ Has_Sort = int(max(LabelProps)) + 1, No_Selection, Multi_Selection, Multi_Column, Key_Preview,
 						Selected_Item, Selected_Index, Hot_Index, Hot_Item}
 ListViewProps :: enum{ Item_Alignment = int(max(ListBoxProps)) + 1, Column_Alignment, View_Style, Hide_Selection,
@@ -640,6 +651,9 @@ set_property :: proc(ctl: ^$T,  prop: $U, value: $V)
 
 		case int(min(FormProps))..=int(max(FormProps)):
 				when T == Form do form_property_setter(ctl, prop, value)
+
+		case int(min(GroupBoxProps))..=int(max(GroupBoxProps)):
+				when T == GroupBox do gbx_property_setter(ctl, prop, value)
 
 		case int(min(LabelProps))..=int(max(LabelProps)):
 				when T == Label do label_property_setter(ctl, prop, value)

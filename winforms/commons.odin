@@ -74,6 +74,11 @@ current_filetime :: proc(tm : TimeMode) -> i64
 	return result
 }
 
+check_redraw :: #force_inline proc(ctl: ^Control, draw: b32 = false) 
+{
+	if ctl._isCreated do InvalidateRect(ctl.handle, nil, BOOL(draw))
+}
+
 create_hbrush :: proc(clr : uint) -> HBRUSH
 {
 	cref := get_color_ref(clr)
@@ -269,13 +274,12 @@ get_y_lpm :: #force_inline proc "contextless"(y: LPARAM) -> i32 {
 }
 
 
-@private select_gdi_object :: proc(hd : HDC, obj : $T)
+@private select_gdi_object :: #force_inline proc(hd : HDC, obj : $T)
 {
-	gdi_obj := cast(HGDIOBJ) obj
-	SelectObject(hd, gdi_obj)
+	SelectObject(hd, cast(HGDIOBJ)obj)
 }
 
-@private delete_gdi_object :: proc(obj : $T)
+@private delete_gdi_object :: #force_inline proc(obj : $T)
 {
 	DeleteObject(cast(HGDIOBJ) obj)
 }

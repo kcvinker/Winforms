@@ -69,9 +69,20 @@ font_clone :: proc(src: ^Font, dst: ^Font, id : int = 0)
 	if src.handle != nil do font_create_handle(src)
 }
 
+font_change_font :: proc(this: ^Font, fname : string , fs : int, fw : FontWeight = .Normal)
+{
+	this.name = fname
+	this.size = fs
+	this.weight = fw
+	this.underline = false
+	this.italics = false
+	widestring_update(&this._wtext, fname)
+	font_create_handle(this)
+}
+
 font_destroy :: proc(this: ^Font,id: int = 0)
 {
-	if id > 0 do ptf("lv's font wtxt -> %d", int(uintptr(this._wtext)))
+	// if id > 0 do ptf("lv's font wtxt -> %d", int(uintptr(this._wtext)))
 	widestring_destroy(this._wtext, id)
 	this._wtext = nil
 	if this.handle != nil {

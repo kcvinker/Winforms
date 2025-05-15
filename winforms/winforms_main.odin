@@ -91,4 +91,5 @@ app_finalize :: proc(this: Application) // Will be executed right after main loo
         if this.trayHwnd != nil do DestroyWindow(this.trayHwnd)
     }
     delete(this.winMap)
+    print("Winform closed...")
 }

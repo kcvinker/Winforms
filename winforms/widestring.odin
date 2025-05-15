@@ -30,7 +30,7 @@ new_widestring :: proc(text : string) -> ^WideString
     this.ptr[wn] = 0
     for wn >= 1 && this.ptr[wn - 1] == 0 { wn -= 1 }	
 	this.buffLen = wn	
-    // ptf("new wstr %s", text)
+    // ptf("new wstr %s, wn %d, wn2 %d", text, wn, wn2)
 	return this
 } //No Entry Point,  Format Options
 
@@ -70,7 +70,7 @@ widestring_update :: proc(this: ^^WideString, txt: string)
     cstr := raw_data(barr)
 	wn := MultiByteToWideChar(CP_UTF8, 0, cstr, newlen, nil, 0)
 	if wn == 0 do return
-	if wn > this^.buffLen {
+	if wn >= this^.buffLen {
 		free(this^.ptr)
 		this^.ptr = nil
 		this^.ptr = make([^]WCHAR, (wn + 1), context.allocator)    
@@ -81,6 +81,15 @@ widestring_update :: proc(this: ^^WideString, txt: string)
 	this^.buffLen = wn	
     this^.strLen = newlen
 }
+
+// widestring_has_space :: proc(this: ^WideString, txt: string) -> b64
+// {
+// 	newlen := i32(len(txt))
+// 	barr := transmute([]byte)txt	
+//     cstr := raw_data(barr)
+// 	wn := MultiByteToWideChar(CP_UTF8, 0, cstr, newlen, nil, 0)
+// 	return this.buffLen > wn
+// }
 
 
 widestring_destroy :: proc(this: ^WideString, id: int = 0)
