@@ -1,6 +1,7 @@
 package winforms
 import "core:mem"
 import "base:runtime"
+import api "core:sys/windows"
 
 _def_font_name :: "DejaVu Sans Condensed"
 _def_font_size :: 12
@@ -14,7 +15,7 @@ Font :: struct
 	italics : bool,
 	handle : HFONT,
 	_defFontChanged : bool,
-	_wtext: ^WideString,
+	// _wtext: ^WideString,
 }
 
 new_font_1 :: proc() -> Font
@@ -32,29 +33,57 @@ new_font_2 :: proc(fname : string , fs : int, fw : FontWeight = .Normal,
 	this.underline = fu
 	this.italics = fi
 	this._defFontChanged = true
-	this._wtext = new_widestring(fname)
+	// this._wtext = new_widestring(fname)
 	return this
 }
 
 new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
-font_create_handle :: proc(this : ^Font) 
+@private font_fill_logfont :: proc(this : ^Font, plf: ^LOGFONT) 
 {
 	fsiz:= i32(app.scaleFactor * f64(this.size))
-	iHeight : i32 = -MulDiv(fsiz , app.sysDPI, 72)
+	iHeight : i32 = -MulDiv(fsiz , app.sysDPI, 72)		
+	widestring_fill_buffer(plf.lfFaceName[:], this.name)
+	plf.lfItalic = cast(byte)this.italics
+	plf.lfUnderline = cast(byte)this.underline
+	plf.lfHeight = iHeight
+	plf.lfWeight = cast(LONG)this.weight
+	plf.lfCharSet = DEFAULT_CHARSET
+	plf.lfOutPrecision = OUT_DEFAULT_PRECIS
+	plf.lfClipPrecision = CLIP_DEFAULT_PRECIS
+	plf.lfQuality = DEFAULT_QUALITY
+	plf.lfPitchAndFamily = DEFAULT_PITCH
+}
 
+font_create_handle :: proc(this: ^Font, usePrimary: b32 = false) {
 	lf : LOGFONT
-	lf.lfItalic = cast(byte)this.italics
-	lf.lfUnderline = cast(byte)this.underline
-	copy(lf.lfFaceName[:], this._wtext.ptr[:this._wtext.buffLen])
-	lf.lfHeight = iHeight
-	lf.lfWeight = cast(LONG)this.weight
-	lf.lfCharSet = DEFAULT_CHARSET
-	lf.lfOutPrecision = OUT_DEFAULT_PRECIS
-	lf.lfClipPrecision = CLIP_DEFAULT_PRECIS
-	lf.lfQuality = DEFAULT_QUALITY
-	lf.lfPitchAndFamily = DEFAULT_PITCH
-	this.handle = CreateFontIndirect(&lf)
+	plf : ^LOGFONT = &app.lfont if usePrimary else &lf
+	if !usePrimary {
+		font_fill_logfont(this, plf)
+	} else {
+		if this.handle != nil do delete_gdi_object(this.handle)
+	}	
+	this.handle = CreateFontIndirect(plf)
+}
+
+@private font_clone_handle :: proc(this: ^Font, srcHandle: HFONT) {
+	if srcHandle != nil {
+		lf : LOGFONT
+        x := api.GetObjectW(HANDLE(srcHandle), size_of(lf), cast(LPVOID)&lf)
+        if x > 0 {
+			this.handle = CreateFontIndirect(&lf)
+		} else {
+			ptf("Proc: font_clone_handle, Error : %d", GetLastError())
+		}
+	}
+}
+
+font_clone_parent_handle :: proc(this: ^Font, pHandle: HFONT) {
+	if pHandle == nil {
+        this.handle = CreateFontIndirect(&app.lfont)
+	} else {
+        font_clone_handle(this, pHandle)
+	}
 }
 
 font_clone :: proc(src: ^Font, dst: ^Font, id : int = 0)
@@ -65,9 +94,8 @@ font_clone :: proc(src: ^Font, dst: ^Font, id : int = 0)
 	dst.underline = src.underline
 	dst.italics = src.italics
 	dst._defFontChanged = src._defFontChanged	
-	widestring_clone(src._wtext, &dst._wtext, id)
-	if src.handle != nil do font_create_handle(src)
-}
+	font_clone_handle(dst, src.handle)
+}	
 
 font_change_font :: proc(this: ^Font, fname : string , fs : int, fw : FontWeight = .Normal)
 {
@@ -76,15 +104,11 @@ font_change_font :: proc(this: ^Font, fname : string , fs : int, fw : FontWeight
 	this.weight = fw
 	this.underline = false
 	this.italics = false
-	widestring_update(&this._wtext, fname)
 	font_create_handle(this)
 }
 
-font_destroy :: proc(this: ^Font,id: int = 0)
+font_destroy :: #force_inline proc(this: ^Font,id: int = 0)
 {
-	// if id > 0 do ptf("lv's font wtxt -> %d", int(uintptr(this._wtext)))
-	widestring_destroy(this._wtext, id)
-	this._wtext = nil
 	if this.handle != nil {
 		// ptf("deleting font %s", this.name)
 		delete_gdi_object(this.handle)

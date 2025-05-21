@@ -21,10 +21,6 @@ new_widestring :: proc(text : string) -> ^WideString
     cstr := raw_data(barr)
 	wn := MultiByteToWideChar(CP_UTF8, 0, cstr, this.strLen, nil, 0)
     if wn == 0 do return nil
-    // if wn + 1 == 15 {
-    //     print("This text size is 14 bytes")
-    //     print(text)
-    // }
 	this.ptr = make([^]WCHAR, (wn + 1), context.allocator)	
     wn2 := MultiByteToWideChar(CP_UTF8, 0, cstr, this.strLen, this.ptr, wn)    
     this.ptr[wn] = 0
@@ -80,6 +76,16 @@ widestring_update :: proc(this: ^^WideString, txt: string)
     for wn >= 1 && this^.ptr[wn - 1] == 0 { wn -= 1 }	
 	this^.buffLen = wn	
     this^.strLen = newlen
+}
+
+widestring_fill_buffer :: proc(buffer: []WCHAR, txt: string) {
+	newlen := i32(len(txt))
+	barr := transmute([]byte)txt	
+    cstr := raw_data(barr)
+	wn := MultiByteToWideChar(CP_UTF8, 0, cstr, newlen, nil, 0)
+	if wn == 0 do return
+	wn2 := MultiByteToWideChar(CP_UTF8, 0, cstr, newlen, &buffer[0], wn)
+	buffer[wn] = 0
 }
 
 // widestring_has_space :: proc(this: ^WideString, txt: string) -> b64

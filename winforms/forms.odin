@@ -85,8 +85,8 @@ Form :: struct
 
     _isLoaded : bool,    
     _gdraw : FormGradient,
-    _drawMode : FormDrawMode,
-    _cDrawChilds : [dynamic]HWND,
+    _drawMode : FormDrawMode, 
+    _cDrawChilds : [dynamic]HWND, // Holds Child handles which needs special draw
     _uDrawChilds : map[UINT]HWND,
     _controls : [dynamic]^Control,
     _gdBrush: HBRUSH,
@@ -101,37 +101,30 @@ Form :: struct
 new_form :: proc{new_form1, new_form2}
 
 // Users can call 'create_handle()' instead of this.
-create_form :: proc(frm : ^Form )
+create_form :: proc(this : ^Form )
 {
     // if app.mainHandle == nil {}
-    if frm.backColor != def_window_color && frm._drawMode != .Gradient do frm._drawMode = .Flat_Color
-    set_start_position(frm)
-    set_form_style(frm)
-    frm.handle = CreateWindowEx(  frm._exStyle,
-                                    &winFormsClass[0],
-                                    to_wstring(frm.text),
-                                    frm._style,
-                                    i32(frm.xpos),
-                                    i32(frm.ypos),
-                                    i32(frm.width),
-                                    i32(frm.height),
-                                    nil,
-                                    nil,
-                                    app.hInstance,
-                                    nil )
-    if frm.handle == nil {
+    if this.backColor != def_window_color && this._drawMode != .Gradient do this._drawMode = .Flat_Color
+    set_start_position(this)
+    set_form_style(this)
+    this.handle = CreateWindowEx(this._exStyle, &winFormsClass[0],
+                                to_wstring(this.text), this._style,
+                                i32(this.xpos), i32(this.ypos),
+                                i32(this.width), i32(this.height),
+                                nil, nil, app.hInstance, nil )
+    if this.handle == nil {
         fmt.println("Error in CreateWindowEx,", GetLastError()) }
     else {
-        app.winMap[frm.handle] = frm
-        frm._isCreated = true
+        app.winMap[this.handle] = this
+        this._isCreated = true
         app.formCount += 1
         if app.mainHandle == nil {
-            app.mainHandle = frm.handle
-            app.startState = frm.windowState
+            app.mainHandle = this.handle
+            app.startState = this.windowState
         }
-        // set_form_font_internal(frm)
-        if frm.font.handle == nil do font_create_handle(&frm.font)
-        SetWindowLongPtr(frm.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) frm)
+        // set_form_font_internal(this)
+        if this.font.handle == nil do font_create_handle(&this.font)
+        SetWindowLongPtr(this.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
         ShowWindow(app.mainHandle, cast(i32) app.startState )
     }
     // free_all(context.temp_allocator)
@@ -187,7 +180,7 @@ form_addTimer :: proc(this: ^Form, interval: u32 = 100, tickHandler: EventHandle
     return tm
 }
 
-// Drawing mode
+// Drawing mode for Form BKG
 FormDrawMode :: enum { Default, Flat_Color, Gradient,}
 
 // Form start position
@@ -284,25 +277,15 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     // ptf("Form freed res %s\n", x)
 }
 
-@private set_form_font_internal :: proc(frm : ^Form) // deprecated
+
+form_setfont :: proc(this : ^Form, fname: string, fsize: int, fweight: FontWeight = .Normal, useGlobal: b32 = true) 
 {
-    if app.globalFont.handle == nil do font_create_handle(&app.globalFont)
-    if frm.font.name == def_font_name && frm.font.size == def_font_size
-    {
-        // User did not made any changes in font. So use default font handle.
-        // frm.font = app.globalFont
-        SendMessage(frm.handle, WM_SETFONT, WPARAM(frm.font.handle), LPARAM(1))
-    }
-    else
-    {
-        if frm.font.handle == nil
-        {
-            // User just changed the font name and/or size. Create the font handle
-            font_create_handle(&frm.font)
-            SendMessage(frm.handle, WM_SETFONT, WPARAM(frm.font.handle), LPARAM(1))
-        }
-        else { SendMessage(frm.handle, WM_SETFONT, WPARAM(frm.font.handle), LPARAM(1)) }
-    }
+    this.font = new_font(fname, fsize, fweight)
+    lf : LOGFONT
+    font_fill_logfont(&this.font, &lf)
+    this.font.handle = CreateFontIndirect(&lf)
+    if this._isCreated do ctl_send_msg(this.handle, WM_SETFONT,this.font.handle, 1)
+    if useGlobal do app.lfont = lf      
 }
 
 @private create_child_handles :: proc(this: ^Form)

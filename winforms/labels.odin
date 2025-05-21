@@ -154,10 +154,10 @@ LabelBorder:: enum {No_Border, Single_Line, Sunken_Border, }
     // Labels are creating with zero width & height.
     // We need to find appropriate size if it is an auto sized label.
     hdc:= GetDC(lb.handle)
+    defer ReleaseDC(lb.handle, hdc)
     ctl_size: SIZE
     select_gdi_object(hdc, lb.font.handle)
-    GetTextExtentPoint32(hdc, lb._wtext.ptr, lb._wtext.strLen, &ctl_size )
-    ReleaseDC(lb.handle, hdc)
+    GetTextExtentPoint32(hdc, lb._wtext.ptr, lb._wtext.strLen, &ctl_size )    
     lb.width = int(ctl_size.width) //+ lb._SizeIncr.width
     lb.height = int(ctl_size.height) //+ lb._SizeIncr.height
     SetWindowPos(lb.handle, nil, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), SWP_NOMOVE )
@@ -167,6 +167,7 @@ LabelBorder:: enum {No_Border, Single_Line, Sunken_Border, }
 @private lbl_before_creation:: proc(lb: ^Label) 
 {
     if lb.borderStyle != .No_Border do adjust_border(lb)
+    lb._hbrush = CreateSolidBrush(get_color_ref(lb.backColor))
     check_for_autosize(lb)
     //adjust_alignment(lb)
 }
@@ -175,6 +176,7 @@ LabelBorder:: enum {No_Border, Single_Line, Sunken_Border, }
 {
     if lb.autoSize do calculate_label_size(lb)
     set_subclass(lb, label_wnd_proc)
+    ptf("lb hwnd %d, %d, %d, %d", lb.handle, lb.width, lb.height, lb.autoSize)
 }
 
 @private label_property_setter:: proc(this: ^Label, prop: LabelProps, value: $T)
@@ -201,16 +203,16 @@ LabelBorder:: enum {No_Border, Single_Line, Sunken_Border, }
 {
     context = global_context
     switch msg {
-        case WM_PAINT:
-            lb:= control_cast(Label, ref_data)
-            if lb.onPaint != nil {
-                ps: PAINTSTRUCT
-                hdc:= BeginPaint(hw, &ps)
-                pea:= new_paint_event_args(&ps)
-                lb.onPaint(lb, &pea)
-                EndPaint(hw, &ps)
-                return 0
-            }
+        // case WM_PAINT:
+        //     lb:= control_cast(Label, ref_data)
+        //     if lb.onPaint != nil {
+        //         ps: PAINTSTRUCT
+        //         hdc:= BeginPaint(hw, &ps)
+        //         pea:= new_paint_event_args(&ps)
+        //         lb.onPaint(lb, &pea)
+        //         EndPaint(hw, &ps)
+        //         return 0
+        //     }
 
         case WM_CONTEXTMENU:
             lb:= control_cast(Label, ref_data)
@@ -309,11 +311,12 @@ LabelBorder:: enum {No_Border, Single_Line, Sunken_Border, }
             }
 
         case CM_CTLLCOLOR:
+            print("pp")
             lb:= control_cast(Label, ref_data)
             hdc:= dir_cast(wp, HDC)
             SetTextColor(hdc, get_color_ref(lb.foreColor))
             SetBackColor(hdc, get_color_ref(lb.backColor))
-            lb._hbrush = CreateSolidBrush(get_color_ref(lb.backColor))
+            // lb._hbrush = CreateSolidBrush(get_color_ref(lb.backColor))
             return toLRES(lb._hbrush)
 
         case WM_DESTROY: 

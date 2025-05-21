@@ -34,9 +34,10 @@ Application :: struct
     mainLoopStarted : bool,
     nidUsed : bool,
     startState : FormState,
-    globalFont : Font,
     iccx : INITCOMMONCONTROLSEX,    
     winMap : map[HWND]^Form,
+    font: Font,
+    lfont : LOGFONT,
     
 }
 
@@ -54,7 +55,10 @@ app_start :: proc()
     app.clrBlack = pure_black
     
     register_class()
-    get_system_dpi()    
+    get_system_dpi()  
+    app.font = new_font("Tahoma", 11)
+    font_fill_logfont(&app.font, &app.lfont)
+
 }
 
 @private get_system_dpi :: proc()

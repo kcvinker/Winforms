@@ -303,6 +303,7 @@ foreign gdi32 {
    @(link_name="GetRgnBox") GetRgnBox :: proc(hrgn: HRGN, lprc: ^RECT) -> BOOL---
    @(link_name="ExtTextOutW") ExtTextOut :: proc(hdc: HDC, x, y: i32, opt: u32, lprc: ^RECT, str: LPCWSTR, c: u32, lpdx: ^i32) -> BOOL---
    @(link_name="FillRgn") FillRgn :: proc(hdc: HDC, hrg: HRGN, hbr: HBRUSH) -> BOOL---
+   // @(link_name="GetObjectW") GetObject :: proc(h: HANDLE, c: i32, p: LPVOID) -> i32---
 
 
 } // Gdi32 library

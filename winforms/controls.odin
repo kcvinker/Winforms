@@ -209,6 +209,20 @@ control_setpos :: #force_inline proc(this: ^Control) {
     SetWindowPos(this.handle, nil, this.xpos, this.ypos, this.width, this.height, SWP_NOZORDER)
 }
 
+@private ctl_send_msg :: #force_inline proc(hw: HWND, msg: UINT, wp: $T, lp: $U) -> LRESULT
+{
+	return SendMessage(hw, msg, WPARAM(wp), LPARAM(lp))
+}
+
+control_clone_parent_font :: proc(this: ^Control) {
+	this.font.name = this.parent.font.name
+    this.font.size = this.parent.font.size
+    this.font.weight = this.parent.font.weight
+    this.font.italics = this.parent.font.italics
+    this.font.underline = this.parent.font.underline  
+    font_clone_parent_handle(&this.font, nil)
+}
+
 // Enable or disable a control or form.
 control_enable :: proc(ctl : ^Control, bstate : bool)
 {
@@ -266,10 +280,8 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int,
 	italics = fi
 	underline = fu
 	_defFontChanged = true
-	if ctl.handle != nil { // Only set the font if control handle is created.
-		font_create_handle(&ctl.font)
-		SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
-	}
+	font_create_handle(&ctl.font)
+	if ctl.handle != nil do ctl_send_msg(ctl.handle, WM_SETFONT, ctl.font.handle, 1)
 	if ctl._fp_size_fix != nil do ctl._fp_size_fix(ctl)
 }
 
@@ -656,7 +668,7 @@ set_property :: proc(ctl: ^$T,  prop: $U, value: $V)
 				when T == GroupBox do gbx_property_setter(ctl, prop, value)
 
 		case int(min(LabelProps))..=int(max(LabelProps)):
-				when T == Label do label_property_setter(ctl, prop, value)
+				when T == Label do label_property_setter(ctl, LabelProps(prop), value)
 
 		case int(min(ListBoxProps))..=int(max(ListBoxProps)):
 				when T == ListBox do listbox_property_setter(ctl, prop, value)
