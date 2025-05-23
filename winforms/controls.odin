@@ -140,27 +140,7 @@ Control :: struct
 	onDestroy : EventHandler,
 }
 
-// Type of control
-ControlKind :: enum
-{
-	Form,
-	Button,
-	Calendar,
-	Check_Box,
-	Combo_Box,
-	Date_Time_Picker,
-	Group_Box,
-	Label,
-	List_Box,
-	List_View,
-	Number_Picker,
-	Panel,
-	Progress_Bar,
-	Radio_Button,
-	Text_Box,
-	Track_Bar,
-	Tree_View,
-}
+
 
 
 // Create a Control. Use this for all controls.
@@ -613,33 +593,6 @@ ctrl_killfocus_handler :: proc(ctl: ^Control)
 	}
 }
 
-CommonProps :: enum{Back_Color, Font, Fore_Color, Enabled, Height, Text, Visible, Width, Xpos, Ypos}
-CalendarProps :: enum{Value = int(max(CommonProps)) + 1, View_Mode, Old_View, Show_Week_Num, No_Today_Circle, No_Today, No_Trailing_Dates, Short_Day_Names}
-CheckBoxProps :: enum{Checked = int(max(CalendarProps)) + 1, Text_Alignment, Auto_Size}
-ComboProps :: enum{Combo_Style = int(max(CheckBoxProps)) + 1, Visible_Item_Count, Selected_Index, Selected_Item}
-DTPProps :: enum{Format = int(max(ComboProps)) + 1, Format_String, Right_Align, Four_Digit_Year, Value, Show_Updown}
-FormProps :: enum{Start_Pos = int(max(DTPProps)) + 1, Style, Minimize_Box, Window_State}
-GroupBoxProps :: enum{Back_Color = int(max(FormProps)) + 1, Height, Text, Width}
-LabelProps :: enum{Auto_Size = int(max(GroupBoxProps)) + 1, Border_Style, Text_Alignment, Multi_Line}
-ListBoxProps :: enum{ Has_Sort = int(max(LabelProps)) + 1, No_Selection, Multi_Selection, Multi_Column, Key_Preview,
-						Selected_Item, Selected_Index, Hot_Index, Hot_Item}
-ListViewProps :: enum{ Item_Alignment = int(max(ListBoxProps)) + 1, Column_Alignment, View_Style, Hide_Selection,
-						Multi_Selection, Has_Check_Boxes, Full_Row_Select, Show_Grid_Lines, One_Click_Activate,
-						No_Track_Select, Edit_Label, No_Header, Header_Back_Color, Header_Height, Header_Clickable}
-NumberPickerProps :: enum{ Button_On_Left = int(max(ListViewProps)) + 1, Text_Alignment, Min_Range, Max_Range,
-							Has_Separator, Auto_Rotate, Hide_Caret, Value, Format_String, Decimal_Precision,
-							Track_Mouse_Leave, Step}
-ProgressBarProps :: enum{Min_Value = int(max(NumberPickerProps)) + 1, Max_Value, Step, Style, Orientation,
-							Value, Show_Percentage}
-RadioButtonProps :: enum{Text_Alignment = int(max(ProgressBarProps)) + 1, Checked, Check_On_Click, Auto_Size}
-TextBoxProps :: enum{Text_Alignment = int(max(RadioButtonProps)) + 1, Multi_Line, Text_Type, Text_Case,
-						Hide_Selection, Read_Only, Cue_Banner}
-TrackBarProps :: enum {Tic_Pos = int(max(TextBoxProps)) + 1, No_Tick, Channel_Color, Tic_Color, Tic_Width,
-						Min_Range, Frequency, Page_S_Ize, Line_Size, Tic_Length, Default_Tics, Value,
-						Vertical, Reversed, Sel_Range, No_Thumb, Tool_Tip, Custom_Draw, Free_Move,
-						Sel_Color, Channel_Style }
-TreeViewProps :: enum{No_Lines = int(max(TrackBarProps)) + 1, No_Buttons, Has_Check_Boxes, Full_Row_Select,
-						Editable, Show_Selection, Hot_Tracking, Selected_Node, Image_List, Line_Color }
 
 
 set_property :: proc(ctl: ^$T,  prop: $U, value: $V)

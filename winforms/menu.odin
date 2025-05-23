@@ -98,7 +98,7 @@ import api "core:sys/windows"
     SDM_FLAG :: MIIM_ID | MIIM_TYPE | MIIM_STATE | MIIM_SUBMENU
 // End Constants
 
-MenuType :: enum {Base_Menu, Menu_Item, Popup, Context_Menu, Seprator}
+
 
 //https://www.codeproject.com/Tips/5256198/Yet-Another-Fully-Functional-ownerdraw-Menu
 //https://www.codeproject.com/articles/16529/simple-menus-that-display-icons-minimalistic-appro
@@ -112,7 +112,7 @@ btrue : BOOL = cast(BOOL)bt
 cmenuMsgWinCreated : bool = false
 cmenuClass := []WCHAR {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'C', 'm', 'e', 'n', 'u', 0}
 
-MenuState :: enum u32 {Enabled, Unchecked = 0, Unhilite = 0, Disabled = 3, Checked = 8, Hilite = 128 }
+
 MenuBase :: struct
 {
     handle: HMENU,
@@ -135,7 +135,7 @@ MenuBar :: struct
 }
 
 
-MenuEvents :: enum {On_Click, On_Popup, On_Closeup, On_Focus}
+
 
 //===================================================================MENUBAR==============================
 

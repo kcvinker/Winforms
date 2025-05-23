@@ -46,17 +46,6 @@ ImageList :: struct {
     handle : HIMAGELIST,
 }
 
-ColorOptions :: enum {
-    Default_Color,
-    Color_4 = 4,
-    Color_8 = 8,
-    Color_16 = 16,
-    Color_24 = 24 ,
-    Color32 = 32,
-    Color_DDB = 0x000000FE,
-}
-
-ImageTypes :: enum {Normal_Image, Small_Image, State_Image}
 
 
 // Create an ImageList struct with default initialization.

@@ -19,10 +19,13 @@ package winforms
 import "base:runtime"
 import api "core:sys/windows"
 
+PENWIDTH :i32: 4
+
 
 GroupBox :: struct
 {
     using control : Control,
+    _gbStyle: GroupBoxStyle,
     _bkBrush : HBRUSH,
     _hbmp: HBITMAP,
     _pen : HPEN,
@@ -32,6 +35,8 @@ GroupBox :: struct
     _paintBkg : b64,
     _dbFill: b64,
     _getWidth: b64,
+    _themeOff: b64,
+    _controls : [dynamic]^Control,
     
 }
 
@@ -51,7 +56,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 //==============================Private Functions==================================
 @private gb_count : int = 1
 
-@private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^GroupBox
+@private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int, gStyle: GroupBoxStyle) -> ^GroupBox
 {
     // if WcGroupBoxW == nil do WcGroupBoxW = to_wstring()
     gb := new(GroupBox)
@@ -60,6 +65,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         _textable = true
         _dbFill = true
         _getWidth = true
+        _gbStyle = gStyle
         parent = p
         _wtext = new_widestring(txt)        
         xpos = x
@@ -83,7 +89,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 @private gb_ctor1 :: proc(parent : ^Form) -> ^GroupBox
 {
     gb_txt : string = conc_num("GroupBox_", gb_count)
-    gb := gb_ctor(parent, gb_txt, 10, 10, 250, 250)
+    gb := gb_ctor(parent, gb_txt, 10, 10, 250, 250, .System)
     gb_count += 1
     if parent.createChilds do create_control(gb)
     return gb
@@ -91,10 +97,10 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 
 @private gb_ctor2 :: proc(parent : ^Form,
                             txt : string,
-                            x, y : int,
-                            w: int = 200, h: int = 200) -> ^GroupBox
+                            x, y : int, w: int = 200, h: int = 200, 
+                            style: GroupBoxStyle = .System) -> ^GroupBox
 {
-    gb := gb_ctor(parent, txt, x, y, w, h)
+    gb := gb_ctor(parent, txt, x, y, w, h, .System)
     gb_count += 1
     if parent.createChilds do create_control(gb)
     return gb
@@ -103,9 +109,29 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 @private gb_before_creation :: proc(this : ^GroupBox)
 {
     this._bkBrush = get_solid_brush(this.backColor)
-    this._pen = CreatePen(PS_SOLID, 5, get_color_ref(this.backColor))
+    if this._gbStyle == .Overriden {
+        this._pen = CreatePen(PS_SOLID, PENWIDTH, get_color_ref(this.backColor))
+    }
     this._rct = RECT{0, 0, i32(this.width), i32(this.height)}
     this._fcref = get_color_ref(this.foreColor)
+}
+
+@private gb_after_creation :: proc(this : ^GroupBox)
+{
+    if this._gbStyle == .Classic {
+        SetWindowTheme(this.handle, EMWSTR_PTR, EMWSTR_PTR)
+        this._themeOff = true
+    }
+	set_subclass(this, gb_wnd_proc)    
+}
+
+gbx_add_controls :: proc(this: ^GroupBox, items: ..^Control) {
+    if this._isCreated {
+        for item in items {
+           append(&this._controls, item)
+           if item.kind == .Label do item.backColor = this.backColor
+        }
+    }
 }
 
 gbx_set_backcolor :: proc(this: ^GroupBox, clr: uint)
@@ -142,29 +168,45 @@ gbx_set_font :: proc(this: ^GroupBox, fname: string, fsize: int, fweight: FontWe
 {
     font_change_font(&this.font, fname, fsize, fweight)
     this._getWidth = true
+    ctl_send_msg(this.handle, WM_SETFONT, this.font.handle, 1)
     check_redraw(this)
 }
 
+gbx_set_font1 :: proc(this: ^GroupBox, value: ^Font) {
+    font_clone(&this.font, value)
+    this._getWidth = true
+    ctl_send_msg(this.handle, WM_SETFONT, this.font.handle, 1)
+    check_redraw(this)
+}
+
+gbx_set_style :: proc(this: ^GroupBox, value: GroupBoxStyle) {
+    this._gbStyle = value
+    if value == .Classic {
+        if !this._themeOff {
+            SetWindowTheme(this.handle, EMWSTR_PTR, EMWSTR_PTR)
+            this._themeOff = true
+        }
+    } else if value == .Overriden {
+        this._getWidth = true
+        this._pen = CreatePen(PS_SOLID, PENWIDTH, get_color_ref(this.backColor))
+    }
+    check_redraw(this)
+}
 
 
 @private resetGdiObjects :: proc(this: ^GroupBox, brpn: b64) 
 {
     if brpn {
         if this._bkBrush != nil do delete_gdi_object(this._bkBrush)
-        if this._pen != nil do delete_gdi_object(this._pen)
         this._bkBrush = get_solid_brush(this.backColor)
-        this._pen = CreatePen(PS_SOLID, 2, get_color_ref(this.backColor))
+        if this._gbStyle == .Overriden {
+            if this._pen != nil do delete_gdi_object(this._pen)        
+            this._pen = CreatePen(PS_SOLID, PENWIDTH, get_color_ref(this.backColor))
+        }
     }
     if this._memDC != nil do DeleteDC(this._memDC)
     if this._hbmp != nil do delete_gdi_object(this._hbmp)    
     this._dbFill = true
-}
-
-@private gb_after_creation :: proc(this : ^GroupBox)
-{
-	set_subclass(this, gb_wnd_proc)
-    // gb_double_buffer_fill(this)
-    
 }
 
 @private gbx_property_setter:: proc(this: ^GroupBox, prop: GroupBoxProps, value: $T)
@@ -172,6 +214,8 @@ gbx_set_font :: proc(this: ^GroupBox, fname: string, fsize: int, fweight: FontWe
 	switch prop {
 		case .Back_Color:
             when T == uint do gbx_set_backcolor(this, value)
+        case .Font:
+            when T == Font do gbx_set_font1(this, value)
 		case .Height:
             when T == int do gbx_set_height(this, value)            
 		case .Text:
@@ -188,7 +232,8 @@ gbx_set_font :: proc(this: ^GroupBox, fname: string, fsize: int, fweight: FontWe
     delete_gdi_object(this._hbmp)
     DeleteDC(this._memDC)
     widestring_destroy(this._wtext)
-    font_destroy(&this.font)    
+    font_destroy(&this.font)  
+    delete(this._controls)  
     free(this)
 }
 
@@ -207,25 +252,31 @@ gbx_set_font :: proc(this: ^GroupBox, fname: string, fsize: int, fweight: FontWe
 
         case WM_PAINT :            
             this := control_cast(GroupBox, ref_data)
-            ret := DefSubclassProc(hw, msg, wp, lp)
-            gfx := new_graphics(hw)
-            defer gfx_destroy(gfx)
-            gfx_draw_hline(gfx, this._pen, 10, 12, this._txtWidth)
-            gfx_draw_text(gfx, this, 12, 0)
+            if this._gbStyle == .Overriden {
+                ret := DefSubclassProc(hw, msg, wp, lp)
+                gfx := new_graphics(hw)
+                defer gfx_destroy(gfx)
+                gfx_draw_hline(gfx, this._pen, 10, 12, this._txtWidth)
+                gfx_draw_text(gfx, this, 12, 0)
+            }
 
 
         case WM_CONTEXTMENU:
             this := control_cast(GroupBox, ref_data)
 		    if this.contextMenu != nil do contextmenu_show(this.contextMenu, lp)
 
-        // case CM_CTLLCOLOR :
-        //     hdc := dir_cast(wp, HDC)
-        //     api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
-        //     this._bkBrush = CreateSolidBrush(get_color_ref(this.backColor))
-        //     // if this.foreColor != 0x000000 do SetTextColor(hdc, get_color_ref(this.foreColor))
-        //     return dir_cast(this._bkBrush, LRESULT)
+        case CM_CTLLCOLOR:
+            this := control_cast(GroupBox, ref_data)
+            if this._gbStyle == .Classic {
+                hdc := dir_cast(wp, HDC)
+                api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)                
+                SetTextColor(hdc, get_color_ref(this.foreColor))
+            }
+            return dir_cast(this._bkBrush, LRESULT)
+
         case WM_GETTEXTLENGTH:
-            return 0
+            this := control_cast(GroupBox, ref_data)
+            if this._gbStyle == .Overriden do return 0
 
         case WM_ERASEBKGND:
             this := control_cast(GroupBox, ref_data)

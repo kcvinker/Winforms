@@ -47,7 +47,7 @@ import api "core:sys/windows"
 
 WcComboW: wstring = L("ComboBox")
 
-DropDownStyle:: enum {Tb_Combo, Lb_Combo,}
+
 
 ComboBox:: struct
 {

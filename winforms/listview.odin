@@ -69,7 +69,7 @@ lvcount: int = 0
 ListView:: struct
 {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a property
 	using control: Control,
-	itemAlignment: enum {Left, Top},
+	itemAlignment: LVItemAlignment,
 	columnAlignment: ColumnAlignment,
 
 	viewStyle: ListViewStyle,
@@ -345,9 +345,7 @@ ListViewSubItem:: struct
 }
 
 //ListViewStyle:: enum {Normal, Report, }
-ListViewStyle:: enum {Large_Icon, Report, Small_Icon, List, Tile, }
-ColumnAlignment:: enum {Left, Right, Center,}
-HeaderAlignment:: enum {Left, Right, Center,}
+
 
 /*----------------------------------------------------------------------------------------------------
 											↓ ListView constructor ↓

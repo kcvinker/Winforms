@@ -8,7 +8,7 @@
         Constructor: new_radiobutton() -> ^RadioButton
         Properties:
             All props from Control struct
-            textAlignment  : enum {left, right}
+            textAlign  : enum {left, right}
             checked        : bool
             checkOnClick   : bool
             autoSize       : bool
@@ -33,7 +33,7 @@ WcRadioBtnClassW:= L("Button")
 RadioButton:: struct
 {
     using control: Control,
-    textAlignment: enum {left, right},
+    textAlign: Alignment,
     checked: bool,
     checkOnClick: bool,
     autoSize: bool,
@@ -138,7 +138,7 @@ radiobutton_set_autocheck:: proc(rb: ^RadioButton, auto_check: bool )
 @private rb_adjust_styles:: proc(rb: ^RadioButton)
 {
     if !rb.checkOnClick do rb._style ~= BS_AUTORADIOBUTTON
-    //if rb.textAlignment = .right do rb.
+    //if rb.textAlign = .right do rb.
 }
 
 @private rb_before_creation:: proc(rb: ^RadioButton)
@@ -294,7 +294,7 @@ radiobutton_set_autocheck:: proc(rb: ^RadioButton, auto_check: bool )
                 case CDDS_PREPAINT:
                     cref:= get_color_ref(rb.foreColor)
                     rct: RECT = nmcd.rc
-                    if rb.textAlignment == .left{
+                    if rb.textAlign == .Left{
                         rct.left += 18
                     } else do rct.right -= 18
                     SetTextColor(nmcd.hdc, cref)

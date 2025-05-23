@@ -107,6 +107,8 @@ font_change_font :: proc(this: ^Font, fname : string , fs : int, fw : FontWeight
 	font_create_handle(this)
 }
 
+
+
 font_destroy :: #force_inline proc(this: ^Font,id: int = 0)
 {
 	if this.handle != nil {
@@ -161,13 +163,4 @@ FF_DECORATIVE  :: 80
 
 LOGPIXELSY :: 90
 
-FontWeight :: enum 
-{
-	Light = 300,
-    Normal = 400,
-    Medium = 500,
-    Semi_Bold = 600,
-    Bold = 700,
-    Extra_Bold = 800,
-    Ultra_Bold = 900,
-}
+

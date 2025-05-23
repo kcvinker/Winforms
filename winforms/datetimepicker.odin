@@ -41,9 +41,7 @@ isDtpClassInit: bool = false
 WcDTPClassW: wstring = L("SysDateTimePick32")
 
 
-// Date time time format for DTP control.
-// Possible values: long = 1, short = 2, time = 4, custom = 8
-DtpFormat:: enum {Long = 1, Short = 2, Time = 4, Custom = 8}
+
 
 DateTimePicker:: struct
 {

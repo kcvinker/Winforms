@@ -23,8 +23,6 @@ transparent : i32 : 1
 _buttonCount : int
 btnclass := [7]WCHAR {'B', 'u', 't', 't', 'o', 'n', 0}
 
-ButtonStyle :: enum {Default, Flat, Gradient,}
-ButtonDrawMode :: enum {Default, Text_Only, Bg_Only, Text_And_Bg, Gradient, Grad_And_Text}
 
 Button :: struct
 {

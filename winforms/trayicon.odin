@@ -41,8 +41,6 @@ trayMsgWinRegistered : bool = false
 
 LIMG_FLAG : u32 : LR_DEFAULTCOLOR | LR_LOADFROMFILE
 
-TrayMenuTrigger :: enum u8 {None, Left_Click, Left_Double_Click = 2, Right_Click = 4, Any_Click = 7}
-BalloonIcon :: enum {None, Info, Warning, Error, Custom} 
 
 TrayIcon :: struct
 {

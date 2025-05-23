@@ -31,7 +31,7 @@ Label:: struct {
     autoSize: bool,
     borderStyle: LabelBorder,
     textAlignment: TextAlignment,
-    multiLine: bool,
+    multiLine: bool, 
     _hbrush: HBRUSH,
     _txtAlign: DWORD,
 }
@@ -41,9 +41,7 @@ new_label:: proc{new_label1, new_label2, new_label3}
 
 
 
-// Border style for Label.
-// Possible values: no_border, single_line, sunken_border
-LabelBorder:: enum {No_Border, Single_Line, Sunken_Border, }
+
 
 //==================================Private Functions==================================
 @private label_ctor:: proc(p: ^Form, txt: string, x, y: int, w: int = 0, h: int = 0) -> ^Label 

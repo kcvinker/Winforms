@@ -129,9 +129,7 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
     }
 }
 
-BarStyle :: enum {Block, Marquee}
-BarAlign :: enum {Horizontal, Vertical}
-BarTheme :: enum {System_Color, Custom_Color }
+
 
 //=====================================Private Functions=======================================
 @private pb_ctor :: proc(f : ^Form, x, y, w, h : int) -> ^ProgressBar

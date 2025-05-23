@@ -180,29 +180,6 @@ form_addTimer :: proc(this: ^Form, interval: u32 = 100, tickHandler: EventHandle
     return tm
 }
 
-// Drawing mode for Form BKG
-FormDrawMode :: enum { Default, Flat_Color, Gradient,}
-
-// Form start position
-StartPosition :: enum
-{
-    Top_Left,
-    Top_Mid,
-    Top_Right,
-    Mid_Left,
-    Center,
-    Mid_Right,
-    Bottom_Left,
-    Bottom_Mid,
-    Bottom_Right,
-    Manual,
-}
-
-// Form style
-FormStyle :: enum { Default, Fixed_Single, Fixed_3D, Fixed_Dialog, Fixed_Tool, Sizable_Tool, }
-
-// Starting state of Form
-FormState :: enum {Normal = 1, Minimized, Maximized}
 
 // Private ??
 FormGradient :: struct {c1, c2 : Color, t2b : bool, }
@@ -387,7 +364,7 @@ form_setfont :: proc(this : ^Form, fname: string, fsize: int, fweight: FontWeigh
     api.FillRect(hdc, &rct, this._gdBrush)
 }
 
-FindHwnd :: enum {lb_hwnd, tb_hwnd}
+
 
  // Display windows message names in wndproc function.
 @private display_msg :: proc(umsg : u32, )

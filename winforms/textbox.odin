@@ -31,17 +31,7 @@ import api "core:sys/windows"
 
 WcEditClassW: wstring = L("Edit")
 
-// Text case for Textbox control.
-// Possible values: default, lower_case, upper_case
-TextCase:: enum {Default, Lower_Case, Upper_Case}
 
-// Text case for Textbox control.
-// Possible values: default, number_only, password_char
-TextType:: enum {Default, Number_Only, Password_Char}
-
-// Text alignment for Textbox control.
-// Possible values: left, center, right
-TbTextAlign:: enum {Left, Center, Right}
 
 TextBox:: struct
 {

@@ -16,6 +16,8 @@ def_font_name       :: "Tahoma"
 def_font_size       :: 11
 def_bgc : Color
 def_fgc : Color
+EMWARR : [1]WCHAR
+EMWSTR_PTR : LPCWSTR 
 app : Application // Global variable for storing data needed by the entire library.
 
 @private
@@ -53,7 +55,8 @@ app_start :: proc()
     InitCommonControlsEx(&app.iccx)    
     app.clrWhite = pure_white
     app.clrBlack = pure_black
-    
+    EMWARR[0] = 0
+    EMWSTR_PTR = &EMWARR[0]
     register_class()
     get_system_dpi()  
     app.font = new_font("Tahoma", 11)

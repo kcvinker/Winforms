@@ -25,7 +25,7 @@ import "core:strings"
 //
 
 // Type Decl
-    DialogType :: enum {File_Open, File_Save}
+    
 
     DialogBase :: struct {
         kind : DialogType,

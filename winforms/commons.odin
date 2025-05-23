@@ -16,28 +16,7 @@ gea : EventArgs = new_event_args()
 
 
 
-// Controls like window & button wants to paint themselve with a gradient brush.
-// In that cases, we need an option for painting in two directions.
-// So this enum will be used in controls which had the ebility to draw a gradient bkgnd.
-GradientStyle :: enum {Top_To_Bottom, Left_To_Right,}
-TextAlignment :: enum {
-	Top_Left, Top_Center, Top_Right, Mid_Left, Center, Mid_Right, 
-	Bottom_Left, Bottom_Center, Bottom_Right
-}
-SimpleTextAlignment :: enum {Left, Center, Right}
-TicPosition :: enum {Down_Side, Up_Side, Left_Side, 
-						Right_Side, Both_Side
-					} // For trackbar
 
-
-TimeMode :: enum {Nano_Sec, Micro_Sec, Milli_Sec}
-
-Time :: struct {_nano_sec : i64,}
-
-
-SizeIncrement :: struct {width, height : int,}
-Area :: struct {width, height : int,}
-WordValue :: enum {Low, High}
 
 /*----------------------------------------------------------------------------------
 Use this function to update ui components from another thread.

@@ -70,9 +70,6 @@ tvcount: int = 0
 TreeNodeArray:: distinct ^[dynamic]^TreeNode
 NodeDisposeHandler:: proc(node: ^TreeNode)
 NodeNotifyHandler:: proc(node: ^TreeNode)
-ChildData:: enum {Child_Auto = -2, Child_Callback = -1, Zero = 0, One = 1,}
-NodeOp:: enum {Add_Node, Insert_Node, Add_Child, Insert_Child,}
-
 
 TreeView:: struct
 {

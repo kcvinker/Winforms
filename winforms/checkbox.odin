@@ -28,7 +28,7 @@ CheckBox:: struct
 {
     using control: Control,
     checked: bool,
-    textAlignment: enum {Left, Right},
+    textAlign: Alignment,
     autoSize: bool,
     _bkBrush: HBRUSH,
     _txtStyle: UINT,
@@ -104,7 +104,7 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
 
 @private adjust_style:: proc(cb: ^CheckBox)
 {
-    if cb.textAlignment == .Right {
+    if cb.textAlign == .Right {
         cb._style |= BS_RIGHTBUTTON
        cb._txtStyle |= DT_RIGHT
     }
@@ -183,7 +183,7 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
                 case CDDS_PREPAINT:
                     cref:= get_color_ref(cb.foreColor)
                     rct: RECT = nmcd.rc
-                    if cb.textAlignment == .Left{
+                    if cb.textAlign == .Left{
                         rct.left += 18
                     } else do rct.right -= 18
                     SetTextColor(nmcd.hdc, cref)

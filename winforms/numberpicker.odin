@@ -109,8 +109,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     if new_arr_size > len(this._disValArr) do resize(&this._disValArr, new_arr_size)
 }
 
-StepOprator :: enum {Add, Sub}
-ButtonAlignment :: enum {Right, Left}
+
 
 
 //===================================================================Private Functions======================

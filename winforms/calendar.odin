@@ -49,8 +49,7 @@ Calendar:: struct
 // Create a new Calendar control.
 new_calendar:: proc{new_cal1, new_cal2}
 
-// Enum for setting Calendar's view mode.
-ViewMode:: enum {Month, Year, Decade, Centuary}
+
 
 //===================================================Private functions=============================================
 @private calendar_ctor:: proc(p: ^Form, x, y: int) -> ^Calendar

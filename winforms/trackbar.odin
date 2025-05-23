@@ -129,8 +129,7 @@ TicData:: struct
     logPoint: i32,
 }
 
-// Define drawing style for channel.
-ChannelStyle::enum {classic, outline,}
+
 
 //=================================================Private Functions===========================
 @private new_ticdata:: proc(pp: i32, lp: i32) -> TicData

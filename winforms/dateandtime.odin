@@ -14,7 +14,7 @@ DateTime :: struct
     dayOfWeek : WeekDays,
 }
 
-WeekDays :: enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }
+
 
 new_date_time :: proc{dt_ctor, dt_ctor2}
 
