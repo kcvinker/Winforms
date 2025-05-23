@@ -221,8 +221,8 @@ dtp_set_custom_format:: proc(dtp: ^DateTimePicker, fmt_string: string)
 {
     ss: SIZE
     SendMessage(dtp.handle, DTM_GETIDEALSIZE, 0, to_lparam(&ss))
-    dtp.width = int(ss.width + 3)
-    dtp.height = int(ss.height )
+    dtp.width = int(ss.cx + 3)
+    dtp.height = int(ss.cy )
     SetWindowPos(dtp.handle, nil, dtp.xpos, dtp.ypos, dtp.width, dtp.height, SWP_NOZORDER)
 }
 

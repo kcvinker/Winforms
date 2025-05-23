@@ -83,9 +83,9 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 {
 	ss : SIZE
     SendMessage(ctl.handle, BCM_GETIDEALSIZE, 0, dir_cast( &ss, LPARAM))
-    ctl.width = int(ss.width)
-    ctl.height = int(ss.height)
-    MoveWindow(ctl.handle, i32(ctl.xpos), i32(ctl.ypos), ss.width, ss.height, true)
+    ctl.width = int(ss.cx)
+    ctl.height = int(ss.cy)
+    MoveWindow(ctl.handle, i32(ctl.xpos), i32(ctl.ypos), ss.cx, ss.cy, true)
 }
 
 @private in_range :: proc(value, min_val, max_val : i32) -> bool

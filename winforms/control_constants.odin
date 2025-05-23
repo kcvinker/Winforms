@@ -98,7 +98,7 @@ package winforms
 // End of DTP constants.
 
 // GroupBox constants.
-    gbstyle : DWORD : WS_CHILD | WS_VISIBLE | BS_GROUPBOX
+    gbstyleFlag : DWORD : WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP | WS_OVERLAPPED | WS_CLIPCHILDREN | WS_CLIPSIBLINGS
     gbexstyle : DWORD : WS_EX_CONTROLPARENT | WS_EX_LEFT // | WS_EX_TRANSPARENT
 // End of GroupBox constants.
 

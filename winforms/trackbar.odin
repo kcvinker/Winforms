@@ -493,7 +493,7 @@ TicData:: struct
             tkb:= control_cast(TrackBar, ref_data)
 		    if tkb.contextMenu != nil do contextmenu_show(tkb.contextMenu, lp)
 
-        case CM_CTLLCOLOR:
+        case CM_STATIC_COLOR:
             // hdc:= dir_cast(wp, HDC)
             // SetTextColor(hdc, get_color_ref(tkb.foreColor))
             // tkb._bkBrush = CreateSolidBrush(get_color_ref(tkb.backColor))

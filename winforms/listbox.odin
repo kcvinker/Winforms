@@ -441,7 +441,7 @@ listbox_set_selected_index:: proc(lbx: ^ListBox, indx: int)
             lbx:= control_cast(ListBox, ref_data)
 		    if lbx.contextMenu != nil do contextmenu_show(lbx.contextMenu, lp)
 
-        case CM_CTLLCOLOR:
+        case CM_LIST_COLOR:
             lbx:= control_cast(ListBox, ref_data)
             // ptf("lbx draw flag %d\n", lbx._drawFlag)
             if lbx._drawFlag > 0 {

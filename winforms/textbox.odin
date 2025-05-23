@@ -232,14 +232,14 @@ textbox_clear_all:: proc(tb: ^TextBox)
             tb:= control_cast(TextBox, ref_data)
 		    if tb.contextMenu != nil do contextmenu_show(tb.contextMenu, lp)
 
-        case CM_CTLLCOLOR:
+        case CM_EDIT_COLOR:
             tb:= control_cast(TextBox, ref_data)
             // print("ctl clr rcvd")
             if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
                 dc_handle:= dir_cast(wp, HDC)
                 // SetBkMode(dc_handle, Transparent)
                 if tb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
-                SetBackColor(dc_handle, get_color_ref(tb.backColor))
+                SetBkColor(dc_handle, get_color_ref(tb.backColor))
                 // tb._bkBrush = CreateSolidBrush(get_color_ref(tb.backColor))
 
             } //else do return 0

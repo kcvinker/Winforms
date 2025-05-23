@@ -78,7 +78,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         _clsName = &btnclass[0]
 	    _fp_beforeCreation = cast(CreateDelegate) gb_before_creation
 	    _fp_afterCreation = cast(CreateDelegate) gb_after_creation
-        _style = gbstyle 
+        _style = gbstyleFlag 
         _exStyle = gbexstyle // WS_EX_TRANSPARENT | WS_EX_RIGHTSCROLLBAR
 
     font_clone(&p.font, &gb.font )  
@@ -100,7 +100,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
                             x, y : int, w: int = 200, h: int = 200, 
                             style: GroupBoxStyle = .System) -> ^GroupBox
 {
-    gb := gb_ctor(parent, txt, x, y, w, h, .System)
+    gb := gb_ctor(parent, txt, x, y, w, h, style)
     gb_count += 1
     if parent.createChilds do create_control(gb)
     return gb
@@ -122,7 +122,8 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         SetWindowTheme(this.handle, EMWSTR_PTR, EMWSTR_PTR)
         this._themeOff = true
     }
-	set_subclass(this, gb_wnd_proc)    
+	set_subclass(this, gb_wnd_proc)  
+    ptf("gb style %s", this._gbStyle)  
 }
 
 gbx_add_controls :: proc(this: ^GroupBox, items: ..^Control) {
@@ -145,14 +146,14 @@ gbx_set_height :: proc(this: ^GroupBox, value: int)
 {
     this.height = value
     resetGdiObjects(this, false)
-    if this._isCreated do control_setpos(this)
+    if this._isCreated do control_setpos(this, SWP_NOZORDER)
 }
 
 gbx_set_width :: proc(this: ^GroupBox, value: int)
 {
     this.width = value
     resetGdiObjects(this, false)
-    if this._isCreated do control_setpos(this)
+    if this._isCreated do control_setpos(this, SWP_NOZORDER)
 }
 
 gbx_set_text :: proc(this: ^GroupBox, value: string)
@@ -265,7 +266,7 @@ gbx_set_style :: proc(this: ^GroupBox, value: GroupBoxStyle) {
             this := control_cast(GroupBox, ref_data)
 		    if this.contextMenu != nil do contextmenu_show(this.contextMenu, lp)
 
-        case CM_CTLLCOLOR:
+        case CM_STATIC_COLOR:
             this := control_cast(GroupBox, ref_data)
             if this._gbStyle == .Classic {
                 hdc := dir_cast(wp, HDC)
@@ -285,7 +286,7 @@ gbx_set_style :: proc(this: ^GroupBox, value: GroupBoxStyle) {
                 sz : SIZE    
                 select_gdi_object(hdc, this.font.handle)
                 GetTextExtentPoint32(hdc, this._wtext.ptr, this._wtext.strLen, &sz)                
-                this._txtWidth = sz.width + 10
+                this._txtWidth = sz.cx + 10
                 this._getWidth = false
             }
             if this._dbFill {

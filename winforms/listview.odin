@@ -779,7 +779,7 @@ ListViewSubItem:: struct
     SelectObject(hdc, HGDIOBJ(lv.font.handle))
     GetTextExtentPoint32(hdc, to_wstring(colname), txtlen, &ss)
 	//defer // free_all(context.temp_allocator)
-    return int(ss.width + 10)
+    return int(ss.cx + 10)
 }
 
 // This will executed right before a list view is created

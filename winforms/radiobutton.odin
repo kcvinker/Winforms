@@ -275,11 +275,11 @@ radiobutton_set_autocheck:: proc(rb: ^RadioButton, auto_check: bool )
             }
 
 
-        case CM_CTLLCOLOR:
+        case CM_STATIC_COLOR:
             rb:= control_cast(RadioButton, ref_data)
             hdc:= dir_cast(wp, HDC)
             api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
-            SetBackColor(hdc, get_color_ref(rb.backColor))
+            SetBkColor(hdc, get_color_ref(rb.backColor))
             rb._hbrush = CreateSolidBrush(get_color_ref(rb.backColor))
             // print("rb bkc ", rb.backColor)
             // return toLRES(rb._hbrush)

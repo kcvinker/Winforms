@@ -24,6 +24,7 @@ WcLabelW: []WCHAR = {'S', 't', 'a', 't', 'i', 'c', 0}
 @private _lb_count:= 0
 @private _lb_height_incr:: 3
 @private _lb_width_incr:: 2
+@private _padding :: 4
 
 
 Label:: struct {
@@ -61,7 +62,7 @@ new_label:: proc{new_label1, new_label2, new_label3}
     this.backColor = p.backColor
     this.foreColor = app.clrBlack
     this._exStyle = 0 // WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-    this._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   //SS_LEFT |  WS_OVERLAPPED
+    this._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   
     this._SizeIncr.width = 2
     this._SizeIncr.height = 3
     this._clsName = &WcLabelW[0]
@@ -71,6 +72,7 @@ new_label:: proc{new_label1, new_label2, new_label3}
     this._inherit_color = true
     font_clone(&p.font, &this.font )
     append(&p._controls, this)
+    // ptf("lb az %s", this.autoSize)
     return this
 }
 
@@ -147,34 +149,36 @@ new_label:: proc{new_label1, new_label2, new_label3}
     }
 }
 
-@private calculate_label_size:: proc(lb: ^Label) 
+@private calculate_label_size:: proc(this: ^Label) 
 {
     // Labels are creating with zero width & height.
     // We need to find appropriate size if it is an auto sized label.
-    hdc:= GetDC(lb.handle)
-    defer ReleaseDC(lb.handle, hdc)
-    ctl_size: SIZE
-    select_gdi_object(hdc, lb.font.handle)
-    GetTextExtentPoint32(hdc, lb._wtext.ptr, lb._wtext.strLen, &ctl_size )    
-    lb.width = int(ctl_size.width) //+ lb._SizeIncr.width
-    lb.height = int(ctl_size.height) //+ lb._SizeIncr.height
-    SetWindowPos(lb.handle, nil, i32(lb.xpos), i32(lb.ypos), i32(lb.width), i32(lb.height), SWP_NOMOVE )
-    // free_all(context.temp_allocator)
+    hdc:= GetDC(this.handle)
+    defer ReleaseDC(this.handle, hdc)
+    ss: SIZE
+    select_gdi_object(hdc, this.font.handle)
+    GetTextExtentPoint32(hdc, this._wtext.ptr, this._wtext.strLen, &ss )    
+    this.width = int(ss.cx + _padding)
+    this.height = int(ss.cy + _padding)
+    lflag :UINT =  SWP_NOZORDER | SWP_NOACTIVATE // SWP_NOMOVE |
+    control_setpos2(this.handle, this.xpos, this.ypos, this.width, this.height, SWP_NOMOVE)
+    check_redraw(this, false)
 }
 
-@private lbl_before_creation:: proc(lb: ^Label) 
+@private lbl_before_creation:: proc(this: ^Label) 
 {
-    if lb.borderStyle != .No_Border do adjust_border(lb)
-    lb._hbrush = CreateSolidBrush(get_color_ref(lb.backColor))
-    check_for_autosize(lb)
-    //adjust_alignment(lb)
+    if this.borderStyle != .No_Border do adjust_border(this)
+    this._hbrush = CreateSolidBrush(get_color_ref(this.backColor))
+    check_for_autosize(this)
+    //adjust_alignment(this)
 }
 
-@private lbl_after_creation:: proc(lb: ^Label) 
-{
-    if lb.autoSize do calculate_label_size(lb)
-    set_subclass(lb, label_wnd_proc)
-    ptf("lb hwnd %d, %d, %d, %d", lb.handle, lb.width, lb.height, lb.autoSize)
+@private lbl_after_creation:: proc(this: ^Label) 
+{    
+    set_subclass(this, label_wnd_proc)
+    ctl_send_msg(this.handle, WM_SETFONT, this.font.handle, 1)
+    if this.autoSize do calculate_label_size(this)
+    ptf("this hwnd %d, %d, %d, %d", this.handle, this.width, this.height, this.autoSize)
 }
 
 @private label_property_setter:: proc(this: ^Label, prop: LabelProps, value: $T)
@@ -201,16 +205,16 @@ new_label:: proc{new_label1, new_label2, new_label3}
 {
     context = global_context
     switch msg {
-        // case WM_PAINT:
-        //     lb:= control_cast(Label, ref_data)
-        //     if lb.onPaint != nil {
-        //         ps: PAINTSTRUCT
-        //         hdc:= BeginPaint(hw, &ps)
-        //         pea:= new_paint_event_args(&ps)
-        //         lb.onPaint(lb, &pea)
-        //         EndPaint(hw, &ps)
-        //         return 0
-        //     }
+        case WM_PAINT:
+            this:= control_cast(Label, ref_data)
+            if this.onPaint != nil {
+                ps: PAINTSTRUCT
+                hdc:= BeginPaint(hw, &ps)
+                pea:= new_paint_event_args(&ps)
+                this.onPaint(this, &pea)
+                EndPaint(hw, &ps)
+                return 0
+            }
 
         case WM_CONTEXTMENU:
             lb:= control_cast(Label, ref_data)
@@ -218,7 +222,6 @@ new_label:: proc{new_label1, new_label2, new_label3}
 
         case WM_LBUTTONDOWN:
             lb:= control_cast(Label, ref_data)
-           // print("label lbutton down")
             
             if lb.onMouseDown != nil {
                 mea:= new_mouse_event_args(msg, wp, lp)
@@ -308,14 +311,12 @@ new_label:: proc{new_label1, new_label2, new_label3}
                 lb.onMouseLeave(lb, &ea)
             }
 
-        case CM_CTLLCOLOR:
-            print("pp")
-            lb:= control_cast(Label, ref_data)
+        case CM_STATIC_COLOR:
+            this:= control_cast(Label, ref_data)
             hdc:= dir_cast(wp, HDC)
-            SetTextColor(hdc, get_color_ref(lb.foreColor))
-            SetBackColor(hdc, get_color_ref(lb.backColor))
-            // lb._hbrush = CreateSolidBrush(get_color_ref(lb.backColor))
-            return toLRES(lb._hbrush)
+            if (this._drawFlag & 1) != 1 do SetTextColor(hdc, get_color_ref(this.foreColor))
+            SetBkColor(hdc, get_color_ref(this.backColor))
+            return toLRES(this._hbrush)
 
         case WM_DESTROY: 
             lb:= control_cast(Label, ref_data)

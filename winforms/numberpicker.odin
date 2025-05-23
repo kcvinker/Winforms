@@ -550,7 +550,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
             np_paint_buddy_border(nump, hdc)           
             return res  
 
-        case CM_CTLLCOLOR :
+        case CM_EDIT_COLOR :
             tb := control_cast(NumberPicker, ref_data)
             if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
                 dc_handle := dir_cast(wp, HDC)

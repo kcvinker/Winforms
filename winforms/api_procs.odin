@@ -287,7 +287,7 @@ foreign gdi32 {
                                                                         lp_string : wstring,
                                                                         #any_int str_len : i32,
                                                                         psize : ^SIZE) -> BOOL---
-   @(link_name="SetBkColor") SetBackColor :: proc(dchandle : HDC, cref : COLORREF) -> COLORREF ---
+   @(link_name="SetBkColor") SetBkColor :: proc(dchandle : HDC, cref : COLORREF) -> COLORREF ---
    @(link_name="GetStockObject") GetStockObject :: proc(fn_object : i32) -> HGDIOBJ ---
    @(link_name="SaveDC") SaveDC :: proc(dch : HDC) -> i32 ---
    @(link_name="RestoreDC") RestoreDC :: proc(dch : HDC, ndc : i32) -> BOOL---

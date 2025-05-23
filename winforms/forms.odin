@@ -466,11 +466,11 @@ window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) 
 
         case WM_CTLCOLOREDIT :
             ctl_hwnd := dir_cast(lp, HWND)
-            return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+            return SendMessage(ctl_hwnd, CM_EDIT_COLOR, wp, lp)
 
         case WM_CTLCOLORSTATIC :
             ctl_hwnd := dir_cast(lp, HWND)
-            return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+            return SendMessage(ctl_hwnd, CM_STATIC_COLOR, wp, lp)
 
         case WM_CTLCOLORLISTBOX :
             /* ================================================================================
@@ -487,7 +487,7 @@ window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) 
                 return SendMessage(cmb_hwnd, CM_COMBOLBCOLOR, wp, lp)
             } else {
                 // This message is from a normal listbox. send it to it's wndproc.
-                return SendMessage(ctl_hwnd, CM_CTLLCOLOR, wp, lp)
+                return SendMessage(ctl_hwnd, CM_LIST_COLOR, wp, lp)
             }
 
         case WM_COMMAND :
@@ -771,8 +771,8 @@ window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) 
                     defer ReleaseDC(hw, hdc)
                     size : SIZE
                     GetTextExtentPoint32(hdc, mi._wideText, len(mi.text), &size)                    
-                    pmi.itemWidth = auto_cast(size.width)
-                    pmi.itemHeight = auto_cast(size.height + 10)
+                    pmi.itemWidth = auto_cast(size.cx)
+                    pmi.itemHeight = auto_cast(size.cy + 10)
                 } else {
                     pmi.itemWidth = 150
                     pmi.itemHeight = 25

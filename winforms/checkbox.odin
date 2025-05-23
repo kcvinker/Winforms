@@ -166,7 +166,7 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
                 cb.onCheckChanged(cb, &ea)
             }
 
-        case CM_CTLLCOLOR:
+        case CM_STATIC_COLOR:
             cb:= control_cast(CheckBox, ref_data)
             hd:= dir_cast(wp, HDC)
             bkref:= get_color_ref(cb.backColor)

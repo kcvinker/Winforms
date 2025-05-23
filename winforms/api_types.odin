@@ -407,7 +407,7 @@ INITCOMMONCONTROLSEX :: struct {
 	dwIcc : DWORD,
 }
 
-SIZE :: struct {width : i32, height : i32,}
+SIZE :: struct {cx : i32, cy : i32,}
 
 DRAWITEMSTRUCT :: struct {
 	ctlType : UINT,

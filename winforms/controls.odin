@@ -185,8 +185,12 @@ create_control :: proc(c : ^Control)
     }
 }
 
-control_setpos :: #force_inline proc(this: ^Control) {
-    SetWindowPos(this.handle, nil, this.xpos, this.ypos, this.width, this.height, SWP_NOZORDER)
+control_setpos :: #force_inline proc(this: ^Control, flag: UINT) {
+    SetWindowPos(this.handle, nil, this.xpos, this.ypos, this.width, this.height, flag)
+}
+
+control_setpos2 :: #force_inline proc(hw: HWND, x, y, w, h: int, flag: UINT) {
+	SetWindowPos(hw, nil, x, y, w, h, flag)
 }
 
 @private ctl_send_msg :: #force_inline proc(hw: HWND, msg: UINT, wp: $T, lp: $U) -> LRESULT

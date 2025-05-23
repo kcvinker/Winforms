@@ -225,8 +225,8 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
         defer ReleaseDC(hw, hdc)
         SelectObject(hdc, HGDIOBJ(this.font.handle))
         GetTextExtentPoint32(hdc, wtext, tlen, &ss)
-        x: i32 = (i32(this.width) - ss.width) / 2;
-        y: i32 = (i32(this.height) - ss.height) / 2;
+        x: i32 = (i32(this.width) - ss.cx) / 2;
+        y: i32 = (i32(this.height) - ss.cy) / 2;
         api.SetBkMode(hdc, api.BKMODE.TRANSPARENT);
         SetTextColor(hdc, get_color_ref(this.foreColor));
         TextOut(hdc, x, y, wtext, tlen)

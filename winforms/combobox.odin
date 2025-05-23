@@ -603,13 +603,13 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, edit_wnd_proc, sc_id)
 
-        case CM_CTLLCOLOR:
+        case CM_EDIT_COLOR:
             cmb:= control_cast(ComboBox, ref_data)
             if cmb.foreColor != def_fore_clr || cmb.backColor != def_back_clr {
                 dc_handle:= dir_cast(wp, HDC)
                 // SetBkMode(dc_handle, Transparent)
                 if cmb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(cmb.foreColor))
-                if cmb.backColor != def_back_clr do SetBackColor(dc_handle, get_color_ref(cmb.backColor))
+                if cmb.backColor != def_back_clr do SetBkColor(dc_handle, get_color_ref(cmb.backColor))
                 return toLRES(cmb._bkBrush)
             }
 
