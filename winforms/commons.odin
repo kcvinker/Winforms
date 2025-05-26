@@ -112,10 +112,9 @@ conc_num :: proc{conc_num1, conc_num2}
 conc_num1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 conc_num2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 
-dir_cast :: proc(value : $T, $tp : typeid) -> tp
+dir_cast :: #force_inline proc(value : $T, $tp : typeid) -> tp
 {
-	up := cast(UINT_PTR) value
-	return cast(tp) up
+	return cast(tp)cast(UINT_PTR) value
 }
 
 convert_to :: proc($tp : typeid, value : $T) -> tp

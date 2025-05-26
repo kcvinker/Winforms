@@ -407,38 +407,41 @@ ListViewSubItem:: struct
 	return lv
 }
 
-@private lv_constructor4:: proc(f: ^Form, x, y, w, h: int, colnames: ..string) -> ^ListView
+@private lv_constructor4:: proc(parent: ^Form, x, y, w, h: int, colnames: ..string) -> ^ListView
 {
-	lv:= lv_constructor(f, x, y, w, h)
-	for col in colnames
-	{
-		pCol:= new_listview_column(col, set_coloumn_autosize(lv, col))
-		listview_add_column(lv, pCol)
-	}
-	create_control(lv)
-	return lv
+	this := lv_constructor(parent, x, y, w, h)
+	if parent.createChilds do create_control(this)
+	for col in colnames {
+		pCol:= new_listview_column(col, set_coloumn_autosize(this, col))
+		listview_add_column(this, pCol)
+	}	
+	return this
 }
 
-@private lv_constructor5:: proc(f: ^Form, x, y, w, h: int, colnames: []string, widths: []int) -> ^ListView
+@private lv_constructor5:: proc(parent: ^Form, x, y, w, h: int, colnames: []string, widths: []int) -> ^ListView
 {
-	lv:= lv_constructor(f, x, y, w, h)
+	this:= lv_constructor(parent, x, y, w, h)
+	if parent.createChilds do create_control(this)
 	if len(colnames) == len(widths)	{
 		for col, width in colnames {
 			pCol:= new_listview_column(col, widths[width])
-			listview_add_column(lv, pCol)
+			listview_add_column(this, pCol)
 		}
 	}
-	create_control(lv)
-	return lv
+	// create_control(lv)
+	return this
 }
 
-@private lv_constructor6:: proc(f: ^Form, x, y, w, h: int, coldata: ..any) -> ^ListView
+@private lv_constructor6:: proc(parent: ^Form, x, y, w, h: int, coldata: ..any) -> ^ListView
 {
-	lv:= lv_constructor(f, x, y, w, h)
+	this:= lv_constructor(parent, x, y, w, h)
+	if parent.createChilds do create_control(this)
 	colnames: [dynamic]string
 	colwidths: [dynamic]int
-	defer delete(colnames)
-	defer delete(colwidths)
+	defer {
+		delete(colnames)
+		delete(colwidths)
+	}
 	// Extracting column names and widths
 	for item in coldata {
         if value, is_str:= item.(string) ; is_str { append(&colnames, value) } // LEAK
@@ -447,19 +450,18 @@ ListViewSubItem:: struct
 	if len(colnames) == len(colwidths) {// If they are same, we can proceed
 		for col, i in colnames {
 			pCol:= new_listview_column(col, colwidths[i])
-			listview_add_column(lv, pCol)
+			listview_add_column(this, pCol)
 		}
 	}
-	create_control(lv)
-	return lv
+	return this
 }
 
-@private lv_constructor7:: proc(f: ^Form, x, y, w, h: int, cols: []^ListViewColumn) -> ^ListView
+@private lv_constructor7:: proc(parent: ^Form, x, y, w, h: int, cols: []^ListViewColumn) -> ^ListView
 {
-	lv:= lv_constructor(f, x, y, w, h)
-	for pCol in cols { listview_add_column(lv, pCol) }
-	create_control(lv)
-	return lv
+	this:= lv_constructor(parent, x, y, w, h)
+	if parent.createChilds do create_control(this)
+	for pCol in cols { listview_add_column(this, pCol) }
+	return this
 }
 
 /*------------------------------------------------------------------------------------------------------------
@@ -601,6 +603,10 @@ ListViewSubItem:: struct
 // Here is the actual add column work happening.
 @private lv_add_column:: proc(lv: ^ListView, lvCol: ^ListViewColumn)
 {
+	if lv.handle == nil {
+		print("Cannot add column in list view, ListView handle is nil.")
+		return
+	}
 	lvc: LVCOLUMN
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM
 	lvc.fmt = cast(i32) lvCol.alignment
@@ -614,19 +620,8 @@ ListViewSubItem:: struct
 	}
 
 	if lvCol.imageOnRight do lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT
-
-	if lv._isCreated {
-		SendMessage(lv.handle,
-					LVM_INSERTCOLUMNW,
-					WPARAM(lvCol.index),
-					dir_cast(&lvc, LPARAM) )
-
-		// print("LVM_INSERTCOLUMNW res ", res, lvCol.text)
-	} else {
-		append(&lv._lvcList, lvc)
-		// print("append success")
-	}
-	append(&lv.columns, lvCol) // We need to add columns if lv is not created now.
+	SendMessage(lv.handle, LVM_INSERTCOLUMNW, WPARAM(lvCol.index), dir_cast(&lvc, LPARAM))	
+	append(&lv.columns, lvCol)
 }
 
 @private lv_addrow1:: proc(lv: ^ListView, items: ..any, )

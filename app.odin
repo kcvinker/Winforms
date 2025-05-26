@@ -31,7 +31,7 @@ MakeWindow :: proc()
     frm.createChilds = true
     // Let's create a tray icon.
     ti = new_tray_icon("Winforms tray icon!", "winforms-icon.ico")
-    frm.onClick = frmClickProc // Show a balloon text when clicking on form.
+    // frm.onClick = frmClickProc // Show a balloon text when clicking on form.
 
     // // Let's add a context menu for our tray icon. "|" is for separator.
     tray_add_context_menu(ti, .Any_Click, "Windows", "|", "Linux", "ReactOS")
@@ -67,12 +67,12 @@ MakeWindow :: proc()
     set_property(cmb, ComboProps.Selected_Index, 0)
 
     dtp := new_datetimepicker(frm, cright(cmb) + 20, 10)
-    gb := new_groupbox(frm, "Format Options", 10, 80, w=230, h=110)
-    lb1 := new_label(frm, "Line_Space", 15, 122)//gbx(gb, 10), gby(gb, 40))
-    set_property(lb1, CommonProps.Back_Color, 0xddAA45)
+    gb := new_groupbox(frm, "Format Options", 10, 80, w=230, h=110) //, style=.Classic)
+    lb1 := new_label(frm, "Line_Space", gbx(gb, 10), gby(gb, 40))
+    // set_property(lb1, CommonProps.Back_Color, 0xddAA45)
     np1 := new_numberpicker(frm, cright(lb1) + 15, gby(gb, 35), deciPrec = 2, step = 1.5)
     np1.foreColor = 0x9d0208
-    lb2 := new_label(frm, "Col Width", gbx(gb, 10), cbottom(lb1) + 20)
+    lb2 := new_label(frm, "Col Width", gbx(gb, 10), cbottom(lb1) + 12)
     np2 := new_numberpicker(frm, np1.xpos, cbottom(np1) + 15)
     np2.buttonOnLeft = true
     np2.backColor = 0xcaffbf
@@ -150,7 +150,6 @@ MakeWindow :: proc()
         tray_show_balloon(ti, "Winforms", "Info from Winforms", 3000)
     }
 
-    lb3 := new_label(frm, "Test", 290, 335 )
     start_mainloop(frm)
     
 
