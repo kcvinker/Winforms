@@ -13,6 +13,9 @@ TreeEventHandler :: proc(sender : ^TreeView, e : ^TreeEventArgs)
 MenuEventHandler :: proc(sender: ^MenuItem, e: ^EventArgs)
 ContextMenuEventHandler :: proc(sender: ^ContextMenu, e: ^EventArgs)
 TrayIconEventHandler :: proc(sender: ^TrayIcon, e: ^EventArgs)
+ListViewItemEventHandler :: proc(sender: ^ListView, e: ^LVItemEventArgs)
+ListViewSelChangeEventHandler :: proc(sender: ^ListView, e: ^LVSelChangedEventArgs)
+ListViewItemCheckEventHandler :: proc(sender: ^ListView, e: ^LVItemCheckEventArgs)
 
 CreateDelegate :: proc(ctl : ^Control)
 ControlDelegate :: proc(ctl : ^Control)
@@ -70,6 +73,28 @@ TreeEventArgs :: struct
     oldNode : ^TreeNode,
 }
 
+LVItemEventArgs :: struct
+{
+    using base: EventArgs,
+    item: ^ListViewItem,
+}
+
+LVSelChangedEventArgs :: struct
+{
+    using base: EventArgs,
+    item: ^ListViewItem,
+    index: i32,
+    isSelected: b32,
+}
+
+LVItemCheckEventArgs :: struct 
+{
+    using base: EventArgs,
+    item: ^ListViewItem,
+    index: i32,
+    isChecked: b32,
+}
+
 new_event_args :: proc() -> EventArgs
 {
 	ea : EventArgs
@@ -77,6 +102,7 @@ new_event_args :: proc() -> EventArgs
     ea.cancelled = false
 	return ea
 }
+
 
 new_mouse_event_args :: proc(msg : u32, wp : WPARAM, lp : LPARAM) -> MouseEventArgs
 {
@@ -181,7 +207,7 @@ tree_event_args2 :: proc(pic : ^TVITEMCHANGE) -> TreeEventArgs
     return tea
 }
 
-//new_datetime_event_args :: proc()
+
 
 
 

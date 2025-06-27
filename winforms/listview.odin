@@ -49,9 +49,15 @@
 			listview_delete_column
 			listview_get_item
 			listview_get_row
+			listview_get_selected_items
              
         Events:
             All events from Control struct
+			onSelectionChanged
+			onItemCheckChanged
+			onItemClick
+			onItemDoubleClick
+			onItemActivate
              
         
 ===============================================================================*/
@@ -65,6 +71,9 @@ IccListViewClass:: 0x1
 WcListViewClassW: wstring = L("SysListView32")
 lvcount: int = 0
 
+LVIS_SELECTED :: 0x0002
+LVIS_STATEIMAGEMASK :: 61440
+LVN_ITEMACTIVATE :: (LVN_FIRST-14)
 
 ListView:: struct
 {			// IMPORTANT - use this -> LVS_EX_COLUMNSNAPPOINTS - as a property
@@ -82,7 +91,7 @@ ListView:: struct
 	hotTrackSelect: bool,
 	editLabel: bool,
 	noHeader: bool,
-	checked: bool,
+	checked: b32,
 	headerBackColor, headerForeColor: uint,
 	headerHeight: int,
 	selectedItemIndex: int,
@@ -90,6 +99,8 @@ ListView:: struct
 
 	headerClickable: bool,
 	items: [dynamic]^ListViewItem,
+	selectedItems: [dynamic]^ListViewItem,
+	selectedItem: ^ListViewItem,
 	columns: [dynamic]^ListViewColumn,
 
 	_colIndex: i32,
@@ -105,8 +116,11 @@ ListView:: struct
 	_lvcList: [dynamic]LVCOLUMN,
 
 	// Events
-	onSelectionChanged: EventHandler,
-	onCheckedChanged: EventHandler,
+	onSelectionChanged: ListViewSelChangeEventHandler,
+	onItemCheckChanged: ListViewItemCheckEventHandler,
+	onItemClick: ListViewItemEventHandler,
+	onItemDoubleClick: ListViewItemEventHandler,
+	onItemActivate: EventHandler,
 }
 
 // Create a new ListView struct
@@ -234,6 +248,16 @@ listview_get_coulmn_count:: proc (lv: ^ListView) -> int
 	return x
 }
 
+//Get list view's selected items. Works only if multi-selection enabled.
+// NOTE: The caller must free the array with 'delete'
+listview_get_selected_items :: proc(this: ^ListView) -> []^ListViewItem
+{
+	if this._isCreated {
+		return nil
+	}
+	return nil
+}
+
 listview_set_style:: proc (lv: ^ListView, view: ListViewStyle)
 {
 	lv.viewStyle = view
@@ -334,6 +358,7 @@ ListViewItem:: struct
 	foreColor: uint,
 	font: Font,
 	imageIndex: int,
+	checked: b32,
 }
 
 ListViewSubItem:: struct
@@ -722,7 +747,7 @@ ListViewSubItem:: struct
 		hd_index:= cast(i32)nmcd.dwItemSpec
 		col:= lv.columns[hd_index]
 		// print("hdr drawing started ", col.width, hd_index)
-
+		
 		if col.index > 0 do nmcd.rc.left += 1
 		if lv.headerClickable {
 
@@ -734,6 +759,7 @@ ListViewSubItem:: struct
 					// Mouse pointer is on header. So we will change the back color.
 					api.FillRect(nmcd.hdc, &nmcd.rc, lv._hdrHotBrush)
 				} else {
+					
 					api.FillRect(nmcd.hdc, &nmcd.rc, lv._hdrBkBrush)
 				}
 			}
@@ -756,7 +782,6 @@ ListViewSubItem:: struct
 		api.SetBkMode(nmcd.hdc, api.BKMODE.TRANSPARENT) // TRANSPARENT
 		nmcd.rc.left += 3 // We need some room on the left side
 		DrawText(nmcd.hdc, col._wideText, -1, &nmcd.rc, col._hdrTxtFlag)
-		// print("draw text res ", col._hdrTxtFlag, col.text)
 		return CDRF_SKIPDEFAULT
 	}
 	else {
@@ -855,6 +880,7 @@ ListViewSubItem:: struct
     for pitem in this.items	 {free(pitem)}
     delete(this.items)
 	delete(this.columns)
+	delete(this.selectedItems)
 	// font_destroy(&this.font, 12)
     free(this)
 }
@@ -883,7 +909,7 @@ ListViewSubItem:: struct
 		lv:= control_cast(ListView, ref_data)
 		if lv.contextMenu != nil do contextmenu_show(lv.contextMenu, lp)
 
-	case CM_NOTIFY:
+	case CM_NOTIFY: // Re-routed from parent
 		lv:= control_cast(ListView, ref_data)
 		nmh:= dir_cast(lp, ^NMHDR)
 		switch nmh.code {
@@ -900,28 +926,75 @@ ListViewSubItem:: struct
 				}
 				return CDRF_DODEFAULT
 
+			case NM_CLICK:
+				if lv.onItemClick != nil && len(lv.items) > 0 { 
+                    nmia := dir_cast(lp, ^NMITEMACTIVATE)
+                    sitem := lv.items[nmia.iItem]
+					lviea := LVItemEventArgs{item = sitem}
+                    lv.onItemClick(lv, &lviea)
+				}
+			case NM_DBLCLK:
+				if lv.onItemDoubleClick != nil && len(lv.items) > 0 { 
+					nmia := dir_cast(lp, ^NMITEMACTIVATE)
+					sitem := lv.items[nmia.iItem]
+					lviea := LVItemEventArgs{item = sitem}
+					lv.onItemDoubleClick(lv, &lviea)
+				}
+
 			case LVN_ITEMCHANGED:
 				nmlv:= dir_cast(lp, ^NMLISTVIEW)
-				if nmlv.uNewState == 8192 || nmlv.uNewState == 4096 {
-					lv.checked = nmlv.uNewState == 8192 ? true: false
-					if lv.onCheckedChanged != nil {
-						ea:= new_event_args()
-						lv.onCheckedChanged(lv, &ea)
-					}
-				} else {
-					if (nmlv.uNewState == 3) {
-						//print("this area oka");
-						lv.selectedItemIndex = int(nmlv.iItem)
-						lv.selectedSubItemIndex = int(nmlv.iSubItem)
+				if (nmlv.uChanged & LVIF_STATE) != 0 {
+					nowSelected : b32 = (nmlv.uNewState & LVIS_SELECTED) != 0
+                    wasSelected : b32 = (nmlv.uOldState & LVIS_SELECTED) != 0
+                    if (nowSelected && !wasSelected) {
+						sitem := lv.items[nmlv.iItem]
+						if lv.multiSelection {
+							append(&lv.selectedItems, sitem)
+						} else {
+							lv.selectedItem = sitem
+						}   
 						if lv.onSelectionChanged != nil {
-							ea:= new_event_args()
-							lv.onSelectionChanged(lv, &ea)
-						}                               
+							lsea := LVSelChangedEventArgs{item = sitem, 
+														   index = nmlv.iItem, 
+														   isSelected = nowSelected}
+							lv.onSelectionChanged(lv, &lsea)
+						}
+
+                    } else if !nowSelected && wasSelected {
+						sitem := lv.items[nmlv.iItem]
+                        if lv.multiSelection {
+                            ordered_remove(&lv.selectedItems, sitem.index)
+							if lv.onSelectionChanged != nil {
+								lsea := LVSelChangedEventArgs{item = sitem, 
+														   index = nmlv.iItem, 
+														   isSelected = nowSelected}
+								lv.onSelectionChanged(lv, &lsea)
+							}
+						}
+					}
+					// ✅ Check for checkbox state change
+					state_index := (nmlv.uNewState & LVIS_STATEIMAGEMASK) >> 12
+					old_state_index := (nmlv.uOldState & LVIS_STATEIMAGEMASK) >> 12
+
+					if state_index != old_state_index { // Item checkbox changed
+						is_checked : b32 = (state_index == 2) // 2 = checked, 1 = unchecked
+						if len(lv.items) > 0{                             
+                            sitem := lv.items[nmlv.iItem]                                
+							sitem.checked = is_checked  
+							if lv.onItemCheckChanged != nil {
+								licea := LVItemCheckEventArgs{item = sitem, 
+															  index = nmlv.iItem, 
+															  isChecked = is_checked}
+								lv.onItemCheckChanged(lv, &licea)
+							}
+						}
 					}
 				}
+			case LVN_ITEMACTIVATE:
+                if lv.onItemActivate != nil do lv.onItemActivate(lv, &gea)
 		}
 
-	case WM_NOTIFY:
+	case WM_NOTIFY: // From our child
 		lv:= control_cast(ListView, ref_data)
 		// Message from header.
 		nmh:= dir_cast(lp, ^NMHDR)

@@ -3,8 +3,6 @@ import "core:mem"
 import "base:runtime"
 import api "core:sys/windows"
 
-_def_font_name :: "DejaVu Sans Condensed"
-_def_font_size :: 12
 
 Font :: struct
 {

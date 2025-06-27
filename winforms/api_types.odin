@@ -386,8 +386,8 @@ NMSELCHANGE :: struct
 NMHDR :: struct
 {
 	hwndFrom : HWND,
-	idFrom : u64,
-	code : u64,
+	idFrom : UINT_PTR,
+	code : UINT,
 }
 
 NMCUSTOMDRAW :: struct
@@ -585,3 +585,14 @@ NOTIFYICONDATA :: struct
 	dwInfoFlags: DWORD	
 }
 
+NMITEMACTIVATE :: struct {
+    hdr       : NMHDR,
+    iItem     : i32,
+    iSubItem  : i32,
+    uNewState : UINT,
+    uOldState : UINT,
+    uChanged  : UINT,
+    ptAction  : POINT,
+    lParam    : LPARAM,
+    uKeyFlags : UINT,
+}

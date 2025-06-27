@@ -119,6 +119,7 @@ dtp_set_custom_format:: proc(dtp: ^DateTimePicker, fmt_string: string)
     dtp._exStyle = WS_EX_LEFT
     font_clone(&p.font, &dtp.font )
     append(&p._controls, dtp)
+    
     return dtp
 }
 
@@ -291,8 +292,8 @@ dtp_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
         case CM_NOTIFY:
             dtp:= control_cast(DateTimePicker, ref_data)
             nm:= dir_cast(lp, ^NMHDR)
-            switch nm.code {
-                case DtnUserStr:
+            switch nm.code { 
+                case DTN_USERSTRING:
                     if dtp.onTextChanged != nil {
                         dts:= dir_cast(lp, ^NMDATETIMESTRINGW)
                         dtea: DateTimeEventArgs

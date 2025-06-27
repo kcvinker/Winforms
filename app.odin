@@ -151,7 +151,7 @@ MakeWindow :: proc()
     }
 
     start_mainloop(frm)
-    
+
 
     
 }

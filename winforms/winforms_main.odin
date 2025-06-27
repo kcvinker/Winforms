@@ -13,7 +13,7 @@ def_fore_color      : uint  : 0x000000
 pure_white          : uint  : 0xFFFFFF
 pure_black          : uint  : 0x000000
 def_font_name       :: "Tahoma"
-def_font_size       :: 11
+def_font_size       :: 12
 def_bgc : Color
 def_fgc : Color
 EMWARR : [1]WCHAR
