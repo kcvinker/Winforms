@@ -38,6 +38,7 @@ Application :: struct
     startState : FormState,
     iccx : INITCOMMONCONTROLSEX,    
     winMap : map[HWND]^Form,
+    trayHwnds: [dynamic]HWND,
     font: Font,
     lfont : LOGFONT,
     
@@ -94,9 +95,12 @@ app_start :: proc()
 @private
 app_finalize :: proc(this: Application) // Will be executed right after main loop exit
 {
-    if this.nidUsed {
-        if this.trayHwnd != nil do DestroyWindow(this.trayHwnd)
+    if len(this.trayHwnds) > 0 {
+        for hwnd in this.trayHwnds {
+            if hwnd != nil do DestroyWindow(hwnd)
+        }        
     }
+    delete(this.trayHwnds)
     delete(this.winMap)
     print("Winform closed...")
 }

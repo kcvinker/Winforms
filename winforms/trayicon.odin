@@ -35,6 +35,7 @@
 package winforms
 
 import api "core:sys/windows"
+// import "core:slice"
 
 trayClass := []WCHAR {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'T', 'r', 'a', 'y', 0}
 trayMsgWinRegistered : bool = false
@@ -49,6 +50,7 @@ TrayIcon :: struct
     userData: rawptr,
     _resetIcon, _cmenuUsed, _retainIcon: bool,
     _hTrayIcon: HICON,
+    _hwndIndex: int,
     _msgWinHwnd: HWND,
     _nid: NOTIFYICONDATA,
 
@@ -87,8 +89,11 @@ new_tray_icon :: proc(tooltip: string, iconpath: string = "") -> ^TrayIcon
     copy(this._nid.toolTipText[:], tipTxt)
     x := Shell_NotifyIcon(NIM_ADD, &this._nid);  
     // ptf("shell notify res %d", x)
-    app.trayHwnd = this._msgWinHwnd
-    app.nidUsed = true
+
+    // This is for a safety, in case, user forgets to close a tray icon,
+    // app will destroy it when program closes.
+    append(&app.trayHwnds, this._msgWinHwnd)
+    this._hwndIndex = len(app.trayHwnds) - 1
     return this
 }
 
@@ -170,7 +175,8 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
 @private tray_icon_finalize :: proc(this: ^TrayIcon)
 {
     DestroyWindow(this._msgWinHwnd)
-    app.trayHwnd = nil // So that app's finalizer won't call this finalizer.
+    // index, found := slice.linear_search(app.trayHwnds[:], this._msgWinHwnd)
+    unordered_remove(&app.trayHwnds, this._hwndIndex)
 }
 
 @private resetIconInternal :: proc(this: ^TrayIcon)
@@ -211,7 +217,7 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
             if this._hTrayIcon != nil do DestroyIcon(this._hTrayIcon)
             if this._cmenuUsed do contextmenu_dtor(this.contextMenu)
             free(this)
-            // print("context menu's message-only window destroyed")
+            print("Tray Icon's message-only window destroyed")
 
         case CM_TRAY_MSG:
             switch lp {
