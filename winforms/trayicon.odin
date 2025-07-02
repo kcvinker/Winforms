@@ -50,7 +50,6 @@ TrayIcon :: struct
     userData: rawptr,
     _resetIcon, _cmenuUsed, _retainIcon: bool,
     _hTrayIcon: HICON,
-    _hwndIndex: int,
     _msgWinHwnd: HWND,
     _nid: NOTIFYICONDATA,
 
@@ -93,7 +92,6 @@ new_tray_icon :: proc(tooltip: string, iconpath: string = "") -> ^TrayIcon
     // This is for a safety, in case, user forgets to close a tray icon,
     // app will destroy it when program closes.
     append(&app.trayHwnds, this._msgWinHwnd)
-    this._hwndIndex = len(app.trayHwnds) - 1
     return this
 }
 
@@ -175,8 +173,8 @@ tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNam
 @private tray_icon_finalize :: proc(this: ^TrayIcon)
 {
     DestroyWindow(this._msgWinHwnd)
-    // index, found := slice.linear_search(app.trayHwnds[:], this._msgWinHwnd)
-    unordered_remove(&app.trayHwnds, this._hwndIndex)
+    index, found := array_search(app.trayHwnds, this._msgWinHwnd)
+    if found do unordered_remove(&app.trayHwnds, index)
 }
 
 @private resetIconInternal :: proc(this: ^TrayIcon)
