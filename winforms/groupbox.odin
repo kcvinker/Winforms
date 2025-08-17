@@ -123,7 +123,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
         this._themeOff = true
     }
 	set_subclass(this, gb_wnd_proc)  
-    ptf("gb style %s", this._gbStyle)  
+    // ptf("gb style %s", this._gbStyle)  
 }
 
 gbx_add_controls :: proc(this: ^GroupBox, items: ..^Control) {

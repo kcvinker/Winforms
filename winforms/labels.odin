@@ -178,7 +178,7 @@ new_label:: proc{new_label1, new_label2, new_label3}
     set_subclass(this, label_wnd_proc)
     ctl_send_msg(this.handle, WM_SETFONT, this.font.handle, 1)
     if this.autoSize do calculate_label_size(this)
-    ptf("this hwnd %d, %d, %d, %d", this.handle, this.width, this.height, this.autoSize)
+    // ptf("this hwnd %d, %d, %d, %d", this.handle, this.width, this.height, this.autoSize)
 }
 
 @private label_property_setter:: proc(this: ^Label, prop: LabelProps, value: $T)
