@@ -354,11 +354,13 @@ ListViewItem:: struct
 {
 	index: int,
 	text: string,
-	backColor: uint,
-	foreColor: uint,
+	backColor: Color,
+	foreColor: Color,
 	font: Font,
 	imageIndex: int,
 	checked: b32,
+	_bgdraw: b32,
+	_fgdraw: b32,
 }
 
 ListViewSubItem:: struct
@@ -554,10 +556,12 @@ ListViewSubItem:: struct
 @private lv_item_constructor:: proc(txt: string, bgc: uint, fgc: uint, img: int = -1) -> ^ListViewItem
 {
 	lvi:= new(ListViewItem)
-	lvi.backColor = bgc
-	lvi.foreColor = fgc
+	lvi.backColor = new_color(bgc)
+	lvi.foreColor = new_color(fgc)
 	lvi.text = txt
 	lvi.imageIndex = img
+	if bgc != 0xFFFFFF do lvi._bgdraw = true
+	if fgc != 0x000000 do lvi._fgdraw = true
 	return lvi
 }
 
@@ -919,8 +923,9 @@ ListViewSubItem:: struct
 				case CDDS_PREPAINT:
 					return CDRF_NOTIFYITEMDRAW
 				case CDDS_ITEMPREPAINT:
-					lvcd.clrTextBk = lv._bgcRef
-					lvcd.clrText = lv._fgcRef
+					pitem := lv.items[lvcd.nmcd.dwItemSpec]
+					if pitem._bgdraw do lvcd.clrTextBk = pitem.backColor.ref
+					if pitem._fgdraw do lvcd.clrText = pitem.foreColor.ref
 					// print("iSubItem ", lvcd.nmcd.dwItemSpec)
 					return CDRF_NEWFONT | CDRF_DODEFAULT
 				}
