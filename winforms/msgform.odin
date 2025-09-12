@@ -36,7 +36,7 @@ new_messageform :: proc(msgHandler: MessageHandler, autoc: bool = true,
     if !notray {
         this.tray = new_tray_icon(traytip, iconpath)
         if !nocmenu {
-            tray_add_context_menu(this.tray, TrayMenuTrigger.Any_Click, "Quit")
+            tray_add_context_menu(this.tray, false, TrayMenuTrigger.Any_Click, "Quit")
             cmenu_set_itemtag(this.tray.contextMenu, "Quit", this)
             cmenu_add_handler(this.tray.contextMenu, "Quit", onTrayQuit)
         }

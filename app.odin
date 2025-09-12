@@ -35,7 +35,7 @@ MakeWindow :: proc()
     // frm.onClick = frmClickProc // Show a balloon text when clicking on form.
 
     // // Let's add a context menu for our tray icon. "|" is for separator.
-    tray_add_context_menu(ti, .Any_Click, "Windows", "|", "Linux", "ReactOS")
+    tray_add_context_menu(ti, false, .Any_Click, "Windows", "|", "Linux", "ReactOS")
     ti.contextMenu.menus[0].onClick = proc(c: rawptr, ea: ^EventArgs) {print("Windows menu selected")}
 
 
@@ -43,7 +43,7 @@ MakeWindow :: proc()
     // // And our timer_ontick proc will be called on each tick.
     tmr = form_addTimer(frm, 400, timer_ontick)
 
-    mbar := new_menubar(frm, true, "File", "Edit", "Format")
+    mbar := new_menubar(frm, false, "File", "Edit", "Format")
     
 
     // // Add some sub menus. "|" is for separator.
@@ -97,7 +97,7 @@ MakeWindow :: proc()
     listview_add_row(lv, "Win8", "Catalina", "Debian")
     listview_add_row(lv, "Win10", " Big Sur", "Kali")
 
-    control_add_contextmenu(lv, true, "Compile", "Link Only", "|", "Make Console")
+    control_add_contextmenu(lv, false, "Compile", "Link Only", "|", "Make Console")
     lv.contextMenu.menus[0].onClick = contextmenu_click // Handler for "Compile" menu
     lv.contextMenu.menus[0].menuState = MenuState.Checked
     // lv.contextMenu._ownDraw = true

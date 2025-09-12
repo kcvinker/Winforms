@@ -156,9 +156,9 @@ tray_update_icon :: proc(this: ^TrayIcon, iconpath: string)
 }
 
 // Add context menu to tray icon
-tray_add_context_menu :: proc(this: ^TrayIcon, trigger: TrayMenuTrigger, menuNames: ..string) -> ^ContextMenu
+tray_add_context_menu :: proc(this: ^TrayIcon, cdraw: bool, trigger: TrayMenuTrigger, menuNames: ..string) -> ^ContextMenu
 {
-    cmenu := new_contextmenu(true);
+    cmenu := new_contextmenu(cdraw);
     contextmenu_add_items(cmenu, ..menuNames)
     cmenu.tray = this
     cmenu._hasTrayParent = true  

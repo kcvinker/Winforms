@@ -56,7 +56,7 @@ contextmenu_add_item :: proc(this: ^ContextMenu, item: string) -> ^MenuItem
 {
     mtyp : MenuType = item == "|" ? .Seprator : .Context_Menu
     mi := new_menuitem(item, mtyp, this.handle, this._menuCount)
-    mi._ownDraw = this.customDraw
+    // mi._ownDraw = this.customDraw
     this._menuCount += 1
     append(&this.menus, mi)
     return mi
@@ -68,7 +68,7 @@ contextmenu_add_items :: proc(this: ^ContextMenu, items: ..string)
     for item in items {
         mtyp : MenuType = item == "|" ? .Seprator : .Context_Menu
         mi := new_menuitem(item, mtyp, this.handle, this._menuCount)
-        mi._ownDraw = this.customDraw
+        // mi._ownDraw = this.customDraw
         this._menuCount += 1
         append(&this.menus, mi)
     }
@@ -110,9 +110,22 @@ contextmenu_remove_item :: proc(this: ^ContextMenu, indexOrName: $T) -> bool
 cmenu_create_handle :: proc(this: ^ContextMenu)
 {
     if len(this.menus) > 0 {
-        for menu in this.menus { 
-            cmenu_insert_internal(menu)
+        draw_flag : UINT = MF_STRING
+        if this.customDraw {
+            draw_flag = MF_OWNERDRAW
+            hdcmem : HDC = CreateCompatibleDC(nil)
+            defer DeleteDC(hdcmem)
+            oldfont := SelectObject(hdcmem, cast(HGDIOBJ)this.font.handle)
+            defer SelectObject(hdcmem, oldfont)
+            for menu in this.menus {
+                GetTextExtentPoint32(hdcmem, menu._wideText, 
+                                     auto_cast(len(menu.text)), &menu._txtSize)
+                if menu.kind == .Base_Menu {
+                    menu._txtSize.cx = menu._txtSize.cx < 100 ? 100 : menu._txtSize.cx + 20
+                } 
+            }
         }
+        for menu in this.menus {cmenu_insert_internal(menu, draw_flag)}
     }
     this._menuInserted = true
 }
@@ -155,6 +168,14 @@ cmenu_set_itemtag :: proc(this: ^ContextMenu, menuName: string, tagvalue: rawptr
     this._borderBrush = get_solid_brush(0x0077b6)
     this._grayBrush = get_solid_brush(0xced4da)
     this._grayCref = get_color_ref(0x979dac)
+
+    /*------------------------------------------------------------
+    We need to register our window class only once. We will
+    create a message-only window from this class to handle
+    context menu messages. This hidden window will handle menu related
+    messages like WM_MEASUREITEM, WM_DRAWITEM, WM_MENUSELECT etc.
+    This window will be created right before the context menu
+    --------------------------------------------------------------*/
     if !cmenuMsgWinCreated do register_msgwindow()
     return this
 }
@@ -193,20 +214,21 @@ cmenu_set_itemtag :: proc(this: ^ContextMenu, menuName: string, tagvalue: rawptr
         for name in cmenus {
             mtyp : MenuType = name == "|" ? .Seprator : .Context_Menu
             mi := new_menuitem(name, mtyp, this.handle, this._menuCount)
-            mi._ownDraw = this.customDraw
+            // mi._ownDraw = this.customDraw
             this._menuCount += 1
             append(&this.menus, mi)
         }
     }
 }
 
-@private cmenu_insert_internal :: proc(this: ^MenuItem)
+@private cmenu_insert_internal :: proc(this: ^MenuItem, draw_flag: UINT)
 {
     if len(this.menus) > 0 {
-        for menu in this.menus {cmenu_insert_internal(menu)}
+        for menu in this.menus {cmenu_insert_internal(menu, draw_flag)}
     }
+
     if this.kind == .Context_Menu {         
-        insert_menu_internal(this, this.parentHandle)
+        insert_menu_internal(this, this.parentHandle, draw_flag)
     } else if this.kind == .Seprator {
         api.AppendMenuW(this.parentHandle, MF_SEPARATOR, 0, nil)
     }

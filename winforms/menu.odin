@@ -28,6 +28,7 @@
             kind            : MenuType
             hasCheckMark    : bool
             menuState       : MenuState
+            tag             : rawptr // Users can store any value here
 
         Functions:
            menu_set_state
@@ -158,6 +159,7 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     this := new(MenuBar)
     this.handle = CreateMenu()
     this._pForm = frm
+    this.customDraw = false
     this.font = new_font("Tahoma", 11)
     this._menuGrayBrush = get_solid_brush(0xced4da)
     this._menuGrayCref = get_color_ref(0x979dac)
@@ -181,7 +183,8 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     return this
 }
 
-@private menubar_draw_menu_items :: proc(this: ^MenuBar, dis: LPDRAWITEMSTRUCT)
+@private 
+menubar_draw_menu_items :: proc(this: ^MenuBar, dis: LPDRAWITEMSTRUCT)
 {
     mi := dir_cast(dis.itemData, ^MenuItem)
     // ptf("wm draw item - item state : %d\n", dis.itemState)
@@ -216,7 +219,8 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     DrawText(dis.hDC, mi._wideText, -1, &dis.rcItem, menuTxtFlag)
 }
 
-@private menubar_additem1 :: proc(this: ^MenuBar, menuTxt: string, txtColor: uint = 0x000000) -> ^MenuItem
+@private 
+menubar_additem1 :: proc(this: ^MenuBar, menuTxt: string, txtColor: uint = 0x000000) -> ^MenuItem
 {
     mi := new_menuitem(menuTxt, MenuType.Base_Menu, this.handle, this._menuCount )
     mi._formHwnd = this._pForm.handle
@@ -229,7 +233,8 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     return mi
 }
 
-@private menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, 
+@private 
+menubar_additem2 :: proc(this: ^MenuBar, menuTxt: string, 
                                     parent: ^MenuItem, txtColor: uint = 0x000000) -> ^MenuItem
 {
     mi := new_menuitem(menuTxt, MenuType.Menu_Item, parent.handle, parent._menuCount )
@@ -245,7 +250,8 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
 
 
 // Create more than one base menus in this MenuBar.
-@private menubar_additems1 :: proc(this: ^MenuBar, menuTxts: ..string)
+@private 
+menubar_additems1 :: proc(this: ^MenuBar, menuTxts: ..string)
 {
     for item in menuTxts {
         mi := new_menuitem(item, MenuType.Base_Menu, this.handle, this._menuCount )
@@ -259,7 +265,8 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     }
 }
 
-@private menubar_additems2 :: proc(this: ^MenuBar, parentIndex: int, menu_txts: ..string)
+@private 
+menubar_additems2 :: proc(this: ^MenuBar, parentIndex: int, menu_txts: ..string)
 {
     if len(this.menus) > 0 {
         parent := this.menus[parentIndex]
@@ -267,29 +274,45 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     }
 }
 
-@private menubar_additems3 :: proc(this: ^MenuBar, parentMenu: ^MenuItem, menu_txts: ..string)
+@private 
+menubar_additems3 :: proc(this: ^MenuBar, parentMenu: ^MenuItem, menu_txts: ..string)
 {
     add_multi_childs(parentMenu, this, ..menu_txts)
 }
 
 // This will get called right before the form first appeared on the screen.
-@private menubar_create_handle :: proc(this: ^MenuBar)
+@private 
+menubar_create_handle :: proc(this: ^MenuBar)
 {
     this._menuDefBgBrush = get_solid_brush(0xe9ecef)
     this._menuHotBgBrush = get_solid_brush(0x90e0ef)
     this._menuFrameBrush = get_solid_brush(0x0077b6)
 	if (this.font.handle == nil)  do font_create_handle(&this.font)
+    menu_draw_flag: UINT = MF_STRING
 
     // If there are menus, we need to create the handles for them too.
     if this._menuCount > 0 {
-		for menu in this.menus {
-            menuitem_create_handle(menu)
+        if this.customDraw {
+            menu_draw_flag = MF_OWNERDRAW
+            hdcmem : HDC = CreateCompatibleDC(nil)
+            defer DeleteDC(hdcmem)
+            oldfont := SelectObject(hdcmem, cast(HGDIOBJ)this.font.handle)
+            defer SelectObject(hdcmem, oldfont)
+            for menu in this.menus {
+                GetTextExtentPoint32(hdcmem, menu._wideText, 
+                                     auto_cast(len(menu.text)), &menu._txtSize)
+                if menu.kind == .Base_Menu {
+                    menu._txtSize.cx = menu._txtSize.cx < 100 ? 100 : menu._txtSize.cx + 20
+                } 
+            }
         }
+		for menu in this.menus {menuitem_create_handle(menu, menu_draw_flag)}
 	}
     SetMenu(this._pForm.handle, this.handle)
 }
 
-@private menubar_getitem1 :: proc(this: ^MenuBar, menu_text: string) -> (^MenuItem, bool)
+@private 
+menubar_getitem1 :: proc(this: ^MenuBar, menu_text: string) -> (^MenuItem, bool)
 {
     if len(this._pForm._menuItemMap) > 0 {
         for _, menu in this._pForm._menuItemMap {
@@ -301,7 +324,8 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
 
 // You can pass the menu structure like this - "File", "New File", "Start"
 // This will finf the Start menu under 'New File' which is a child of 'File'
-@private menubar_getitem2 :: proc(this: ^MenuBar, menu_name: string, parent_name: string) -> (^MenuItem, bool)
+@private 
+menubar_getitem2 :: proc(this: ^MenuBar, menu_name: string, parent_name: string) -> (^MenuItem, bool)
 {
     if len(this.menus) == 0 do return nil, false
     menuList : [dynamic]^MenuItem
@@ -321,7 +345,8 @@ menubar_get_item :: proc{ menubar_getitem1, menubar_getitem2 }
     return nil, false
 }
 
-@private menubar_dtor :: proc(this: ^MenuBar)
+@private 
+menubar_dtor :: proc(this: ^MenuBar)
 {
     if this._menuCount > 0 {
         for menu in this.menus do menuitem_dtor(menu)
@@ -358,7 +383,7 @@ MenuItem :: struct
 	_evtFlag : uint,
     _uFlag: uint,
 	_iLevel: int,
-    _cachedWidth, _cachedHeight: i32,
+    _txtSize: SIZE,
 	_isEnabled : bool,
 	_popup : bool,
 	_formMenu : bool,
@@ -432,17 +457,17 @@ menu_set_state :: proc(this: ^MenuItem, value: MenuState)
     }
 }
 
-@private insert_menu_internal :: proc(this: ^MenuItem, parent: HMENU)
-{
-    
+@private insert_menu_internal :: proc(this: ^MenuItem, parent: HMENU, draw_flag: UINT)
+{   
+
 	mii : api.MENUITEMINFOW
     mii.cbSize = size_of(mii)
-    mii.fMask = this._ownDraw ? ODM_FLAG : SDM_FLAG
-    mii.fType = this._ownDraw ? MF_OWNERDRAW : 0 
+    mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA | MIIM_SUBMENU | MIIM_STATE //this._ownDraw ? ODM_FLAG : SDM_FLAG
+    mii.fType = draw_flag //this._ownDraw ? MF_OWNERDRAW : 0 
     mii.fState = u32(this.menuState)
     mii.dwTypeData = this._wideText
     mii.cch = auto_cast(len(this.text))
-    mii.dwItemData = this._ownDraw ? dir_cast(rawptr(this), ULONG_PTR) : 0
+    mii.dwItemData = draw_flag == 256 ? dir_cast(rawptr(this), ULONG_PTR) : 0
     mii.wID = auto_cast(this.idNum)
     mii.hSubMenu = this._popup ? this.handle : nil
     x:= api.InsertMenuItemW(parent, u32(this.idNum), btrue, &mii)
@@ -450,18 +475,19 @@ menu_set_state :: proc(this: ^MenuItem, value: MenuState)
     // ptf("351: insert res: %d, menu name: %s, menu id: %d", x, this.text, mii.wID)
 }
 
-@private menuitem_create_handle :: proc(mi: ^MenuItem)
+@private menuitem_create_handle :: proc(mi: ^MenuItem, draw_flag: UINT)
 {
     switch mi.kind {
         case .Base_Menu, .Popup:
+            insert_menu_internal(mi, mi.parentHandle, draw_flag)
             if len(mi.menus) > 0 {
                 for menu in mi.menus {
                     // ptf("265: menu item name %s\n", menu.text)
-                    menuitem_create_handle(menu)
+                    menuitem_create_handle(menu, draw_flag)
                 }
             }
-            insert_menu_internal(mi, mi.parentHandle)
-        case .Menu_Item: insert_menu_internal(mi, mi.parentHandle)
+            
+        case .Menu_Item: insert_menu_internal(mi, mi.parentHandle, draw_flag)
         case .Seprator: api.AppendMenuW(mi.parentHandle, MF_SEPARATOR, 0, nil)
         case .Context_Menu: break
     }
