@@ -16,6 +16,7 @@ import  ui "winforms"
     frm : ^ui.Form
     tmr: ^ui.Timer
     ti : ^ui.TrayIcon
+    
 //
 
 MakeWindow :: proc()
@@ -35,7 +36,7 @@ MakeWindow :: proc()
 
     // // Let's add a context menu for our tray icon. "|" is for separator.
     tray_add_context_menu(ti, .Any_Click, "Windows", "|", "Linux", "ReactOS")
-    ti.contextMenu.menus[0].onClick = proc(c: ^MenuItem, ea: ^EventArgs) {print("Windows menu selected")}
+    ti.contextMenu.menus[0].onClick = proc(c: rawptr, ea: ^EventArgs) {print("Windows menu selected")}
 
 
     // // Let's add a timer to this form which ticks in every 400 ms.
@@ -116,33 +117,34 @@ MakeWindow :: proc()
 
     cal := new_calendar(frm, tv.xpos, cbottom(tv) + 20)
 
-    track_change_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
+    track_change_proc :: proc(c : rawptr, e : ^ui.EventArgs) {
         ui.progressbar_set_value(pgb, tk.value)
     }
 
-    newclient_menuclick :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs) {
+    newclient_menuclick :: proc(sender: rawptr, e: ^ui.EventArgs) {
         print("New Client selected")
     }
 
-    contextmenu_click :: proc(sender: ^ui.MenuItem, e: ^ui.EventArgs) {
-        ptf("%s option is selected\n", sender.text)
+    contextmenu_click :: proc(sender: rawptr, e: ^ui.EventArgs) {
+        // ptf("%s option is selected\n", sender.text)
     }
 
-    open_file_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
+    open_file_proc :: proc(c : rawptr, e : ^ui.EventArgs) {
         idir : string = "D:\\Work\\Shashikumar\\2023\\Jack Ryan"
 
         ofd := ui.file_open_dialog(initFolder = idir, description = "PDF Files", ext = ".pdf")
         ofd.multiSel = true
         x := ui.dialog_show(&ofd, frm.handle)
         dialog_destroy(&ofd)
+        
     }
 
-    b2_click_proc :: proc(c : ^ui.Control, e : ^ui.EventArgs) {
+    b2_click_proc :: proc(c : rawptr, e : ^ui.EventArgs) {
         // ui.timer_start(tmr)
         print("duuuup")
     }
 
-    timer_ontick :: proc(f: ^ui.Control, e: ^ui.EventArgs) {
+    timer_ontick :: proc(f: rawptr, e: ^ui.EventArgs) {
         print("Timer ticked")
     }
 

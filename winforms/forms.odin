@@ -189,6 +189,7 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
 @private form_ctor :: proc( t : string = "", w : int = 500, h : int = 400 ) -> ^Form
 {
     if app.formCount == 0 do global_context = context
+    if app.isFormReg == false do initFormDefaults()
     app.formCount += 1
     // app.curr_context = ctx
     // ptf("form context ui %d\n", context.user_index)
@@ -834,3 +835,4 @@ window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) 
     }
     return DefWindowProc(hw, msg, wp, lp)
 }
+

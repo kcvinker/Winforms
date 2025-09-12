@@ -5,6 +5,7 @@ package winforms
 //import "core:strings"
 import "core:fmt"
 import "base:runtime"
+import api "core:sys/windows"
 
 //=================================== Functions===================================
 
@@ -218,6 +219,8 @@ foreign user32 {
    @(link_name="KillTimer") KillTimer :: proc(hWnd: HWND, nID: UINT_PTR) -> BOOL ---
    @(link_name="UnregisterClassW") UnregisterClass :: proc(LPCWSTR, HINSTANCE) -> BOOL ---
    @(link_name="DrawFrameControl") DrawFrameControl :: proc(HDC, ^RECT, UINT, UINT) -> BOOL ---
+   // @(link_name="RegisterHotKey") RegisterHotKey :: proc(HWND, INT, UINT, UINT) -> BOOL ---
+   @(link_name="UnregisterHotKey") UnregisterHotKey :: proc(HWND, api.INT) -> BOOL ---
 
 
 

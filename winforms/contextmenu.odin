@@ -117,6 +117,31 @@ cmenu_create_handle :: proc(this: ^ContextMenu)
     this._menuInserted = true
 }
 
+cmenu_add_handler :: proc(this: ^ContextMenu, menuName: string, handler: EventHandler) 
+{
+    if len(this.menus) > 0 {
+        for menu in this.menus {
+            if menu.text == menuName {
+                menu.onClick = handler
+                break
+            }
+        }
+    }    
+}
+
+cmenu_set_itemtag :: proc(this: ^ContextMenu, menuName: string, tagvalue: rawptr) 
+{
+    if len(this.menus) > 0 {
+        for menu in this.menus {
+            if menu.text == menuName {
+                menu.tag = tagvalue
+                break
+            }
+        }
+    }    
+}
+
+
 //===============================================Private Functions===========================
 @private cmenu_ctor :: proc() -> ^ContextMenu
 {

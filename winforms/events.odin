@@ -1,7 +1,7 @@
 package winforms
 //import "core:fmt"
 
-EventHandler :: proc(sender : ^Control, ea : ^EventArgs) //distinct #type
+EventHandler :: proc(sender : rawptr, ea : ^EventArgs) //distinct #type
 MouseEventHandler :: proc(sender : ^Control, e : ^MouseEventArgs)
 KeyEventHandler :: proc(sender : ^Control, e : ^KeyEventArgs)
 DateTimeEventHandler :: proc(sender : ^Control, e : ^DateTimeEventArgs)

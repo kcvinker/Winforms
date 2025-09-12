@@ -7,6 +7,7 @@ import "core:mem"
 import api "core:sys/windows"
 
 winFormsClass := []u16 {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'W', 'i', 'n', 'd', 'o', 'w', 0}
+mfclass := []u16 {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'M', 's', 'g', '_', 'F', 'o', 'r', 'm',  0}
 global_context      := runtime.default_context() // Context
 def_window_color    : uint  : 0xF5F5F5
 def_fore_color      : uint  : 0x000000
@@ -35,9 +36,12 @@ Application :: struct
     fontHeight : LONG,
     mainLoopStarted : bool,
     nidUsed : bool,
+    isFormReg : bool,
+    isMowReg : bool,
     startState : FormState,
     iccx : INITCOMMONCONTROLSEX,    
     winMap : map[HWND]^Form,
+    mfMap : map[HWND]^MessageForm,
     trayHwnds: [dynamic]HWND,
     font: Font,
     lfont : LOGFONT,
@@ -49,6 +53,11 @@ Application :: struct
 app_start :: proc() 
 {
     app.hInstance = GetModuleHandle(nil)
+}
+
+@private
+initFormDefaults :: proc()
+{
     app.screenWidth = int(api.GetSystemMetrics(0))
     app.screenHeight = int(api.GetSystemMetrics(1))
     app.iccx.dwSize = size_of(app.iccx)
@@ -62,7 +71,18 @@ app_start :: proc()
     get_system_dpi()  
     app.font = new_font("Tahoma", 11)
     font_fill_logfont(&app.font, &app.lfont)
+}
 
+@private
+initMsgForm :: proc() // Called when first msg-only window starting
+{
+	wc : WNDCLASSEXW
+	wc.cbSize = size_of(wc)
+	wc.lpfnWndProc = msgfrm_wndproc	
+	wc.hInstance = app.hInstance
+	wc.lpszClassName = &mfclass[0]
+	res := RegisterClassEx(&wc)
+	if res > 0 do app.isMowReg = true
 }
 
 @private get_system_dpi :: proc()
@@ -90,6 +110,7 @@ app_start :: proc()
     win_class.lpszMenuName = nil
     win_class.lpszClassName = &winFormsClass[0]
     res := RegisterClassEx(&win_class)
+    if res > 0 do app.isFormReg = true    
 }
 
 @private
@@ -102,5 +123,6 @@ app_finalize :: proc(this: Application) // Will be executed right after main loo
     }
     delete(this.trayHwnds)
     delete(this.winMap)
+    delete(this.mfMap)
     print("Winform closed...")
 }

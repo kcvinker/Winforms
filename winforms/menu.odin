@@ -33,7 +33,7 @@
            menu_set_state
              
         Events:
-            MenuEventHandler type events - proc(^MenuItem, ^EventArgs)
+            EventHandler type events - proc(rawptr, ^EventArgs)
                 onClick
                 onPopup
                 onCloseup
@@ -351,6 +351,7 @@ MenuItem :: struct
 	kind: MenuType,
     hasCheckMark : bool,
     menuState : MenuState,
+    tag: rawptr,
 
     _wideText: LPCWSTR,
 	_index : uint,
@@ -375,7 +376,7 @@ MenuItem :: struct
     // _textHeight: i32,     // Height of the cached text bitmap
 
     // Events
-	onClick, onPopup, onCloseup, onFocus: MenuEventHandler,
+	onClick, onPopup, onCloseup, onFocus: EventHandler,
 }
 
 new_menuitem :: proc{menuitem_ctor}

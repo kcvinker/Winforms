@@ -26,6 +26,8 @@ package winforms
 	CM_THREAD_MSG :: MSG_FIXED_VALUE + 20
 	CM_RUN_DTOR :: MSG_FIXED_VALUE + 21
     CM_TRAY_MSG :: MSG_FIXED_VALUE + 22
+    CM_CLOSE_MSGFORM :: MSG_FIXED_VALUE + 23
+    CM_TIMER_DESTROY :: MSG_FIXED_VALUE + 24
 // My Own messages
 
 Msg_map :: enum uint {
