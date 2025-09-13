@@ -238,11 +238,9 @@ FormGradient :: struct {c1, c2 : Color, t2b : bool, }
     delete(this._comboData)
 
     delete_gdi_object(this._gdBrush)
-    if this._menubarUsed
-    {
+    if this._menubarUsed {
         menubar_dtor(this.menubar)
         delete(this._menuItemMap)
-
     }
     if len(this._timerMap) > 0 {
         for key, tmr in this._timerMap do timer_dtor(tmr)
@@ -754,12 +752,13 @@ window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) 
                 ea:= new_event_args()
                 frm.onClosed(frm, &ea)
             }
-            form_dtor(frm) // Freeing all resources.
-            frm = nil
-            // return 0
 
         case WM_NCDESTROY:
+            frm := app.winMap[hw]
             if hw == app.mainHandle do PostQuitMessage(0)
+            form_dtor(frm) // Freeing all resources.
+            delete_key(&app.winMap, hw)
+            frm = nil
             // return 0
 
         // Menu related

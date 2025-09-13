@@ -197,6 +197,8 @@ msgfrm_wndproc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM
         case WM_NCDESTROY:
             this := app.mfMap[hw]
             if this != nil do msgfrm_destroy(this)
+            delete_key(&app.mfMap, hw)
+            this = nil
             return 0
 
         case WM_DESTROY, CM_CLOSE_MSGFORM:
