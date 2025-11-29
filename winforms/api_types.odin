@@ -109,7 +109,7 @@ wstring :: [^]WCHAR
 LPCWSTR :: api.LPCWSTR
 LPWSTR :: api.LPWSTR
 LPSTR :: api.LPSTR
-MYCWSTR :: ^u16
+WCPTR :: ^u16
 
 size_t     :: api.size_t
 
@@ -498,7 +498,7 @@ MENUITEMINFO :: struct
 	hbmpChecked : HBITMAP,
 	hbmpUnchecked : HBITMAP,
 	dwItemData : ULONG_PTR,
-	dwTypeData : LPWSTR,
+	dwTypeData : WCPTR,
 	cch : UINT,
 	hbmpItem : HBITMAP,
 }
@@ -519,23 +519,23 @@ OPENFILENAMEW :: struct {
 	lStructSize: DWORD,
 	hwndOwner: HWND,
 	hInstance: HINSTANCE,
-	lpstrFilter: MYCWSTR,
-	lpstrCustomFilter: LPWSTR,
+	lpstrFilter: WCPTR,
+	lpstrCustomFilter: WCPTR,
 	nMaxCustFilter: DWORD,
 	nFilterIndex: DWORD,
-	lpstrFile: LPWSTR,
+	lpstrFile: WCPTR,
 	nMaxFile: DWORD,
-	lpstrFileTitle: LPWSTR,
+	lpstrFileTitle: WCPTR,
 	nMaxFileTitle: DWORD,
-	lpstrInitialDir: MYCWSTR,
-	lpstrTitle: MYCWSTR,
+	lpstrInitialDir: WCPTR,
+	lpstrTitle: WCPTR,
 	Flags: DWORD,
 	nFileOffset: WORD,
 	nFileExtension: WORD,
-	lpstrDefExt: MYCWSTR,
+	lpstrDefExt: WCPTR,
 	lCustData: LPARAM,
 	lpfnHook: OFNHOOKPROC,
-	lpTemplateName: MYCWSTR,
+	lpTemplateName: WCPTR,
 	pvReserved: rawptr,
 	dwReserved: DWORD,
 	FlagsEx: DWORD,
@@ -561,8 +561,8 @@ PCIDLIST_ABSOLUTE :: ^ITEMIDLIST_ABSOLUTE
 BROWSEINFOW :: struct {
 	hwndOwner: HWND,
 	pidlRoot: PCIDLIST_ABSOLUTE,
-	pszDisplayName: LPWSTR,
-	lpszTitle: LPCWSTR,
+	pszDisplayName: WCPTR,
+	lpszTitle: WCPTR,
 	ulFlags: UINT,
 	lpfn: BROWSECBPROC,
 	lParam: LPARAM,

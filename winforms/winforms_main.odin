@@ -18,7 +18,7 @@ def_font_size       :: 12
 def_bgc : Color
 def_fgc : Color
 EMWARR : [1]WCHAR
-EMWSTR_PTR : LPCWSTR 
+EWCAPTR : WCPTR  
 app : Application // Global variable for storing data needed by the entire library.
 
 @private
@@ -50,9 +50,11 @@ Application :: struct
 
 @(init)
 @private 
-app_start :: proc() 
+app_start :: proc "contextless" () 
 {
     app.hInstance = GetModuleHandle(nil)
+    gea = new_event_args()
+    global_context.user_index = 471
 }
 
 @private
@@ -66,7 +68,7 @@ initFormDefaults :: proc()
     app.clrWhite = pure_white
     app.clrBlack = pure_black
     EMWARR[0] = 0
-    EMWSTR_PTR = &EMWARR[0]
+    EWCAPTR = &EMWARR[0]
     register_class()
     get_system_dpi()  
     app.font = new_font("Tahoma", 11)

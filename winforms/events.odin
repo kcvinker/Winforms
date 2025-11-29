@@ -95,7 +95,7 @@ LVItemCheckEventArgs :: struct
     isChecked: b32,
 }
 
-new_event_args :: proc() -> EventArgs
+new_event_args :: proc "contextless" () -> EventArgs
 {
 	ea : EventArgs
 	ea.handled = false

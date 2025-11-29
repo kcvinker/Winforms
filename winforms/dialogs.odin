@@ -2,11 +2,13 @@
 
 package winforms
 import "core:fmt"
+import "base:runtime"
 import "core:strings"
+import "core:mem"
 
 // Constants
     MAX_PATH :: 260
-    MAX_ARR_SIZE :: 32768 + 256 * 100 + 1
+    MAX_ARR_SIZE :: 65535
     OFN_ALLOWMULTISELECT :: 0x200
     OFN_PATHMUSTEXIST :: 0x800
     OFN_FILEMUSTEXIST :: 0x1000
@@ -58,9 +60,9 @@ import "core:strings"
 // End Type
 
 
-file_open_dialog :: proc(titleStr: string = "Open file", initFolder: string = "", description: string = "", ext: string = "" ) -> FileOpenDialog
+file_open_dialog :: proc(titleStr: string = "Open file", initFolder: string = "", description: string = "", ext: string = "" ) -> ^FileOpenDialog
 {
-    this : FileOpenDialog
+    this := new(FileOpenDialog)
     this.title = titleStr
     this.initDir = initFolder
     this.kind = DialogType.File_Open
@@ -88,15 +90,25 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
 
 
 
-@private extract_file_names :: proc(this: ^FileOpenDialog, buffer: []WCHAR, start: WORD)
+@private extract_file_names :: proc(this: ^FileOpenDialog, 
+                                    buffer: []WCHAR, 
+                                    start: WORD,
+                                    alloc: runtime.Allocator)
 {
+    context = global_context
     start_pos:= cast(int)start
-    dir_path := utf16_to_utf8(buffer[0:(start_pos - 1)]) // First item in buffer is directory path.
+
+    // This will be freed by the caller when they free the arena allocator.
+    // First item in buffer is directory path.
+    dir_path := utf16_to_utf8(buffer[0:(start_pos - 1)], alloc) 
     for i in start_pos..<MAX_ARR_SIZE {
         if buffer[i] == 0 {
             slice := buffer[start_pos:i]
             start_pos = i + 1
-            append(&this.selectedFiles, fmt.tprintf("%s\\%s", dir_path, utf16_to_utf8(slice)))
+            append(&this.selectedFiles, fmt.aprintf("%s\\%s", 
+                                                     dir_path, 
+                                                     utf16_to_utf8(slice, alloc), 
+                                                     context.allocator))
             if buffer[start_pos] == 0 do break
         }
     }
@@ -114,59 +126,98 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     return false
 }
 
+@private calc_arena_size :: proc(this: ^$T, init_size: int) -> int
+{
+    arena_size : int = (init_size * 2)
+    when T == FolderBrowserDialog {
+        if len(this.title) > 0 do arena_size += (len(this.title) + 1) * 2
+    } else {
+        if len(this.filter) > 0 do arena_size += (len(this.filter) + 1) * 2
+        if len(this.initDir) > 0 do arena_size += (len(this.initDir) + 1) * 2
+        if len(this.title) > 0 do arena_size += (len(this.title) + 1) * 2
+    }    
+    return arena_size
+}
+
 @private open_dialog_helper :: proc(this: ^FileOpenDialog, hwnd: HWND = nil)-> bool
 {
+    /* We are using arena allocator here to allocate memory for the dialog buffers.
+       This memory will be freed when the dialog is closed. But caller must call 
+       dialog_destroy function after calling this. 
+    */
+    context = global_context    
+    buffer : [dynamic]WCHAR
+    def_size : int = this.multiSel? MAX_ARR_SIZE : MAX_PATH
+    arena_size : int = calc_arena_size(this, def_size + 20) // Extra 20 chars for safety
+
+    mem_block := make([]byte, arena_size)
+    arena : mem.Arena
+    mem.arena_init(&arena, mem_block)
+    arena_alloc := mem.arena_allocator(&arena)
+    defer delete(mem_block)
+
+    if this.multiSel {
+        buffer = make([dynamic]WCHAR, MAX_ARR_SIZE, arena_alloc)
+    } else {
+        buffer = make([dynamic]WCHAR, MAX_PATH, arena_alloc)
+    }       
 
     if this.allowAllFiles {
-        this.filter = fmt.tprintf("%sAll files\x00*.*\x00", this.filter)
+        this.filter = fmt.aprintf("%sAll files\x00*.*\x00", this.filter, arena_alloc)
     }
 
     // This is a hack. Windows will ignore the initial directory path if it...
     // contains a space in it's last part. But if path ends with a '\' it will work. So here...
     // we are checking for white space and put the '\' at the end.
-    if isPathContainsWhiteSpace(this.initDir) do this.initDir = fmt.tprintf("%s\\", this.initDir)
-
-    buffer : [MAX_ARR_SIZE]WCHAR
-
+    if isPathContainsWhiteSpace(this.initDir) {
+        this.initDir = fmt.aprintf("%s\\", this.initDir, arena_alloc)
+    }
     ofn : OPENFILENAMEW
     ofn.hwndOwner = hwnd
     ofn.lStructSize = size_of(ofn)
-    ofn.lpstrFilter = to_wchar_ptr(this.filter)
+    ofn.lpstrFilter = to_wchar_ptr(this.filter, arena_alloc)
     ofn.lpstrFile = &buffer[0]
-    ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir)
-    ofn.lpstrTitle = to_wchar_ptr(this.title)
+    ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir, arena_alloc)
+    ofn.lpstrTitle = to_wchar_ptr(this.title, arena_alloc)
     ofn.nMaxFile = MAX_ARR_SIZE
     ofn.nMaxFileTitle = MAX_PATH
     ofn.lpstrDefExt = dir_cast(0, ^WCHAR)
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST
     if this.multiSel do ofn.Flags = ofn.Flags | OFN_ALLOWMULTISELECT | OFN_EXPLORER
     if this.showHidden do ofn.Flags = ofn.Flags | OFN_FORCESHOWHIDDEN
-    ret := cast(int)GetOpenFileName(&ofn)
-    // ptf("GetOpenFileName Errors : %d\n", GetLastError())
+    ret := cast(int)GetOpenFileName(&ofn)    
     if ret > 0 {
         if this.multiSel {
-            extract_file_names(this, buffer[:], ofn.nFileOffset)
+            // We are using arena allocator to store the dir path and file names.
+            extract_file_names(this, buffer[:], ofn.nFileOffset, arena_alloc)
             return true
         } else {
-            this.selectedPath = utf16_to_utf8(buffer[:])
+            this.selectedPath = utf16_to_utf8(buffer[:], context.allocator)
             return true
         }
-    }
-    // free_all(context.temp_allocator)
+    }    
     return false
 }
 
 @private save_dialog_helper :: proc(this: ^FileSaveDialog, hwnd: HWND) -> bool
 {
     if isPathContainsWhiteSpace(this.initDir) do this.initDir = fmt.tprintf("%s\\", this.initDir)
-    buffer : [MAX_PATH]WCHAR
+    
+    arena_size : int = calc_arena_size(this, MAX_PATH)   
+    mem_block := make([]byte, arena_size)
+    arena : mem.Arena
+    mem.arena_init(&arena, mem_block)
+    arena_alloc := mem.arena_allocator(&arena)
+    defer delete(mem_block)
+
+    buffer := make([dynamic]WCHAR, MAX_PATH, arena_alloc)
     ofn : OPENFILENAMEW
     ofn.hwndOwner = hwnd
     ofn.lStructSize = size_of(ofn)
-    ofn.lpstrFilter = to_wchar_ptr(this.filter)
+    ofn.lpstrFilter = to_wchar_ptr(this.filter, arena_alloc)
     ofn.lpstrFile = &buffer[0]
-    ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir)
-    ofn.lpstrTitle = to_wchar_ptr(this.title)
+    ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir, arena_alloc)
+    ofn.lpstrTitle = to_wchar_ptr(this.title, arena_alloc)
     ofn.nMaxFile = MAX_PATH
     ofn.nMaxFileTitle = MAX_PATH
     ofn.lpstrDefExt = dir_cast(0, ^WCHAR)
@@ -175,7 +226,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     if ret != 0 {
         this.fileStart = int(ofn.nFileOffset)
         this.extStart = int(ofn.nFileExtension)
-        this.selectedPath = wstring_to_string(&buffer[0])
+        this.selectedPath = wstring_to_string(&buffer[0], context.allocator)
         return true
     }
     // free_all(context.temp_allocator)
@@ -184,10 +235,17 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
 
 @private folder_browser_helper :: proc(this: ^FolderBrowserDialog, hwnd: HWND = nil) -> bool
 {
-    buffer : [MAX_ARR_SIZE]WCHAR
+    arena_size : int = calc_arena_size(this, MAX_PATH)   
+    mem_block := make([]byte, arena_size)
+    arena : mem.Arena
+    mem.arena_init(&arena, mem_block)
+    arena_alloc := mem.arena_allocator(&arena)
+    defer delete(mem_block)
+
+    buffer := make([dynamic]WCHAR, MAX_PATH, arena_alloc)
     bi : BROWSEINFOW
     bi.hwndOwner = hwnd
-    bi.lpszTitle = to_wchar_ptr(this.title)
+    bi.lpszTitle = to_wchar_ptr(this.title, arena_alloc)
     bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE
     if this.newFolBtn do bi.ulFlags = bi.ulFlags | BIF_NONEWFOLDERBUTTON
     if this.showFiles do bi.ulFlags = bi.ulFlags | BIF_BROWSEINCLUDEFILES
@@ -196,7 +254,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
         res := cast(int)SHGetPathFromIDList(pidl, &buffer[0])
         if res != 0 {
             CoTaskMemFree(pidl)
-            this.selectedPath = wstring_to_string(&buffer[0])
+            this.selectedPath = wstring_to_string(&buffer[0], context.allocator)
             return true
         } else {
             CoTaskMemFree(pidl)
@@ -243,7 +301,16 @@ dialog_append_filter :: proc(di: ^DialogBase, description, ftype: string)
     di.filter = fmt.tprintf("%s%s\x00*%s\x00", di.filter, description, ftype)
 }
 
-dialog_destroy :: proc(this: ^FileOpenDialog)
+dialog_destroy :: proc(this: ^$T)
 {
-    if this.multiSel do delete(this.selectedFiles)
+    when T == FileOpenDialog {        
+        if this.multiSel {
+            for f in this.selectedFiles {
+                delete(f)
+            }
+            delete(this.selectedFiles)
+        }
+    } 
+    delete(this.selectedPath)
+    free(this)
 }

@@ -12,7 +12,7 @@ print :: fmt.println
 // All controls has a default back & fore color.
 def_back_clr :: 0xFFFFFF
 def_fore_clr :: 0x000000
-gea : EventArgs = new_event_args()
+gea : EventArgs 
 
 
 
@@ -112,7 +112,7 @@ conc_num :: proc{conc_num1, conc_num2}
 conc_num1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 conc_num2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
 
-dir_cast :: #force_inline proc(value : $T, $tp : typeid) -> tp
+dir_cast :: #force_inline proc "contextless" (value : $T, $tp : typeid) -> tp
 {
 	return cast(tp)cast(UINT_PTR) value
 }

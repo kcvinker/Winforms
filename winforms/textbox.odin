@@ -78,7 +78,7 @@ textbox_set_readonly:: proc(tb: ^TextBox, bstate: bool)
 textbox_clear_all:: proc(tb: ^TextBox)
 {
     if tb._isCreated {
-        SetWindowText(tb.handle, to_wstring(""))
+        SetWindowText(tb.handle, EWCAPTR)
         // free_all(context.temp_allocator)
     }
 }

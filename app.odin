@@ -130,12 +130,14 @@ MakeWindow :: proc()
     }
 
     open_file_proc :: proc(c : rawptr, e : ^ui.EventArgs) {
+        ptf("Open File button clicked: %d", context.user_index)
         idir : string = "D:\\Work\\Shashikumar\\2023\\Jack Ryan"
 
         ofd := ui.file_open_dialog(initFolder = idir, description = "PDF Files", ext = ".pdf")
         ofd.multiSel = true
-        x := ui.dialog_show(&ofd, frm.handle)
-        dialog_destroy(&ofd)
+        x := ui.dialog_show(ofd, frm.handle)
+        dialog_destroy(ofd)
+
         
     }
 
@@ -170,9 +172,9 @@ main :: proc()
     // mem.tracking_allocator_init(&temp_track, context.temp_allocator)
 
     context.allocator = mem.tracking_allocator(&track)
-    context.user_index = 225
-    x := 23
-    context.user_ptr = &x
+    // context.user_index = 225
+    // x := 23
+    // context.user_ptr = &x
     defer mem.tracking_allocator_destroy(&track)
     MakeWindow()
     ui.show_memory_report(&track)

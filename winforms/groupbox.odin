@@ -119,7 +119,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 @private gb_after_creation :: proc(this : ^GroupBox)
 {
     if this._gbStyle == .Classic {
-        SetWindowTheme(this.handle, EMWSTR_PTR, EMWSTR_PTR)
+        SetWindowTheme(this.handle, EWCAPTR, EWCAPTR)
         this._themeOff = true
     }
 	set_subclass(this, gb_wnd_proc)  
@@ -184,7 +184,7 @@ gbx_set_style :: proc(this: ^GroupBox, value: GroupBoxStyle) {
     this._gbStyle = value
     if value == .Classic {
         if !this._themeOff {
-            SetWindowTheme(this.handle, EMWSTR_PTR, EMWSTR_PTR)
+            SetWindowTheme(this.handle, EWCAPTR, EWCAPTR)
             this._themeOff = true
         }
     } else if value == .Overriden {

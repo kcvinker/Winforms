@@ -161,7 +161,7 @@ create_control :: proc(c : ^Control)
 		width = i32(c.width)
 		height = i32(c.height)
 	}
-	ctrl_txt_ptr : LPCWSTR = c.text == "" ? nil: to_wstring(c.text)
+	ctrl_txt_ptr : WCPTR = c.text == "" ? nil: to_wstring(c.text)
 
     c.handle = CreateWindowEx(  c._exStyle,
 								c._clsName,

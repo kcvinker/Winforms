@@ -48,7 +48,7 @@ utf8_to_utf16_with_array :: proc(s: string, wchar_arr: []u16, allocator := conte
     
 }
 
-to_wstring :: proc(s: string, allocator := context.temp_allocator) -> ^u16 {
+to_wstring :: proc(s: string, allocator := context.temp_allocator) -> ^WCHAR {
    if res := utf8_to_utf16(s, allocator); res != nil {
       return &res[0]
    }
@@ -63,10 +63,13 @@ to_wchar_ptr :: proc(s: string, allocator := context.temp_allocator) -> ^u16 {
 }
 
 
-wstring_to_utf8 :: proc(s: wstring, N: int, allocator := context.temp_allocator) -> (res: string, err: runtime.Allocator_Error)  {
+wstring_to_utf8 :: proc(s: WCPTR, N: int, allocator := context.temp_allocator) -> (res: string, err: runtime.Allocator_Error)  {
    if N == 0  do return "", nil
 
-   n := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, i32(N) if N > 0 else -1, nil, 0, nil, nil)
+   n := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, 
+                              s, 
+                              i32(N) if N > 0 else -1, 
+                              nil, 0, nil, nil)
    if n == 0 do return "", nil
 
    // If N < 0 the call to WideCharToMultiByte assume the wide string is null terminated
@@ -76,7 +79,10 @@ wstring_to_utf8 :: proc(s: wstring, N: int, allocator := context.temp_allocator)
 	// will not be null terminated.
    text := make([]byte, n, allocator) or_return
 
-   n1 := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s, i32(N), raw_data(text), n, nil, nil)
+   n1 := WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, 
+                              s, 
+                              i32(N), 
+                              raw_data(text), n, nil, nil)
    if n1 == 0 {
       delete(text, allocator)
       return "", nil
@@ -105,7 +111,7 @@ wstring_to_string :: proc(s: wstring, allocator := context.temp_allocator) -> st
    return res
 }
 
-make_int_resource::proc(value : UINT) -> wstring {return wstring(rawptr(UINT_PTR(value))) }
+make_int_resource::proc "contextless" (value : UINT) -> wstring {return wstring(rawptr(UINT_PTR(value))) }
 
 FILETIME_as_unix_nanoseconds :: proc "contextless" (ft: FILETIME) -> i64 {
 	t := i64(u64(ft.dwLowDateTime) | u64(ft.dwHighDateTime) << 32)
@@ -130,7 +136,7 @@ foreign user32 {
    @(link_name="LoadCursorW") LoadCursor :: proc(instance: HINSTANCE, cursor_name: wstring) -> HCURSOR ---
 
    @(link_name="CreateWindowExW") CreateWindowEx :: proc(  ex_style: u32,
-                                                            class_name, title: wstring,
+                                                            class_name, title: WCPTR,
                                                             style: u32,
                                                             #any_int x, y, w, h: i32,
                                                             parent: HWND,
@@ -159,10 +165,10 @@ foreign user32 {
    @(link_name="GetClientRect") GetClientRect :: proc(hwnd: HWND, rect: ^RECT) -> BOOL---
    @(link_name="InvalidateRect") InvalidateRect :: proc(hwnd: HWND, rect: ^RECT, berase : BOOL) -> BOOL---
    @(link_name="SetWindowPos") SetWindowPos :: proc(hwnd, hw_ins_after: HWND, #any_int x, y, cx, cy : i32, flags : u32) -> BOOL---
-   @(link_name="SetWindowTextW") SetWindowText :: proc(hwnd : HWND, lp_string : LPCWSTR) -> BOOL---
-   @(link_name="GetWindowTextW") GetWindowText :: proc(hwnd : HWND, lp_string : wstring, count : i32) -> i32 ---
+   @(link_name="SetWindowTextW") SetWindowText :: proc(hwnd : HWND, lp_string : WCPTR) -> BOOL---
+   @(link_name="GetWindowTextW") GetWindowText :: proc(hwnd : HWND, lp_string : WCPTR, count : i32) -> i32 ---
    @(link_name="GetWindowTextLengthW") GetWindowTextLength :: proc(hwnd : HWND) -> i32 ---
-   @(link_name="DrawTextW") DrawText :: proc(hdc : HDC, lp_txt : wstring, cch_txt : i32, lprc : ^RECT, format : UINT) -> i32 ---
+   @(link_name="DrawTextW") DrawText :: proc(hdc : HDC, lp_txt : WCPTR, cch_txt : i32, lprc : ^RECT, format : UINT) -> i32 ---
    @(link_name="InflateRect") InflateRect :: proc(lprct : ^RECT, dx, dy : i32) -> BOOL---
    @(link_name="RedrawWindow") RedrawWindow :: proc(hw : HWND, lprct : ^RECT, upd_rgn : HRGN, flags : UINT) -> BOOL---
    @(link_name="MoveWindow") MoveWindow :: proc(hw : HWND, x, y, w, h : i32, repaint : BOOL) -> BOOL---
@@ -217,7 +223,7 @@ foreign user32 {
    @(link_name="DestroyMenu") DestroyMenu :: proc(hmenu: HMENU) -> BOOL ---
    @(link_name="SetTimer") SetTimer :: proc(hWnd: HWND, nID: UINT_PTR, uEl: UINT, lpfn: TIMERPROC) -> UINT_PTR ---
    @(link_name="KillTimer") KillTimer :: proc(hWnd: HWND, nID: UINT_PTR) -> BOOL ---
-   @(link_name="UnregisterClassW") UnregisterClass :: proc(LPCWSTR, HINSTANCE) -> BOOL ---
+   @(link_name="UnregisterClassW") UnregisterClass :: proc(WCPTR, HINSTANCE) -> BOOL ---
    @(link_name="DrawFrameControl") DrawFrameControl :: proc(HDC, ^RECT, UINT, UINT) -> BOOL ---
    // @(link_name="RegisterHotKey") RegisterHotKey :: proc(HWND, INT, UINT, UINT) -> BOOL ---
    @(link_name="UnregisterHotKey") UnregisterHotKey :: proc(HWND, api.INT) -> BOOL ---
@@ -240,7 +246,7 @@ foreign kernel32 {
                                                                       wc_str: LPWSTR, wc: i32) -> i32 ---
 
    @(link_name="WideCharToMultiByte") WideCharToMultiByte :: proc(code_page: u32, flags: DWORD,
-                                                                      wchar_str: LPCWSTR, wchar: i32,
+                                                                      wchar_str: WCPTR, wchar: i32,
                                                                       multi_str: LPSTR, multi: i32,
                                                                       default_char: LPSTR, used_default_char: ^BOOL) -> i32 ---
 
@@ -287,7 +293,7 @@ foreign gdi32 {
    @(link_name="Rectangle") Rectangle :: proc(hdc : HDC, left, top, right, bottom : i32) -> BOOL---
    @(link_name="CreatePen") CreatePen :: proc(style, #any_int width : i32, cref : COLORREF) -> HPEN ---
    @(link_name="GetTextExtentPoint32W") GetTextExtentPoint32 :: proc(dch : HDC,
-                                                                        lp_string : wstring,
+                                                                        lp_string : WCPTR,
                                                                         #any_int str_len : i32,
                                                                         psize : ^SIZE) -> BOOL---
    @(link_name="SetBkColor") SetBkColor :: proc(dchandle : HDC, cref : COLORREF) -> COLORREF ---
@@ -304,7 +310,7 @@ foreign gdi32 {
    @(link_name="TextOutW") TextOut :: proc(hdc: HDC, x, y: i32, lpTxt: wstring, tLen: i32) -> BOOL---
    @(link_name="BitBlt") BitBlt :: proc(hdc: HDC, x, y, cx, cy: i32, hdcSrc: HDC, x1, y1: i32, rop: DWORD) -> BOOL---
    @(link_name="GetRgnBox") GetRgnBox :: proc(hrgn: HRGN, lprc: ^RECT) -> BOOL---
-   @(link_name="ExtTextOutW") ExtTextOut :: proc(hdc: HDC, x, y: i32, opt: u32, lprc: ^RECT, str: LPCWSTR, c: u32, lpdx: ^i32) -> BOOL---
+   @(link_name="ExtTextOutW") ExtTextOut :: proc(hdc: HDC, x, y: i32, opt: u32, lprc: ^RECT, str: WCPTR, c: u32, lpdx: ^i32) -> BOOL---
    @(link_name="FillRgn") FillRgn :: proc(hdc: HDC, hrg: HRGN, hbr: HBRUSH) -> BOOL---
    // @(link_name="GetObjectW") GetObject :: proc(h: HANDLE, c: i32, p: LPVOID) -> i32---
 
@@ -333,7 +339,7 @@ foreign Comctl32 {
 foreign import "system:UxTheme.lib"
 @(default_calling_convention = "stdcall")
 foreign UxTheme {
-   @(link_name="SetWindowTheme") SetWindowTheme :: proc(hw : HWND, sub_app : wstring, sub_id : wstring) -> HRESULT ---
+   @(link_name="SetWindowTheme") SetWindowTheme :: proc(hw : HWND, sub_app : WCPTR, sub_id : WCPTR) -> HRESULT ---
    @(link_name="OpenThemeData") OpenThemeData :: proc(hw : HWND, cls_list : wstring) -> HTHEME ---
    @(link_name="CloseThemeData") CloseThemeData :: proc(htd : HTHEME) -> HRESULT ---
    @(link_name="DrawThemeEdge") DrawThemeEdge :: proc(htd : HTHEME,

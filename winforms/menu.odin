@@ -378,7 +378,7 @@ MenuItem :: struct
     menuState : MenuState,
     tag: rawptr,
 
-    _wideText: LPCWSTR,
+    _wideText: WCPTR,
 	_index : uint,
 	_evtFlag : uint,
     _uFlag: uint,
@@ -459,7 +459,6 @@ menu_set_state :: proc(this: ^MenuItem, value: MenuState)
 
 @private insert_menu_internal :: proc(this: ^MenuItem, parent: HMENU, draw_flag: UINT)
 {   
-
 	mii : api.MENUITEMINFOW
     mii.cbSize = size_of(mii)
     mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA | MIIM_SUBMENU | MIIM_STATE //this._ownDraw ? ODM_FLAG : SDM_FLAG
