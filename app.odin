@@ -133,9 +133,10 @@ MakeWindow :: proc()
         ptf("Open File button clicked: %d", context.user_index)
         idir : string = "D:\\Work\\Shashikumar\\2023\\Jack Ryan"
 
-        ofd := ui.file_open_dialog(initFolder = idir, description = "PDF Files", ext = ".pdf")
-        ofd.multiSel = true
+        ofd := ui.file_open_dialog(initFolder = idir, filterStr = "PDF Files|*.pdf")
+        // ofd.multiSel = true
         x := ui.dialog_show(ofd, frm.handle)
+        ptf("Dialog result: %s\n", ofd.selectedPath)
         dialog_destroy(ofd)
 
         

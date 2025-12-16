@@ -3,7 +3,7 @@
 package winforms
 import "core:fmt"
 import "base:runtime"
-import "core:strings"
+// import "core:strings"
 import "core:mem"
 
 // Constants
@@ -28,13 +28,14 @@ import "core:mem"
 
 // Type Decl
     
+    
 
     DialogBase :: struct {
         kind : DialogType,
         title, initDir, selectedPath : string,
         fileStart, extStart : int,
         allowAllFiles: bool,
-        filter : string
+        filter : ^DString
     }
 
     FileOpenDialog :: struct {
@@ -54,33 +55,55 @@ import "core:mem"
         newFolBtn, showFiles : bool
     }
 
+
     OFNHOOKPROC :: distinct #type proc "stdcall"(hwnd: HWND, msg: uint, wpm: WPARAM, lpm: LPARAM) -> UINT_PTR
     BROWSECBPROC :: distinct #type proc "stdcall"(hwnd: HWND, msg: uint, lpm1: LPARAM, lpm2: LPARAM) -> i32
 
 // End Type
 
+make_filter_string :: proc(this: ^DialogBase, filterString: string, alloc:= context.allocator)
+{
+    this.filter = newDString(alloc, len(filterString) + 2)
+    dstring_append(this.filter, filterString, alloc)
+    dstring_replace(this.filter, "|", "\x00", alloc)
+    dstring_append(this.filter, "\x00\x00", alloc)
+    ptf("Filter string ptr: %p\n", this.filter.data)
+}
 
-file_open_dialog :: proc(titleStr: string = "Open file", initFolder: string = "", description: string = "", ext: string = "" ) -> ^FileOpenDialog
+// Create new FileOpenDialog. 
+// NOTE: The filterStr uses '|' as separator between description and extensions.
+// Example1: "Image Files|*.png|Text Files|*.txt"
+// Example2: "Document Files|*.doc;*.docx;*.pdf"
+// Example1 uses multiple filters with multiple description.
+// Example2 uses multiple extensions in a single filter.
+file_open_dialog :: proc(titleStr: string = "Open file", 
+                         initFolder: string = "", 
+                         filterStr: string = "All Files|*.*") -> ^FileOpenDialog
 {
     this := new(FileOpenDialog)
     this.title = titleStr
     this.initDir = initFolder
     this.kind = DialogType.File_Open
-    dummy : string = description == "" ? "All Files" : description
-    this.filter = ext == "" ? fmt.tprintf("%s\x00*.*\x00\x00", dummy) : fmt.tprintf("%s\x00*%s\x00\x00",dummy, ext)
+    make_filter_string(this, filterStr)
     return this
 }
 
-file_save_dialog :: proc(titleStr: string = "Save As", initFolder: string = "") -> ^FileSaveDialog
+// Create new FileSaveDialog. 
+// NOTE: The filterStr uses '|' as separator between description and extensions.
+file_save_dialog :: proc(titleStr: string = "Save As", 
+                         initFolder: string = "",
+                         filterStr: string = "All Files|*.*") -> ^FileSaveDialog
 {
     this := new(FileSaveDialog)
     this.title = titleStr
     this.initDir = initFolder
     this.kind = DialogType.File_Save
+    make_filter_string(this, filterStr)
     return this
 }
 
-folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string = "") -> ^FolderBrowserDialog
+folder_browser_dialog :: proc(titleStr: string = "Save As", 
+                              initFolder: string = "") -> ^FolderBrowserDialog
 {
     this := new(FolderBrowserDialog)
     this.title = titleStr
@@ -132,7 +155,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     when T == FolderBrowserDialog {
         if len(this.title) > 0 do arena_size += (len(this.title) + 1) * 2
     } else {
-        if len(this.filter) > 0 do arena_size += (len(this.filter) + 1) * 2
+        if this.filter.len > 0 do arena_size += (this.filter.len + 1) * 2
         if len(this.initDir) > 0 do arena_size += (len(this.initDir) + 1) * 2
         if len(this.title) > 0 do arena_size += (len(this.title) + 1) * 2
     }    
@@ -162,20 +185,16 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
         buffer = make([dynamic]WCHAR, MAX_PATH, arena_alloc)
     }       
 
-    if this.allowAllFiles {
-        this.filter = fmt.aprintf("%sAll files\x00*.*\x00", this.filter, arena_alloc)
-    }
-
     // This is a hack. Windows will ignore the initial directory path if it...
     // contains a space in it's last part. But if path ends with a '\' it will work. So here...
     // we are checking for white space and put the '\' at the end.
     if isPathContainsWhiteSpace(this.initDir) {
-        this.initDir = fmt.aprintf("%s\\", this.initDir, arena_alloc)
+        this.initDir = fmt.aprintf("%s\\", this.initDir, allocator = arena_alloc)
     }
     ofn : OPENFILENAMEW
     ofn.hwndOwner = hwnd
     ofn.lStructSize = size_of(ofn)
-    ofn.lpstrFilter = to_wchar_ptr(this.filter, arena_alloc)
+    ofn.lpstrFilter = to_wchar_ptr(dstring_to_string(this.filter), arena_alloc)
     ofn.lpstrFile = &buffer[0]
     ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir, arena_alloc)
     ofn.lpstrTitle = to_wchar_ptr(this.title, arena_alloc)
@@ -201,8 +220,9 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
 
 @private save_dialog_helper :: proc(this: ^FileSaveDialog, hwnd: HWND) -> bool
 {
-    if isPathContainsWhiteSpace(this.initDir) do this.initDir = fmt.tprintf("%s\\", this.initDir)
-    
+    if isPathContainsWhiteSpace(this.initDir) {
+        this.initDir = fmt.tprintf("%s\\", this.initDir)
+    }
     arena_size : int = calc_arena_size(this, MAX_PATH)   
     mem_block := make([]byte, arena_size)
     arena : mem.Arena
@@ -214,7 +234,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As", initFolder: string =
     ofn : OPENFILENAMEW
     ofn.hwndOwner = hwnd
     ofn.lStructSize = size_of(ofn)
-    ofn.lpstrFilter = to_wchar_ptr(this.filter, arena_alloc)
+    ofn.lpstrFilter = to_wchar_ptr(dstring_to_string(this.filter), arena_alloc)
     ofn.lpstrFile = &buffer[0]
     ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir, arena_alloc)
     ofn.lpstrTitle = to_wchar_ptr(this.title, arena_alloc)
@@ -276,30 +296,13 @@ dialog_show :: proc(di: ^$T, hw: HWND = nil) -> bool
     return false
 }
 
-dialog_set_filters :: proc(di: ^DialogBase, ftypes: ..string)
+dialog_set_filters :: proc(this: ^DialogBase, filterStr: string)
 {
-    sb := strings.builder_make()
-    strings.write_string(&sb, fmt.tprintf("%s\x00", ftypes[0])) // First item is the description
-    extCount := len(ftypes)
-    for i in 1..<extCount {
-        if i == extCount - 1 {
-            strings.write_string(&sb, fmt.tprintf("*%s\x00\x00", ftypes[i])) // It is the last extension
-        } else {
-            strings.write_string(&sb, fmt.tprintf("*%s;", ftypes[i]))
-        }
-    }
-    di.filter = strings.to_string(sb)
+    if this.filter != nil do dstring_destroy(this.filter)
+    make_filter_string(this, filterStr)    
 }
 
-dialog_set_filter :: proc(di: ^DialogBase, description, ftype: string)
-{
-    di.filter = fmt.tprintf("%s\x00*%s\x00", description, ftype)
-}
 
-dialog_append_filter :: proc(di: ^DialogBase, description, ftype: string)
-{
-    di.filter = fmt.tprintf("%s%s\x00*%s\x00", di.filter, description, ftype)
-}
 
 dialog_destroy :: proc(this: ^$T)
 {
@@ -310,6 +313,9 @@ dialog_destroy :: proc(this: ^$T)
             }
             delete(this.selectedFiles)
         }
+        dstring_destroy(this.filter)
+    } else when T == FileSaveDialog {
+        dstring_destroy(this.filter)
     } 
     delete(this.selectedPath)
     free(this)
