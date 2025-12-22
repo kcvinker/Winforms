@@ -173,31 +173,28 @@ folder_browser_dialog :: proc(titleStr: string = "Save As",
     def_size : int = this.multiSel? MAX_ARR_SIZE : MAX_PATH
     arena_size : int = calc_arena_size(this, def_size + 20) // Extra 20 chars for safety
 
-    mem_block := make([]byte, arena_size)
-    arena : mem.Arena
-    mem.arena_init(&arena, mem_block)
-    arena_alloc := mem.arena_allocator(&arena)
-    defer delete(mem_block)
+    // Create arena memory that will be freed when going out of scope.
+    arena := newArenaMemory(arena_size, true)      
 
     if this.multiSel {
-        buffer = make([dynamic]WCHAR, MAX_ARR_SIZE, arena_alloc)
+        buffer = make([dynamic]WCHAR, MAX_ARR_SIZE, arena.allocator)
     } else {
-        buffer = make([dynamic]WCHAR, MAX_PATH, arena_alloc)
+        buffer = make([dynamic]WCHAR, MAX_PATH, arena.allocator)
     }       
 
     // This is a hack. Windows will ignore the initial directory path if it...
     // contains a space in it's last part. But if path ends with a '\' it will work. So here...
     // we are checking for white space and put the '\' at the end.
     if isPathContainsWhiteSpace(this.initDir) {
-        this.initDir = fmt.aprintf("%s\\", this.initDir, allocator = arena_alloc)
+        this.initDir = fmt.aprintf("%s\\", this.initDir, allocator = arena.allocator)
     }
     ofn : OPENFILENAMEW
     ofn.hwndOwner = hwnd
     ofn.lStructSize = size_of(ofn)
-    ofn.lpstrFilter = to_wchar_ptr(dstring_to_string(this.filter), arena_alloc)
+    ofn.lpstrFilter = to_wchar_ptr(dstring_to_string(this.filter), arena.allocator)
     ofn.lpstrFile = &buffer[0]
-    ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir, arena_alloc)
-    ofn.lpstrTitle = to_wchar_ptr(this.title, arena_alloc)
+    ofn.lpstrInitialDir = this.initDir == "" ? nil : to_wchar_ptr(this.initDir, arena.allocator)
+    ofn.lpstrTitle = to_wchar_ptr(this.title, arena.allocator)
     ofn.nMaxFile = MAX_ARR_SIZE
     ofn.nMaxFileTitle = MAX_PATH
     ofn.lpstrDefExt = dir_cast(0, ^WCHAR)
@@ -208,7 +205,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As",
     if ret > 0 {
         if this.multiSel {
             // We are using arena allocator to store the dir path and file names.
-            extract_file_names(this, buffer[:], ofn.nFileOffset, arena_alloc)
+            extract_file_names(this, buffer[:], ofn.nFileOffset, arena.allocator)
             return true
         } else {
             this.selectedPath = utf16_to_utf8(buffer[:], context.allocator)

@@ -376,3 +376,47 @@ show_memory_report :: proc(track: ^mem.Tracking_Allocator)
     for _, v in track.allocation_map { ptf("%v leaked %v bytes\n", v.location, v.size) }
     for bf in track.bad_free_array { ptf("%v allocation %p was freed badly\n", bf.location, bf.memory) }
 }
+
+
+// A helper type for arena allocator
+ArenaMemory :: struct
+{
+	_arena : mem.Arena,
+	_mem_block : []byte,
+	_mem_size : int,
+	_deferOn: bool,
+	allocator : runtime.Allocator
+}
+
+// Create new arena wrapper. If deferOn is true, 
+// the memory will be freed when the wrapper goes out of scope.
+@(deferred_out=arena_memory_destroy)
+newArenaMemory :: proc(size: int, deferOn: bool = false ) -> ^ArenaMemory
+{
+	this := new(ArenaMemory)
+	this._mem_size = size
+	this._deferOn = deferOn
+	this._mem_block = make([]byte, size)
+	mem.arena_init(&this._arena, this._mem_block)
+	this.allocator = mem.arena_allocator(&this._arena)
+	return this
+}
+
+@private
+arena_memory_destroy :: proc(this: ^ArenaMemory)
+{
+	if this._deferOn {
+		delete(this._mem_block)
+		free(this)
+		print("ArenaMemory freed")
+	} else {
+		print("ArenaMemory not freed (deferOn is false)")
+	}
+}
+
+freeArenaMemory :: proc(this: ^ArenaMemory)
+{
+	delete(this._mem_block)
+	free(this)
+	print("ArenaMemory freed")
+}
