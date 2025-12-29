@@ -131,6 +131,8 @@ foreign Shcore {
 foreign import "system:user32.lib"
 @(default_calling_convention = "stdcall")
 foreign user32 {
+   @(link_name="SetProcessDpiAwarenessContext") SetProcessDpiAwarenessContext :: proc(p: DPI_AWARENESS_CONTEXT) -> BOOL ---
+	@(link_name="GetDpiForSystem") GetDpiForSystem :: proc() -> UINT ---
    @(link_name="RegisterClassExW") RegisterClassEx :: proc(wc: ^WNDCLASSEXW) -> i16 ---
    @(link_name="LoadIconW") LoadIcon :: proc(instance: HINSTANCE, icon_name: wstring) -> HICON ---
    @(link_name="LoadCursorW") LoadCursor :: proc(instance: HINSTANCE, cursor_name: wstring) -> HCURSOR ---

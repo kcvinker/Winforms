@@ -28,8 +28,7 @@ Application :: struct
     hInstance : HINSTANCE,
     trayHwnd : HWND,
     screenWidth, screenHeight : int,
-    sysDPI: i32,
-    scaleFactor: f64,
+    sysDPI: u32,
     formCount : int,
     clrWhite : uint,
     clrBlack : uint,
@@ -52,6 +51,7 @@ Application :: struct
 @private 
 app_start :: proc "contextless" () 
 {
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)
     app.hInstance = GetModuleHandle(nil)
     gea = new_event_args()
     global_context.user_index = 471
@@ -62,6 +62,7 @@ initFormDefaults :: proc()
 {
     app.screenWidth = int(api.GetSystemMetrics(0))
     app.screenHeight = int(api.GetSystemMetrics(1))
+    app.sysDPI = GetDpiForSystem()
     app.iccx.dwSize = size_of(app.iccx)
     app.iccx.dwIcc = ICC_STANDARD_CLASSES
     InitCommonControlsEx(&app.iccx)    
@@ -70,7 +71,7 @@ initFormDefaults :: proc()
     EMWARR[0] = 0
     EWCAPTR = &EMWARR[0]
     register_class()
-    get_system_dpi()  
+    // get_system_dpi()  
     app.font = new_font("Tahoma", 11)
     font_fill_logfont(&app.font, &app.lfont)
 }
@@ -87,15 +88,15 @@ initMsgForm :: proc() // Called when first msg-only window starting
 	if res > 0 do app.isMowReg = true
 }
 
-@private get_system_dpi :: proc()
-{
-    hdc: HDC = GetDC(nil)
-    defer ReleaseDC(nil, hdc)
-    app.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY)    
-    scale := f64(GetScaleFactorForDevice(0))
-    app.scaleFactor = scale / 100.0
+// @private get_system_dpi :: proc()
+// {
+//     hdc: HDC = GetDC(nil)
+//     defer ReleaseDC(nil, hdc)
+//     app.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY)    
+//     scale := f64(GetScaleFactorForDevice(0))
+//     app.scaleFactor = scale / 100.0
 	
-}
+// }
 
 @private register_class :: proc()
 {

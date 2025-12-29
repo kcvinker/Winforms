@@ -39,8 +39,7 @@ new_font :: proc {new_font_1, new_font_2} // Overloaded proc
 
 @private font_fill_logfont :: proc(this : ^Font, plf: ^LOGFONT) 
 {
-	fsiz:= i32(app.scaleFactor * f64(this.size))
-	iHeight : i32 = -MulDiv(fsiz , app.sysDPI, 72)		
+	iHeight : i32 = MulDiv(i32(this.size), i32(app.sysDPI), 72)		
 	widestring_fill_buffer(plf.lfFaceName[:], this.name)
 	plf.lfItalic = cast(byte)this.italics
 	plf.lfUnderline = cast(byte)this.underline
