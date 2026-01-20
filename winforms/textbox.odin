@@ -214,7 +214,8 @@ textbox_clear_all:: proc(tb: ^TextBox)
 
 @private tb_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM, sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT {
 
-    context = global_context //runtime.default_context()
+    context = global_context //
+    // context = runtime.default_context()
 
     switch msg {
         case WM_PAINT:

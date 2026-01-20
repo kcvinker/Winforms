@@ -1,4 +1,6 @@
 // Created on 05-Aug-2024 07:39
+// Copyright (c) 2026 kcvinker
+// SPDX-License-Identifier: MIT
 
 package winforms
 
@@ -54,7 +56,7 @@ app_start :: proc "contextless" ()
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)
     app.hInstance = GetModuleHandle(nil)
     gea = new_event_args()
-    global_context.user_index = 471
+    // global_context.user_index = 471
 }
 
 @private

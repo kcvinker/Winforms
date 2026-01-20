@@ -275,7 +275,8 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
 
-    context = global_context //runtime.default_context()
+    context = global_context //
+    // context = runtime.default_context()
     
     //display_msg(msg)
     switch msg {

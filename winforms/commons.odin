@@ -224,7 +224,7 @@ get_mouse_pos_on_msg :: proc() -> POINT
     dw_value := GetMessagePos()
     result.x = i32(LOWORD(dw_value))
     result.y = i32(HIWORD(dw_value))
-	ptf("x: %d, y: %d", result.x, result.y)
+	// ptf("x: %d, y: %d", result.x, result.y)
 	return result
 }
 

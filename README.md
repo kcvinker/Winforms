@@ -4,6 +4,9 @@ A simple GUI library for Odin programming language.
 It is built upon win32 API functions. So it needs Windows 64 bit to run.
 Currently, it's a work in progress project.
 
+## License
+This project is licensed under the MIT License.
+
 ## Control List
 Button, Calendar, CheckBox, ComboBox, DateTimePicker, GroupBox, Label, ListBox, TextBox
 NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView, MenuBar, TrayIcon

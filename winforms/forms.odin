@@ -434,6 +434,7 @@ form_setfont :: proc(this : ^Form, fname: string, fsize: int, fweight: FontWeigh
 window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
 {
     context = global_context
+    // context = runtime.default_context()
     //display_msg(msg)
     switch msg {
         case CM_THREAD_MSG:

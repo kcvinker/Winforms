@@ -204,6 +204,7 @@ new_label:: proc{new_label1, new_label2, new_label3}
                                                     sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context
+    // context = runtime.default_context()
     switch msg {
         case WM_PAINT:
             this:= control_cast(Label, ref_data)

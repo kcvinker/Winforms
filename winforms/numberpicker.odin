@@ -445,7 +445,8 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 @private np_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context //runtime.default_context()
+    context = global_context //
+    // context = runtime.default_context()
     
     //display_msg(msg)
     switch msg {
@@ -533,7 +534,8 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 @private buddy_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                             sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context //runtime.default_context()
+    context = global_context //
+    // context = runtime.default_context()
     
     // display_msg(msg)
     switch msg {

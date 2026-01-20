@@ -893,6 +893,7 @@ ListViewSubItem:: struct
 												sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
 {
 	context = global_context  
+	// context = runtime.default_context()
 	// print("user_index ", (cast(^int) context.user_ptr)^)
 	
 	//display_msg(msg)
@@ -1022,7 +1023,8 @@ ListViewSubItem:: struct
 @private hdr_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
 												sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT 
 {
-	context = global_context //runtime.default_context()
+	context = global_context //
+	// context = runtime.default_context()
 	
 	// display_msg(msg)
 		switch msg {

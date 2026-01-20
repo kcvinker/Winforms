@@ -551,7 +551,8 @@ treeview_create_image_list:: proc(tv: ^TreeView, nImg: int, ico_size: int = 16)
 @private tv_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                     sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context //runtime.default_context()
+    // context = runtime.default_context()
+    context = global_context
     
     //display_msg(msg)
     switch msg {

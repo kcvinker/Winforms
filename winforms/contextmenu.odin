@@ -27,6 +27,7 @@
 
 package winforms
 import api "core:sys/windows"
+import "base:runtime"
 
 
 ContextMenu :: struct {
@@ -168,7 +169,7 @@ cmenu_set_itemtag :: proc(this: ^ContextMenu, menuName: string, tagvalue: rawptr
     this._borderBrush = get_solid_brush(0x0077b6)
     this._grayBrush = get_solid_brush(0xced4da)
     this._grayCref = get_color_ref(0x979dac)
-
+    
     /*------------------------------------------------------------
     We need to register our window class only once. We will
     create a message-only window from this class to handle
@@ -363,12 +364,14 @@ cmenu_set_itemtag :: proc(this: ^ContextMenu, menuName: string, tagvalue: rawptr
     api.DestroyWindow(this._dummyHwnd)
     
     free(this)
+    
     // print("context menu dtor finished")
 }
 
 @private cmenu_wndproc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM) -> LRESULT
 {
     context = global_context
+    // context = runtime.default_context()
     // display_msg(msg)
     switch msg {
         // case WM_DESTROY:

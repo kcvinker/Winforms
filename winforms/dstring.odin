@@ -50,7 +50,7 @@ dstring_append :: proc(ds: ^DString, str: string, alloc: runtime.Allocator)
         strLen := len(str)
         newLen := ds.len + strLen
         if newLen > ds.capacity {
-            print("Reallocating DString buffer")
+            // print("Reallocating DString buffer")
             newCap := max(ds.capacity * 2, newLen)
             newData := make([dynamic]u8, newLen, newCap, alloc)
             if ds.len > 0 do copy(newData[0:ds.len], ds.data[0:ds.len])
@@ -58,7 +58,7 @@ dstring_append :: proc(ds: ^DString, str: string, alloc: runtime.Allocator)
             ds.data = newData
             ds.capacity = newCap
         }
-        ptf("strlen %d, dslen: %d\n", strLen, ds.len)
+        // ptf("strlen %d, dslen: %d\n", strLen, ds.len)
         for i in 0 ..< strLen {
             ds.data[ds.len + i] = str[i]
         }

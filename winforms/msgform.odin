@@ -28,6 +28,7 @@ new_messageform :: proc(msgHandler: MessageHandler, autoc: bool = true,
                 iconpath: string = ""  ) -> ^MessageForm
 {
     context = global_context
+
     if app.isMowReg == false do initMsgForm()    
     this := new(MessageForm, context.allocator)
     this.noTray = notray
@@ -189,7 +190,8 @@ msgfrm_destroy :: proc(this: ^MessageForm)
 msgfrm_wndproc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
 {
     context = global_context
-    display_msg(msg)
+    // context = runtime.default_context()
+    // display_msg(msg)
     switch msg {
         case WM_GETMINMAXINFO, WM_NCCREATE, WM_NCCALCSIZE, WM_CREATE:
             return DefWindowProc(hw, msg, wp, lp)

@@ -67,7 +67,7 @@ make_filter_string :: proc(this: ^DialogBase, filterString: string, alloc:= cont
     dstring_append(this.filter, filterString, alloc)
     dstring_replace(this.filter, "|", "\x00", alloc)
     dstring_append(this.filter, "\x00\x00", alloc)
-    ptf("Filter string ptr: %p\n", this.filter.data)
+    // ptf("Filter string ptr: %p\n", this.filter.data)
 }
 
 // Create new FileOpenDialog. 
@@ -119,6 +119,7 @@ folder_browser_dialog :: proc(titleStr: string = "Save As",
                                     alloc: runtime.Allocator)
 {
     context = global_context
+    // context = runtime.default_context()
     start_pos:= cast(int)start
 
     // This will be freed by the caller when they free the arena allocator.

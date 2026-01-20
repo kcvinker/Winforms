@@ -177,7 +177,8 @@ radiobutton_set_autocheck:: proc(rb: ^RadioButton, auto_check: bool )
 @private rb_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context    
+    context = global_context  
+    // context = runtime.default_context()  
     //display_msg(msg)
     switch msg {
         case WM_DESTROY: 

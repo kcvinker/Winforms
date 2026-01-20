@@ -35,6 +35,7 @@
 package winforms
 
 import api "core:sys/windows"
+import "base:runtime"
 // import "core:slice"
 
 trayClass := []WCHAR {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'T', 'r', 'a', 'y', 0}
@@ -207,6 +208,8 @@ tray_add_context_menu :: proc(this: ^TrayIcon, cdraw: bool, trigger: TrayMenuTri
 @private tray_wndproc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT
 {
     context = global_context
+    // context = runtime.default_context()
+    
     // display_msg(msg)
     switch msg {
         case WM_DESTROY:            
@@ -215,7 +218,7 @@ tray_add_context_menu :: proc(this: ^TrayIcon, cdraw: bool, trigger: TrayMenuTri
             if this._hTrayIcon != nil do DestroyIcon(this._hTrayIcon)
             if this._cmenuUsed do contextmenu_dtor(this.contextMenu)
             free(this)
-            print("Tray Icon's message-only window destroyed")
+            // print("Tray Icon's message-only window destroyed")
 
         case CM_TRAY_MSG:
             switch lp {

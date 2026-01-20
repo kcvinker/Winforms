@@ -141,6 +141,7 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
                                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context
+    // context = runtime.default_context()
     
     switch msg {
         case WM_PAINT:
