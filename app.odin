@@ -24,7 +24,7 @@ MakeWindow :: proc()
     using ui
     frm = new_form( txt = "Odin is fun")
     frm.width = 1100
-    frm.height = 500
+    frm.height = 600
     // frm.font = new_font("Tahoma", 13)
     print_points(frm)
     
@@ -103,6 +103,7 @@ MakeWindow :: proc()
     // lv.contextMenu._ownDraw = true
 
     tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20)
+    pbx := new_picturebox(frm, cright(gb2) + 10, 328, 270, 180, "gbil.jpg", .Stretch)
 
     pgb = new_progressbar(frm, lv.xpos, cbottom(lv) + 15, lv.width, 30, perc = true)
     tk = new_trackbar(frm, lv.xpos, cbottom(pgb) + 20, 200, 50)
@@ -173,7 +174,7 @@ main :: proc()
     // mem.tracking_allocator_init(&temp_track, context.temp_allocator)
 
     context.allocator = mem.tracking_allocator(&track)
-    // context.user_index = 225
+    context.user_index = 225
     // x := 23
     // context.user_ptr = &x
     defer mem.tracking_allocator_destroy(&track)

@@ -89,6 +89,7 @@ radiobutton_set_autocheck:: proc(rb: ^RadioButton, auto_check: bool )
     this.height = h
     this.checkOnClick = true
     this.autoSize = true
+    this._hasFont = true
     this.backColor = f.backColor
     this.foreColor = f.foreColor
     this._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_CLIPCHILDREN

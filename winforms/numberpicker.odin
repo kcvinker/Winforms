@@ -128,6 +128,7 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     this.xpos = x
     this.ypos = y
     this.step = 1
+    this._hasFont = true
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
     this.minRange = 0

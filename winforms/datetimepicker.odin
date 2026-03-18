@@ -108,6 +108,7 @@ dtp_set_custom_format:: proc(dtp: ^DateTimePicker, fmt_string: string)
     dtp.ypos = y
     dtp.width = w
     dtp.height = h
+    dtp._hasFont = true
     dtp._clsName = WcDTPClassW
     dtp.format = .Custom
     dtp._fp_size_fix = set_dtp_size

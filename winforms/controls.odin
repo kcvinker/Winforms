@@ -109,6 +109,7 @@ Control :: struct
 	_inherit_color: bool,
 	_textable: bool,
 	_cmenuUsed: bool,
+	_hasFont: bool,
 	_wtext : ^WideString,
 	_fcref : COLORREF,
 
@@ -153,7 +154,8 @@ create_control :: proc(c : ^Control)
     	c.controlID = globalCtlID
 	}
 
-	c._fp_beforeCreation(c)
+	if c._fp_beforeCreation != nil do c._fp_beforeCreation(c)
+
 	width : i32 = 0
 	height : i32 = 0
 	if c.kind != ControlKind.Number_Picker {
@@ -179,8 +181,8 @@ create_control :: proc(c : ^Control)
 
     if c.handle != nil {
         c._isCreated = true
-        setfont_internal(c)
-		c._fp_afterCreation(c)
+        if c._hasFont do setfont_internal(c)
+		if c._fp_afterCreation != nil do c._fp_afterCreation(c)
 		// context = runtime.default_context()
     }
 }

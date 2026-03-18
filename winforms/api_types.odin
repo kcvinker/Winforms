@@ -597,3 +597,15 @@ NMITEMACTIVATE :: struct {
     lParam    : LPARAM,
     uKeyFlags : UINT,
 }
+
+GdiplusStartupInput :: struct {
+    GdiplusVersion           : u32,
+    DebugEventCallback       : DebugEventProc,  // can be nil
+    SuppressBackgroundThread : BOOL,	
+    SuppressExternalCodecs   : BOOL
+}
+
+DebugEventProc :: proc(level: DebugEventLevel, message: cstring)
+GpImage :: struct {}
+GpGraphics :: struct {}
+

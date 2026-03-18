@@ -46,6 +46,8 @@ Application :: struct
     trayHwnds: [dynamic]HWND,
     font: Font,
     lfont : LOGFONT,
+    gdip_token : ULONG_PTR,
+    gdip_inited : bool,
     
 }
 
@@ -90,15 +92,26 @@ initMsgForm :: proc() // Called when first msg-only window starting
 	if res > 0 do app.isMowReg = true
 }
 
-// @private get_system_dpi :: proc()
-// {
-//     hdc: HDC = GetDC(nil)
-//     defer ReleaseDC(nil, hdc)
-//     app.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY)    
-//     scale := f64(GetScaleFactorForDevice(0))
-//     app.scaleFactor = scale / 100.0
+@private gdiplus_init :: proc()
+{
+    if app.gdip_inited do return
+    gdipInput : GdiplusStartupInput
+    gdipInput.GdiplusVersion = 1
+    gdipInput.DebugEventCallback = nil
+    gdipInput.SuppressBackgroundThread = false
+    gdipInput.SuppressExternalCodecs = false
+    res := GdiplusStartup(&app.gdip_token, &gdipInput, nil)
+    if res == 0 do app.gdip_inited = true
 	
-// }
+}
+
+@private gdiplus_shutdown :: proc()
+{
+    if app.gdip_inited {
+        GdiplusShutdown(app.gdip_token)
+        app.gdip_inited = false
+    }
+}
 
 @private register_class :: proc()
 {

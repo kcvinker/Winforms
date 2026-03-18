@@ -9,11 +9,11 @@ This project is licensed under the MIT License.
 
 ## Control List
 Button, Calendar, CheckBox, ComboBox, DateTimePicker, GroupBox, Label, ListBox, TextBox
-NumberPicker (Updown Control), ProgressBar, RadioButton, TrackBar, TreeView, MenuBar, TrayIcon
+NumberPicker (Updown Control), PictureBox, ProgressBar, RadioButton, TrackBar, TreeView, MenuBar, TrayIcon
 
 ## Screenshot
 
-![image](/winforms2311.jpg)
+![image](/wfsc0326.jpg)
 
 
 
@@ -119,6 +119,7 @@ MakeWindow :: proc()
     lv.contextMenu.menus[0].onClick = contextmenu_click // Handler for "Compile" menu
 
     tb := new_textbox(frm, cright(gb2) + 10, cbottom(lbx) + 20)
+    pbx := new_picturebox(frm, cright(gb2) + 10, 328, 270, 180, "gbil.jpg", .Stretch)
 
     pgb = new_progressbar(frm, lv.xpos, cbottom(lv) + 15, lv.width, 30, perc = true)
     tk = new_trackbar(frm, lv.xpos, cbottom(pgb) + 20, 200, 50)

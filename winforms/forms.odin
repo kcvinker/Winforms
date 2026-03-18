@@ -124,7 +124,7 @@ create_form :: proc(this : ^Form )
         }
         // set_form_font_internal(this)
         if this.font.handle == nil do font_create_handle(&this.font)
-        SetWindowLongPtr(this.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
+        // SetWindowLongPtr(this.handle, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
         ShowWindow(app.mainHandle, cast(i32) app.startState )
     }
     // free_all(context.temp_allocator)

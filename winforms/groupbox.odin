@@ -63,6 +63,7 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
     using gb
         kind = .Group_Box
         _textable = true
+        _hasFont = true
         _dbFill = true
         _getWidth = true
         _gbStyle = gStyle

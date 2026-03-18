@@ -51,6 +51,7 @@ new_label:: proc{new_label1, new_label2, new_label3}
     this:= new(Label)
     this.autoSize = true
     this._textable = true
+    this._hasFont = true
     this.kind = .Label
     this.text = txt
     this.width = w // reset later

@@ -240,6 +240,7 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
     cmb.ypos = y
     cmb.width = w
     cmb.height = h
+    cmb._hasFont = true
     cmb.backColor = app.clrWhite
     cmb.foreColor = app.clrBlack
     cmb._exStyle = 0

@@ -46,7 +46,57 @@ ImageList :: struct {
     handle : HIMAGELIST,
 }
 
+Image :: struct {
+    imagePtr : ^GpImage,
+    width, height : u32,
+    imgPath: string    
+}
 
+new_image :: proc(fPath : string) -> ^Image 
+{
+    context = global_context
+    gdiplus_init()
+    img := new(Image, context.allocator)
+    gstatus := GdipLoadImageFromFile(to_wstring(fPath), &img.imagePtr)
+    if gstatus != cast(i32)Status.Ok{
+        ptf("Failed to load image from path: %s, GDI+ Status: %d", fPath, gstatus)
+        return nil
+    }
+    GdipGetImageWidth(img.imagePtr, &img.width)
+    GdipGetImageHeight(img.imagePtr, &img.height)
+    img.imgPath = fPath
+    // ptf("gstatus %s", gstatus)
+    return img
+}
+
+image_destroy :: proc(img : ^Image) {
+    GdipDisposeImage(img.imagePtr)
+    img.imagePtr = nil
+    img.width = 0
+    img.height = 0
+    img.imgPath = ""
+    free(img, context.allocator)
+}
+
+image_get_size :: proc(img : ^Image) -> SIZE {
+    return SIZE{cast(i32)img.width, cast(i32)img.height}
+}
+
+image_draw :: proc(img : ^Image, hdc : HDC, x, y, w, h : i32) {
+    if img.imagePtr == nil do return
+    gp : ^GpGraphics
+    st := GdipCreateFromHDC(hdc, &gp)
+    if st != cast(i32)Status.Ok {
+        ptf("Failed to create GpGraphics from HDC. Status: %d", st)
+        return
+    }
+    defer GdipDeleteGraphics(gp)
+    st = GdipDrawImageRect(gp, img.imagePtr, cast(f32)x, cast(f32)y, cast(f32)w, cast(f32)h)
+    if st != cast(i32)Status.Ok {
+        ptf("Failed to draw image. Status: %d", st)
+        return
+    }
+}
 
 // Create an ImageList struct with default initialization.
 new_image_list :: proc() -> ImageList {

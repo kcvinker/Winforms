@@ -148,6 +148,7 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
     this.height = h
     this.minValue = 0
     this.maxValue = 100
+    this._hasFont = true
     this.step = 1
     this.speed = 30
     this.style = .Block

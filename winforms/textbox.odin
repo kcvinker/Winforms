@@ -95,6 +95,7 @@ textbox_clear_all:: proc(tb: ^TextBox)
     this.xpos = x
     this.ypos = y
     this.hideSelection = true
+    this._hasFont = true
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
     this.focusRectColor = 0x007FFF

@@ -109,8 +109,12 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 }
 
 conc_num :: proc{conc_num1, conc_num2}
-conc_num1 :: proc(value : string, num : int ) -> string {return fmt.tprint(args = {value, num},sep = "")}
-conc_num2 :: proc(value : string, num : uint ) -> string {return fmt.tprint(args = {value, num},sep = "")}
+conc_num1 :: proc(value : string, num : int ) -> string {
+	return fmt.tprint(args = {value, num},sep = "")
+}
+conc_num2 :: proc(value : string, num : uint ) -> string {
+	return fmt.tprint(args = {value, num},sep = "")
+}
 
 dir_cast :: #force_inline proc "contextless" (value : $T, $tp : typeid) -> tp
 {

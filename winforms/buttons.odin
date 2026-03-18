@@ -116,6 +116,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 	this := new(Button, context.allocator)
 	this.kind = .Button
 	this._textable = true
+	this._hasFont = true
 	this.text = txt == "" ? conc_num("Button_", _buttonCount) : txt
 	this._wtext = new_widestring(txt)
 	this.width = w

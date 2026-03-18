@@ -18,6 +18,7 @@ ControlKind :: enum
 	List_View,
 	Number_Picker,
 	Panel,
+    Picture_Box,
 	Progress_Bar,
 	Radio_Button,
 	Text_Box,
@@ -204,7 +205,44 @@ BalloonIcon :: enum {None, Info, Warning, Error, Custom}
 ChildData:: enum {Child_Auto = -2, Child_Callback = -1, Zero = 0, One = 1,}
 NodeOp:: enum {Add_Node, Insert_Node, Add_Child, Insert_Child,}
 
+Status :: enum i32 {
+    Ok                         = 0,
+    Generic_Error              = 1,
+    Invalid_Parameter          = 2,
+    Out_Of_Memory              = 3,
+    Object_Busy                = 4,
+    Insufficient_Buffer        = 5,
+    Not_Implemented            = 6,
+    Win32_Error                = 7,
+    Wrong_State                = 8,
+    Aborted                    = 9,
+    File_Not_Found             = 10,
+    Value_Overflow             = 11,
+    Access_Denied              = 12,
+    Unknown_Image_Format       = 13,
+    Font_Family_Not_Found      = 14,
+    Font_Style_Not_Found       = 15,
+    Not_True_Type_Font         = 16,
+    Unsupported_Gdiplus_Version= 17,
+    Gdiplus_Not_Initialized    = 18,
+    Property_Not_Found         = 19,
+    Property_Not_Supported     = 20,
+    Profile_Not_Found          = 21,
+}
 
+DebugEventLevel :: enum {
+    DebugEventLevelFatal,
+    DebugEventLevelWarning
+}
+
+PictureSizeMode :: enum
+{
+    Normal,
+    Stretch,
+    Auto_Size,
+    Center,
+    Zoom
+}
 
 
 KeyEnum :: enum

@@ -395,6 +395,7 @@ ListViewSubItem:: struct
 	this.height = h
 	this.viewStyle = .Report
 	this.showGridLines = true
+	this._hasFont = true
 	//this.multiSelection = true
 	this.fullRowSelect = true
 	this._style = WS_VISIBLE | WS_CHILD | LVS_REPORT | WS_BORDER | LVS_ALIGNLEFT | LVS_SINGLESEL

@@ -400,3 +400,20 @@ foreign ole32 {
    @(link_name="CoTaskMemFree") CoTaskMemFree :: proc(pv: LPVOID) ---
 }
 
+foreign import "system:gdiplus.lib"
+@(default_calling_convention = "stdcall")
+foreign gdiplus {
+   @(link_name="GdiplusStartup") GdiplusStartup :: proc(token: ^ULONG_PTR, 
+                                                         input: ^GdiplusStartupInput, 
+                                                         output: ^rawptr) -> i32 ---
+   @(link_name="GdiplusShutdown") GdiplusShutdown :: proc(token: ULONG_PTR) ---
+   @(link_name="GdipLoadImageFromFile") GdipLoadImageFromFile :: proc(filename: wstring, image: ^^GpImage) -> i32 ---
+   @(link_name="GdipGetImageWidth") GdipGetImageWidth :: proc(image: ^GpImage, width: ^u32) -> i32 ---
+   @(link_name="GdipGetImageHeight") GdipGetImageHeight :: proc(image: ^GpImage, height: ^u32) -> i32 ---
+   @(link_name="GdipDisposeImage") GdipDisposeImage :: proc(image: ^GpImage) -> Status ---
+   @(link_name="GdipCreateFromHDC") GdipCreateFromHDC :: proc(hdc: HDC, graphics: ^^GpGraphics) -> i32 ---
+   @(link_name="GdipGetImageGraphicsContext") GdipGetImageGraphicsContext :: proc(image: ^GpImage, graphics: ^^GpGraphics) -> i32 ---
+   @(link_name="GdipDrawImage") GdipDrawImage :: proc(graphics: ^GpGraphics, image: ^GpImage, x, y : i32) -> i32 ---
+   @(link_name="GdipDeleteGraphics") GdipDeleteGraphics :: proc(graphics: ^GpGraphics) -> i32 ---
+   @(link_name="GdipDrawImageRect") GdipDrawImageRect :: proc(graphics: ^GpGraphics, image: ^GpImage, x, y, w, h : f32) -> i32 ---
+}

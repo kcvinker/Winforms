@@ -47,6 +47,7 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
     _cbcount += 1
     this.kind = .Check_Box
     this._textable = true
+    this._hasFont = true
     this.parent = p
     this._wtext = new_widestring(txt)
     this.text = txt

@@ -294,6 +294,7 @@ listbox_set_selected_index:: proc(lbx: ^ListBox, indx: int)
     this.height = h
     this.xpos = x
     this.ypos = y
+    this._hasFont = true
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
     this._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT

@@ -256,6 +256,7 @@ treeview_create_image_list:: proc(tv: ^TreeView, nImg: int, ico_size: int = 16)
     this.ypos = y
     this.width = w
     this.height = h           // By default a treeview has buttons and lines. Every user might need that.
+    this._hasFont = true
     this._style = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT | TVS_DISABLEDRAGDROP
     this._exStyle = 0
     this._clsName = WcTreeViewClassW
