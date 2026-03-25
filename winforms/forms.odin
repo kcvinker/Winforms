@@ -578,17 +578,7 @@ window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) 
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onMouseUp(frm, &mea)
             }
-            if frm._mDownHappened {
-                frm._mDownHappened = false
-                SendMessage(frm.handle, CM_LMOUSECLICK, 0, 0)
-            }
-
-        case CM_LMOUSECLICK :
-            frm := app.winMap[hw]
-            if frm.onClick != nil {
-                ea := new_event_args()
-                frm->onClick(&ea)
-            }
+            if frm.onClick != nil do frm->onClick(&gea)           
 
         case WM_RBUTTONUP :
             frm := app.winMap[hw]
@@ -596,23 +586,12 @@ window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) 
                 mea := new_mouse_event_args(msg, wp, lp)
                 frm.onRightMouseUp(frm, &mea)
             }
-            if frm._mRDownHappened {
-                frm._mRDownHappened = false
-                SendMessage(frm.handle, CM_RMOUSECLICK, 0, 0)
-            }
-
-        case CM_RMOUSECLICK :
-            frm := app.winMap[hw]
-            if frm.onRightClick != nil {
-                ea := new_event_args()
-                frm.onRightClick(frm, &ea)
-            }
+            if frm.onRightClick != nil do frm.onRightClick(frm, &gea)
 
         case WM_LBUTTONDBLCLK :
             frm := app.winMap[hw]
             if frm.onDoubleClick != nil {
-                ea := new_event_args()
-                frm.onDoubleClick(frm, &ea)
+                frm.onDoubleClick(frm, &gea)
                 return 0
             }
 

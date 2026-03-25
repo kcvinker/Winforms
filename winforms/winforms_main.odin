@@ -101,7 +101,7 @@ initMsgForm :: proc() // Called when first msg-only window starting
     gdipInput.SuppressBackgroundThread = false
     gdipInput.SuppressExternalCodecs = false
     res := GdiplusStartup(&app.gdip_token, &gdipInput, nil)
-    if res == 0 do app.gdip_inited = true
+    if res == Status.Ok do app.gdip_inited = true
 	
 }
 

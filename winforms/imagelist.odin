@@ -58,7 +58,7 @@ new_image :: proc(fPath : string) -> ^Image
     gdiplus_init()
     img := new(Image, context.allocator)
     gstatus := GdipLoadImageFromFile(to_wstring(fPath), &img.imagePtr)
-    if gstatus != cast(i32)Status.Ok{
+    if gstatus != Status.Ok {
         ptf("Failed to load image from path: %s, GDI+ Status: %d", fPath, gstatus)
         return nil
     }
@@ -86,13 +86,13 @@ image_draw :: proc(img : ^Image, hdc : HDC, x, y, w, h : i32) {
     if img.imagePtr == nil do return
     gp : ^GpGraphics
     st := GdipCreateFromHDC(hdc, &gp)
-    if st != cast(i32)Status.Ok {
+    if st != Status.Ok {
         ptf("Failed to create GpGraphics from HDC. Status: %d", st)
         return
     }
     defer GdipDeleteGraphics(gp)
     st = GdipDrawImageRect(gp, img.imagePtr, cast(f32)x, cast(f32)y, cast(f32)w, cast(f32)h)
-    if st != cast(i32)Status.Ok {
+    if st != Status.Ok {
         ptf("Failed to draw image. Status: %d", st)
         return
     }

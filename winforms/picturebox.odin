@@ -260,6 +260,84 @@ pbx_window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARA
                 if pbx.sizeMode != .Auto_Size do InvalidateRect(hw, nil, true)
             }
 
+        case WM_LBUTTONDOWN:            
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            pbx._mDownHappened = true
+            if pbx.onMouseDown != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                pbx.onMouseDown(pbx, &mea)
+            }
+
+        case WM_RBUTTONDOWN:
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            pbx._mRDownHappened = true
+            if pbx.onRightMouseDown != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                pbx.onRightMouseDown(pbx, &mea)
+            }
+
+        case WM_LBUTTONUP :
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            if pbx.onMouseUp != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                pbx.onMouseUp(pbx, &mea)
+            }
+            if pbx.onClick != nil do pbx->onClick(&gea)           
+
+        case WM_RBUTTONUP :
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            if pbx.onRightMouseUp != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                pbx.onRightMouseUp(pbx, &mea)
+            }
+            if pbx.onRightClick != nil do pbx.onRightClick(pbx, &gea)
+
+        case WM_LBUTTONDBLCLK :
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            if pbx.onDoubleClick != nil {
+                pbx.onDoubleClick(pbx, &gea)
+                return 0
+            }
+
+        case WM_MOUSEWHEEL :
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            if pbx.onMouseScroll != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                pbx.onMouseScroll(pbx, &mea)
+            }
+
+        case WM_MOUSEMOVE :
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            if !pbx._isMouseTracking {
+                pbx._isMouseTracking = true
+                track_mouse_move(hw)
+                if !pbx._isMouseEntered {
+                    pbx._isMouseEntered = true
+                    if pbx.onMouseEnter != nil do pbx.onMouseEnter(pbx, &gea)
+                }
+            } //---------------------------------------
+
+            if pbx.onMouseMove != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                pbx.onMouseMove(pbx, &mea)
+            }
+
+        case WM_MOUSEHOVER :
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            if pbx._isMouseTracking do pbx._isMouseTracking = false
+            if pbx.onMouseHover != nil {
+                mea := new_mouse_event_args(msg, wp, lp)
+                pbx.onMouseHover(pbx, &mea)
+            }
+
+        case WM_MOUSELEAVE :
+            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+            if pbx._isMouseTracking {
+                pbx._isMouseTracking = false
+                pbx._isMouseEntered = false
+            }
+            if pbx.onMouseLeave != nil do pbx.onMouseLeave(pbx, &gea)
+
         case :
             return DefWindowProc(hw, msg, wp, lp)
     }
