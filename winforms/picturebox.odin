@@ -9,7 +9,7 @@ import "core:time"
 import api "core:sys/windows"
 
 _pbxCount : int
-_pbxclass := [?]WCHAR {'W','i','n','f','o', 'r', 'm', 's', '_','P','i','c','t','u','r','e','B','o','x', 0}
+wcnPictureBox := L("Winforms_PictureBox")
 _isPbxRegistered : bool
 
 
@@ -107,7 +107,7 @@ pbox_clear_image :: proc(this: ^PictureBox)
     wc.hCursor = LoadCursor(nil, IDC_ARROW)
     wc.hbrBackground = nil
     wc.lpszMenuName = nil
-    wc.lpszClassName = &_pbxclass[0]
+    wc.lpszClassName = &wcnPictureBox[0]
     wc.hIconSm = nil
 
     atom := RegisterClassEx(&wc)
@@ -123,20 +123,12 @@ pbox_clear_image :: proc(this: ^PictureBox)
     if !_isPbxRegistered do register_picturebox_class()
    
     this:= new(PictureBox)
-    this.kind = .Picture_Box
-    this.parent = p
-    this.width = w
-    this.height = h
-    this.xpos = x
-    this.ypos = y
+    init_control(this, p, x, y, w, h, .Picture_Box, COMM_CTRL_STYLES, 0, 
+                                                    wcnPictureBox, NO_TXT, NO_FONT)
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
-    this._style = WS_VISIBLE | WS_CHILD | WS_TABSTOP
-    this._exStyle = 0
-    this._clsName = cast([^]WCHAR)&_pbxclass[0]
 	this._fp_beforeCreation = cast(CreateDelegate) pbox_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) pbox_after_creation
-    append(&p._controls, this)
     return this
 }
 

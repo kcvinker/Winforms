@@ -29,7 +29,7 @@ import "core:fmt"
 import api "core:sys/windows"
 
 
-WcEditClassW: wstring = L("Edit")
+wcnEdit := L("Edit")
 
 
 
@@ -87,26 +87,16 @@ textbox_clear_all:: proc(tb: ^TextBox)
 @private tb_ctor:: proc(p: ^Form, x, y, w, h: int) -> ^TextBox
 {
     this:= new(TextBox)
-    this.kind = .Text_Box
-    this._textable = true
-    this.width = w
-    this.height = h
-    this.parent = p
-    this.xpos = x
-    this.ypos = y
+    init_control(this, p, x, y, w, h, .Text_Box, 
+                    COMM_CTRL_STYLES | TBSTYLE, TBEXSTYLE, 
+                    wcnEdit, TXTABLE, FONTABLE)
     this.hideSelection = true
-    this._hasFont = true
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
     this.focusRectColor = 0x007FFF
     this._frcRef = get_color_ref(this.focusRectColor)
-    this._style = TBSTYLE  // | WS_CLIPCHILDREN
-    this._exStyle = TBEXSTYLE  
-    this._clsName = WcEditClassW
     this._fp_beforeCreation = cast(CreateDelegate) tb_before_creation
     this._fp_afterCreation = cast(CreateDelegate) tb_after_creation
-    font_clone(&p.font, &this.font )
-    append(&p._controls, this)
     return this
 }
 

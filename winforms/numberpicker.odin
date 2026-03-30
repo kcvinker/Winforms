@@ -39,7 +39,8 @@ import api "core:sys/windows"
 
 
 is_np_inited : bool = false    
-WcNumPickerW : wstring = L("msctls_updown32")    
+wcnNumPick := L("msctls_updown32") 
+NP_STYLES : u32 = UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK   
 
 //MAX_VALUE :: 16 // Increase this value if you need more than 15 digits on 
 
@@ -121,12 +122,8 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         InitCommonControlsEx(&app.iccx)
     }
     this := new(NumberPicker)
-    this.kind = .Number_Picker
-    this.parent = p
-    this.width = w
-    this.height = h
-    this.xpos = x
-    this.ypos = y
+    init_control(this, p, x, y, w, h, .Number_Picker, COMM_CTRL_STYLES | NP_STYLES, 0, 
+                    wcnNumPick, TXTABLE, FONTABLE)
     this.step = 1
     this._hasFont = true
     this.backColor = app.clrWhite
@@ -135,18 +132,12 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     this.maxRange = 100
     this.decimalPrecision = 0
     this.formatString = "%d"
-    this._clsName = WcNumPickerW
 	this._fp_beforeCreation = cast(CreateDelegate) np_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) np_after_creation
-
-    this._style =  WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK
     this._buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP | WS_BORDER
     this._buddyExStyle = WS_EX_LTRREADING | WS_EX_LEFT
-    this._exStyle = 0x00000000
     this._topEdgeFlag = BF_TOPLEFT
     this._botEdgeFlag = BF_BOTTOM
-    font_clone(&p.font, &this.font )
-    append(&p._controls, this)
     return this
 }
 

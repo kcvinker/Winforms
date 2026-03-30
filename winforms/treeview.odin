@@ -64,8 +64,9 @@ import "base:runtime"
 //import "core:fmt"
 
 g_node_id: int = 100
-WcTreeViewClassW: wstring = L("SysTreeView32")
+wcnTreeView := L("SysTreeView32")
 tvcount: int = 0
+TV_STYLE : u32 = WS_BORDER | TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT | TVS_DISABLEDRAGDROP
 
 TreeNodeArray:: distinct ^[dynamic]^TreeNode
 NodeDisposeHandler:: proc(node: ^TreeNode)
@@ -245,25 +246,14 @@ treeview_create_image_list:: proc(tv: ^TreeView, nImg: int, ico_size: int = 16)
         InitCommonControlsEx(&app.iccx)
     }
     this:= new(TreeView)
+    init_control(this, f, x, y, w, h, .Tree_View, COMM_CTRL_STYLES | TV_STYLE, 0, wcnTreeView, NO_TXT, FONTABLE)
     tvcount += 1
-    this.kind = .Tree_View
-    this.parent = f
     this._uniqItemID = 100
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
     this.lineColor = app.clrBlack
-    this.xpos = x
-    this.ypos = y
-    this.width = w
-    this.height = h           // By default a treeview has buttons and lines. Every user might need that.
-    this._hasFont = true
-    this._style = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT | TVS_DISABLEDRAGDROP
-    this._exStyle = 0
-    this._clsName = WcTreeViewClassW
     this._fp_beforeCreation = cast(CreateDelegate) tv_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) tv_after_creation
-    font_clone(&f.font, &this.font )
-    append(&f._controls, this)
     return this
 }
 

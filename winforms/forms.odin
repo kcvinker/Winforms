@@ -107,7 +107,7 @@ create_form :: proc(this : ^Form )
     if this.backColor != def_window_color && this._drawMode != .Gradient do this._drawMode = .Flat_Color
     set_start_position(this)
     set_form_style(this)
-    this.handle = CreateWindowEx(this._exStyle, &winFormsClass[0],
+    this.handle = CreateWindowEx(this._exStyle, wcnForm,
                                 to_wstring(this.text), this._style,
                                 i32(this.xpos), i32(this.ypos),
                                 i32(this.width), i32(this.height),

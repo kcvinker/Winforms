@@ -38,7 +38,7 @@ import api "core:sys/windows"
 import "base:runtime"
 // import "core:slice"
 
-trayClass := []WCHAR {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'T', 'r', 'a', 'y', 0}
+wcnTrayIcon := L("Winforms_TrayIcon_MsgWindow")
 trayMsgWinRegistered : bool = false
 
 LIMG_FLAG : u32 : LR_DEFAULTCOLOR | LR_LOADFROMFILE
@@ -192,14 +192,14 @@ tray_add_context_menu :: proc(this: ^TrayIcon, cdraw: bool, trigger: TrayMenuTri
     wc.cbSize = size_of(wc)
     wc.lpfnWndProc = tray_wndproc
     wc.hInstance = app.hInstance
-    wc.lpszClassName = &trayClass[0]
+    wc.lpszClassName = wcnTrayIcon
     RegisterClassEx(&wc)
     trayMsgWinRegistered = true
 }
 
 @private create_tray_msgonly_window :: proc(this: ^TrayIcon)
 {
-    this._msgWinHwnd = CreateWindowEx(0, &trayClass[0], nil, 0, 0, 0, 0, 0, HWND_MESSAGE, nil, app.hInstance, nil)
+    this._msgWinHwnd = CreateWindowEx(0, wcnTrayIcon, nil, 0, 0, 0, 0, 0, HWND_MESSAGE, nil, app.hInstance, nil)
     // ptf("msg win hwnd %d", this._msgWinHwnd)
     SetWindowLongPtr(this._msgWinHwnd, GWLP_USERDATA, cast(LONG_PTR) cast(UINT_PTR) this)
     // if this.font.handle == nil do font_create_handle(&this.font)

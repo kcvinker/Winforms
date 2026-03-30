@@ -21,7 +21,7 @@ import api "core:sys/windows"
 
 transparent : i32 : 1
 _buttonCount : int
-btnclass := [7]WCHAR {'B', 'u', 't', 't', 'o', 'n', 0}
+wcnButton := L("Button")
 
 
 Button :: struct
@@ -111,30 +111,16 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 @private buttonCtor :: proc(p : ^Form, txt : string, x, y, w, h : int) -> ^Button
 {
 	context = global_context
-	// ptf("btn context ui %d", context.user_index)
 	_buttonCount += 1
 	this := new(Button, context.allocator)
-	this.kind = .Button
-	this._textable = true
-	this._hasFont = true
+	init_control(this, p, x, y, w, h, .Button, COMM_CTRL_STYLES | BS_NOTIFY, 0, wcnButton, TXTABLE, FONTABLE)
 	this.text = txt == "" ? conc_num("Button_", _buttonCount) : txt
 	this._wtext = new_widestring(txt)
-	this.width = w
-	this.height = h
-	this.xpos = x
-	this.ypos = y
-	this.parent = p
-	this._exStyle = 0
-	this._style = WS_CHILD | WS_TABSTOP | WS_VISIBLE | BS_NOTIFY
-	this._clsName = &btnclass[0]
 	this._drawFlag = 0
 	this.foreColor = p.foreColor
 	this.backColor = p.backColor
 	this._fp_beforeCreation = cast(CreateDelegate) btn_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) btn_after_creation
-	font_clone(&p.font, &this.font )
-
-	append(&p._controls, this)
 	return this
 }
 

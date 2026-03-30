@@ -64,7 +64,7 @@ TkbThumbCdraw:= dir_cast( 0x2, DWORD_PTR)
 TkbChannelCdraw:= dir_cast( 0x3, DWORD_PTR)
 TkbItemPrePaint:= dir_cast(65537, DWORD_PTR)
 
-WcTrackbarClassW: wstring = L("msctls_trackbar32")
+wcnTrackBar := L("msctls_trackbar32")
 trkcount: int = 0
 
 
@@ -148,13 +148,8 @@ TicData:: struct
         InitCommonControlsEx(&app.iccx)
     }
     this:= new(TrackBar)
+    init_control(this, f, x, y, w, h, .Track_Bar, COMM_CTRL_STYLES | TBS_AUTOTICKS, 0, wcnTrackBar, NO_TXT, NO_FONT)
     trkcount += 1
-    this.kind = .Track_Bar
-    this.parent = f
-    this.xpos = x
-    this.ypos = y
-    this.width = w
-    this.height = h
     this.backColor = f.backColor
     this.channelColor = light_steel_blue
     this.ticColor = 0x000000
@@ -171,16 +166,10 @@ TicData:: struct
     this.channelColor = 0xc2c2a3
     this.selColor = 0x99ff33
     this.ticColor = 0x3385ff
-
-    this._style = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS
-    this._exStyle = 0
-    this.text = "my track"
-    this._clsName = WcTrackbarClassW
+    // this.text = "my track"
     this._fp_beforeCreation = cast(CreateDelegate) tkb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) tkb_after_creation
     this._chanFlag = BF_RECT | BF_ADJUST
-    font_clone(&f.font, &this.font )
-    append(&f._controls, this)
     return this
 }
 

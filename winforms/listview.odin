@@ -68,8 +68,11 @@ import api "core:sys/windows"
 //import "core:fmt"
 
 IccListViewClass:: 0x1
-WcListViewClassW: wstring = L("SysListView32")
+wcnListView := L("SysListView32")
 lvcount: int = 0
+
+// Default style for list view. We can change it later with listview_set_style function.
+LV_STYLE : u32 = LVS_REPORT | WS_BORDER | LVS_ALIGNLEFT | LVS_SINGLESEL 
 
 LVIS_SELECTED :: 0x0002
 LVIS_STATEIMAGEMASK :: 61440
@@ -384,22 +387,15 @@ ListViewSubItem:: struct
         app.iccx.dwIcc = IccListViewClass
         InitCommonControlsEx(&app.iccx)
     }
-	context.user_index = 472
+
 	this:= new(ListView)
+	init_control(this, f, x, y, w, h, .List_View, COMM_CTRL_STYLES | LV_STYLE, 0, wcnListView, NO_TXT, FONTABLE)
 	lvcount += 1
-	this.kind = .List_View
-	this.parent = f
-	this.xpos = x
-	this.ypos = y
-	this.width = w
-	this.height = h
 	this.viewStyle = .Report
 	this.showGridLines = true
 	this._hasFont = true
 	//this.multiSelection = true
-	this.fullRowSelect = true
-	this._style = WS_VISIBLE | WS_CHILD | LVS_REPORT | WS_BORDER | LVS_ALIGNLEFT | LVS_SINGLESEL
-	this._exStyle = 0
+	this.fullRowSelect = true	
 	this.headerClickable = true
 	this.headerBackColor = 0xb3cccc
 	this.headerForeColor = 0x000000
@@ -407,11 +403,8 @@ ListViewSubItem:: struct
 	this.foreColor = app.clrBlack
 	this._hdrIndex = -1
 	this.headerHeight = 25
-	this._clsName = WcListViewClassW
 	this._fp_beforeCreation = cast(CreateDelegate) lv_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) lv_after_creation
-	font_clone(&f.font, &this.font, 14 )
-	append(&f._controls, this)
 	return this
 }
 

@@ -18,7 +18,7 @@ package winforms
 import "base:runtime"
 //import "core:time"
 
-WcLabelW: []WCHAR = {'S', 't', 'a', 't', 'i', 'c', 0}
+wcnStatic := L("Static")
 
 // this is for labels
 @private _lb_count:= 0
@@ -49,31 +49,19 @@ new_label:: proc{new_label1, new_label2, new_label3}
 {
     _lb_count += 1
     this:= new(Label)
+    init_control(this, p, x, y, w, h, .Label, COMM_CTRL_STYLES | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY, 
+                    0, wcnStatic, TXTABLE, FONTABLE)
     this.autoSize = true
-    this._textable = true
-    this._hasFont = true
-    this.kind = .Label
     this.text = txt
-    this.width = w // reset later
-    this.height = h // reset later
-    this.xpos = x
-    this.ypos = y
-    this.parent = p
     this._wtext = new_widestring(txt)
     this.backColor = p.backColor
     this.foreColor = app.clrBlack
-    this._exStyle = 0 // WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-    this._style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY   
     this._SizeIncr.width = 2
     this._SizeIncr.height = 3
-    this._clsName = &WcLabelW[0]
     this.autoSize = (w != 0 || h != 0) ? false: true
     this._fp_beforeCreation = cast(CreateDelegate) lbl_before_creation
     this._fp_afterCreation = cast(CreateDelegate) lbl_after_creation
     this._inherit_color = true
-    font_clone(&p.font, &this.font )
-    append(&p._controls, this)
-    // ptf("lb az %s", this.autoSize)
     return this
 }
 

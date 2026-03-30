@@ -38,7 +38,7 @@ import "base:runtime"
 
 
 isDtpClassInit: bool = false
-WcDTPClassW: wstring = L("SysDateTimePick32")
+wcnDTP := L("SysDateTimePick32")
 
 
 
@@ -101,26 +101,13 @@ dtp_set_custom_format:: proc(dtp: ^DateTimePicker, fmt_string: string)
         // print("inited comctrlex")
     }
     dtp:= new(DateTimePicker)
-    dtp.kind = .Date_Time_Picker
+    init_control(dtp, p, x, y, w, h, .Date_Time_Picker, 0x52000004, WS_EX_LEFT, wcnDTP, TXTABLE, FONTABLE)
     dtp.text = ""
-    dtp.parent = p
-    dtp.xpos = x
-    dtp.ypos = y
-    dtp.width = w
-    dtp.height = h
-    dtp._hasFont = true
-    dtp._clsName = WcDTPClassW
     dtp.format = .Custom
     dtp._fp_size_fix = set_dtp_size
     dtp.formatString = " dd-MMM-yyyy"
     dtp._fp_beforeCreation = cast(CreateDelegate) dtp_before_creation
-	dtp._fp_afterCreation = cast(CreateDelegate) dtp_after_creation
-
-    dtp._style = 0x52000004 //WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT
-    dtp._exStyle = WS_EX_LEFT
-    font_clone(&p.font, &dtp.font )
-    append(&p._controls, dtp)
-    
+	dtp._fp_afterCreation = cast(CreateDelegate) dtp_after_creation    
     return dtp
 }
 

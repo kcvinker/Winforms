@@ -8,8 +8,8 @@ import "base:runtime"
 import "core:mem"
 import api "core:sys/windows"
 
-winFormsClass := []u16 {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'W', 'i', 'n', 'd', 'o', 'w', 0}
-mfclass := []u16 {'W', 'i', 'n', 'f', 'o', 'r', 'm', 's', '_', 'M', 's', 'g', '_', 'F', 'o', 'r', 'm',  0}
+wcnForm := L("Winforms_Window_Class")
+wcnMsgOnlyWin := L("Winforms_MsgForm_Class")
 global_context      := runtime.default_context() // Context
 def_window_color    : uint  : 0xF5F5F5
 def_fore_color      : uint  : 0x000000
@@ -87,7 +87,7 @@ initMsgForm :: proc() // Called when first msg-only window starting
 	wc.cbSize = size_of(wc)
 	wc.lpfnWndProc = msgfrm_wndproc	
 	wc.hInstance = app.hInstance
-	wc.lpszClassName = &mfclass[0]
+	wc.lpszClassName = wcnMsgOnlyWin
 	res := RegisterClassEx(&wc)
 	if res > 0 do app.isMowReg = true
 }
@@ -126,7 +126,7 @@ initMsgForm :: proc() // Called when first msg-only window starting
     win_class.hCursor = LoadCursor(nil, IDC_ARROW)
     win_class.hbrBackground = CreateSolidBrush(get_color_ref(def_window_color)) 
     win_class.lpszMenuName = nil
-    win_class.lpszClassName = &winFormsClass[0]
+    win_class.lpszClassName = wcnForm
     res := RegisterClassEx(&win_class)
     if res > 0 do app.isFormReg = true    
 }

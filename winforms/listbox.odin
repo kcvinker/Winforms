@@ -47,7 +47,8 @@ import "core:fmt"
 import api "core:sys/windows"
 //import "core:slice"
 
-WcListBoxW: wstring = L("ListBox")
+wcnListBox := L("ListBox")
+LBX_STYLES : u32 = LBS_HASSTRINGS | WS_VSCROLL | WS_BORDER | LBS_NOTIFY
 
 ListBox:: struct 
 {
@@ -286,25 +287,13 @@ listbox_set_selected_index:: proc(lbx: ^ListBox, indx: int)
 //============================================Private Functions==================================
 @private lbox_ctor:: proc(p: ^Form, x, y, w, h: int) -> ^ListBox 
 {
-    // if WcListBoxW == nil do WcListBoxW = to_wstring("ListBox")
     this:= new(ListBox)
-    this.kind = .List_Box
-    this.parent = p
-    this.width = w
-    this.height = h
-    this.xpos = x
-    this.ypos = y
-    this._hasFont = true
+    init_control(this, p, x, y, w, h, .List_Box, COMM_CTRL_STYLES | LBX_STYLES, 0, wcnListBox, NO_TXT, FONTABLE)
     this.backColor = app.clrWhite
     this.foreColor = app.clrBlack
-    this._style = WS_VISIBLE | WS_CHILD | LBS_HASSTRINGS  | WS_VSCROLL | WS_BORDER | LBS_NOTIFY //LBS_SORT
-    this._exStyle = 0
-    this._clsName = WcListBoxW
 	this._fp_beforeCreation = cast(CreateDelegate) lbx_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) lbx_after_creation
     this._dummyIndex = -1
-    font_clone(&p.font, &this.font )
-    append(&p._controls, this)
     return this
 }
 

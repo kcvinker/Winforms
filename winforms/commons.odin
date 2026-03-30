@@ -13,7 +13,30 @@ print :: fmt.println
 def_back_clr :: 0xFFFFFF
 def_fore_clr :: 0x000000
 gea : EventArgs 
+COMM_CTRL_STYLES : UINT = WS_CHILD | WS_VISIBLE | WS_TABSTOP
+TXTABLE : bool = true
+FONTABLE : bool = true
+NO_TXT : bool = false
+NO_FONT : bool = false
 
+@private init_control :: proc(this: ^Control, parent: ^Form, x, y, w, h: int, 
+								ctyp: ControlKind, style: DWORD, exStyle: DWORD, 
+								clsName: [^]u16, textable: bool, hasFont: bool)
+{
+	this.kind = ctyp
+	this._textable = textable
+	this._hasFont = hasFont
+	this.xpos = x
+	this.ypos = y
+	this.width = w
+	this.height = h
+	this.parent = parent
+	this._exStyle = exStyle
+	this._style = style
+	this._clsName = clsName
+	if hasFont do font_clone(&parent.font, &this.font)
+	append(&parent._controls, this)
+}
 
 
 

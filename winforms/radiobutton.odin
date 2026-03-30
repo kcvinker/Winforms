@@ -28,7 +28,6 @@ import api "core:sys/windows"
 
 
 rb_count: int
-WcRadioBtnClassW:= L("Button")
 
 RadioButton:: struct
 {
@@ -78,31 +77,21 @@ radiobutton_set_autocheck:: proc(rb: ^RadioButton, auto_check: bool )
 @private rb_ctor:: proc(f: ^Form, txt: string, x, y, w, h: int) -> ^RadioButton
 {
     this:= new(RadioButton)
-    this.kind = .Radio_Button
-    this._textable = true
-    this.parent = f
+    init_control(this, f, x, y, w, h, .Radio_Button, 
+                    COMM_CTRL_STYLES | BS_AUTORADIOBUTTON | WS_CLIPCHILDREN, 0, 
+                    wcnButton, TXTABLE, FONTABLE)
     this.text = txt
     this._wtext = new_widestring(txt)
-    this.xpos = x
-    this.ypos = y
-    this.width = w
-    this.height = h
     this.checkOnClick = true
     this.autoSize = true
-    this._hasFont = true
     this.backColor = f.backColor
     this.foreColor = f.foreColor
-    this._style = WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_CLIPCHILDREN
     this._txtStyle = DT_SINGLELINE | DT_VCENTER
-    this._exStyle = 0
     this._SizeIncr.width = 20
     this._SizeIncr.height = 3
-    this._clsName = WcRadioBtnClassW
     this._fp_beforeCreation = cast(CreateDelegate) rb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) rb_after_creation
     this._inherit_color = true
-    font_clone(&f.font, &this.font )
-    append(&f._controls, this)
     return this
 }
 

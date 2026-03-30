@@ -45,30 +45,18 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
 {
     this:= new(CheckBox)
     _cbcount += 1
-    this.kind = .Check_Box
-    this._textable = true
-    this._hasFont = true
-    this.parent = p
+    init_control(this, p, x, y, w, h, .Check_Box, COMM_CTRL_STYLES | BS_AUTOCHECKBOX, 
+                    WS_EX_LTRREADING | WS_EX_LEFT, wcnButton, TXTABLE, FONTABLE)
     this._wtext = new_widestring(txt)
     this.text = txt
-    this.xpos = x
-    this.ypos = y
-    this.width = w
-    this.height = h
     this.backColor = p.backColor
     this.foreColor = app.clrBlack
-    this._exStyle = 0
-    this._style = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX
-    this._exStyle =  WS_EX_LTRREADING | WS_EX_LEFT
     this._txtStyle = DT_SINGLELINE | DT_VCENTER
     this.autoSize = true
     this._SizeIncr.width = 20
     this._SizeIncr.height = 3
-    this._clsName = &btnclass[0]
     this._fp_beforeCreation = cast(CreateDelegate) cb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) cb_after_creation
-    font_clone(&p.font, &this.font )
-    append(&p._controls, this)
     return this
 }
 

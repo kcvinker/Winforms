@@ -34,7 +34,7 @@ import api "core:sys/windows"
 
 
 
-WcProgressClassW : wstring = L("msctls_progress32")
+wcnProgressBar := L("msctls_progress32")
 pgbcount : int = 0
 
 ProgressBar :: struct
@@ -139,28 +139,18 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
         InitCommonControlsEx(&app.iccx)
     }
     this := new(ProgressBar)
+    init_control(this, f, x, y, w, h, .Progress_Bar, 
+                    COMM_CTRL_STYLES | PBS_SMOOTH, WS_EX_STATICEDGE, 
+                    wcnProgressBar, NO_TXT, FONTABLE)
     pgbcount += 1
-    this.kind = .Progress_Bar
-    this.parent = f
-    this.xpos = x
-    this.ypos = y
-    this.width = w
-    this.height = h
     this.minValue = 0
     this.maxValue = 100
-    this._hasFont = true
     this.step = 1
     this.speed = 30
     this.style = .Block
     this._theme = .System_Color
-    this._clsName = WcProgressClassW
     this._fp_beforeCreation = cast(CreateDelegate) pb_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) pb_after_creation
-
-    this._style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | PBS_SMOOTH
-    this._exStyle = WS_EX_STATICEDGE
-    font_clone(&f.font, &this.font )
-    append(&f._controls, this)
     return this
 }
 

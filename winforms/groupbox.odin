@@ -59,32 +59,16 @@ gby :: #force_inline proc(this: ^GroupBox, offset: int) -> int
 @private gb_ctor :: proc(p : ^Form, txt : string, x, y, w, h : int, gStyle: GroupBoxStyle) -> ^GroupBox
 {
     // if WcGroupBoxW == nil do WcGroupBoxW = to_wstring()
-    gb := new(GroupBox)
-    using gb
-        kind = .Group_Box
-        _textable = true
-        _hasFont = true
-        _dbFill = true
-        _getWidth = true
-        _gbStyle = gStyle
-        parent = p
-        _wtext = new_widestring(txt)        
-        xpos = x
-        ypos = y
-        text = txt
-        width = w
-        height = h
-        backColor = p.backColor
-        foreColor = p.foreColor
-        _clsName = &btnclass[0]
-	    _fp_beforeCreation = cast(CreateDelegate) gb_before_creation
-	    _fp_afterCreation = cast(CreateDelegate) gb_after_creation
-        _style = gbstyleFlag 
-        _exStyle = gbexstyle // WS_EX_TRANSPARENT | WS_EX_RIGHTSCROLLBAR
-
-    font_clone(&p.font, &gb.font )  
-    append(&p._controls, gb)
-    return gb
+    this := new(GroupBox)    
+    init_control(this, p, x, y, w, h, .Group_Box, gbstyleFlag, gbexstyle, wcnButton, TXTABLE, FONTABLE)
+    this._dbFill = true
+    this._getWidth = true
+    this._wtext = new_widestring(txt)        
+    this.backColor = p.backColor
+    this.foreColor = p.foreColor
+    this._fp_beforeCreation = cast(CreateDelegate) gb_before_creation
+	this._fp_afterCreation = cast(CreateDelegate) gb_after_creation
+    return this
 }
 
 @private gb_ctor1 :: proc(parent : ^Form) -> ^GroupBox

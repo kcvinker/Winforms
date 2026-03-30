@@ -45,7 +45,7 @@ import "base:runtime"
 import api "core:sys/windows"
 
 
-WcComboW: wstring = L("ComboBox")
+wcnCombo:= L("ComboBox")
 
 
 
@@ -232,27 +232,16 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
 
 @private cmb_ctor:: proc(p: ^Form, w: int = 130, h: int = 30, x: int = 10, y: int = 10) -> ^ComboBox
 {
-    // if WcComboW == nil do WcComboW = to_wstring("ComboBox")
+    // if wcnCombo == nil do wcnCombo = to_wstring("ComboBox")
     cmb:= new(ComboBox)
-    cmb.kind = .Combo_Box
-    cmb.parent = p
-    cmb.xpos = x
-    cmb.ypos = y
-    cmb.width = w
-    cmb.height = h
-    cmb._hasFont = true
+    init_control(cmb, p, x, y, w, h, .Combo_Box, COMM_CTRL_STYLES | CBS_DROPDOWN, 
+                    WS_EX_CLIENTEDGE, wcnCombo, NO_TXT, FONTABLE)
     cmb.backColor = app.clrWhite
     cmb.foreColor = app.clrBlack
-    cmb._exStyle = 0
     cmb.selectedIndex = -1
     cmb.comboStyle = DropDownStyle.Lb_Combo
-    cmb._style = WS_CHILD | WS_VISIBLE | CBS_DROPDOWN
-    cmb._exStyle = WS_EX_CLIENTEDGE    // WS_EX_WINDOWEDGE WS_EX_STATICEDGE
-    cmb._clsName = WcComboW
     cmb._fp_beforeCreation = cast(CreateDelegate) cmb_before_creation
 	cmb._fp_afterCreation = cast(CreateDelegate) cmb_after_creation
-    font_clone(&p.font, &cmb.font )
-    append(&p._controls, cmb)
     return cmb
 }
 

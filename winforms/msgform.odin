@@ -49,7 +49,7 @@ new_messageform :: proc(msgHandler: MessageHandler, autoc: bool = true,
     
 msgform_create_handle :: proc(this: ^MessageForm) -> HWND
 {
-    this.handle = CreateWindowEx(0, &mfclass[0], nil, 0, 0, 0, 0, 0,
+    this.handle = CreateWindowEx(0, wcnMsgOnlyWin, nil, 0, 0, 0, 0, 0,
                                 HWND_MESSAGE, nil, app.hInstance, nil)
 
     if this.handle != nil {

@@ -26,7 +26,7 @@
 package winforms
 import "base:runtime"
 
-WcCalenderClassW: []WCHAR = {'S','y','s','M','o','n','t','h','C','a','l','3','2',0}
+wcnCalendar:= L("SysMonthCal32")
 
 Calendar:: struct
 {
@@ -59,22 +59,11 @@ new_calendar:: proc{new_cal1, new_cal2}
         app.iccx.dwIcc = ICC_DATE_CLASSES
         InitCommonControlsEx(&app.iccx)
     }
-    // yp: ^int = cast(^int)context.user_ptr
-    // ptf("calendar context up %d\n", yp^)
+
     this:= new(Calendar)
-    this.parent = p
-    // this.font = p.font
-    this.kind = .Calendar
-    this.width = 0
-    this.height = 0
-    this.xpos = x
-    this.ypos = y
-    this._style = WS_CHILD | WS_VISIBLE //| MCS_DAYSTATE
-    this._clsName = &WcCalenderClassW[0]
+    init_control(this, p, x, y, 0, 0, .Calendar, COMM_CTRL_STYLES, 0, wcnCalendar, NO_TXT, NO_FONT)
     this._fp_beforeCreation = cast(CreateDelegate) cal_before_creation
 	this._fp_afterCreation = cast(CreateDelegate) cal_after_creation
-    font_clone(&p.font, &this.font )
-    append(&p._controls, this)
     return this
 }
 
