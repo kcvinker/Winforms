@@ -268,106 +268,23 @@ progressbar_set_value :: proc(pb : ^ProgressBar, ival : int)
 
     context = global_context //
     // context = runtime.default_context()
+    pb := control_cast(ProgressBar, ref_data)
+    res := ctrl_common_msg_handler(pb, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     
     //display_msg(msg)
     switch msg {
-        case WM_DESTROY : 
-            pb := control_cast(ProgressBar, ref_data)
-            pb_finalize(pb, sc_id)
+    case WM_DESTROY : 
+        pb := control_cast(ProgressBar, ref_data)
+        pb_finalize(pb, sc_id)
 
-        case WM_PAINT : 
-            pb := control_cast(ProgressBar, ref_data)
-            return pb_draw_percentage(pb, hw, msg, wp, lp)
-            // if pb.onPaint != nil {
-            //     ps : PAINTSTRUCT
-            //     hdc := BeginPaint(hw, &ps)
-            //     pea := new_paint_event_args(&ps)
-            //     pb.onPaint(pb, &pea)
-            //     EndPaint(hw, &ps)
-            //     return 0
-            // }
-
-        case WM_CONTEXTMENU:
-            pb := control_cast(ProgressBar, ref_data)
-		    if pb.contextMenu != nil do contextmenu_show(pb.contextMenu, lp)
-
-        case WM_LBUTTONDOWN:
-            pb := control_cast(ProgressBar, ref_data)
-           // pb._draw_focus_rct = true            
-            if pb.onMouseDown != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pb.onMouseDown(pb, &mea)
-                return 0
-            }
-
-        case WM_RBUTTONDOWN:
-            pb := control_cast(ProgressBar, ref_data)           
-            if pb.onRightMouseDown != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pb.onRightMouseDown(pb, &mea)
-            }
-
-        case WM_LBUTTONUP:
-            pb := control_cast(ProgressBar, ref_data)
-            if pb.onMouseUp != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pb.onMouseUp(pb, &mea)
-            }            
-            if pb.onClick != nil {
-                ea := new_event_args()
-                pb.onClick(pb, &ea)
-                return 0
-            }
-
-        case WM_LBUTTONDBLCLK:
-            pb := control_cast(ProgressBar, ref_data)
-            if pb.onDoubleClick != nil {
-                ea := new_event_args()
-                pb.onDoubleClick(pb, &ea)
-                return 0
-            }
-
-        case WM_RBUTTONUP:
-            pb := control_cast(ProgressBar, ref_data)
-            if pb.onRightMouseUp != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pb.onRightMouseUp(pb, &mea)
-            }            
-            if pb.onRightClick != nil {
-                ea := new_event_args()
-                pb.onRightClick(pb, &ea)
-                return 0
-            }
-
-        case WM_MOUSEHWHEEL:
-            pb := control_cast(ProgressBar, ref_data)
-            if pb.onMouseScroll != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pb.onMouseScroll(pb, &mea)
-            }
-        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
-            pb := control_cast(ProgressBar, ref_data)
-            if pb._isMouseEntered {
-                if pb.onMouseMove != nil {
-                    mea := new_mouse_event_args(msg, wp, lp)
-                    pb.onMouseMove(pb, &mea)
-                }
-            }
-            else {
-                pb._isMouseEntered = true
-                if pb.onMouseEnter != nil  {
-                    ea := new_event_args()
-                    pb.onMouseEnter(pb, &ea)
-                }
-            }
-
-        case WM_MOUSELEAVE:
-            pb := control_cast(ProgressBar, ref_data)
-            pb._isMouseEntered = false
-            if pb.onMouseLeave != nil {
-                ea := new_event_args()
-                pb.onMouseLeave(pb, &ea)
-            }
+    case WM_PAINT : 
+        pb := control_cast(ProgressBar, ref_data)
+        return pb_draw_percentage(pb, hw, msg, wp, lp)
+              
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

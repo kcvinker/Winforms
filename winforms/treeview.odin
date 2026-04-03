@@ -546,129 +546,124 @@ treeview_create_image_list:: proc(tv: ^TreeView, nImg: int, ico_size: int = 16)
     context = global_context
     
     //display_msg(msg)
+    tv:= control_cast(TreeView, ref_data)
+    res := ctrl_common_msg_handler(tv, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
-        case WM_DESTROY:
-            tv:= control_cast(TreeView, ref_data)
-            if tv.onDestroy != nil {
-                ea:= new_event_args()
-                tv.onDestroy(tv, &ea)
+    case WM_DESTROY:
+        if tv.onDestroy != nil {
+            ea:= new_event_args()
+            tv.onDestroy(tv, &ea)
+        }
+        tv_finalize(tv, sc_id)
+
+    case CM_TVNODEEXPAND:
+        node:= dir_cast(lp, ^TreeNode)
+        SendMessage(tv.handle, TVM_EXPAND, wp, dir_cast(node.handle, LPARAM))
+        if node.childCount > 0 {
+            for n in node.nodes {
+                SendMessage(tv.handle, CM_TVNODEEXPAND, wp, dir_cast(n, LPARAM))
             }
-            tv_finalize(tv, sc_id)
+        }
+        // return 0
 
-        case WM_CONTEXTMENU:
-            tv:= control_cast(TreeView, ref_data)
-		    if tv.contextMenu != nil do contextmenu_show(tv.contextMenu, lp)
+    case CM_NOTIFY:
+        nm:= dir_cast(lp, ^NMHDR)
+        switch nm.code {
+        case TVN_DELETEITEMW:
+            if tv.onNodeDeleted != nil {
+                // nmtv:= dir_cast(lp, ^NMTREEVIEW)
+                // tn:= dir_cast(nmtv.itemOld.lParam, ^TreeNode)
+                // ptf("%s's array deleted now\n", tn.text)
+                ea:= new_event_args()
+                tv.onNodeDeleted(tv, &ea)
+            }
+        case TVN_SELCHANGINGW:
+            if tv.onBeforeSelect != nil {
+                nmtv:= dir_cast(lp, ^NMTREEVIEW)
+                tea:= new_tree_event_args(nmtv)
+                tv.onBeforeSelect(tv, &tea)
+            }
+        case TVN_SELCHANGEDW:
+            nmtv:= dir_cast(lp, ^NMTREEVIEW)
+            tea:= new_tree_event_args(nmtv)
+            tv.selectedNode = tea.node
+            if tv.onAfterSelect != nil { tv.onAfterSelect(tv, &tea) }
 
-        case CM_TVNODEEXPAND:
-            tv:= control_cast(TreeView, ref_data)
-            node:= dir_cast(lp, ^TreeNode)
-            SendMessage(tv.handle, TVM_EXPAND, wp, dir_cast(node.handle, LPARAM))
-            if node.childCount > 0 {
-                for n in node.nodes {
-                    SendMessage(tv.handle, CM_TVNODEEXPAND, wp, dir_cast(n, LPARAM))
+        case NM_TVSTATEIMAGECHANGING:
+            //print("check NM_TVSTATEIMAGECHANGING")
+            tvsic:= dir_cast(lp, ^NMTVSTATEIMAGECHANGING)
+            //tea:= new_tree_event_args(tvsic)
+
+            if tvsic.iOldStateImageIndex == 1 {
+                tv._nodeChecked = true }
+            else if tvsic.iOldStateImageIndex == 2 {
+                tv._nodeChecked = false
+            }
+
+            // print("chk new - ", tvsic.iNewStateImageIndex)
+            //print("chk action - ", tvsic.iNewStateImageIndex)
+
+        case TVN_ITEMCHANGINGW:
+            if tv.onBeforeChecked != nil {
+                tvic:= dir_cast(lp, ^TVITEMCHANGE)
+                tea:= new_tree_event_args(tvic)
+                if tv._nodeChecked do tea.node.checked = true
+                tv.onBeforeChecked(tv, &tea)
+            }
+
+        case TVN_ITEMCHANGEDW:
+            if tv.onAfterChecked != nil {
+                tvic:= dir_cast(lp, ^TVITEMCHANGE)
+                tea:= new_tree_event_args(tvic)
+                if tv._nodeChecked do tea.node.checked = true
+                tv.onAfterChecked(tv, &tea)
+            }
+
+        case TVN_ITEMEXPANDINGW:
+            nmtv:= dir_cast(lp, ^NMTREEVIEW)
+            switch nmtv.action {
+            case 1:
+                if tv.onBeforeCollapse != nil {
+                    tea:= new_tree_event_args(nmtv)
+                    tv.onBeforeCollapse(tv, &tea)
+                }
+            case 2:
+                if tv.onBeforeExpand != nil {
+                    tea:= new_tree_event_args(nmtv)
+                    tv.onBeforeExpand(tv, &tea)
                 }
             }
-           // return 0
 
-        case CM_NOTIFY:
-            tv:= control_cast(TreeView, ref_data)
-            nm:= dir_cast(lp, ^NMHDR)
-            switch nm.code
-            {
-                case TVN_DELETEITEMW:
-                    if tv.onNodeDeleted != nil
-                    {
-                        // nmtv:= dir_cast(lp, ^NMTREEVIEW)
-                        // tn:= dir_cast(nmtv.itemOld.lParam, ^TreeNode)
-                        // ptf("%s's array deleted now\n", tn.text)
-                        ea:= new_event_args()
-                        tv.onNodeDeleted(tv, &ea)
-                    }
-                case TVN_SELCHANGINGW:
-                    if tv.onBeforeSelect != nil {
-                        nmtv:= dir_cast(lp, ^NMTREEVIEW)
-                        tea:= new_tree_event_args(nmtv)
-                        tv.onBeforeSelect(tv, &tea)
-                    }
-                case TVN_SELCHANGEDW:
-                    nmtv:= dir_cast(lp, ^NMTREEVIEW)
+        case TVN_ITEMEXPANDEDW:
+            nmtv:= dir_cast(lp, ^NMTREEVIEW)
+            switch nmtv.action {
+            case 1:
+                if tv.onAfterCollapse != nil {
                     tea:= new_tree_event_args(nmtv)
-                    tv.selectedNode = tea.node
-                    if tv.onAfterSelect != nil { tv.onAfterSelect(tv, &tea) }
-
-                case NM_TVSTATEIMAGECHANGING:
-                    //print("check NM_TVSTATEIMAGECHANGING")
-                    tvsic:= dir_cast(lp, ^NMTVSTATEIMAGECHANGING)
-                    //tea:= new_tree_event_args(tvsic)
-
-                    if tvsic.iOldStateImageIndex == 1 {
-                        tv._nodeChecked = true }
-                    else if tvsic.iOldStateImageIndex == 2 {
-                        tv._nodeChecked = false
-                    }
-
-                    // print("chk new - ", tvsic.iNewStateImageIndex)
-                    //print("chk action - ", tvsic.iNewStateImageIndex)
-
-                case TVN_ITEMCHANGINGW:
-                    if tv.onBeforeChecked != nil {
-                        tvic:= dir_cast(lp, ^TVITEMCHANGE)
-                        tea:= new_tree_event_args(tvic)
-                        if tv._nodeChecked do tea.node.checked = true
-                        tv.onBeforeChecked(tv, &tea)
-                    }
-
-                case TVN_ITEMCHANGEDW:
-                    if tv.onAfterChecked != nil {
-                        tvic:= dir_cast(lp, ^TVITEMCHANGE)
-                        tea:= new_tree_event_args(tvic)
-                        if tv._nodeChecked do tea.node.checked = true
-                        tv.onAfterChecked(tv, &tea)
-                    }
-
-                case TVN_ITEMEXPANDINGW:
-                    nmtv:= dir_cast(lp, ^NMTREEVIEW)
-                    switch nmtv.action {
-                        case 1:
-                            if tv.onBeforeCollapse != nil {
-                                tea:= new_tree_event_args(nmtv)
-                                tv.onBeforeCollapse(tv, &tea)
-                            }
-                        case 2:
-                            if tv.onBeforeExpand != nil {
-                                tea:= new_tree_event_args(nmtv)
-                                tv.onBeforeExpand(tv, &tea)
-                            }
-                    }
-
-                case TVN_ITEMEXPANDEDW:
-                    nmtv:= dir_cast(lp, ^NMTREEVIEW)
-                    switch nmtv.action {
-                        case 1:
-                            if tv.onAfterCollapse != nil {
-                                tea:= new_tree_event_args(nmtv)
-                                tv.onAfterCollapse(tv, &tea)
-                            }
-                        case 2:
-                            if tv.onAfterExpand != nil {
-                                tea:= new_tree_event_args(nmtv)
-                                tv.onAfterExpand(tv, &tea)
-                            }
-                    }
-
-                case NM_CUSTOMDRAW:
-                    if tv._nodeClrChange {
-                        return treenode_color( lp)
-                    }
-
-
-
-                case:
-                    //print("else case - ", nm.code)
-               // case 4294966879:
-                 //   print("4294966879 rcvd")
-               // case: alert(fmt.tprintf("NMHDR.Code - %d", nm.code)) 4294967279
+                    tv.onAfterCollapse(tv, &tea)
+                }
+            case 2:
+                if tv.onAfterExpand != nil {
+                    tea:= new_tree_event_args(nmtv)
+                    tv.onAfterExpand(tv, &tea)
+                }
             }
+
+        case NM_CUSTOMDRAW:
+            if tv._nodeClrChange {
+                return treenode_color( lp)
+            }
+
+        case:
+            //print("else case - ", nm.code)
+        // case 4294966879:
+            //   print("4294966879 rcvd")
+        // case: alert(fmt.tprintf("NMHDR.Code - %d", nm.code)) 4294967279
+        }
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

@@ -207,182 +207,81 @@ textbox_clear_all:: proc(tb: ^TextBox)
 
     context = global_context //
     // context = runtime.default_context()
-
+    tb:= control_cast(TextBox, ref_data)
+    res := ctrl_common_msg_handler(tb, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
-        case WM_PAINT:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onPaint != nil {
-                ps: PAINTSTRUCT
-                hdc:= BeginPaint(hw, &ps)
-                pea:= new_paint_event_args(&ps)
-                tb.onPaint(tb, &pea)
-                EndPaint(hw, &ps)
-                return 0
-            }
+    case WM_PAINT:
+        if tb.onPaint != nil {
+            ps: PAINTSTRUCT
+            hdc:= BeginPaint(hw, &ps)
+            pea:= new_paint_event_args(&ps)
+            tb.onPaint(tb, &pea)
+            EndPaint(hw, &ps)
+            return 0
+        }
 
-        case WM_CONTEXTMENU:
-            tb:= control_cast(TextBox, ref_data)
-		    if tb.contextMenu != nil do contextmenu_show(tb.contextMenu, lp)
+    case CM_EDIT_COLOR:
+        // print("ctl clr rcvd")
+        if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
+            dc_handle:= dir_cast(wp, HDC)
+            // SetBkMode(dc_handle, Transparent)
+            if tb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
+            SetBkColor(dc_handle, get_color_ref(tb.backColor))
+            // tb._bkBrush = CreateSolidBrush(get_color_ref(tb.backColor))
 
-        case CM_EDIT_COLOR:
-            tb:= control_cast(TextBox, ref_data)
-            // print("ctl clr rcvd")
-            if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
-                dc_handle:= dir_cast(wp, HDC)
-                // SetBkMode(dc_handle, Transparent)
-                if tb.foreColor != def_fore_clr do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
-                SetBkColor(dc_handle, get_color_ref(tb.backColor))
-                // tb._bkBrush = CreateSolidBrush(get_color_ref(tb.backColor))
+        } //else do return 0
 
-            } //else do return 0
+        return toLRES(tb._bkBrush)
 
-            return toLRES(tb._bkBrush)
+    case WM_SETFOCUS:
+        if tb.onGotFocus != nil {
+            ea:= new_event_args()
+            tb.onGotFocus(tb, &ea)
+        }
 
+    case WM_KILLFOCUS:
+    //    tb._drawFocusRect = false
+        if tb.onLostFocus != nil {
+            ea:= new_event_args()
+            tb.onLostFocus(tb, &ea)
+        }
 
+    case WM_KEYDOWN:
+        // tb._drawFocusRect = true
+        if tb.onKeyDown != nil {
+            kea:= new_key_event_args(wp)
+            tb.onKeyDown(tb, &kea)
+            return 0
+        }
 
-        // case CM_CTLCOMMAND:
-        //     ncode:= HIWORD(wp)
-        //     if ncode == EN_SETFOCUS {
-        //     //    tb._drawFocusRect = true
-        //        //SetWindowPos(tb.handle, nil, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_DRAWFRAME)
+    case WM_KEYUP:
+        if tb.onKeyUp != nil {
+            kea:= new_key_event_args(wp)
+            tb.onKeyUp(tb, &kea)
+            return 0
+        }
 
-        //        if tb.onGotFocus != nil {
-        //             ea:= new_event_args()
-        //             tb.onGotFocus(tb, &ea)
-        //             return 0
-        //         }
-        //     }
+    case WM_CHAR:
+        if tb.onKeyPress != nil {
+            kea:= new_key_event_args(wp)
+            tb.onKeyPress(tb, &kea)
+        }
+        SendMessage(tb.handle, CM_TBTXTCHANGED, 0, 0)
 
-        case WM_LBUTTONDOWN:
-            tb:= control_cast(TextBox, ref_data)
-           // tb._drawFocusRect = true            
-            if tb.onMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tb.onMouseDown(tb, &mea)
-                //return 0
-            }            
+    case CM_TBTXTCHANGED:
+        if tb.onTextChanged != nil {
+            ea:= new_event_args()
+            tb.onTextChanged(tb, &ea)
+        }
 
-        case WM_RBUTTONDOWN:   
-            tb:= control_cast(TextBox, ref_data)         
-            if tb.onRightMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tb.onRightMouseDown(tb, &mea)
-            }
+    case WM_DESTROY: 
+        tb_finalize(tb, sc_id)
 
-        case WM_LBUTTONUP:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tb.onMouseUp(tb, &mea)
-            }            
-            if tb.onClick != nil {
-                ea:= new_event_args()
-                tb.onClick(tb, &ea)
-                //return 0
-            }
-
-        case WM_LBUTTONDBLCLK:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onDoubleClick != nil {
-                ea:= new_event_args()
-                tb.onDoubleClick(tb, &ea)
-                return 0
-            }
-
-        case WM_RBUTTONUP:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onRightMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tb.onRightMouseUp(tb, &mea)
-            }            
-            if tb.onRightClick != nil {
-                ea:= new_event_args()
-                tb.onRightClick(tb, &ea)
-                return 0
-            }
-
-        case WM_MOUSEHWHEEL:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onMouseScroll != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tb.onMouseScroll(tb, &mea)
-            }
-        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
-            tb:= control_cast(TextBox, ref_data)
-            if tb._isMouseEntered {
-                if tb.onMouseMove != nil {
-                    mea:= new_mouse_event_args(msg, wp, lp)
-                    tb.onMouseMove(tb, &mea)
-                }
-            }
-            else {
-                tb._isMouseEntered = true
-                if tb.onMouseEnter != nil  {
-                    ea:= new_event_args()
-                    tb.onMouseEnter(tb, &ea)
-                }
-            }
-
-        case WM_MOUSELEAVE:
-            tb:= control_cast(TextBox, ref_data)
-            tb._isMouseEntered = false
-            if tb.onMouseLeave != nil {
-                ea:= new_event_args()
-                tb.onMouseLeave(tb, &ea)
-            }
-
-        case WM_SETFOCUS:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onGotFocus != nil {
-                ea:= new_event_args()
-                tb.onGotFocus(tb, &ea)
-            }
-
-        case WM_KILLFOCUS:
-            tb:= control_cast(TextBox, ref_data)
-        //    tb._drawFocusRect = false
-            if tb.onLostFocus != nil {
-                ea:= new_event_args()
-                tb.onLostFocus(tb, &ea)
-            }
-
-        case WM_KEYDOWN:
-            tb:= control_cast(TextBox, ref_data)
-           // tb._drawFocusRect = true
-            if tb.onKeyDown != nil {
-                kea:= new_key_event_args(wp)
-                tb.onKeyDown(tb, &kea)
-                return 0
-            }
-
-        case WM_KEYUP:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onKeyUp != nil {
-                kea:= new_key_event_args(wp)
-                tb.onKeyUp(tb, &kea)
-                return 0
-            }
-
-        case WM_CHAR:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onKeyPress != nil {
-                kea:= new_key_event_args(wp)
-                tb.onKeyPress(tb, &kea)
-            }
-           SendMessage(tb.handle, CM_TBTXTCHANGED, 0, 0)
-
-        case CM_TBTXTCHANGED:
-            tb:= control_cast(TextBox, ref_data)
-            if tb.onTextChanged != nil {
-                ea:= new_event_args()
-                tb.onTextChanged(tb, &ea)
-            }
-
-        case WM_DESTROY: 
-            tb:= control_cast(TextBox, ref_data)
-            tb_finalize(tb, sc_id)
-
-        // case: return DefSubclassProc(hw, msg, wp, lp)
+    // case: return DefSubclassProc(hw, msg, wp, lp)
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

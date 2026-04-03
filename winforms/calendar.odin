@@ -140,14 +140,16 @@ new_calendar:: proc{new_cal1, new_cal2}
 @private cal_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                             sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    // context = runtime.default_context()
-    context = global_context
-    
+    context = global_context    
    //display_msg(msg)
-    switch msg {
-
-        case WM_PAINT:
-            cal:= control_cast(Calendar, ref_data)
+    cal:= control_cast(Calendar, ref_data)
+    res := ctrl_common_msg_handler(cal, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1 
+    }
+        switch msg {
+        case WM_PAINT:            
             if cal.onPaint != nil {
                 ps: PAINTSTRUCT
                 hdc:= BeginPaint(hw, &ps)
@@ -157,12 +159,7 @@ new_calendar:: proc{new_cal1, new_cal2}
                 return 0
             }
 
-        case WM_CONTEXTMENU:
-            cal:= control_cast(Calendar, ref_data)
-		    if cal.contextMenu != nil do contextmenu_show(cal.contextMenu, lp)
-
         case CM_NOTIFY:
-            cal:= control_cast(Calendar, ref_data)
             nm:= dir_cast(lp, ^NMHDR)
             //print("nm.code - ", nm.code)
             switch nm.code {
@@ -190,88 +187,9 @@ new_calendar:: proc{new_cal1, new_cal2}
                         ea:= new_event_args()
                         cal.onViewChanged(cal, &ea)
                     }
-            }
-
-         case WM_MOUSEHWHEEL:
-            cal:= control_cast(Calendar, ref_data)
-            if cal.onMouseScroll != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cal.onMouseScroll(cal, &mea)
-            }
-
-        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
-            cal:= control_cast(Calendar, ref_data)
-            if cal._isMouseEntered {
-                if cal.onMouseMove != nil {
-                    mea:= new_mouse_event_args(msg, wp, lp)
-                    cal.onMouseMove(cal, &mea)
-                }
-            } else {
-                cal._isMouseEntered = true
-                if cal.onMouseEnter != nil  {
-                    ea:= new_event_args()
-                    cal.onMouseEnter(cal, &ea)
-                }
-            }
-
-        case WM_MOUSELEAVE:
-            cal:= control_cast(Calendar, ref_data)
-            cal._isMouseEntered = false
-            if cal.onMouseLeave != nil {
-                ea:= new_event_args()
-                cal.onMouseLeave(cal, &ea)
-            }
-
-
-        case WM_LBUTTONDOWN:     
-            cal:= control_cast(Calendar, ref_data)       
-            if cal.onMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cal.onMouseDown(cal, &mea)
-                return 0
-            }
-
-        case WM_RBUTTONDOWN:
-            cal:= control_cast(Calendar, ref_data)
-            if cal.onRightMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cal.onRightMouseDown(cal, &mea)
-            }
-
-        case WM_LBUTTONUP:
-            cal:= control_cast(Calendar, ref_data)
-            if cal.onMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cal.onMouseUp(cal, &mea)
-            }
-           if cal.onClick != nil {
-                ea:= new_event_args()
-                cal.onClick(cal, &ea)
-                return 0
-            }     
-
-        case WM_LBUTTONDBLCLK:
-            cal:= control_cast(Calendar, ref_data)
-            if cal.onDoubleClick != nil {
-                ea:= new_event_args()
-                cal.onDoubleClick(cal, &ea)
-                return 0
-            }
-
-        case WM_RBUTTONUP:
-            cal:= control_cast(Calendar, ref_data)
-            if cal.onRightMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cal.onRightMouseUp(cal, &mea)
-            }
-            if cal.onRightClick != nil {
-                ea:= new_event_args()
-                cal.onRightClick(cal, &ea)
-                return 0
-            }        
+            }      
             
-        case WM_DESTROY:
-            cal:= control_cast(Calendar, ref_data) 
+        case WM_DESTROY: 
             cal_finalize(cal, sc_id)
 
         case:

@@ -474,207 +474,130 @@ TicData:: struct
     // context = runtime.default_context()
     
     // display_msg(msg)
+    tkb:= control_cast(TrackBar, ref_data)
+    res := ctrl_common_msg_handler(tkb, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
-        case WM_DESTROY: 
+    case WM_DESTROY: 
+        tkb:= control_cast(TrackBar, ref_data)
+        tkb_finalize(tkb, sc_id)
+
+    case CM_STATIC_COLOR:
+        // hdc:= dir_cast(wp, HDC)
+        // SetTextColor(hdc, get_color_ref(tkb.foreColor))
+        // tkb._bkBrush = CreateSolidBrush(get_color_ref(tkb.backColor))
+        tkb:= control_cast(TrackBar, ref_data)
+        // ptf("tkb brush %d", tkb._bkBrush)
+        return dir_cast(tkb._bkBrush, LRESULT)
+
+    case CM_NOTIFY:
+        nmh:= dir_cast(lp, ^NMHDR)
+        if nmh.code == NM_CUSTOMDRAW {
             tkb:= control_cast(TrackBar, ref_data)
-            tkb_finalize(tkb, sc_id)
+            if tkb.customDraw {
+                nmcd:= dir_cast(lp, ^NMCUSTOMDRAW)
+                switch nmcd.dwDrawStage {
+                case CDDS_PREPAINT: 
+                    return CDRF_NOTIFYITEMDRAW
 
-        case WM_CONTEXTMENU:
-            tkb:= control_cast(TrackBar, ref_data)
-		    if tkb.contextMenu != nil do contextmenu_show(tkb.contextMenu, lp)
+                case CDDS_ITEMPREPAINT:
+                    switch nmcd.dwItemSpec {
 
-        case CM_STATIC_COLOR:
-            // hdc:= dir_cast(wp, HDC)
-            // SetTextColor(hdc, get_color_ref(tkb.foreColor))
-            // tkb._bkBrush = CreateSolidBrush(get_color_ref(tkb.backColor))
-            tkb:= control_cast(TrackBar, ref_data)
-            // ptf("tkb brush %d", tkb._bkBrush)
-            return dir_cast(tkb._bkBrush, LRESULT)
+                    // TkbTicsCdraw is not a magical value. Explanation is given at line 39
+                    case TkbTicsCdraw:
+                        if (!tkb.noTick) do draw_tics(tkb, nmcd.hdc)                                       
+                        return CDRF_SKIPDEFAULT
 
-        case CM_NOTIFY:
-            nmh:= dir_cast(lp, ^NMHDR)
-            if nmh.code == NM_CUSTOMDRAW {
-                tkb:= control_cast(TrackBar, ref_data)
-                if tkb.customDraw {
-                    nmcd:= dir_cast(lp, ^NMCUSTOMDRAW)
-                    switch nmcd.dwDrawStage {
-                        case CDDS_PREPAINT: 
-                            return CDRF_NOTIFYITEMDRAW
-
-                        case CDDS_ITEMPREPAINT:
-                            switch nmcd.dwItemSpec {
-
-                                // TkbTicsCdraw is not a magical value. Explanation is given at line 39
-                                case TkbTicsCdraw:
-                                    if (!tkb.noTick) do draw_tics(tkb, nmcd.hdc)                                       
-                                    return CDRF_SKIPDEFAULT
-
-                                // TkbChannelCdraw is not a magical value. Explanation is given at line 39
-                                case TkbChannelCdraw:
-                                    /*======================================================================== 
-                                    In Python project i am using EDGE_SUNKEN style without BF_FLAT.
-                                    in D, it gives a strange outline in those flags. So I decided to use...
-                                    these flags. But in this case, we don't need to reduce 1 point from...
-                                    the coloring rect. It looks perfect without changing rect. 
-                                    ==========================================================================*/
-                                    if !tkb.selRange {
-                                        if tkb.channelStyle == ChannelStyle.classic {
-                                            DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, tkb._chanFlag)
-                                        } else {
-                                            SelectObject(nmcd.hdc, HGDIOBJ(tkb._chanPen))
-                                            Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom );
-                                        }
-                                    } else {
-                                        /*===================================================
-                                        This gives a pleasant look when selRange is enabled.
-                                        Without a border(or edge), channel looks ugly. 
-                                        =====================================================*/
-                                        DrawEdge(nmcd.hdc, &nmcd.rc, BDR_OUTER, BIG_CHANNEL_EDGE)
-                                        rc: RECT = get_thumb_rect(hw)
-                                        if fill_channel_rect(tkb, nmcd, rc) do InvalidateRect(hw, &nmcd.rc, false)
-                                    }
-                                    return CDRF_SKIPDEFAULT
+                    // TkbChannelCdraw is not a magical value. Explanation is given at line 39
+                    case TkbChannelCdraw:
+                        /*======================================================================== 
+                        In Python project i am using EDGE_SUNKEN style without BF_FLAT.
+                        in D, it gives a strange outline in those flags. So I decided to use...
+                        these flags. But in this case, we don't need to reduce 1 point from...
+                        the coloring rect. It looks perfect without changing rect. 
+                        ==========================================================================*/
+                        if !tkb.selRange {
+                            if tkb.channelStyle == ChannelStyle.classic {
+                                DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, tkb._chanFlag)
+                            } else {
+                                SelectObject(nmcd.hdc, HGDIOBJ(tkb._chanPen))
+                                Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom );
                             }
-                    }
-                } else {
-                    return CDRF_DODEFAULT
-                }
-            }
-
-
-        case WM_LBUTTONDOWN:
-           // tkb._draw_focus_rct = true
-           tkb:= control_cast(TrackBar, ref_data)            
-            if tkb.onMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tkb.onMouseDown(tkb, &mea)
-                return 0
-            }
-
-        case WM_RBUTTONDOWN:
-            tkb:= control_cast(TrackBar, ref_data)            
-            if tkb.onRightMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tkb.onRightMouseDown(tkb, &mea)
-            }
-
-        case WM_LBUTTONUP:
-            tkb:= control_cast(TrackBar, ref_data)
-            if tkb.onMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tkb.onMouseUp(tkb, &mea)
-            }            
-            if tkb.onClick != nil {
-                ea:= new_event_args()
-                tkb.onClick(tkb, &ea)
-                return 0
-            }
-
-        case WM_LBUTTONDBLCLK:
-            tkb:= control_cast(TrackBar, ref_data)
-            if tkb.onDoubleClick != nil {
-                ea:= new_event_args()
-                tkb.onDoubleClick(tkb, &ea)
-                return 0
-            }
-
-        case WM_RBUTTONUP:
-            tkb:= control_cast(TrackBar, ref_data)
-            if tkb.onRightMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tkb.onRightMouseUp(tkb, &mea)
-            }           
-            if tkb.onRightClick != nil {
-                ea:= new_event_args()
-                tkb.onRightClick(tkb, &ea)
-                return 0
-            }
-
-        case WM_MOUSEHWHEEL:
-            tkb:= control_cast(TrackBar, ref_data)
-            if tkb.onMouseScroll != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                tkb.onMouseScroll(tkb, &mea)
-            }
-        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
-            tkb:= control_cast(TrackBar, ref_data)
-            if tkb._isMouseEntered {
-                if tkb.onMouseMove != nil {
-                    mea:= new_mouse_event_args(msg, wp, lp)
-                    tkb.onMouseMove(tkb, &mea)
-                }
-            }
-            else {
-                tkb._isMouseEntered = true
-                if tkb.onMouseEnter != nil  {
-                    ea:= new_event_args()
-                    tkb.onMouseEnter(tkb, &ea)
-                }
-            }
-
-        case WM_MOUSELEAVE:
-            tkb:= control_cast(TrackBar, ref_data)
-            tkb._isMouseEntered = false
-            if tkb.onMouseLeave != nil {
-                ea:= new_event_args()
-                tkb.onMouseLeave(tkb, &ea)
-            }
-
-        case WM_HSCROLL, WM_VSCROLL:
-            tkb:= control_cast(TrackBar, ref_data)
-            lwp:= LOWORD(wp)
-            switch lwp {
-                case TB_THUMBPOSITION:
-                    setup_value_internal(tkb, i32(HIWORD(wp)))
-                    if !tkb.freeMove {
-                        pos: i32 = i32(tkb.value)
-                        half: f32 = f32(tkb.frequency) / 2
-                        diff: i32 = pos %% i32(tkb.frequency)
-
-                        if diff >= i32(half) {
-                            pos = (i32(tkb.frequency) - diff) + i32(tkb.value)
-                        } else if diff < i32(half) {
-                            pos =  i32(tkb.value) - diff
-                        }
-
-                        if tkb.reversed {
-                            SendMessage(hw, TBM_SETPOS, WPARAM(1), LPARAM(pos * -1))
                         } else {
-                            SendMessage(hw, TBM_SETPOS, WPARAM(1), LPARAM(pos))
+                            /*===================================================
+                            This gives a pleasant look when selRange is enabled.
+                            Without a border(or edge), channel looks ugly. 
+                            =====================================================*/
+                            DrawEdge(nmcd.hdc, &nmcd.rc, BDR_OUTER, BIG_CHANNEL_EDGE)
+                            rc: RECT = get_thumb_rect(hw)
+                            if fill_channel_rect(tkb, nmcd, rc) do InvalidateRect(hw, &nmcd.rc, false)
                         }
-
-                        tkb.value = int(pos)
+                        return CDRF_SKIPDEFAULT
                     }
+                }
+            } else {
+                return CDRF_DODEFAULT
+            }
+        }
 
-                    // We need to refresh Trackbar in order to display our new drawings.
-                    InvalidateRect(hw, &tkb._chanRC, false)
+    case WM_HSCROLL, WM_VSCROLL:
+        tkb:= control_cast(TrackBar, ref_data)
+        lwp:= LOWORD(wp)
+        switch lwp {
+        case TB_THUMBPOSITION:
+            setup_value_internal(tkb, i32(HIWORD(wp)))
+            if !tkb.freeMove {
+                pos: i32 = i32(tkb.value)
+                half: f32 = f32(tkb.frequency) / 2
+                diff: i32 = pos %% i32(tkb.frequency)
 
-                    if tkb.onDragged != nil {
-                        ea:= new_event_args()
-                        tkb.onDragged(tkb, &ea)
-                    }
+                if diff >= i32(half) {
+                    pos = (i32(tkb.frequency) - diff) + i32(tkb.value)
+                } else if diff < i32(half) {
+                    pos =  i32(tkb.value) - diff
+                }
 
-                    if tkb.onValueChanged != nil {
-                        ea:= new_event_args()
-                        tkb.onValueChanged(tkb, &ea)
-                    }
+                if tkb.reversed {
+                    SendMessage(hw, TBM_SETPOS, WPARAM(1), LPARAM(pos * -1))
+                } else {
+                    SendMessage(hw, TBM_SETPOS, WPARAM(1), LPARAM(pos))
+                }
 
-                case THUMB_LINE_HIGH, THUMB_LINE_LOW, THUMB_PAGE_HIGH, THUMB_PAGE_LOW:
-                    setup_value_internal(tkb, i32(SendMessage(hw, TBM_GETPOS, 0, 0)))
-                    if tkb.onValueChanged != nil {
-                        ea:= new_event_args()
-                        tkb.onValueChanged(tkb, &ea)
-                    }
-
-                case TB_THUMBTRACK:
-                    setup_value_internal(tkb, i32(SendMessage(hw, TBM_GETPOS, 0, 0)))
-                    if tkb.onDragging != nil {
-                        ea:= new_event_args()
-                        tkb.onDragging(tkb, &ea)
-                    }
+                tkb.value = int(pos)
             }
 
-        // case: return DefSubclassProc(hw, msg, wp, lp)
+            // We need to refresh Trackbar in order to display our new drawings.
+            InvalidateRect(hw, &tkb._chanRC, false)
+
+            if tkb.onDragged != nil {
+                ea:= new_event_args()
+                tkb.onDragged(tkb, &ea)
+            }
+
+            if tkb.onValueChanged != nil {
+                ea:= new_event_args()
+                tkb.onValueChanged(tkb, &ea)
+            }
+
+        case THUMB_LINE_HIGH, THUMB_LINE_LOW, THUMB_PAGE_HIGH, THUMB_PAGE_LOW:
+            setup_value_internal(tkb, i32(SendMessage(hw, TBM_GETPOS, 0, 0)))
+            if tkb.onValueChanged != nil {
+                ea:= new_event_args()
+                tkb.onValueChanged(tkb, &ea)
+            }
+
+        case TB_THUMBTRACK:
+            setup_value_internal(tkb, i32(SendMessage(hw, TBM_GETPOS, 0, 0)))
+            if tkb.onDragging != nil {
+                ea:= new_event_args()
+                tkb.onDragging(tkb, &ea)
+            }
+        }
+
+    // case: return DefSubclassProc(hw, msg, wp, lp)
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

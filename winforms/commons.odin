@@ -41,6 +41,7 @@ NO_FONT : bool = false
 
 
 
+
 /*----------------------------------------------------------------------------------
 Use this function to update ui components from another thread.
 Usage : Call this function with required data packed in wpm and lpm.
@@ -127,7 +128,14 @@ draw_ellipse :: proc(dch : HDC, rc : RECT)
 @private alert2 :: proc(txt : string, data : any)
 {
 	@static cntr : int = 1
-	ptf("[%d] %s - %s\n", cntr, txt, fmt.tprint(data))
+	ptf("[%d] %s - %s", cntr, txt, fmt.tprint(data))
+	cntr += 1
+}
+
+@private alert3 :: proc(txt : string, data1, data2 : any)
+{
+	@static cntr : int = 1
+	ptf("[%d] %s - %s", cntr, txt, fmt.tprint(data1, data2))
 	cntr += 1
 }
 
@@ -364,7 +372,7 @@ screen_to_window :: proc(rc: RECT, hw: HWND) -> RECT
 	return {p1.x, p1.y, p2.x, p2.y}
 }
 
-@private set_rect :: proc(rc : ^RECT, left, top, right, bottom: i32)
+@private set_rect :: #force_inline proc(rc : ^RECT, left, top, right, bottom: i32)
 {
 	rc.left = left
 	rc.top = top
@@ -447,3 +455,7 @@ freeArenaMemory :: proc(this: ^ArenaMemory)
 	free(this)
 	print("ArenaMemory freed")
 }
+
+// combo_ctl_mouse_track :: proc(this: ^Control) -> bool {
+// 	print("Mouse tracking started for combo box")
+// }

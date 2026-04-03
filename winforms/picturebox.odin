@@ -217,121 +217,46 @@ pbox_clear_image :: proc(this: ^PictureBox)
 pbx_window_proc :: proc "stdcall" (hw : HWND, msg : u32, wp : WPARAM, lp : LPARAM ) -> LRESULT
 {
 	context = global_context
+    pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
+    res := ctrl_common_msg_handler(pbx, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
 	switch msg {
-        case WM_NCDESTROY:
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            pbox_finalize(pbx)
+    case WM_NCDESTROY:
+        pbox_finalize(pbx)
 
-        case WM_PAINT:
-            ps: PAINTSTRUCT
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            hdc: HDC = BeginPaint(hw, &ps) 
-            defer EndPaint(hw, &ps)             
-            if pbx.image != nil { 
-                image_draw(pbx.image, hdc, pbx._rect.left, pbx._rect.top, 
-                                pbx._rect.right - pbx._rect.left, 
-                                pbx._rect.bottom - pbx._rect.top)
-            } else {
-                // If no image, fill with background color
-                // print("No image to draw, filling with background color");
-                hbr: HBRUSH = CreateSolidBrush(get_color_ref(pbx.backColor))
-                defer delete_gdi_object(hbr)
-                api.FillRect(hdc, &ps.rcPaint, hbr);
-                
-            }
-            return 0
+    case WM_PAINT:
+        ps: PAINTSTRUCT
+        hdc: HDC = BeginPaint(hw, &ps) 
+        defer EndPaint(hw, &ps)             
+        if pbx.image != nil { 
+            image_draw(pbx.image, hdc, pbx._rect.left, pbx._rect.top, 
+                            pbx._rect.right - pbx._rect.left, 
+                            pbx._rect.bottom - pbx._rect.top)
+        } else {
+            // If no image, fill with background color
+            // print("No image to draw, filling with background color");
+            hbr: HBRUSH = CreateSolidBrush(get_color_ref(pbx.backColor))
+            defer delete_gdi_object(hbr)
+            api.FillRect(hdc, &ps.rcPaint, hbr);
+            
+        }
+        return 0
 
-        case WM_ERASEBKGND:
-            // We handle everything in WM_PAINT, so suppress background erase
-            return 1;
+    case WM_ERASEBKGND:
+        // We handle everything in WM_PAINT, so suppress background erase
+        return 1;
 
-        case WM_SIZE:        
-            // ptf("PictureBox resized, new size: %d x %d", LOWORD(lParam), HIWORD(lParam));
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if (pbx != nil) {
-                if pbx.sizeMode != .Auto_Size do InvalidateRect(hw, nil, true)
-            }
+    case WM_SIZE:        
+        // ptf("PictureBox resized, new size: %d x %d", LOWORD(lParam), HIWORD(lParam));
+        if (pbx != nil) {
+            if pbx.sizeMode != .Auto_Size do InvalidateRect(hw, nil, true)
+            }      
 
-        case WM_LBUTTONDOWN:            
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            pbx._mDownHappened = true
-            if pbx.onMouseDown != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pbx.onMouseDown(pbx, &mea)
-            }
-
-        case WM_RBUTTONDOWN:
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            pbx._mRDownHappened = true
-            if pbx.onRightMouseDown != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pbx.onRightMouseDown(pbx, &mea)
-            }
-
-        case WM_LBUTTONUP :
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if pbx.onMouseUp != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pbx.onMouseUp(pbx, &mea)
-            }
-            if pbx.onClick != nil do pbx->onClick(&gea)           
-
-        case WM_RBUTTONUP :
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if pbx.onRightMouseUp != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pbx.onRightMouseUp(pbx, &mea)
-            }
-            if pbx.onRightClick != nil do pbx.onRightClick(pbx, &gea)
-
-        case WM_LBUTTONDBLCLK :
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if pbx.onDoubleClick != nil {
-                pbx.onDoubleClick(pbx, &gea)
-                return 0
-            }
-
-        case WM_MOUSEWHEEL :
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if pbx.onMouseScroll != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pbx.onMouseScroll(pbx, &mea)
-            }
-
-        case WM_MOUSEMOVE :
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if !pbx._isMouseTracking {
-                pbx._isMouseTracking = true
-                track_mouse_move(hw)
-                if !pbx._isMouseEntered {
-                    pbx._isMouseEntered = true
-                    if pbx.onMouseEnter != nil do pbx.onMouseEnter(pbx, &gea)
-                }
-            } //---------------------------------------
-
-            if pbx.onMouseMove != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pbx.onMouseMove(pbx, &mea)
-            }
-
-        case WM_MOUSEHOVER :
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if pbx._isMouseTracking do pbx._isMouseTracking = false
-            if pbx.onMouseHover != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                pbx.onMouseHover(pbx, &mea)
-            }
-
-        case WM_MOUSELEAVE :
-            pbx := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^PictureBox)
-            if pbx._isMouseTracking {
-                pbx._isMouseTracking = false
-                pbx._isMouseEntered = false
-            }
-            if pbx.onMouseLeave != nil do pbx.onMouseLeave(pbx, &gea)
-
-        case :
-            return DefWindowProc(hw, msg, wp, lp)
+    case :
+        return DefWindowProc(hw, msg, wp, lp)
     }
     return DefWindowProc(hw, msg, wp, lp)
 }

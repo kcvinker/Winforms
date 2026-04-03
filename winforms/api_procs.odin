@@ -229,6 +229,7 @@ foreign user32 {
    @(link_name="DrawFrameControl") DrawFrameControl :: proc(HDC, ^RECT, UINT, UINT) -> BOOL ---
    // @(link_name="RegisterHotKey") RegisterHotKey :: proc(HWND, INT, UINT, UINT) -> BOOL ---
    @(link_name="UnregisterHotKey") UnregisterHotKey :: proc(HWND, api.INT) -> BOOL ---
+   @(link_name="IsChild") IsChild :: proc(HWND, HWND) -> BOOL ---
 
 
 
@@ -257,6 +258,7 @@ foreign kernel32 {
    @(link_name="GetSystemTime") GetSystemTime :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="GetLocalTime") GetLocalTime :: proc(sys_time : ^SYSTEMTIME) ---
    @(link_name="Sleep") Sleep :: proc(milli_sec : DWORD) ---
+   @(link_name="Beep") Beep :: proc(freq : DWORD, ms_dur : DWORD) -> BOOL ---
 
    @(link_name="GetPrivateProfileStringA") GetPrivateProfileString :: proc(lpAppName : cstring,
                                                                            lpKeyName : cstring,

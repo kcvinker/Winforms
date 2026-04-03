@@ -131,10 +131,14 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
 {
     context = global_context
     // context = runtime.default_context()
-    
+     cb:= control_cast(CheckBox, ref_data)
+    res := ctrl_common_msg_handler(cb, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
-        case WM_PAINT:
-            cb:= control_cast(CheckBox, ref_data)
+        case WM_PAINT:           
             if cb.onPaint != nil {
                 ps: PAINTSTRUCT
                 hdc:= BeginPaint(hw, &ps)
@@ -144,12 +148,7 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
                 return 0
             }
 
-        case WM_CONTEXTMENU:
-            cb:= control_cast(CheckBox, ref_data)
-		    if cb.contextMenu != nil do contextmenu_show(cb.contextMenu, lp)
-
         case CM_CTLCOMMAND:
-            cb:= control_cast(CheckBox, ref_data)
             cb.checked = cast(bool) SendMessage(hw, BM_GETCHECK, 0, 0)
             if cb.onCheckChanged != nil {
                 ea:= new_event_args()
@@ -157,7 +156,6 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
             }
 
         case CM_STATIC_COLOR:
-            cb:= control_cast(CheckBox, ref_data)
             hd:= dir_cast(wp, HDC)
             bkref:= get_color_ref(cb.backColor)
             api.SetBkMode(hd, api.BKMODE.TRANSPARENT)
@@ -165,7 +163,6 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
             return toLRES(cb._bkBrush)
 
         case CM_NOTIFY:
-            cb:= control_cast(CheckBox, ref_data)
             nmcd:= dir_cast(lp, ^NMCUSTOMDRAW)
             switch nmcd.dwDrawStage {
                 case CDDS_PREERASE:
@@ -180,84 +177,6 @@ new_checkbox:: proc{new_checkbox1, new_checkbox2}
                     DrawText(nmcd.hdc, to_wstring(cb.text), -1, &rct, cb._txtStyle)
                     // // free_all(context.temp_allocator)
                     return CDRF_SKIPDEFAULT
-            }
-
-        case WM_LBUTTONDOWN: 
-            cb:= control_cast(CheckBox, ref_data)           
-            if cb.onMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cb.onMouseDown(cb, &mea)
-                return 0
-            }
-
-        case WM_RBUTTONDOWN: 
-            cb:= control_cast(CheckBox, ref_data)           
-            if cb.onRightMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cb.onRightMouseDown(cb, &mea)
-            }
-
-        case WM_LBUTTONUP:
-            cb:= control_cast(CheckBox, ref_data)
-            if cb.onMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cb.onMouseUp(cb, &mea)
-            }
-            if cb.onClick != nil {
-                ea:= new_event_args()
-                cb.onClick(cb, &ea)
-                return 0
-            }           
-
-        case WM_LBUTTONDBLCLK: 
-            cb:= control_cast(CheckBox, ref_data)           
-            if cb.onDoubleClick != nil {
-                ea:= new_event_args()
-                cb.onDoubleClick(cb, &ea)
-                return 0
-            }
-
-        case WM_RBUTTONUP:
-            cb:= control_cast(CheckBox, ref_data)
-            if cb.onRightMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cb.onRightMouseUp(cb, &mea)
-            }
-           if cb.onRightClick != nil {
-                ea:= new_event_args()
-                cb.onRightClick(cb, &ea)
-                return 0
-            }       
-
-        case WM_MOUSEHWHEEL:
-            cb:= control_cast(CheckBox, ref_data)
-            if cb.onMouseScroll != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                cb.onMouseScroll(cb, &mea)
-            }
-
-        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
-            cb:= control_cast(CheckBox, ref_data)
-            if cb._isMouseEntered {
-                if cb.onMouseMove != nil {
-                    mea:= new_mouse_event_args(msg, wp, lp)
-                    cb.onMouseMove(cb, &mea)
-                }
-            }
-            else {
-                cb._isMouseEntered = true
-                if cb.onMouseEnter != nil  {
-                    ea:= new_event_args()
-                    cb.onMouseEnter(cb, &ea)
-                }
-            }
-
-        case WM_MOUSELEAVE:
-            cb:= control_cast(CheckBox, ref_data)
-            cb._isMouseEntered = false
-            if cb.onMouseLeave != nil {
-                ea:= new_event_args()
-                cb.onMouseLeave(cb, &ea)
             }
 
         case WM_DESTROY: 

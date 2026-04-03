@@ -170,132 +170,51 @@ radiobutton_set_autocheck:: proc(rb: ^RadioButton, auto_check: bool )
     context = global_context  
     // context = runtime.default_context()  
     //display_msg(msg)
+    rb:= control_cast(RadioButton, ref_data)
+    res := ctrl_common_msg_handler(rb, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
-        case WM_DESTROY: 
-            rb:= control_cast(RadioButton, ref_data)
-            rb_finalize(rb, hw, sc_id)
+    case WM_DESTROY: 
+        rb_finalize(rb, hw, sc_id)
 
-        case WM_CONTEXTMENU:
-            rb:= control_cast(RadioButton, ref_data)
-		    if rb.contextMenu != nil do contextmenu_show(rb.contextMenu, lp)
-
-        case CM_CTLCOMMAND:
-            rb:= control_cast(RadioButton, ref_data)
-            if HIWORD(wp) == 0 {
-                rb.checked = bool(SendMessage(rb.handle, BM_GETCHECK, 0, 0))
-                if rb.onStateChanged != nil {
-                    ea:= new_event_args()
-                    rb.onStateChanged(rb, &ea)
-                }
-            }
-         case WM_LBUTTONDOWN:
-            rb:= control_cast(RadioButton, ref_data)            
-            if rb.onMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                rb.onMouseDown(rb, &mea)
-                return 0
-            }
-
-        case WM_RBUTTONDOWN:
-            rb:= control_cast(RadioButton, ref_data)            
-            if rb.onRightMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                rb.onRightMouseDown(rb, &mea)
-            }
-        case WM_LBUTTONUP:
-            rb:= control_cast(RadioButton, ref_data)
-            if rb.onMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                rb.onMouseUp(rb, &mea)
-            }            
-            if rb.onClick != nil {
+    case CM_CTLCOMMAND:
+        if HIWORD(wp) == 0 {
+            rb.checked = bool(SendMessage(rb.handle, BM_GETCHECK, 0, 0))
+            if rb.onStateChanged != nil {
                 ea:= new_event_args()
-                rb.onClick(rb, &ea)
-                return 0
+                rb.onStateChanged(rb, &ea)
             }
+        }
 
-        case WM_LBUTTONDBLCLK:
-            rb:= control_cast(RadioButton, ref_data)            
-            if rb.onDoubleClick != nil {
-                ea:= new_event_args()
-                rb.onDoubleClick(rb, &ea)
-                return 0
-            }
+    case CM_STATIC_COLOR:
+        hdc:= dir_cast(wp, HDC)
+        api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
+        SetBkColor(hdc, get_color_ref(rb.backColor))
+        rb._hbrush = CreateSolidBrush(get_color_ref(rb.backColor))
+        // print("rb bkc ", rb.backColor)
+        // return toLRES(rb._hbrush)
+        return toLRES(rb._hbrush)
 
-        case WM_RBUTTONUP:
-            rb:= control_cast(RadioButton, ref_data)
-            if rb.onRightMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                rb.onRightMouseUp(rb, &mea)
-            }            
-            if rb.onRightClick != nil {
-                ea:= new_event_args()
-                rb.onRightClick(rb, &ea)
-                return 0
-            }
-
-        case WM_MOUSEHWHEEL:
-            rb:= control_cast(RadioButton, ref_data)
-            if rb.onMouseScroll != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                rb.onMouseScroll(rb, &mea)
-            }
-        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
-            rb:= control_cast(RadioButton, ref_data)
-            if rb._isMouseEntered {
-                if rb.onMouseMove != nil {
-                    mea:= new_mouse_event_args(msg, wp, lp)
-                    rb.onMouseMove(rb, &mea)
-                }
-            }
-            else {
-                rb._isMouseEntered = true
-                if rb.onMouseEnter != nil  {
-                    ea:= new_event_args()
-                    rb.onMouseEnter(rb, &ea)
-                }
-            }
-        //end case--------------------
-
-        case WM_MOUSELEAVE:
-            rb:= control_cast(RadioButton, ref_data)
-            rb._isMouseEntered = false
-            if rb.onMouseLeave != nil {
-                ea:= new_event_args()
-                rb.onMouseLeave(rb, &ea)
-            }
-
-
-        case CM_STATIC_COLOR:
-            rb:= control_cast(RadioButton, ref_data)
-            hdc:= dir_cast(wp, HDC)
-            api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)
-            SetBkColor(hdc, get_color_ref(rb.backColor))
-            rb._hbrush = CreateSolidBrush(get_color_ref(rb.backColor))
-            // print("rb bkc ", rb.backColor)
-            // return toLRES(rb._hbrush)
-            return toLRES(rb._hbrush)
-
-        case CM_NOTIFY:
-            rb:= control_cast(RadioButton, ref_data)
-            nmcd:= dir_cast(lp, ^NMCUSTOMDRAW)
-            switch nmcd.dwDrawStage {
-                case CDDS_PREERASE:
-                    return CDRF_NOTIFYPOSTERASE
-                case CDDS_PREPAINT:
-                    cref:= get_color_ref(rb.foreColor)
-                    rct: RECT = nmcd.rc
-                    if rb.textAlign == .Left{
-                        rct.left += 18
-                    } else do rct.right -= 18
-                    SetTextColor(nmcd.hdc, cref)
-                    // SetBackColor(nmcd.hdc, get_color_ref(rb.backColor))
-                    DrawText(nmcd.hdc, rb._wtext.ptr, -1, &rct, rb._txtStyle)
-                    // free_all(context.temp_allocator)
-                    return CDRF_SKIPDEFAULT
-            }
-
-
+    case CM_NOTIFY:
+        nmcd:= dir_cast(lp, ^NMCUSTOMDRAW)
+        switch nmcd.dwDrawStage {
+        case CDDS_PREERASE:
+            return CDRF_NOTIFYPOSTERASE
+        case CDDS_PREPAINT:
+            cref:= get_color_ref(rb.foreColor)
+            rct: RECT = nmcd.rc
+            if rb.textAlign == .Left{
+                rct.left += 18
+            } else do rct.right -= 18
+            SetTextColor(nmcd.hdc, cref)
+            // SetBackColor(nmcd.hdc, get_color_ref(rb.backColor))
+            DrawText(nmcd.hdc, rb._wtext.ptr, -1, &rct, rb._txtStyle)
+            // free_all(context.temp_allocator)
+            return CDRF_SKIPDEFAULT
+        }
 
     }
     return DefSubclassProc(hw, msg, wp, lp)

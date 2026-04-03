@@ -92,6 +92,8 @@ SizedReason :: enum
     Other_Maxmizied,
 }
 
+MsgHandlerReturn :: enum {Call_Def_Proc, Continue, Immediate_Return}
+
 MouseButtons :: enum
 {
 	None = 0,

@@ -71,6 +71,7 @@ NumberPicker :: struct
     _tbrc : RECT,
     _udrc : RECT,
     _myrc : RECT,
+    _npRect: RECT,
     _updatedTxt : string,
     _topEdgeFlag : DWORD,
     _botEdgeFlag : DWORD,
@@ -138,6 +139,8 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     this._buddyExStyle = WS_EX_LTRREADING | WS_EX_LEFT
     this._topEdgeFlag = BF_TOPLEFT
     this._botEdgeFlag = BF_BOTTOM
+    this._spMMoveProc = nump_mouse_move_handler
+    this._spMLeaveProc = nump_mouse_leave_handler
     return this
 }
 
@@ -261,9 +264,12 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
      * There is no magic in it. We just create a big RECT. It can comprise the edit & updown.
      * So, we will map the mouse points into parent's client rect size. Then we will
      * check if those points are inside our big rect. If yes, mouse is on us. Otherwise mouse leaved. */
-    SetRect(&np._myrc, i32(np.xpos), i32(np.ypos), i32(np.xpos + np.width), i32(np.ypos + np.height))
+    
     np._tbrc = get_rect(np._buddyHandle) // Textbox rect
     np._udrc = get_rect(np.handle) // Updown btn rect
+    // GetWindowRect(np.handle, &np._npRect) // NumberPicker rect
+    // np._npRect = RECT{0, 0, i32(np.width), i32(np.height)}
+    // print_rcpt(np._npRect, {0, 0}, 0)
 }
 
 @private resize_buddy :: proc(np : ^NumberPicker)
@@ -297,40 +303,45 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     np._bgcRef = get_color_ref(np.backColor)
 }
 
-@private np_after_creation :: proc(np : ^NumberPicker)
+@private np_after_creation :: proc(this : ^NumberPicker)
 {
     ctl_id : UINT= globalCtlID // Use global control ID & update it.
     globalCtlID += 1
-    np._buddyHandle = CreateWindowEx( np._buddyExStyle,
+    this._buddyHandle = CreateWindowEx( this._buddyExStyle,
                                         to_wstring("Edit"),
                                         nil,
-                                        np._buddyStyle,
-                                        i32(np.xpos),
-                                        i32(np.ypos),
-                                        i32(np.width),
-                                        i32(np.height),
-                                        np.parent.handle,
+                                        this._buddyStyle,
+                                        i32(this.xpos),
+                                        i32(this.ypos),
+                                        i32(this.width),
+                                        i32(this.height),
+                                        this.parent.handle,
                                         dir_cast(ctl_id, HMENU),
                                         app.hInstance,
                                         nil )
 
     
-    if np.handle != nil && np._buddyHandle != nil {
-        // HWND oldBuddy = HWND(SendMessage(np.handle, UDM_SETBUDDY, convert_to(WPARAM, np._buddyHandle), 0))
-        set_np_subclass(np, np_wnd_proc, buddy_wnd_proc)
-        if np.font.handle != np.parent.font.handle || np.font.handle == nil {
-            font_create_handle(&np.font)
+    if this.handle != nil && this._buddyHandle != nil {
+        // HWND oldBuddy = HWND(SendMessage(this.handle, UDM_SETBUDDY, convert_to(WPARAM, this._buddyHandle), 0))
+        set_np_subclass(this, np_wnd_proc, buddy_wnd_proc)
+        if this.font.handle != this.parent.font.handle || this.font.handle == nil {
+            font_create_handle(&this.font)
         }
-        SendMessage(np._buddyHandle, WM_SETFONT, WPARAM(np.font.handle), LPARAM(1))
+        SendMessage(this._buddyHandle, WM_SETFONT, WPARAM(this.font.handle), LPARAM(1))
 
-        usb := SendMessage(np.handle, UDM_SETBUDDY, WPARAM(np._buddyHandle), 0)
+        usb := SendMessage(this.handle, UDM_SETBUDDY, WPARAM(this._buddyHandle), 0)
         oldBuddy : HWND = dir_cast(usb, HWND)
-        SendMessage(np.handle, UDM_SETRANGE32, WPARAM(np.minRange), LPARAM(np.maxRange))
+        SendMessage(this.handle, UDM_SETRANGE32, WPARAM(this.minRange), LPARAM(this.maxRange))
 
-        set_rects_and_size(np)
-        resize_buddy(np)
+        set_rects_and_size(this)
+        resize_buddy(this)
         if oldBuddy != nil do SendMessage(oldBuddy, CM_BUDDY_RESIZE, 0, 0)
-        np_display_value_internal(np)
+        SetRect(&this._myrc, i32(this.xpos), i32(this.ypos), i32(this.xpos + this.width), i32(this.ypos + this.height))
+        // SetRect(&this._myRect, cast(i32)(this.xpos), cast(i32)(this.ypos), 
+        //                     cast(i32)(this.xpos + this.width), cast(i32)(this.ypos + this.height)
+        // )
+        np_display_value_internal(this)
+        // print_rcpt(this._myRect, {0, 0}, "Initial")
     }
 }
 
@@ -407,21 +418,67 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 	globalSubClassID += 1
 }
 
-@private is_mouse_on_me :: proc(np : ^NumberPicker) -> bool
+@private nump_mouse_move_handler :: proc(ctl: ^Control, hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
+{
+    // print("mouse moved on buddy ")
+    if ctl.onMouseMove != nil {
+        mea := new_mouse_event_args(msg, wp, lp)
+        ctl.onMouseMove(ctl, &mea)
+    }
+    needsLeave : bool = (ctl.onMouseEnter != nil || ctl.onMouseLeave != nil)
+	needsHover : bool = (ctl.onMouseHover != nil)
+    if (needsLeave || needsHover) {
+        // alert2("Needs Tracking: ", this._isMouseTracking)
+        this := cast(^NumberPicker) ctl
+        if hw == this._buddyHandle && !this._isMouseTracking {
+            // It's from the edit, we need to start mouse tracking here.            
+            flags : DWORD = 0
+            if needsLeave do flags |= TME_LEAVE
+            if needsHover do flags |= TME_HOVER
+
+            // Start tracking
+            track_mouse_move(this._buddyHandle, flags)
+            this._isMouseTracking = true               
+        }
+        
+        if !this._isMouseEntered && this.onMouseEnter != nil {
+            this._isMouseEntered = true
+            this.onMouseEnter(this, &gea)
+            // print_rcpt(this._myRect, {0, 0}, "In mouse enter")
+        }        
+    }
+}
+
+@private nump_mouse_leave_handler :: proc(ctl: ^Control) -> MsgHandlerReturn
 {
     /*-----------------------------------------------------------------------------
-        If this returns False, onMouseLeave event will triggered
-    Since, updown control is a combo of an edit and button controls...
-    we have no better options to control the mouse enter & leave mechanism.
-    Now, we create an imaginary rect over the bondaries of these two controls.
-    If mouse is inside that rect, there is no mouse leave. Perfect hack.
-    fmt.println(np.parent.handle)
-    ---------------------------------------------------------------------------*/
-    pt : POINT
-    GetCursorPos(&pt)
-    ScreenToClient(np.parent.handle, &pt)
-    return bool(PtInRect(&np._myrc, pt))
+        Mouse leave event in NumberPicker control is a bit tricky. It's a combination
+        of a text box and button. And if we use UDS_HOTTRACK style, the
+        control internally uses TrackMouseEvent function to track the mouse movement
+        in the rect of the arrow button only. So we have to create an imaginary rect over 
+        the bondaries of these two controls. If mouse is inside that rect, 
+        there is no mouse leave. A perfect hack!
+    ----------------------------------------------------------------------------------*/
+    if ctl.onMouseLeave != nil || ctl.onMouseEnter != nil || ctl.onMouseMove != nil {
+        this := cast(^NumberPicker) ctl
+        pt : POINT
+        GetCursorPos(&pt)
+        ScreenToClient(this.parent.handle, &pt)
+        am_i_in_myrect := PtInRect(&this._myrc, pt) 
+        
+        // print_rcpt(this._myrc, pt, am_i_in_myrect)
+        if am_i_in_myrect { // Mouse is outside of the control rect. So, it is a real mouse leave.
+            return .Immediate_Return
+        } else {
+            this._isMouseEntered = false
+            this._isMouseTracking = false
+            if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
+        }
+        
+    }
+    return .Call_Def_Proc
 }
+
 
 @private np_finalize :: proc(this: ^NumberPicker, scid: UINT_PTR)
 {
@@ -432,6 +489,19 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     delete(this._disValArr)  
     free(this)
 }
+npm_test :: proc(this: ^NumberPicker)
+{
+    pt := RECT{cast(i32)(this.xpos), cast(i32)(this.ypos), cast(i32)(this.xpos + this.width), cast(i32)(this.ypos + this.height)}
+    // ScreenToClient(this.parent.handle, &pt)
+    ptf("Mouse points of NumberPicker %d, %d, %d, %d", pt.left, pt.top, pt.right, pt.bottom)
+    // ptf("NumberPicker rect %d, %d, %d, %d", this._npRect.left, this._npRect.top, this._npRect.right, this._npRect.bottom)
+    p2 : POINT
+    GetCursorPos(&p2)
+    ScreenToClient(this.parent.handle, &p2)
+    insie := PtInRect(&pt, p2)
+    ptf("Cursor points %d, %d", p2.x, p2.y)
+    ptf("Is cursor inside NumberPicker? %t", insie)
+}
 
 
 @private np_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
@@ -440,84 +510,65 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     context = global_context //
     // context = runtime.default_context()
     
-    //display_msg(msg)
+    nump := control_cast(NumberPicker, ref_data)
+    // if msg == WM_MOUSELEAVE {
+    //     // npm_test(nump)
+    //     return nump_mouse_leave_handler(nump)
+    // }
+    res := ctrl_common_msg_handler(nump, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
-        case WM_DESTROY : 
-            np := control_cast(NumberPicker, ref_data)
-            np_finalize(np, sc_id)
+    case WM_DESTROY :             
+        np_finalize(nump, sc_id)
+        return 0
+
+    case WM_PAINT :
+        if nump.onPaint != nil {
+            ps : PAINTSTRUCT
+            hdc := BeginPaint(hw, &ps)
+            pea := new_paint_event_args(&ps)
+            nump.onButtonPaint(nump, &pea)
+            EndPaint(hw, &ps)
             return 0
+        }
+        // return 0
 
-        case WM_PAINT :
-            np := control_cast(NumberPicker, ref_data)
-            if np.onPaint != nil {
-                ps : PAINTSTRUCT
-                hdc := BeginPaint(hw, &ps)
-                pea := new_paint_event_args(&ps)
-                np.onButtonPaint(np, &pea)
-                EndPaint(hw, &ps)
-                return 0
-            }
-            // return 0
+    // case WM_MOUSEMOVE:
+        // nump_mouse_move_handler(nump, msg, wp, lp)
+        // return 0
 
-        case WM_CONTEXTMENU:
-            np := control_cast(NumberPicker, ref_data)
-		    if np.contextMenu != nil do contextmenu_show(np.contextMenu, lp)
-            return 0
+    // case WM_MOUSELEAVE:
+    //     alert("Mouse leave from nump")
+        // return special_mouse_leave_handler(nump, &nump._npRect)
+        // return nump_mouse_leave_handler(nump)
 
-        case CM_NOTIFY :
-            np := control_cast(NumberPicker, ref_data)
-            nm := dir_cast(lp, ^NMUPDOWN)
-            if nm.hdr.code == UDN_DELTAPOS {
-                tbstr : string = get_ctrl_text_internal(np._buddyHandle)
-                new_val, _ := strconv.parse_f32(tbstr)
-                np.value = new_val
-                defer delete(tbstr)                
-                np_set_value_internal(np, nm.iDelta)                
-            }
+        
+    case CM_NOTIFY :
+        nm := dir_cast(lp, ^NMUPDOWN)
+        if nm.hdr.code == UDN_DELTAPOS {
+            tbstr : string = get_ctrl_text_internal(nump._buddyHandle)
+            new_val, _ := strconv.parse_f32(tbstr)
+            nump.value = new_val
+            defer delete(tbstr)                
+            np_set_value_internal(nump, nm.iDelta)                
+        }
 
-            if np.onValueChanged != nil {
-                ea := new_event_args()
-                np.onValueChanged(np, &ea)
-            }
-            return 0
+        if nump.onValueChanged != nil {
+            ea := new_event_args()
+            nump.onValueChanged(nump, &ea)
+        }
+        return 0       
 
-        case WM_MOUSEMOVE :
-            np := control_cast(NumberPicker, ref_data)
-            if np._isMouseEntered {
-                if np.onMouseMove != nil {
-                    mea := new_mouse_event_args(msg, wp, lp)
-                    np.onMouseMove(np, &mea)
-                }
-            }
-            else {
-                np._isMouseEntered = true
-                if np.onMouseEnter != nil  {
-                    ea := new_event_args()
-                    np.onMouseEnter(np, &ea)
-                }
-            }
-            return 0
+    case WM_ENABLE :
+        api.EnableWindow(hw, auto_cast(wp))
+        api.EnableWindow(nump._buddyHandle, auto_cast(wp))
+        return 0
 
-        case WM_MOUSELEAVE :
-            np := control_cast(NumberPicker, ref_data)
-            if np.trackMouseLeave {
-                if !is_mouse_on_me(np) {
-                    np._isMouseEntered = false
-                    ea := new_event_args()
-                    np.onMouseLeave(np, &ea)
-                }
-            }
-            return 0
-
-        case WM_ENABLE :
-            np := control_cast(NumberPicker, ref_data)
-            api.EnableWindow(hw, auto_cast(wp))
-            api.EnableWindow(np._buddyHandle, auto_cast(wp))
-            return 0
-
-        //case WM_CANCELMODE : print("WM_CANCELMODE")
-
-        case : return DefSubclassProc(hw, msg, wp, lp)
+    case : 
+        return DefSubclassProc(hw, msg, wp, lp)
 
     }
     return DefSubclassProc(hw, msg, wp, lp)
@@ -527,104 +578,103 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
                                             sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context //
-    // context = runtime.default_context()
-    
+    // context = runtime.default_context()    
     // display_msg(msg)
+    // if msg == WM_MOUSELEAVE do alert("Mouse leave message received from buddy edit control.")
+    nump := control_cast(NumberPicker, ref_data)
+    // if msg == WM_MOUSEMOVE {
+    //     alert("Mouse move on buddy")        
+    // } else if msg == WM_MOUSELEAVE {
+    //     alert("Mouse leave from buddy")
+    // }
+    // if msg == WM_MOUSELEAVE do return special_mouse_leave_handler(nump, &nump._npRect)
+    res := ctrl_common_msg_handler(nump, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, buddy_wnd_proc, sc_id)
-        case WM_PAINT :
+        case WM_PAINT:
             /* 
              * We are drawing the edge line over the edit border.
              * Because, we need our edit & updown look like a single control. 
-             */
-            nump := control_cast(NumberPicker, ref_data)
+             */            
             res := DefSubclassProc(hw, msg, wp, lp)
             hdc : HDC = GetWindowDC(hw)
             defer ReleaseDC(hw, hdc)
             np_paint_buddy_border(nump, hdc)           
             return res  
 
-        case CM_EDIT_COLOR :
-            tb := control_cast(NumberPicker, ref_data)
-            if tb.foreColor != def_fore_clr || tb.backColor != def_back_clr {
+        case CM_EDIT_COLOR:
+            if nump.foreColor != def_fore_clr || nump.backColor != def_back_clr {
                 dc_handle := dir_cast(wp, HDC)
                 api.SetBkMode(dc_handle, api.BKMODE.TRANSPARENT)
-
-                if tb.foreColor != 0x000000 do SetTextColor(dc_handle, get_color_ref(tb.foreColor))
-                if tb._bkBrush == nil do tb._bkBrush = CreateSolidBrush(get_color_ref(tb.backColor))
-                return toLRES(tb._bkBrush)
+                if nump.foreColor != 0x000000 do SetTextColor(dc_handle, get_color_ref(nump.foreColor))
+                if nump._bkBrush == nil do nump._bkBrush = CreateSolidBrush(get_color_ref(nump.backColor))
+                return toLRES(nump._bkBrush)
             }
 
         case EM_SETSEL: return 1
 
-        case WM_KEYDOWN :
-            tb := control_cast(NumberPicker, ref_data)
+        case WM_KEYDOWN:
+
             kea := new_key_event_args(wp)
-            if tb.onKeyDown != nil {
-                tb.onKeyDown(tb, &kea)
+            if nump.onKeyDown != nil {
+                nump.onKeyDown(nump, &kea)
             }
 
-        case CM_CTLCOMMAND :
-            tb := control_cast(NumberPicker, ref_data)
+        case CM_CTLCOMMAND:
             ncode := HIWORD(wp)
             if ncode == EN_UPDATE {
-                if tb.hideCaret do HideCaret(hw)
+                if nump.hideCaret do HideCaret(hw)
             }
 
-        case WM_KEYUP :
-            tb := control_cast(NumberPicker, ref_data)
+        case WM_KEYUP:
+
             kea := new_key_event_args(wp)
-            if tb.onKeyUp != nil {
-                tb.onKeyUp(tb, &kea)
+            if nump.onKeyUp != nil {
+                nump.onKeyUp(nump, &kea)
             }
             SendMessage(hw, CM_TBTXTCHANGED, 0, 0)
             return 0
 
-        case WM_CHAR :
-            tb := control_cast(NumberPicker, ref_data)
-            if tb.onKeyPress != nil {
+        case WM_CHAR:
+
+            if nump.onKeyPress != nil {
                 kea := new_key_event_args(wp)
-                tb.onKeyPress(tb, &kea)
+                nump.onKeyPress(nump, &kea)
                 return 0
             }
 
-        case CM_TBTXTCHANGED :
-            tb := control_cast(NumberPicker, ref_data)
-             if tb.onValueChanged != nil {
+        case CM_TBTXTCHANGED:
+
+             if nump.onValueChanged != nil {
                 ea:= new_event_args()
-                tb.onValueChanged(tb, &ea)
+                nump.onValueChanged(nump, &ea)
             }
 
-        case WM_MOUSEMOVE :
-            tb := control_cast(NumberPicker, ref_data)
-            //print("mouse moved on buddy ")
-             if tb._isMouseEntered {
-                if tb.onMouseMove != nil {
-                    mea := new_mouse_event_args(msg, wp, lp)
-                    tb.onMouseMove(tb, &mea)
-                }
-            }
-            else {
-                tb._isMouseEntered = true
-                if tb.onMouseEnter != nil  {
-                    ea := new_event_args()
-                    tb.onMouseEnter(tb, &ea)
-                }
-            }
+        // case WM_MOUSEMOVE:
+            // nump_mouse_move_handler(nump, msg, wp, lp)
+            // return 0
 
-        case WM_MOUSELEAVE :
-            tb := control_cast(NumberPicker, ref_data)
-            if tb.trackMouseLeave {
-                if !is_mouse_on_me(tb) {
-                    tb._isMouseEntered = false
-                    ea := new_event_args()
-                    tb.onMouseLeave(tb, &ea)
-                }
-            }
+        // case WM_MOUSELEAVE:
+        //     alert("Mouse leave from buddy")
+            // return special_mouse_leave_handler(nump, &nump._npRect)
+            // return nump_mouse_leave_handler(nump)
+
+        // case WM_MOUSELEAVE:         
+        //     if nump.onMouseLeave != nil || nump.onMouseEnter != nil || nump.onMouseMove != nil {
+        //         if !is_mouse_on_me(nump) {
+        //             nump._isMouseEntered = false
+        //             if nump.onMouseLeave != nil do nump.onMouseLeave(nump, &gea)
+        //         }
+        //     }
 
         case CM_BUDDY_RESIZE: 
-            tb := control_cast(NumberPicker, ref_data)
-            resize_buddy(tb)
+            resize_buddy(nump)
+            SetRect(&nump._myrc, i32(nump.xpos), i32(nump.ypos), 
+                    i32(nump.xpos + nump.width), i32(nump.ypos + nump.height))
 
 
         case : return DefSubclassProc(hw, msg, wp, lp)

@@ -228,101 +228,65 @@ gbx_set_style :: proc(this: ^GroupBox, value: GroupBoxStyle) {
 {
     // context = runtime.default_context()
     context = global_context
-    
+    this := control_cast(GroupBox, ref_data)
+     res := ctrl_common_msg_handler(this, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     //display_msg(msg)
+    
     switch msg {
-         case WM_DESTROY : 
-            RemoveWindowSubclass(hw, gb_wnd_proc, sc_id)
-            this := control_cast(GroupBox, ref_data)
-            gb_finalize(this)
+        case WM_DESTROY : 
+        RemoveWindowSubclass(hw, gb_wnd_proc, sc_id)
+        this := control_cast(GroupBox, ref_data)
+        gb_finalize(this)
 
-        case WM_PAINT :            
-            this := control_cast(GroupBox, ref_data)
-            if this._gbStyle == .Overriden {
-                ret := DefSubclassProc(hw, msg, wp, lp)
-                gfx := new_graphics(hw)
-                defer gfx_destroy(gfx)
-                gfx_draw_hline(gfx, this._pen, 10, 12, this._txtWidth)
-                gfx_draw_text(gfx, this, 12, 0)
-            }
+    case WM_PAINT :            
+        this := control_cast(GroupBox, ref_data)
+        if this._gbStyle == .Overriden {
+            ret := DefSubclassProc(hw, msg, wp, lp)
+            gfx := new_graphics(hw)
+            defer gfx_destroy(gfx)
+            gfx_draw_hline(gfx, this._pen, 10, 12, this._txtWidth)
+            gfx_draw_text(gfx, this, 12, 0)
+        }
 
-
-        case WM_CONTEXTMENU:
-            this := control_cast(GroupBox, ref_data)
-		    if this.contextMenu != nil do contextmenu_show(this.contextMenu, lp)
-
-        case CM_STATIC_COLOR:
-            this := control_cast(GroupBox, ref_data)
-            if this._gbStyle == .Classic {
-                hdc := dir_cast(wp, HDC)
-                api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)                
-                SetTextColor(hdc, get_color_ref(this.foreColor))
-            }
-            return dir_cast(this._bkBrush, LRESULT)
-
-        case WM_GETTEXTLENGTH:
-            this := control_cast(GroupBox, ref_data)
-            if this._gbStyle == .Overriden do return 0
-
-        case WM_ERASEBKGND:
-            this := control_cast(GroupBox, ref_data)
+    case CM_STATIC_COLOR:
+        this := control_cast(GroupBox, ref_data)
+        if this._gbStyle == .Classic {
             hdc := dir_cast(wp, HDC)
-            if this._getWidth {
-                sz : SIZE    
-                select_gdi_object(hdc, this.font.handle)
-                GetTextExtentPoint32(hdc, this._wtext.ptr, this._wtext.strLen, &sz)                
-                this._txtWidth = sz.cx + 10
-                this._getWidth = false
-            }
-            if this._dbFill {
-                this._memDC = CreateCompatibleDC(hdc)
-                this._hbmp = CreateCompatibleBitmap(hdc, i32(this.width), i32(this.height))
-                select_gdi_object(this._memDC, this._hbmp)
-                api.FillRect(this._memDC, &this._rct, this._bkBrush)  
-                this._dbFill = false
-            }
-            BitBlt(hdc, 0, 0, i32(this.width), i32(this.height), this._memDC, 0, 0, SRCCOPY)
-            return 1
+            api.SetBkMode(hdc, api.BKMODE.TRANSPARENT)                
+            SetTextColor(hdc, get_color_ref(this.foreColor))
+        }
+        return dir_cast(this._bkBrush, LRESULT)
 
+    case WM_GETTEXTLENGTH:
+        this := control_cast(GroupBox, ref_data)
+        if this._gbStyle == .Overriden do return 0
 
-         case WM_MOUSEHWHEEL:
-            this := control_cast(GroupBox, ref_data)
-            if this.onMouseScroll != nil {
-                mea := new_mouse_event_args(msg, wp, lp)
-                this.onMouseScroll(this, &mea)
-            }
+    case WM_ERASEBKGND:
+        this := control_cast(GroupBox, ref_data)
+        hdc := dir_cast(wp, HDC)
+        if this._getWidth {
+            sz : SIZE    
+            select_gdi_object(hdc, this.font.handle)
+            GetTextExtentPoint32(hdc, this._wtext.ptr, this._wtext.strLen, &sz)                
+            this._txtWidth = sz.cx + 10
+            this._getWidth = false
+        }
+        if this._dbFill {
+            this._memDC = CreateCompatibleDC(hdc)
+            this._hbmp = CreateCompatibleBitmap(hdc, i32(this.width), i32(this.height))
+            select_gdi_object(this._memDC, this._hbmp)
+            api.FillRect(this._memDC, &this._rct, this._bkBrush)  
+            this._dbFill = false
+        }
+        BitBlt(hdc, 0, 0, i32(this.width), i32(this.height), this._memDC, 0, 0, SRCCOPY)
+        return 1        
 
-        case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-            //print("grop mouse move")
-            this := control_cast(GroupBox, ref_data)
-            if this._isMouseEntered {
-                if this.onMouseMove != nil {
-                    mea := new_mouse_event_args(msg, wp, lp)
-                    this.onMouseMove(this, &mea)
-                }
-            }
-            else {
-                this._isMouseEntered = true
-                if this.onMouseEnter != nil  {
-                    ea := new_event_args()
-                    this.onMouseEnter(this, &ea)
-                }
-            }
-        // case WM_NCHITTEST : // This will cause a mouse move message
-        //     return 1
-
-
-        case WM_MOUSELEAVE :
-           // print("m leaved")
-           this := control_cast(GroupBox, ref_data)
-            this._isMouseEntered = false
-            if this.onMouseLeave != nil {
-                ea := new_event_args()
-                this.onMouseLeave(this, &ea)
-            }
-
-        case :
-            return DefSubclassProc(hw, msg, wp, lp)
+    case :
+        return DefSubclassProc(hw, msg, wp, lp)
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

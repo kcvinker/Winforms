@@ -301,9 +301,14 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 									sc_id : UINT_PTR, ref_data : DWORD_PTR) -> LRESULT
 {
 	context = global_context
+	btn := control_cast(Button, ref_data)
+	res := ctrl_common_msg_handler(btn, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
 	switch msg {
-		case WM_PAINT :
-			btn := control_cast(Button, ref_data)
+		case WM_PAINT :			
             if btn.onPaint != nil {
                 ps : PAINTSTRUCT
                 hdc := BeginPaint(hw, &ps)
@@ -314,7 +319,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
             }
 
 		// case WM_SETFOCUS:
-		// 	btn := control_cast(Button, ref_data)
+		// 	
         //     if btn.onGotFocus != nil {
         //         ea := new_event_args()
         //         btn.onGotFocus(btn, &ea)
@@ -323,7 +328,7 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
 
         // case WM_KILLFOCUS:
         //     //btn._draw_focus_rct = false
-		// 	btn := control_cast(Button, ref_data)
+		// 	
         //     if btn.onLostFocus != nil {
         //         ea := new_event_args()
         //         btn.onLostFocus(btn, &ea)
@@ -331,85 +336,12 @@ button_set_gradient_colors :: proc(btn : ^Button, clr1, clr2 : uint)
         //     }
 		// 	return 0  // Avoid this if you want to show the focus rectangle (....)
 
-		case WM_LBUTTONDOWN:
-			btn := control_cast(Button, ref_data)
-			if btn.onMouseDown != nil {
-				mea := new_mouse_event_args(msg, wp, lp)
-				btn.onMouseDown(btn, &mea)
-			}
 
-		case WM_RBUTTONDOWN:
-			btn := control_cast(Button, ref_data)
-			if btn.onRightMouseDown != nil {
-				mea := new_mouse_event_args(msg, wp, lp)
-				btn.onRightMouseDown(btn, &mea)
-			}
 
-		case WM_LBUTTONUP :
-			btn := control_cast(Button, ref_data)				
-			if btn.onMouseUp != nil	{
-				mea := new_mouse_event_args(msg, wp, lp)
-				btn.onMouseUp(btn, &mea)
-			}	
-			if btn.onClick != nil {
-				// ea := new_event_args()
-				btn.onClick(btn, &gea)
-				// return 0
-			}
-
-		case WM_RBUTTONUP :
-			btn := control_cast(Button, ref_data)
-			if btn.onRightMouseUp != nil {
-				mea := new_mouse_event_args(msg, wp, lp)
-				btn.onRightMouseUp(btn, &mea)
-			}
-			if btn.onRightClick != nil {
-				// ea := new_event_args()
-				btn.onRightClick(btn, &gea)
-				// return 0
-			}
-
-		case WM_MOUSEHWHEEL:
-			btn := control_cast(Button, ref_data)
-			if btn.onMouseScroll != nil {
-				mea := new_mouse_event_args(msg, wp, lp)
-				btn.onMouseScroll(btn, &mea)
-			}
-
-		case WM_MOUSEMOVE : // Mouse Enter & Mouse Move is happening here.
-			btn := control_cast(Button, ref_data)
-			if btn._isMouseEntered {
-                if btn.onMouseMove != nil {
-                    mea := new_mouse_event_args(msg, wp, lp)
-                    btn.onMouseMove(btn, &mea)
-                }
-            }
-            else {
-                btn._isMouseEntered = true
-                if btn.onMouseEnter != nil {
-                    // ea := new_event_args()
-                    btn.onMouseEnter(btn, &gea)
-                }
-            }
-
-		case WM_MOUSELEAVE :
-			btn := control_cast(Button, ref_data)
-			btn._isMouseEntered = false
-            if btn.onMouseLeave != nil {
-                // ea := new_event_args()
-                btn.onMouseLeave(btn, &gea)
-            }
-
-		case WM_CONTEXTMENU:
-			btn := control_cast(Button, ref_data)
-			if btn.contextMenu != nil do contextmenu_show(btn.contextMenu, lp)
-
-		case CM_NOTIFY:
-			btn := control_cast(Button, ref_data)
+		case CM_NOTIFY:			
 			return btn_wmnotify_handler(btn, lp)
 
-		case WM_DESTROY: //btn_finalize(btn, hw, sc_id)
-			btn := control_cast(Button, ref_data)
+		case WM_DESTROY:			
 			btn_finalize(btn, hw, sc_id)
 			free(btn,  context.allocator)
 			RemoveWindowSubclass(hw, btn_wnd_proc, sc_id)		

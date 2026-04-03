@@ -39,6 +39,13 @@ timer_stop :: proc(this: ^Timer)
     this._isEnabled = false
 }
 
+timer_restart :: proc(this: ^Timer)
+{
+    if this._isEnabled do KillTimer(this._parentHwnd, this._idNum)
+    SetTimer(this._parentHwnd, this._idNum, this.interval, nil)
+    this._isEnabled = true
+}
+
 @private timer_dtor :: proc(this: ^Timer)
 {
     if this._isEnabled do KillTimer(this._parentHwnd, this._idNum)

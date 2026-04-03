@@ -255,154 +255,78 @@ dtp_wnd_proc:: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
 {
     // context = runtime.default_context()
     context = global_context
-    
+    dtp:= control_cast(DateTimePicker, ref_data)
     //display_msg(msg)
+     res := ctrl_common_msg_handler(dtp, hw, msg, wp, lp) 
+    #partial switch res {
+        case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
+        case .Immediate_Return: return 1
+    }
     switch msg {
-        case WM_DESTROY: 
-            dtp:= control_cast(DateTimePicker, ref_data)
-            dtp_finalize(dtp, sc_id)
+    case WM_DESTROY:             
+        dtp_finalize(dtp, sc_id)
 
-        case WM_PAINT:
-            dtp:= control_cast(DateTimePicker, ref_data)
-            if dtp.onPaint != nil {
-                ps: PAINTSTRUCT
-                hdc:= BeginPaint(hw, &ps)
-                pea:= new_paint_event_args(&ps)
-                dtp.onPaint(dtp, &pea)
-                EndPaint(hw, &ps)
-                return 0
+    case WM_PAINT:
+        if dtp.onPaint != nil {
+            ps: PAINTSTRUCT
+            hdc:= BeginPaint(hw, &ps)
+            pea:= new_paint_event_args(&ps)
+            dtp.onPaint(dtp, &pea)
+            EndPaint(hw, &ps)
+            return 0
+        }
+
+    case WM_CONTEXTMENU:
+        if dtp.contextMenu != nil do contextmenu_show(dtp.contextMenu, lp)
+
+    case CM_NOTIFY:
+        nm:= dir_cast(lp, ^NMHDR)
+        switch nm.code { 
+        case DTN_USERSTRING:
+            if dtp.onTextChanged != nil {
+                dts:= dir_cast(lp, ^NMDATETIMESTRINGW)
+                dtea: DateTimeEventArgs
+                dtea.dateString = wstring_to_string(dts.pszUserString)
+                dtp.onTextChanged(dtp, &dtea )
+                // After invoking the event, send this message to set the time in dtp
+                if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, dir_cast(&dtea.dateStruct, LPARAM))
+                // free_all(context.temp_allocator)
+
             }
-
-        case WM_CONTEXTMENU:
-            dtp:= control_cast(DateTimePicker, ref_data)
-		    if dtp.contextMenu != nil do contextmenu_show(dtp.contextMenu, lp)
-
-        case CM_NOTIFY:
-            dtp:= control_cast(DateTimePicker, ref_data)
-            nm:= dir_cast(lp, ^NMHDR)
-            switch nm.code { 
-                case DTN_USERSTRING:
-                    if dtp.onTextChanged != nil {
-                        dts:= dir_cast(lp, ^NMDATETIMESTRINGW)
-                        dtea: DateTimeEventArgs
-                        dtea.dateString = wstring_to_string(dts.pszUserString)
-                        dtp.onTextChanged(dtp, &dtea )
-                        // After invoking the event, send this message to set the time in dtp
-                        if dtea.handled do SendMessage(dtp.handle, DTM_SETSYSTEMTIME, 0, dir_cast(&dtea.dateStruct, LPARAM))
-                        // free_all(context.temp_allocator)
-
-                    }
-                case DTN_DROPDOWN:
-                    if dtp.onCalendarOpened != nil {
-                        ea:= new_event_args()
-                        dtp.onCalendarOpened(dtp, &ea)
-                        return 0
-                    }
-
-                case DTN_DATETIMECHANGE:
-                    // For unknown reason, this notification occures two times.
-                    // So we need to use an integer value to limit it once and only.
-                    if dtp._valueChangeCount == 0 {
-                        dtp._valueChangeCount = 1
-                        dtc:= dir_cast(lp, ^NMDATETIMECHANGE)
-                        dtp.value = systime_to_datetime(dtc.st)
-                        if dtp.onValueChanged != nil {
-                            ea:= new_event_args()
-                            dtp.onValueChanged(dtp, &ea)
-                            return 0
-                        }
-                    } else if dtp._valueChangeCount == 1 {
-                        dtp._valueChangeCount = 0
-                        return 0
-                    }
-                    return 0
-
-                case DTN_CLOSEUP:
-                    if dtp.onCalendarClosed != nil {
-                        ea:= new_event_args()
-                        dtp.onCalendarClosed(dtp, &ea)
-                    }
-            }
-
-        case WM_LBUTTONDOWN:   
-            dtp:= control_cast(DateTimePicker, ref_data)         
-            if dtp.onMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                dtp.onMouseDown(dtp, &mea)
-                return 0
-            }
-
-        case WM_RBUTTONDOWN: 
-            dtp:= control_cast(DateTimePicker, ref_data)           
-            if dtp.onRightMouseDown != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                dtp.onRightMouseDown(dtp, &mea)
-            }
-
-        case WM_LBUTTONUP:
-            dtp:= control_cast(DateTimePicker, ref_data)
-            if dtp.onMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                dtp.onMouseUp(dtp, &mea)
-            }  
-            if dtp.onClick != nil {
+        case DTN_DROPDOWN:
+            if dtp.onCalendarOpened != nil {
                 ea:= new_event_args()
-                dtp.onClick(dtp, &ea)
+                dtp.onCalendarOpened(dtp, &ea)
                 return 0
             }
 
-        case WM_LBUTTONDBLCLK:
-            dtp:= control_cast(DateTimePicker, ref_data)
-            if dtp.onDoubleClick != nil {
-                ea:= new_event_args()
-                dtp.onDoubleClick(dtp, &ea)
-                return 0
-            }
-
-        case WM_RBUTTONUP:
-            dtp:= control_cast(DateTimePicker, ref_data)
-            if dtp.onRightMouseUp != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                dtp.onRightMouseUp(dtp, &mea)
-            }            
-            if dtp.onRightClick != nil {
-                ea:= new_event_args()
-                dtp.onRightClick(dtp, &ea)
-                return 0
-            }
-
-        case WM_MOUSEHWHEEL:
-            dtp:= control_cast(DateTimePicker, ref_data)
-            if dtp.onMouseScroll != nil {
-                mea:= new_mouse_event_args(msg, wp, lp)
-                dtp.onMouseScroll(dtp, &mea)
-            }
-
-        case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is happening here.
-            dtp:= control_cast(DateTimePicker, ref_data)
-            if dtp._isMouseEntered {
-                if dtp.onMouseMove != nil {
-                    mea:= new_mouse_event_args(msg, wp, lp)
-                    dtp.onMouseMove(dtp, &mea)
-                }
-            }
-            else {
-                dtp._isMouseEntered = true
-                if dtp.onMouseEnter != nil  {
+        case DTN_DATETIMECHANGE:
+            // For unknown reason, this notification occures two times.
+            // So we need to use an integer value to limit it once and only.
+            if dtp._valueChangeCount == 0 {
+                dtp._valueChangeCount = 1
+                dtc:= dir_cast(lp, ^NMDATETIMECHANGE)
+                dtp.value = systime_to_datetime(dtc.st)
+                if dtp.onValueChanged != nil {
                     ea:= new_event_args()
-                    dtp.onMouseEnter(dtp, &ea)
+                    dtp.onValueChanged(dtp, &ea)
+                    return 0
                 }
+            } else if dtp._valueChangeCount == 1 {
+                dtp._valueChangeCount = 0
+                return 0
             }
+            return 0
 
-        case WM_MOUSELEAVE:
-            dtp:= control_cast(DateTimePicker, ref_data)
-            dtp._isMouseEntered = false
-            if dtp.onMouseLeave != nil {
+        case DTN_CLOSEUP:
+            if dtp.onCalendarClosed != nil {
                 ea:= new_event_args()
-                dtp.onMouseLeave(dtp, &ea)
+                dtp.onCalendarClosed(dtp, &ea)
             }
+        }    
 
-        case: return DefSubclassProc(hw, msg, wp, lp)
+    case: 
+        return DefSubclassProc(hw, msg, wp, lp)
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

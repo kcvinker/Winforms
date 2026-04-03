@@ -209,99 +209,91 @@ tray_add_context_menu :: proc(this: ^TrayIcon, cdraw: bool, trigger: TrayMenuTri
 {
     context = global_context
     // context = runtime.default_context()
-    
+    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
     // display_msg(msg)
     switch msg {
-        case WM_DESTROY:            
-            this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-            Shell_NotifyIcon(NIM_DELETE, &this._nid)
-            if this._hTrayIcon != nil do DestroyIcon(this._hTrayIcon)
-            if this._cmenuUsed do contextmenu_dtor(this.contextMenu)
-            free(this)
-            // print("Tray Icon's message-only window destroyed")
+    case WM_DESTROY:              
+        Shell_NotifyIcon(NIM_DELETE, &this._nid)
+        if this._hTrayIcon != nil do DestroyIcon(this._hTrayIcon)
+        if this._cmenuUsed do contextmenu_dtor(this.contextMenu)
+        free(this)
+        // print("Tray Icon's message-only window destroyed")
 
-        case CM_TRAY_MSG:
-            switch lp {
-                case NIN_BALLOONSHOW:
-                    print("tray balloon show")
-                case NIN_BALLOONTIMEOUT:
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)                    
-                    if this.onBalloonClose != nil {
-                        ea := new_event_args()
-                        this.onBalloonClose(this, &ea)
-                    }
-                    if this._resetIcon do resetIconInternal(this) // Need to revert the default icon
+    case CM_TRAY_MSG:
+        switch lp {
+        case NIN_BALLOONSHOW:
+            print("tray balloon show")
+            
+        case NIN_BALLOONTIMEOUT:                    
+            if this.onBalloonClose != nil {
+                ea := new_event_args()
+                this.onBalloonClose(this, &ea)
+            }
+            if this._resetIcon do resetIconInternal(this) // Need to revert the default icon
 
-                case NIN_BALLOONUSERCLICK:
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-                    if this.onBalloonClick != nil {
-                        ea := new_event_args()
-                        this.onBalloonClick(this, &ea)
-                    }
-                    if this._resetIcon do resetIconInternal(this) // Need to revert the default icon
+        case NIN_BALLOONUSERCLICK:
+            if this.onBalloonClick != nil {
+                ea := new_event_args()
+                this.onBalloonClick(this, &ea)
+            }
+            if this._resetIcon do resetIconInternal(this) // Need to revert the default icon
 
-                case WM_LBUTTONDOWN:
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-                    if this.onLeftMouseDown != nil {
-                        ea := new_event_args()
-                        this.onLeftMouseDown(this, &ea)
-                    }
-                    
-                case WM_LBUTTONUP:
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-                    if this.onLeftMouseUp != nil {
-                        ea := new_event_args()
-                        this.onLeftMouseUp(this, &ea)
-                    }
-                    if this.onLeftClick != nil {
-                        ea := new_event_args()
-                        this.onLeftClick(this, &ea)
-                    }
-                    if this._cmenuUsed && (u8(this.menuTrigger) & 1) == 1 {
-                        contextmenu_show(this.contextMenu, 0)
-                    }
-
-                case WM_LBUTTONDBLCLK:
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-                    if this.onLeftDoubleClick != nil {
-                        ea := new_event_args()
-                        this.onLeftDoubleClick(this, &ea)
-                    }
-                    if this._cmenuUsed && u8(this.menuTrigger) & 2 == 2 {
-                        contextmenu_show(this.contextMenu, 0)
-                    }                   
-
-                case WM_RBUTTONDOWN:
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-                    if this.onRightMouseDown != nil {
-                        ea := new_event_args()
-                        this.onRightMouseDown(this, &ea)
-                    }
-
-                case WM_RBUTTONUP:                    
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-                    if this.onRightMouseUp != nil {
-                        ea := new_event_args()
-                        this.onRightMouseUp(this, &ea)
-                    }
-                    if this.onRightClick != nil {
-                        ea := new_event_args()
-                        this.onRightClick(this, &ea)
-                    }
-                    if this._cmenuUsed && u8(this.menuTrigger) & 4 == 4 {
-                        contextmenu_show(this.contextMenu, 0)
-                    }                    
-                    
-                case WM_MOUSEMOVE:
-                    this := dir_cast(GetWindowLongPtr(hw, GWLP_USERDATA), ^TrayIcon)
-                    if this.onMouseMove != nil {
-                        ea := new_event_args()
-                        this.onMouseMove(this, &ea)
-                    }
-                    
+        case WM_LBUTTONDOWN:
+            if this.onLeftMouseDown != nil {
+                ea := new_event_args()
+                this.onLeftMouseDown(this, &ea)
+            }
+            
+        case WM_LBUTTONUP:
+            if this.onLeftMouseUp != nil {
+                ea := new_event_args()
+                this.onLeftMouseUp(this, &ea)
+            }
+            if this.onLeftClick != nil {
+                ea := new_event_args()
+                this.onLeftClick(this, &ea)
+            }
+            if this._cmenuUsed && (u8(this.menuTrigger) & 1) == 1 {
+                contextmenu_show(this.contextMenu, 0)
             }
 
-        case : return DefWindowProc(hw, msg, wp, lp)
+        case WM_LBUTTONDBLCLK:
+            if this.onLeftDoubleClick != nil {
+                ea := new_event_args()
+                this.onLeftDoubleClick(this, &ea)
+            }
+            if this._cmenuUsed && u8(this.menuTrigger) & 2 == 2 {
+                contextmenu_show(this.contextMenu, 0)
+            }                   
+
+        case WM_RBUTTONDOWN:
+            if this.onRightMouseDown != nil {
+                ea := new_event_args()
+                this.onRightMouseDown(this, &ea)
+            }
+
+        case WM_RBUTTONUP:                    
+            if this.onRightMouseUp != nil {
+                ea := new_event_args()
+                this.onRightMouseUp(this, &ea)
+            }
+            if this.onRightClick != nil {
+                ea := new_event_args()
+                this.onRightClick(this, &ea)
+            }
+            if this._cmenuUsed && u8(this.menuTrigger) & 4 == 4 {
+                contextmenu_show(this.contextMenu, 0)
+            }                    
+            
+        case WM_MOUSEMOVE:
+            if this.onMouseMove != nil {
+                ea := new_event_args()
+                this.onMouseMove(this, &ea)
+            }
+                
+        }
+
+    case : return DefWindowProc(hw, msg, wp, lp)
     }
     return DefWindowProc(hw, msg, wp, lp)
 }

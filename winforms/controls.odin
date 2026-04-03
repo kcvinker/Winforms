@@ -77,7 +77,9 @@ import api "core:sys/windows"
 globalSubClassID : int = 2001
 globalCtlID : UINT= 100
 
-
+SpecialMouseMoveHandler :: distinct #type proc (^Control, HWND, UINT, WPARAM, LPARAM) 
+SpecialMouseLeaveHandler :: distinct #type proc (^Control) -> MsgHandlerReturn
+// MouseMsgHandler :: distinct #type proc (^Control)
 
 // A base class for all controls & Form.
 Control :: struct
@@ -100,10 +102,12 @@ Control :: struct
     _style, _exStyle : DWORD,
 	_isCreated : b64,
 	_isMouseTracking, _isMouseEntered : bool,
+	_isPressed: bool,
 	_mDownHappened, _mRDownHappened : bool,
 	_SizeIncr : SizeIncrement,
 	_clsName : wstring,
 	_drawFlag: uint,
+	_cachedWidth, _cachedHeight : i32,
 	_fp_beforeCreation, _fp_afterCreation : CreateDelegate,
 	_fp_size_fix : ControlDelegate,
 	_inherit_color: bool,
@@ -112,6 +116,11 @@ Control :: struct
 	_hasFont: bool,
 	_wtext : ^WideString,
 	_fcref : COLORREF,
+	_myRect : RECT,
+	_spMMoveProc: SpecialMouseMoveHandler,
+	_spMLeaveProc: SpecialMouseLeaveHandler,
+	// _mouseEnterProc, _mouseLeaveProc : MouseMsgHandler,
+	
 
 
 	clrChanged : bool,
@@ -120,6 +129,7 @@ Control :: struct
 	onGotFocus,
 	onLostFocus ,
 	onMouseEnter,
+	onMouseHover,
 	onClick,
 	onRightClick,
 	onDoubleClick,
@@ -132,14 +142,14 @@ Control :: struct
     onMouseUp,
     onRightMouseUp,
     onMouseScroll,
-    onMouseMove,
-	onMouseHover : MouseEventHandler,
+    onMouseMove : MouseEventHandler,
 
     onKeyUp,
 	onKeyDown,
 	onKeyPress : KeyEventHandler,
 	onDestroy : EventHandler,
 }
+
 
 
 
@@ -183,8 +193,20 @@ create_control :: proc(c : ^Control)
         c._isCreated = true
         if c._hasFont do setfont_internal(c)
 		if c._fp_afterCreation != nil do c._fp_afterCreation(c)
+		GetClientRect(c.handle, &c._myRect)	
+		// if c._mouseEnterProc == nil do common_mouse_enter_handler
+		// if c._mouseLeaveProc == nil do c._mouseLeaveProc = common_mouse_leave_handler
+	}
+	else {
+		print("Failed to create control")
 		// context = runtime.default_context()
     }
+}
+
+common_mouse_leave_handler :: proc(this: ^Control)
+{
+	this._isMouseEntered = false
+	alert2("Common Mouse leave message from %s", this.kind)
 }
 
 control_setpos :: #force_inline proc(this: ^Control, flag: UINT) {
@@ -259,6 +281,7 @@ control_setdisable :: proc(this: ^Control, value: b8)
 control_set_font :: proc(ctl : ^Control, fn : string, fsz : int,
 							fw : FontWeight = .Normal, fi : bool = false, fu : bool = false)
 {
+	if ctl._hasFont == false do return
 	using ctl.font
 	name = fn
 	size = fsz
@@ -274,6 +297,7 @@ control_set_font :: proc(ctl : ^Control, fn : string, fsz : int,
 // Set control's font name
 control_set_font_name :: proc(ctl : ^Control, fn : string)
 {
+	if ctl._hasFont == false do return
 	ctl.font._defFontChanged = true
 	ctl.font.name = fn
 	if ctl._isCreated do control_set_font(ctl, fn, ctl.font.size)
@@ -282,6 +306,7 @@ control_set_font_name :: proc(ctl : ^Control, fn : string)
 // Set control's font size
  control_set_font_size :: proc(ctl : ^Control, fsz : int, )
 {
+	if ctl._hasFont == false do return
 	ctl.font._defFontChanged = true
 	ctl.font.size = fsz
 	if ctl._isCreated do control_set_font(ctl, ctl.font.name, fsz)
@@ -331,11 +356,12 @@ control_set_backcolor :: proc{set_back_color1, set_back_color2}
 // To set the fore color of a control or form. Note :- This is not applicable for all controls.
 control_set_forecolor :: proc{set_fore_color1, set_fore_color2}
 
-// Writen to set a control's focus, but it seems not working.
+// To set a control's focus, but it seems not working.
 control_Setfocus :: proc(ctl : ^Control)
 {
 	// This is not working as i intented. This will erase the text box's back color.
 	// I don't know how to fix this.
+	// TODO: Fix the focus issue. Maybe we can set focus to a control's child to avoid the back color issue.
 	SetFocus(ctl.handle)
 }
 
@@ -354,6 +380,7 @@ control_Setfocus :: proc(ctl : ^Control)
 // This is used to set the defualt font right creating the control handle.
 @private setfont_internal :: proc(ctl : ^Control)
 {
+	if ctl._hasFont == false do return
 	if ctl.font.handle == nil do font_create_handle(&ctl.font)
 	SendMessage(ctl.handle, WM_SETFONT, WPARAM(ctl.font.handle), LPARAM(1))
 
@@ -477,7 +504,118 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 // set_focus :: proc(hwnd : HWND) {SetFocus(hwnd)}
 
 // Common control message handlers
+	@private ctrl_common_msg_handler :: proc(this: ^Control, hw: HWND, msg: UINT,wp: WPARAM, lp: LPARAM) -> MsgHandlerReturn
+	{
+		switch msg {
+		case WM_LBUTTONDOWN:
+			this._isPressed = true
+			if this.onMouseDown != nil {
+				mea := new_mouse_event_args(msg, wp, lp)
+				this.onMouseDown(this, &mea)
+			}
+			return .Call_Def_Proc
+
+		case WM_RBUTTONDOWN:
+			this._isPressed = true
+			if this.onRightMouseDown != nil {
+				mea := new_mouse_event_args(msg, wp, lp)
+				this.onRightMouseDown(this, &mea)
+			}
+			return .Call_Def_Proc
+
+		case WM_LBUTTONUP:				
+			if this.onMouseUp != nil	{
+				mea := new_mouse_event_args(msg, wp, lp)
+				this.onMouseUp(this, &mea)
+			}
+
+			if this._isPressed && this.onClick != nil {
+				pt := POINT{cast(i32)(cast(i16)LOWORD(lp)), cast(i32)(cast(i16)HIWORD(lp))}		
+				if PtInRect(&this._myRect, pt) do this->onClick(&gea)
+			}
+			this._isPressed = false;		
+			return .Call_Def_Proc
+
+		case WM_RBUTTONUP:
+			if this.onRightMouseUp != nil {
+				mea := new_mouse_event_args(msg, wp, lp)
+				this.onRightMouseUp(this, &mea)
+			}
+			if this._isPressed && this.onRightClick != nil {
+				pt := POINT{cast(i32)(cast(i16)LOWORD(lp)), cast(i32)(cast(i16)HIWORD(lp))}		
+				if PtInRect(&this._myRect, pt) do this->onRightClick(&gea)
+			}
+			this._isPressed = false;
+			return .Call_Def_Proc
+
+		case WM_MOUSEHWHEEL:
+			if this.onMouseScroll != nil {
+				mea := new_mouse_event_args(msg, wp, lp)
+				this.onMouseScroll(this, &mea)
+			}
+			return .Call_Def_Proc
+
+		case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is firing from here.
+			
+			if this._spMMoveProc == nil {			
+				if this.onMouseMove != nil {
+					mea := new_mouse_event_args(msg, wp, lp)
+					this.onMouseMove(this, &mea)
+				}
+
+				// Determine if we need to start/restart tracking
+				needsLeave : bool = (this.onMouseEnter != nil || this.onMouseLeave != nil)
+				needsHover : bool = (this.onMouseHover != nil)
+				if (needsLeave || needsHover) {
+					// alert2("Needs Tracking: ", this._isMouseTracking)
+					if !this._isMouseTracking {
+						flags : DWORD = 0
+						if needsLeave do flags |= TME_LEAVE
+						if needsHover do flags |= TME_HOVER
+
+						// Start tracking
+						track_mouse_move(this.handle, flags)
+						this._isMouseTracking = true
+						if this.onMouseEnter != nil && !this._isMouseEntered {
+							this._isMouseEntered = true
+							this.onMouseEnter(this, &gea)
+						}
+					}
+				}
+				
+			} else { 
+				this._spMMoveProc(this, hw, msg, wp, lp)
+			}	
+			return .Call_Def_Proc
+			
+			
+
+		case WM_MOUSEHOVER:
+			this._isMouseTracking = false
+			if this.onMouseHover != nil do this.onMouseHover(this, &gea)
+			return .Call_Def_Proc
+
+		case WM_MOUSELEAVE:
+			// alert2("Mouse leave message received from %s", this.kind)
+			if this._spMLeaveProc == nil {
+				this._isMouseTracking = false
+				this._isMouseEntered = false
+				if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
+				return .Call_Def_Proc
+			} else {
+				return this._spMLeaveProc(this)
+			}
+		
+
+		case WM_CONTEXTMENU:
+			if this.contextMenu != nil do contextmenu_show(this.contextMenu, lp)
+			return .Call_Def_Proc
+		}
+		return .Continue
+	}
+	
 // Left Mouse down, up, click
+
 	ctrl_left_mousedown_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM)
 	{
 		if ctl.onMouseDown != nil {

@@ -135,6 +135,22 @@ WNDCLASSEXW :: struct {
 	hIconSm: HICON,
 }
 
+CREATESTRUCTW :: struct {
+    lpCreateParams: LPVOID,
+    hInstance:      HINSTANCE,
+    hMenu:          HMENU,
+    hwndParent:     HWND,
+    cy:             i32,
+    cx:             i32,
+    y:              i32,
+    x:              i32,
+    style:          i32,        // LONG
+    lpszName:       LPCWSTR,       
+    lpszClass:      LPCWSTR,       
+    dwExStyle:      DWORD,        
+}
+LPCREATESTRUCTW :: ^CREATESTRUCTW
+
 POINT :: struct { x, y: i32,}
 
 MSG :: struct {hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM, time: u32, pt: POINT,}
