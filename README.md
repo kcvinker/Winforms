@@ -191,3 +191,10 @@ main :: proc()
 ## Note
 To enable visual styles for your application, you need to use a manifest file.
 Here you can see a **app.exe.manifest** file in this repo. You can copy paste it in your project folder. Then rename it. The name must be your exe file's name. Here in my case, my exe file is **app.exe**. So my manifest file's name is **app.exe.manifest**. However, you can use a reource file and put an entry for this manifest file in it. Then you can compile the app with the manifest data embedded into your exe.
+
+You can set the event handlers like `btn.onClick = my_button_click_proc`, but you can't assign a function pointer for mouse `enter/hover/leave` events. These three events needs special treatement, so you should use any of these functions.
+```odin
+ui.ctrl_set_mouse_enter_handler(cmb, on_cmb_mouse_enter)
+ui.ctrl_set_mouse_leave_handler(cmb, on_cb_mouse_leave)
+ui.ctrl_set_mouse_hover_handler(cmb, on_cmb_mouse_hover)
+```
