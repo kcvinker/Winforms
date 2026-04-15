@@ -26,6 +26,17 @@ new_timer :: proc(pHwnd: HWND, interval: u32, ontickFunc: EventHandler) -> ^Time
     return this
 }
 
+new_timer_internal :: proc(pHwnd: HWND, interval: u32) -> ^Timer
+{
+    context = global_context
+    this := new(Timer, context.allocator)
+    this.interval = interval
+    this._parentHwnd = pHwnd
+    this._idNum = UINT_PTR(this) // Unique ID based on memory address
+    this._isEnabled = false
+    return this
+}
+
 
 timer_start :: proc(this: ^Timer)
 {
@@ -48,6 +59,7 @@ timer_restart :: proc(this: ^Timer)
 
 @private timer_dtor :: proc(this: ^Timer)
 {
+    if this == nil do return
     if this._isEnabled do KillTimer(this._parentHwnd, this._idNum)
     free(this)
 }

@@ -73,13 +73,14 @@ package winforms
 
 import "base:runtime"
 import api "core:sys/windows"
+import "core:reflect"
 
 globalSubClassID : int = 2001
 globalCtlID : UINT= 100
+MOUSE_ENTER_EVENT      :: 1 << 0
+MOUSE_HOVER_EVENT      :: 1 << 1
+MOUSE_LEAVE_EVENT      :: 1 << 2
 
-SpecialMouseMoveHandler :: distinct #type proc (^Control, HWND, UINT, WPARAM, LPARAM) 
-SpecialMouseLeaveHandler :: distinct #type proc (^Control) -> MsgHandlerReturn
-// MouseMsgHandler :: distinct #type proc (^Control)
 
 // A base class for all controls & Form.
 Control :: struct
@@ -100,8 +101,9 @@ Control :: struct
 	contextMenu : ^ContextMenu,
 
     _style, _exStyle : DWORD,
+	_isMouseTracking: BOOL,
 	_isCreated : b64,
-	_isMouseTracking, _isMouseEntered : bool,
+	_isMouseEntered : bool,
 	_isPressed: bool,
 	_mDownHappened, _mRDownHappened : bool,
 	_SizeIncr : SizeIncrement,
@@ -117,14 +119,12 @@ Control :: struct
 	_wtext : ^WideString,
 	_fcref : COLORREF,
 	_myRect : RECT,
-	_spMMoveProc: SpecialMouseMoveHandler,
-	_spMLeaveProc: SpecialMouseLeaveHandler,
-	// _mouseEnterProc, _mouseLeaveProc : MouseMsgHandler,
-	
-
+	_mouseEvents: bit_set[SpecialMouseEvents; u8],
+	_tmeFlags: DWORD,
 
 	clrChanged : bool,
 
+	// Events
 	onPaint : PaintEventHandler,
 	onGotFocus,
 	onLostFocus ,
@@ -168,6 +168,7 @@ create_control :: proc(c : ^Control)
 
 	width : i32 = 0
 	height : i32 = 0
+	c._tmeFlags = 0 
 	if c.kind != ControlKind.Number_Picker {
 		// NumberPicker needs zero width & height. It can find it's size later.
 		width = i32(c.width)
@@ -201,7 +202,10 @@ create_control :: proc(c : ^Control)
 		print("Failed to create control")
 		// context = runtime.default_context()
     }
+
 }
+
+
 
 common_mouse_leave_handler :: proc(this: ^Control)
 {
@@ -557,35 +561,42 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 
 		case WM_MOUSEMOVE: // Mouse Enter & Mouse Move is firing from here.
 			
-			if this._spMMoveProc == nil {			
-				if this.onMouseMove != nil {
-					mea := new_mouse_event_args(msg, wp, lp)
-					this.onMouseMove(this, &mea)
-				}
+			// if this._spMMoveProc == nil {			
+			// 	if this.onMouseMove != nil {
+			// 		mea := new_mouse_event_args(msg, wp, lp)
+			// 		this.onMouseMove(this, &mea)
+			// 	}
 
-				// Determine if we need to start/restart tracking
-				needsLeave : bool = (this.onMouseEnter != nil || this.onMouseLeave != nil)
-				needsHover : bool = (this.onMouseHover != nil)
-				if (needsLeave || needsHover) {
-					// alert2("Needs Tracking: ", this._isMouseTracking)
-					if !this._isMouseTracking {
-						flags : DWORD = 0
-						if needsLeave do flags |= TME_LEAVE
-						if needsHover do flags |= TME_HOVER
+			// 	// Determine if we need to start/restart tracking
+			// 	needsLeave : bool = (this.onMouseEnter != nil || this.onMouseLeave != nil)
+			// 	needsHover : bool = (this.onMouseHover != nil)
+			// 	if (needsLeave || needsHover) {
+			// 		// alert2("Needs Tracking: ", this._isMouseTracking)
+			// 		if !this._isMouseTracking {
+			// 			flags : DWORD = 0
+			// 			if needsLeave do flags |= TME_LEAVE
+			// 			if needsHover do flags |= TME_HOVER
 
-						// Start tracking
-						track_mouse_move(this.handle, flags)
-						this._isMouseTracking = true
-						if this.onMouseEnter != nil && !this._isMouseEntered {
-							this._isMouseEntered = true
-							this.onMouseEnter(this, &gea)
-						}
-					}
-				}
+			// 			// Start tracking
+			// 			track_mouse_move(this.handle, flags)
+			// 			this._isMouseTracking = true
+			// 			if this.onMouseEnter != nil && !this._isMouseEntered {
+			// 				this._isMouseEntered = true
+			// 				this.onMouseEnter(this, &gea)
+			// 			}
+			// 		}
+			// 	}
 				
-			} else { 
-				this._spMMoveProc(this, hw, msg, wp, lp)
-			}	
+			// } else { 
+			// 	this._spMMoveProc(this, hw, msg, wp, lp)
+			// }	
+			if this.kind == .Combo_Box {
+				cmb_mouse_move_handler(cast(^ComboBox)this, hw, msg, wp, lp)
+			} else if this.kind == .Number_Picker {
+				nump_mouse_move_handler(cast(^NumberPicker)this, hw, msg, wp, lp)
+			} else {
+				ctrl_mousemove_handler(this, hw, msg, wp, lp)
+			}
 			return .Call_Def_Proc
 			
 			
@@ -596,15 +607,23 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 			return .Call_Def_Proc
 
 		case WM_MOUSELEAVE:
-			// alert2("Mouse leave message received from %s", this.kind)
-			if this._spMLeaveProc == nil {
-				this._isMouseTracking = false
-				this._isMouseEntered = false
-				if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
-				return .Call_Def_Proc
+			// // alert2("Mouse leave message received from %s", this.kind)
+			// if this._spMLeaveProc == nil {
+			// 	this._isMouseTracking = false
+			// 	this._isMouseEntered = false
+			// 	if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
+			// 	return .Call_Def_Proc
+			// } else {
+			// 	return this._spMLeaveProc(this)
+			// }
+			if this.kind == .Combo_Box {
+				cmb_mouse_leave_handler(cast(^ComboBox)this)
+			} else if this.kind == .Number_Picker {
+				nump_mouse_leave_handler(cast(^NumberPicker)this)
 			} else {
-				return this._spMLeaveProc(this)
+				ctrl_mouseleave_handler(this)
 			}
+			return .Call_Def_Proc
 		
 
 		case WM_CONTEXTMENU:
@@ -670,7 +689,7 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 		}
 	}
 
-	ctrl_mousemove_handler :: proc(ctl: ^Control, msg: UINT,wpm: WPARAM, lpm: LPARAM)
+	@private ctrl_mousemove_handler :: proc(ctl: ^Control, hw: HWND, msg: UINT,wpm: WPARAM, lpm: LPARAM)
 	{
 		if ctl._isMouseEntered {
 			if ctl.onMouseMove != nil {
@@ -678,21 +697,27 @@ control_get_text_wstr :: proc(ctl : Control, alloc := context.allocator) -> []u1
 				ctl.onMouseMove(ctl, &mea)
 			}
 		}
-		else {
-			ctl._isMouseEntered = true
-			if ctl.onMouseEnter != nil  {
-				ea := new_event_args()
-				ctl.onMouseEnter(ctl, &ea)
-			}
-		}
+		if ctl._tmeFlags > 0 {
+			if ctl._isMouseTracking {
+				ctl._isMouseTracking = track_mouse_move(ctl.handle, ctl._tmeFlags)
+				if SpecialMouseEvents.Mouse_Enter in ctl._mouseEvents && !ctl._isMouseEntered {
+					ctl._isMouseEntered = true
+					ea := new_event_args()
+					ctl.onMouseEnter(ctl, &ea)
+				}
+			}			
+		}		
 	}
 
-	ctrl_mouseleave_handler :: proc(ctl: ^Control)
+	@private ctrl_mouseleave_handler :: proc(ctl: ^Control)
 	{
 		ctl._isMouseEntered = false
-		if ctl.onMouseLeave != nil {
-			ea := new_event_args()
-			ctl.onMouseLeave(ctl, &ea)
+		if ctl._isMouseTracking {
+			ctl._isMouseTracking = false
+			if ctl.onMouseLeave != nil {
+				ea := new_event_args()
+				ctl.onMouseLeave(ctl, &ea)
+			}			
 		}
 	}
 
@@ -793,4 +818,33 @@ set_property :: proc(ctl: ^$T,  prop: $U, value: $V)
 	}
 }
 
+
+// User who wants to use mouse enter event must call this function to set the event handler.
+ctrl_set_mouse_enter_handler :: proc(this: ^Control, evtProc: EventHandler,) 
+{
+	this._mouseEvents += {.Mouse_Enter}
+	set_bit_flag(&this._tmeFlags, MouseTrackingFlags.TME_Leave)
+	this.onMouseEnter = evtProc	
+}
+
+// User who wants to use mouse hover event must call this function to set the event handler.
+ctrl_set_mouse_hover_handler :: proc(this: ^Control, evtProc: EventHandler,) 
+{
+	this._mouseEvents += {.Mouse_Hover}
+	set_bit_flag(&this._tmeFlags, MouseTrackingFlags.TME_Hover)
+	this.onMouseHover = evtProc	
+	if this.kind == .Combo_Box {
+		combo_set_hover_timer((^ComboBox)(this))
+	} else if this.kind == .Number_Picker {
+		nump_set_hover_timer((^NumberPicker)(this))
+	}
+}
+
+// User who wants to use mouse leave event must call this function to set the event handler.
+ctrl_set_mouse_leave_handler :: proc(this: ^Control, evtProc: EventHandler,) 
+{
+	this._mouseEvents += {.Mouse_Leave}
+	set_bit_flag(&this._tmeFlags, MouseTrackingFlags.TME_Leave)
+	this.onMouseLeave = evtProc		
+}
 

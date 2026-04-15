@@ -344,15 +344,6 @@ form_setfont :: proc(this : ^Form, fname: string, fsize: int, fweight: FontWeigh
     }
 }
 
-@private track_mouse_move :: proc(hw : HWND, flags: DWORD = TME_HOVER | TME_LEAVE) -> BOOL
-{
-    tme : TRACKMOUSEEVENT
-    tme.cbSize = size_of(tme)
-    tme.dwFlags = flags
-    tme.dwHoverTime = HOVER_DEFAULT
-    tme.hwndTrack = hw
-    return TrackMouseEvent(&tme)
-}
 
 @private set_back_clr_internal :: proc(this : ^Form, hdc : HDC)
 {

@@ -78,6 +78,9 @@ NumberPicker :: struct
     _txtPos : SimpleTextAlignment,
     _bgcRef : COLORREF,
     _lineX : i32,
+    _hoverTriggered: bool,
+    _hoverTimer : ^Timer,
+     _lastMpos: POINT,
     _disValArr: [dynamic]WCHAR,  
 
     // Events
@@ -139,8 +142,6 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     this._buddyExStyle = WS_EX_LTRREADING | WS_EX_LEFT
     this._topEdgeFlag = BF_TOPLEFT
     this._botEdgeFlag = BF_BOTTOM
-    this._spMMoveProc = nump_mouse_move_handler
-    this._spMLeaveProc = nump_mouse_leave_handler
     return this
 }
 
@@ -267,9 +268,6 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     
     np._tbrc = get_rect(np._buddyHandle) // Textbox rect
     np._udrc = get_rect(np.handle) // Updown btn rect
-    // GetWindowRect(np.handle, &np._npRect) // NumberPicker rect
-    // np._npRect = RECT{0, 0, i32(np.width), i32(np.height)}
-    // print_rcpt(np._npRect, {0, 0}, 0)
 }
 
 @private resize_buddy :: proc(np : ^NumberPicker)
@@ -337,12 +335,13 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         resize_buddy(this)
         if oldBuddy != nil do SendMessage(oldBuddy, CM_BUDDY_RESIZE, 0, 0)
         SetRect(&this._myrc, i32(this.xpos), i32(this.ypos), i32(this.xpos + this.width), i32(this.ypos + this.height))
-        // SetRect(&this._myRect, cast(i32)(this.xpos), cast(i32)(this.ypos), 
-        //                     cast(i32)(this.xpos + this.width), cast(i32)(this.ypos + this.height)
-        // )
         np_display_value_internal(this)
-        // print_rcpt(this._myRect, {0, 0}, "Initial")
     }
+}
+
+@private nump_set_hover_timer :: proc(this: ^NumberPicker)
+{
+    this._hoverTimer = new_timer_internal(this.handle, 400)
 }
 
 @private numberpicker_property_setter :: proc(this: ^NumberPicker, prop: NumberPickerProps, value: $T)
@@ -418,38 +417,28 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
 	globalSubClassID += 1
 }
 
-@private nump_mouse_move_handler :: proc(ctl: ^Control, hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
+@private nump_mouse_move_handler :: proc(this: ^NumberPicker, hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
 {
-    // print("mouse moved on buddy ")
-    if ctl.onMouseMove != nil {
+    if this.onMouseMove != nil {
         mea := new_mouse_event_args(msg, wp, lp)
-        ctl.onMouseMove(ctl, &mea)
+        this.onMouseMove(this, &mea)
     }
-    needsLeave : bool = (ctl.onMouseEnter != nil || ctl.onMouseLeave != nil)
-	needsHover : bool = (ctl.onMouseHover != nil)
-    if (needsLeave || needsHover) {
-        // alert2("Needs Tracking: ", this._isMouseTracking)
-        this := cast(^NumberPicker) ctl
-        if hw == this._buddyHandle && !this._isMouseTracking {
-            // It's from the edit, we need to start mouse tracking here.            
-            flags : DWORD = 0
-            if needsLeave do flags |= TME_LEAVE
-            if needsHover do flags |= TME_HOVER
+    
+    if SpecialMouseEvents.Mouse_Hover in this._mouseEvents {
+        this._lastMpos.x = cast(i32)LOWORD(lp)
+        this._lastMpos.y = cast(i32)HIWORD(lp)
+        timer_restart(this._hoverTimer)
+        this._hoverTriggered = true
+    }
 
-            // Start tracking
-            track_mouse_move(this._buddyHandle, flags)
-            this._isMouseTracking = true               
-        }
-        
-        if !this._isMouseEntered && this.onMouseEnter != nil {
-            this._isMouseEntered = true
-            this.onMouseEnter(this, &gea)
-            // print_rcpt(this._myRect, {0, 0}, "In mouse enter")
-        }        
-    }
+    if SpecialMouseEvents.Mouse_Enter in this._mouseEvents && !this._isMouseEntered {
+        this._isMouseEntered = true
+        ea := new_event_args()
+        this.onMouseEnter(this, &ea)
+    }       
 }
 
-@private nump_mouse_leave_handler :: proc(ctl: ^Control) -> MsgHandlerReturn
+@private nump_mouse_leave_handler :: proc(this: ^NumberPicker) 
 {
     /*-----------------------------------------------------------------------------
         Mouse leave event in NumberPicker control is a bit tricky. It's a combination
@@ -459,24 +448,24 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
         the bondaries of these two controls. If mouse is inside that rect, 
         there is no mouse leave. A perfect hack!
     ----------------------------------------------------------------------------------*/
-    if ctl.onMouseLeave != nil || ctl.onMouseEnter != nil || ctl.onMouseMove != nil {
-        this := cast(^NumberPicker) ctl
-        pt : POINT
-        GetCursorPos(&pt)
-        ScreenToClient(this.parent.handle, &pt)
-        am_i_in_myrect := PtInRect(&this._myrc, pt) 
-        
-        // print_rcpt(this._myrc, pt, am_i_in_myrect)
-        if am_i_in_myrect { // Mouse is outside of the control rect. So, it is a real mouse leave.
-            return .Immediate_Return
-        } else {
-            this._isMouseEntered = false
-            this._isMouseTracking = false
-            if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
+    if mouse_leave_or_hover_set(this._tmeFlags) {
+        if this._isMouseEntered || this._isMouseTracking || this._hoverTriggered {
+            pt : POINT = {}
+            GetCursorPos(&pt)
+            ScreenToClient(this.parent.handle, &pt)        
+            inside := PtInRect(&this._myrc, pt)
+            if !inside {        
+                this._isMouseEntered = false
+                this._isMouseTracking = false
+                if this._hoverTriggered {
+                    this._hoverTriggered = false
+                    timer_stop(this._hoverTimer)
+                }
+
+                if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
+            }
         }
-        
     }
-    return .Call_Def_Proc
 }
 
 
@@ -485,42 +474,32 @@ numberpicker_set_decimal_precision :: proc(this: ^NumberPicker, value: int)
     delete_gdi_object(this._bkBrush)
     delete_gdi_object(this._borderBrush)
     font_destroy(&this.font)
+    if SpecialMouseEvents.Mouse_Hover in this._mouseEvents do timer_dtor(this._hoverTimer)
     RemoveWindowSubclass(this.handle, np_wnd_proc, scid)  
     delete(this._disValArr)  
     free(this)
-}
-npm_test :: proc(this: ^NumberPicker)
-{
-    pt := RECT{cast(i32)(this.xpos), cast(i32)(this.ypos), cast(i32)(this.xpos + this.width), cast(i32)(this.ypos + this.height)}
-    // ScreenToClient(this.parent.handle, &pt)
-    ptf("Mouse points of NumberPicker %d, %d, %d, %d", pt.left, pt.top, pt.right, pt.bottom)
-    // ptf("NumberPicker rect %d, %d, %d, %d", this._npRect.left, this._npRect.top, this._npRect.right, this._npRect.bottom)
-    p2 : POINT
-    GetCursorPos(&p2)
-    ScreenToClient(this.parent.handle, &p2)
-    insie := PtInRect(&pt, p2)
-    ptf("Cursor points %d, %d", p2.x, p2.y)
-    ptf("Is cursor inside NumberPicker? %t", insie)
 }
 
 
 @private np_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                         sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context //
-    // context = runtime.default_context()
-    
+    context = global_context 
     nump := control_cast(NumberPicker, ref_data)
-    // if msg == WM_MOUSELEAVE {
-    //     // npm_test(nump)
-    //     return nump_mouse_leave_handler(nump)
-    // }
+    
     res := ctrl_common_msg_handler(nump, hw, msg, wp, lp) 
     #partial switch res {
         case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
         case .Immediate_Return: return 1
     }
+
     switch msg {
+        case WM_TIMER:
+        if nump.onMouseHover != nil {
+            timer_stop(nump._hoverTimer)
+            nump.onMouseHover(nump, &gea)
+            return 0
+        }
     case WM_DESTROY :             
         np_finalize(nump, sc_id)
         return 0
@@ -534,17 +513,6 @@ npm_test :: proc(this: ^NumberPicker)
             EndPaint(hw, &ps)
             return 0
         }
-        // return 0
-
-    // case WM_MOUSEMOVE:
-        // nump_mouse_move_handler(nump, msg, wp, lp)
-        // return 0
-
-    // case WM_MOUSELEAVE:
-    //     alert("Mouse leave from nump")
-        // return special_mouse_leave_handler(nump, &nump._npRect)
-        // return nump_mouse_leave_handler(nump)
-
         
     case CM_NOTIFY :
         nm := dir_cast(lp, ^NMUPDOWN)
@@ -577,22 +545,15 @@ npm_test :: proc(this: ^NumberPicker)
 @private buddy_wnd_proc :: proc "stdcall" (hw: HWND, msg: u32, wp: WPARAM, lp: LPARAM,
                                             sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
-    context = global_context //
-    // context = runtime.default_context()    
-    // display_msg(msg)
-    // if msg == WM_MOUSELEAVE do alert("Mouse leave message received from buddy edit control.")
+    context = global_context
     nump := control_cast(NumberPicker, ref_data)
-    // if msg == WM_MOUSEMOVE {
-    //     alert("Mouse move on buddy")        
-    // } else if msg == WM_MOUSELEAVE {
-    //     alert("Mouse leave from buddy")
-    // }
-    // if msg == WM_MOUSELEAVE do return special_mouse_leave_handler(nump, &nump._npRect)
+
     res := ctrl_common_msg_handler(nump, hw, msg, wp, lp) 
     #partial switch res {
         case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
         case .Immediate_Return: return 1
     }
+
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, buddy_wnd_proc, sc_id)
         case WM_PAINT:
@@ -618,7 +579,6 @@ npm_test :: proc(this: ^NumberPicker)
         case EM_SETSEL: return 1
 
         case WM_KEYDOWN:
-
             kea := new_key_event_args(wp)
             if nump.onKeyDown != nil {
                 nump.onKeyDown(nump, &kea)
@@ -631,7 +591,6 @@ npm_test :: proc(this: ^NumberPicker)
             }
 
         case WM_KEYUP:
-
             kea := new_key_event_args(wp)
             if nump.onKeyUp != nil {
                 nump.onKeyUp(nump, &kea)
@@ -640,7 +599,6 @@ npm_test :: proc(this: ^NumberPicker)
             return 0
 
         case WM_CHAR:
-
             if nump.onKeyPress != nil {
                 kea := new_key_event_args(wp)
                 nump.onKeyPress(nump, &kea)
@@ -648,34 +606,15 @@ npm_test :: proc(this: ^NumberPicker)
             }
 
         case CM_TBTXTCHANGED:
-
              if nump.onValueChanged != nil {
                 ea:= new_event_args()
                 nump.onValueChanged(nump, &ea)
             }
 
-        // case WM_MOUSEMOVE:
-            // nump_mouse_move_handler(nump, msg, wp, lp)
-            // return 0
-
-        // case WM_MOUSELEAVE:
-        //     alert("Mouse leave from buddy")
-            // return special_mouse_leave_handler(nump, &nump._npRect)
-            // return nump_mouse_leave_handler(nump)
-
-        // case WM_MOUSELEAVE:         
-        //     if nump.onMouseLeave != nil || nump.onMouseEnter != nil || nump.onMouseMove != nil {
-        //         if !is_mouse_on_me(nump) {
-        //             nump._isMouseEntered = false
-        //             if nump.onMouseLeave != nil do nump.onMouseLeave(nump, &gea)
-        //         }
-        //     }
-
         case CM_BUDDY_RESIZE: 
             resize_buddy(nump)
             SetRect(&nump._myrc, i32(nump.xpos), i32(nump.ypos), 
                     i32(nump.xpos + nump.width), i32(nump.ypos + nump.height))
-
 
         case : return DefSubclassProc(hw, msg, wp, lp)
     }

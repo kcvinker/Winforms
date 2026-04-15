@@ -181,14 +181,22 @@ MakeWindow :: proc()
         ptf("[%d] Mouse left from Numpic", cntml1)
         cntml1+= 1
     }
-    cmb.onMouseEnter = mep
-    cmb.onMouseLeave = mlp
+    mhp :: proc(c: rawptr, ea: ^ui.EventArgs) {
+        @static cntmh1 : int = 1
+        ptf("[%d] Mouse hovered Numpic", cntmh1)
+        cntmh1+= 1
+    }
+    ui.ctrl_set_mouse_enter_handler(np1, mep)
+    ui.ctrl_set_mouse_leave_handler(np1, mlp)
+    ui.ctrl_set_mouse_hover_handler(np1, mhp)
 
     start_mainloop(frm)
 
 
     
 }
+
+
 
 main :: proc()
 {

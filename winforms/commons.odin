@@ -456,6 +456,29 @@ freeArenaMemory :: proc(this: ^ArenaMemory)
 	print("ArenaMemory freed")
 }
 
-// combo_ctl_mouse_track :: proc(this: ^Control) -> bool {
-// 	print("Mouse tracking started for combo box")
-// }
+// Useful helper function to set a bit flag with an enum value
+set_bit_flag :: #force_inline proc(flag: ^DWORD, value: $T) {
+    flag^ |= cast(DWORD)value
+}
+
+// Useful helper function to check if a bit flag contains an enum value
+has_bit_flag :: #force_inline proc(flag: DWORD, value: $T) -> bool {
+    return flag & cast(DWORD)value != 0 
+}
+
+@private mouse_leave_or_hover_set :: #force_inline proc(flag: DWORD ) -> bool 
+{
+	return (flag & cast(DWORD)MouseTrackingFlags.TME_Leave != 0) || 
+			(flag & cast(DWORD)MouseTrackingFlags.TME_Hover != 0)
+}
+
+
+@private track_mouse_move :: proc(hw : HWND, flags: DWORD = TME_HOVER | TME_LEAVE) -> BOOL
+{
+    tme : TRACKMOUSEEVENT
+    tme.cbSize = size_of(tme)
+    tme.dwFlags = flags
+    tme.dwHoverTime = HOVER_DEFAULT
+    tme.hwndTrack = hw
+    return TrackMouseEvent(&tme)
+}

@@ -61,16 +61,15 @@ ComboBox:: struct
     _recreateEnabled: bool, // Used when we need to recreate existing combo
     _dropped: bool, // Used for tracking whether combo's list is dropped or not.
     _meFired: bool, // Used for avoiding firing mouse leave event when combo's dropdown list is opening.
+    _hoverTriggered: bool,
     _bkBrush: HBRUSH,
     _oldCtlID: UINT,
     _editSubclsID: UINT_PTR,
     // _mouseFlag : i32, // General mouse message processing flag
     // _mst : MouseTrackData,
     _cmbRect: RECT, // Used for mouse tracking
-    // _editHwnd: HWND,
-    // _listHwnd: HWND,
-    // _mstInfo: MouseTrackingInfo,
-    // _tmr : ^Timer,
+    _lastMpos: POINT,
+    _hoverTimer : ^Timer,
 
 
     // Events
@@ -250,7 +249,6 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
 
 @private cmb_ctor:: proc(p: ^Form, w: int = 130, h: int = 30, x: int = 10, y: int = 10) -> ^ComboBox
 {
-    // if wcnCombo == nil do wcnCombo = to_wstring("ComboBox")
     cmb:= new(ComboBox)
     init_control(cmb, p, x, y, w, h, .Combo_Box, COMM_CTRL_STYLES | CBS_DROPDOWN, 
                     WS_EX_CLIENTEDGE, wcnCombo, NO_TXT, FONTABLE)
@@ -259,9 +257,7 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
     cmb.selectedIndex = -1
     cmb.comboStyle = DropDownStyle.Lb_Combo
     cmb._fp_beforeCreation = cast(CreateDelegate) cmb_before_creation
-	cmb._fp_afterCreation = cast(CreateDelegate) cmb_after_creation
-    cmb._spMLeaveProc = cmb_mouse_leave_handler
-    
+	cmb._fp_afterCreation = cast(CreateDelegate) cmb_after_creation    
     return cmb
 }
 
@@ -318,6 +314,11 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
     }
 }
 
+@private combo_set_hover_timer :: proc(this: ^ComboBox)
+{
+    this._hoverTimer = new_timer_internal(this.handle, 400)
+}
+
 
 @private cmb_before_creation:: proc(cmb: ^ComboBox)
 {
@@ -350,6 +351,7 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
 	set_subclass(cmb, cmb_wnd_proc)
     cmb._oldCtlID = cmb.controlID
     cd: ComboData = get_combo_info(cmb)
+
     // Collecting child controls info
     if cmb._recreateEnabled {
         cmb._recreateEnabled = false
@@ -377,23 +379,52 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
     GetClientRect(cmb.handle, &cmb._cmbRect)      
 }
 
-@private cmb_mouse_leave_handler :: proc(ctl: ^Control) -> MsgHandlerReturn
+@private cmb_mouse_move_handler :: proc(this: ^ComboBox, hw: HWND, msg: UINT, wpm: WPARAM, lpm: LPARAM)
 {
-    if ctl.onMouseLeave != nil || ctl.onMouseEnter != nil || ctl.onMouseMove != nil {
-        this := cast(^ComboBox) ctl
-        pt : POINT = {}
-        GetCursorPos(&pt)
-        ScreenToClient(this.handle, &pt)        
-        inside := PtInRect(&this._cmbRect, pt)
-        if inside {        
-            return .Immediate_Return
-        } else {
-            this._isMouseEntered = false
-            this._isMouseTracking = false
-            if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
+    if this.onMouseMove != nil {
+        mea := new_mouse_event_args(msg, wpm, lpm)
+        this.onMouseMove(this, &mea)
+    }
+
+    if SpecialMouseEvents.Mouse_Hover in this._mouseEvents && !this._hoverTriggered {
+        this._lastMpos.x = cast(i32)LOWORD(lpm)
+        this._lastMpos.y = cast(i32)HIWORD(lpm)
+        timer_restart(this._hoverTimer)
+        this._hoverTriggered = true
+    }
+
+    if SpecialMouseEvents.Mouse_Enter in this._mouseEvents && !this._isMouseEntered {
+        this._isMouseEntered = true
+        ea := new_event_args()
+        this.onMouseEnter(this, &ea)
+    }        
+}
+
+@private cmb_mouse_leave_handler :: proc(this: ^ComboBox) 
+{
+    if mouse_leave_or_hover_set(this._tmeFlags) {
+        if this._isMouseEntered || this._isMouseTracking || this._hoverTriggered {
+
+            // SInce ComboBox is a comnination of edit and button, we need special
+            // care to implement mouse leave event. Edit is sitting inside combo's
+            // rect. So we get mouse leave message even when mouse is inside combo.
+            // So, we need to check if mouse is really inside our perimeter. 
+            pt : POINT = {}
+            GetCursorPos(&pt)
+            ScreenToClient(this.handle, &pt)        
+            inside := PtInRect(&this._cmbRect, pt)
+            if !inside {        
+                this._isMouseEntered = false
+                this._isMouseTracking = false
+                if this._hoverTriggered {
+                    this._hoverTriggered = false
+                    timer_stop(this._hoverTimer)
+                }
+                if this.onMouseLeave != nil do this.onMouseLeave(this, &gea)
+            }
         }
     }
-    return .Call_Def_Proc    
+   
 }
 
 @private combo_property_setter:: proc(this: ^ComboBox, prop: ComboProps, value: $T)
@@ -413,6 +444,7 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
     {
         delete_gdi_object(this._bkBrush)
         font_destroy(&this.font)
+        if SpecialMouseEvents.Mouse_Hover in this._mouseEvents do timer_dtor(this._hoverTimer)
         delete(this.items)
         free(this)
     }
@@ -422,9 +454,6 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
                                 sc_id: UINT_PTR, ref_data: DWORD_PTR) -> LRESULT
 {
     context = global_context
-    // context = runtime.default_context()
-    
-    //display_msg(msg)
     cmb:= control_cast(ComboBox, ref_data)
     res := ctrl_common_msg_handler(cmb, hw, msg, wp, lp) 
     #partial switch res {
@@ -521,7 +550,6 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
                     cmb.onTBMouseLeave(cmb, &ea)
                 }
             }
-
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }
@@ -537,6 +565,7 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
         case .Call_Def_Proc: return DefSubclassProc(hw, msg, wp, lp)
         case .Immediate_Return: return 1
     }
+
     switch msg {
         case WM_DESTROY: RemoveWindowSubclass(hw, edit_wnd_proc, sc_id)
 
@@ -559,9 +588,7 @@ combo_set_style:: proc(cmb: ^ComboBox, style: DropDownStyle)
             if cmb.onKeyUp != nil {
                 kea:= new_key_event_args(wp)
                 cmb.onKeyUp(cmb, &kea)
-            }
-
-        
+            }        
     }
     return DefSubclassProc(hw, msg, wp, lp)
 }

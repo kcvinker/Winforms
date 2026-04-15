@@ -108,6 +108,13 @@ TreeViewAction :: enum {Unknown, By_Keyboard, By_Mouse, Collapse, Expand,}
 
 KeyState :: enum {Released, Pressed,}
 
+SpecialMouseEvents :: enum {Mouse_Enter, Mouse_Hover, Mouse_Leave}
+MouseTrackingFlags :: enum DWORD {
+    TME_Hover = 1 << 0, // 1
+    TME_Leave = 1 << 1, // 2
+}
+
+
 FontWeight :: enum 
 {
 	Light = 300,
